@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using Syncfusion.Blazor.Grids
 @using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Inputs
 
 <!-- Control Panel -->
 <div style="padding: 20px; background-color: #f5f5f5; border-radius: 4px; margin-bottom: 20px;">
@@ -15,10 +16,21 @@
     </div> *@
 
     <!-- Dynamic Undo/Redo Limit -->
-    <div style="margin-bottom: 15px;">
-        <label style="font-weight: 500; margin-right: 10px;">Undo/Redo Limit:</label>
-        <input type="number" @bind="UndoRedoLimit" min="1" max="50" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;" />
-        <span style="margin-left: 10px; color: #666;">Actions: @UndoRedoLimit</span>
+    <div style="margin-bottom:15px;">
+        <label style="font-weight:500; margin-right:10px;">
+            Undo/Redo Limit:
+        </label>
+
+        <SfNumericTextBox TValue="int"
+                          @bind-Value="UndoRedoLimit"
+                          Min="1"
+                          Max="50"
+                          Width="100px">
+        </SfNumericTextBox>
+
+        <span style="margin-left:10px;color:#666;">
+            Actions: @UndoRedoLimit
+        </span>
     </div>
     <!-- Keyboard Shortcuts Info -->
     <div style="padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 2px; margin-bottom: 10px;">
