@@ -1,0 +1,64 @@
+﻿@inherits GridTestBase
+
+@{
+    var Initialgroup1 = (new string[] { "CustomerID" });
+}
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Added sort icon div where sorting is allowed">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowPaging="true" AllowGrouping="true" AllowSorting="true">
+            <GridGroupSettings Columns="Initialgroup1" ShowGroupedColumn="true"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" AllowSorting="false" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" AllowSorting="false" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> Orders { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var th = cut.FindAll("th");
+        //Column 1
+        var col1 = th[1].QuerySelectorAll("div.e-sortfilterdiv");
+        Assert.False(col1.Length > 0, "Header shouldn't contain .e-sortfilterdiv");
+        //Column 2
+        var col2 = th[2].QuerySelectorAll("div.e-sortfilterdiv");
+        Assert.True(col2.Length > 0, "Header should contain .e-sortfilterdiv");
+        //Column 3
+        var col3 = th[3].QuerySelectorAll("div.e-sortfilterdiv");
+        Assert.True(col3.Length > 0, "Header should contain .e-sortfilterdiv");
+        //Column 4
+        var col4 = th[4].QuerySelectorAll("div.e-sortfilterdiv");
+        Assert.True(col4.Length > 0, "Header should contain .e-sortfilterdiv");
+
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return Orders = Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON" })[new Random().Next(3)],
+            Freight = 2.1 * x,
+            OrderDate = (new DateTime[] { new DateTime(2010, 5, 1), new DateTime(2010, 5, 2), new DateTime(2010, 5, 3), })[new Random().Next(3)]
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

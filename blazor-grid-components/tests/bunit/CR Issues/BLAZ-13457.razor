@@ -1,0 +1,35 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="ColumnsPropertyTest" Description="Frozen Rendering With Columns property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowGrouping="true" AllowPaging="true" Height="315">
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    SfGrid<Order> GridSource;
+
+    async void ColumnsPropertyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0);
+        Assert.True(5 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Count());
+        var content = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+        Assert.True("Micheal" == content[4].QuerySelectorAll("td")[2].InnerHtml, "Value Check");
+    }
+
+}

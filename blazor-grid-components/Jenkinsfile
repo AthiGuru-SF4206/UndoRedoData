@@ -1,0 +1,186 @@
+node(isProtectedBranch() ? 'BlazorComponent' : 'BlazorComponents') {
+    timeout(time:300){
+        try{
+            deleteDir();
+            stage('Import') {
+                try {
+                    git url: 'https://gitea.syncfusion.com/essential-studio/ej2-groovy-scripts.git', branch: 'master', credentialsId: env.GiteaCredentialID;
+                    blazor = load 'src/blazor.groovy';
+                }
+                catch (Exception e){
+                    error(e);
+                    deleteDir();   
+                }
+            }
+            stage('Checkout') {
+                try {
+                    checkout scm
+                }
+                catch (Exception e){
+                    blazor.publishReport('Checkout');
+                    error(e);
+                    deleteDir();  
+                }
+            }
+
+            stage('Workflow Validation') {
+                blazor.getProjectDetails();
+                blazor.githubCommitStatus('running');
+                blazor.validateMRDescription();
+            }
+
+            if (blazor.checkCommitMessage()) {
+                stage('Install') {
+                    try {
+                        blazor.install();
+                    }
+                    catch (Exception e){
+                        blazor.publishReport('Install');
+                        error(e);
+                        deleteDir();
+                    }
+                }
+                
+                stage('Code Leaks Analysis'){
+                    try{
+                        blazor.initGitleaks();
+                        blazor.runShell('npm run gitleaks-test');
+                    }
+                    finally{
+                        if(fileExists('GitLeaksReport.json'))
+                        {
+                        archiveArtifacts artifacts:'GitLeaksReport.json';
+                        }
+                    }               
+                }
+
+                stage('XSS Vulnerability Check'){
+                    try {
+                        blazor.runShell('npm run remove-markup-eval');
+                    }
+                    catch (Exception e) { 
+                        error(e);
+                        deleteDir();
+                    }  
+                }
+
+                stage('Pragma Warnings') {
+                    try {
+                        blazor.runShell('gulp find-pragma-warnings');
+                    }
+                    catch (Exception e) { 
+                        error(e);
+                        deleteDir();
+                    }
+                } 
+
+                stage('Build') {
+                    try {
+                        blazor.getNuGetVersion();
+                        if(!blazor.isProtectedBranch()){
+                            blazor.runShell('gulp add-analyzer-properties');
+                        }
+                        blazor.runShell('npm run build');
+                    }
+                    catch (Exception e){
+                        blazor.publishReport('Build');
+                        error(e);
+                        deleteDir();                  
+                    }
+                }
+
+                stage('Code Analysis') {
+                    try {
+                        if(!blazor.isProtectedBranch()){
+                            blazor.runShell('npm run code-analysis');
+                        }
+                    }
+                    catch (Exception e){
+                        blazor.publishReport('CodeAnalysis');
+                        error(e);
+                        deleteDir();                   
+                    }
+                    finally{
+                        if (fileExists('codeanalysis')){
+                            archiveArtifacts artifacts: 'codeanalysis/', excludes: null;
+                        }
+                    }
+                }
+                stage('EsLint Validation') {
+                    try {
+                        if(!blazor.isProtectedBranch()){
+                            blazor.runShell('npm run eslint-validation');
+                        }
+                    }
+                    catch (Exception e){
+                        error(e);
+                        deleteDir();  
+                    }
+                }
+                 stage('Coverage Analysis'){
+                     try {
+                         if(!blazor.isProtectedBranch()){
+                             blazor.runShell('npm run coverage-analysis');
+                             if (fileExists('CCReport')){
+                                 archiveArtifacts artifacts: 'CCReport/', excludes: null;
+                             }
+                         }
+                     }
+                     catch (Exception e){
+                         if (fileExists('CCReport')){
+                             archiveArtifacts artifacts: 'CCReport/', excludes: null;
+                         }
+                         error(e);
+                         deleteDir();                    
+                     }
+                 }
+
+                stage('Generate NuGet') {
+                    try{
+                        if (blazor.isProtectedBranch()) {
+                            blazor.runShell('npm run generate-nuget');
+                        }
+                    }
+                    catch (Exception e){
+                        if (blazor.isProtectedBranch()){
+                            blazor.publishReport('GenerateNuGet');
+                            archiveArtifacts artifacts: 'NuGet/', excludes: null;
+                        }
+                        error(e);
+                        deleteDir();
+                    }
+                }
+
+                stage('Publish') {
+                    try {
+                        if (blazor.isProtectedBranch()) {
+                            archiveArtifacts artifacts: 'NuGet/', excludes: null;
+                            blazor.runShell('npm run publish');
+                            blazor.runShell('gulp sync-ej2-blazor-base-scripts');
+                        }
+                    }
+                    catch (Exception e){
+                        blazor.publishReport('Publish');
+                        archiveArtifacts artifacts: 'NuGet/', excludes: null;
+                        error(e);
+                        deleteDir();
+                    }
+                }
+
+            } else {
+                echo "Starting 'ci-compile'";
+                println('MESSAGE: [ci skip] TAG ADDED IN MR.');
+                echo "Finished 'ci-compile'";
+            }
+            deleteDir();
+        }
+        catch (Exception e){
+            deleteDir();
+            error(e);
+        }
+    }
+}
+
+def isProtectedBranch() {
+    return env.githubSourceBranch == env.STAGING_BRANCH || String.valueOf(env.githubSourceBranch).startsWith('hotfix/') || String.valueOf(env.githubSourceBranch).startsWith('release/');
+}

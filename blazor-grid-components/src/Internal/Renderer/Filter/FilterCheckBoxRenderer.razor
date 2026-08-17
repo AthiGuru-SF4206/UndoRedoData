@@ -1,0 +1,278 @@
+@using Microsoft.AspNetCore.Components.Web;
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Data
+@using System.Globalization;
+
+
+
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+@* TODO: Need to Ensure with Mobile nd RTL *@
+@* TODO: DateTimeOffsetConversion *@
+
+@code { int Count = 0; }
+
+
+<div id="CheckBoxRefDialog" @onclick:stopPropagation="true" class="-dlg-grid-element e-hide">
+    @if (!Parent!.EnableAdaptiveUI || (Parent.EnableAdaptiveUI && !Parent.SyncfusionService.IsDeviceMode && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile)) || (Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && Parent.SyncfusionService.IsDeviceMode))
+    {
+        var aria = new Dictionary<string, string>() { { "aria-labelledby", Column?.Uid + "_excelDlg" } };
+        var dialogAttributes = new Dictionary<string, object>() { { "relateTo", Column?.Uid! } };
+        <SfDialog @ref="ExcelDialog" @key="Column!.Uid" ID="@(($"{Column?.Uid}_excelDlg"))" AllowPrerender="true" HtmlAttributes="dialogAttributes" Width="260" Target="@(($"#{Parent.ID}"))" Visible="false" CssClass="@GetClassName()" CloseOnEscape="true" ShowCloseIcon="false" EnableRtl="Parent.EnableRtl">
+            <DialogPositionData X=@Xvalue Y="@Yvalue"></DialogPositionData>
+            <DialogEvents Created="DialogCreated" OnClose="OncloseDialog" Closed="Closed"></DialogEvents>
+            <DialogAnimationSettings Effect="@Effects"></DialogAnimationSettings>
+            <DialogTemplates>
+                <Content>
+                    @{
+                        if (CheckedData?.Count() != 0 && this.Column?.Uid != ((CheckBoxModel)CheckedData!.FirstOrDefault().Value).FUid)
+                        {
+                            CheckedData?.Clear();
+                            isBlank = false;
+                        }
+                        @if (Parent.FilterModule!.GetFilterType(Column!) == "Excel" && !Parent.FilterModule!.ExcelDialog)
+                        {
+                            <ExcelBase @ref="ExcelBaseRef" Column="Column" TContent="TContent"></ExcelBase>
+                        }
+                    }
+                 
+                        <div class="e-searchcontainer" @onblur:stopPropagation="true" @onfocus:stopPropagation="true">
+                            <span class="e-searchbox e-fields">
+                                <span class="e-input-group e-control-wrapper  @InputFocus">
+                                    <input type="text" id="@($"{Parent.ID}_SearchBox")" class="e-searchinput e-input" @onblur:stopPropagation="true" @onfocus:stopPropagation="true" @oninput="@((e) => InputArgs(e))" @onblur="@OnBlur" @onfocus="@OnFocus" placeholder=@Localizer!.GetText(GridLocaleKeys.Search) aria-label="@Localizer!.GetText(GridLocaleKeys.Search)">
+                                    @if (@CancelIcon == "e-chkcancel-icon")
+                                    {
+                                        <span class="e-searchclear e-search-icon e-icons e-input-group-icon @CancelIcon" @onclick="@((e) => CancelIconClick(e))" title=@Localizer.GetText(GridLocaleKeys.Cancel)></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="e-searchclear e-search-icon e-icons e-input-group-icon" title=@Localizer.GetText(GridLocaleKeys.Search)></span>
+                                    }
+                                </span>
+                            </span>
+                            <div class="e-checkbox-spinner">
+                                <div class="e-checkboxlist e-fields" id="@($"{Parent.ID}{Column?.Type.ToString().ToLower(CultureInfo.InvariantCulture)}_CheckBoxList")">
+                                    @if (CheckedData?.Count() > 0)
+                                    {
+                                        @if (!Intermediate)
+                                        {
+                                            var selectAllClass = Parent.FocusModule!.IsSelectAllClicked ? "e-chkfocus" : string.Empty;
+                                            Count++;
+                                            <div class=@($"e-ftrchk {selectAllClass}") uid="@(($"cbox{Count}"))" @onclick="@((MouseEventArgs args) => SelectAllClickHandler(($"cbox{Count}")))">
+                                                <CheckBoxRenderer AriaLabel="aria" Checked=@SelectAllChk CheckBoxClass=@GetLabelClassName() CCSelectAll="true" CCClass="e-chk-hidden e-selectall" Lable="@Localizer.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                            </div>
+                                        }
+                                        else if (Intermediate)
+                                        {
+                                            var intermedaiteClass = Parent.FocusModule!.IsSelectAllClicked ? "e-chkfocus" : string.Empty;
+                                            <div class=@($"e-ftrchk {intermedaiteClass}") uid="@(($"cbox{Count}"))" @onclick="@((MouseEventArgs args) => SelectAllClickHandler(($"cbox{Count}")))">
+                                                <CheckBoxRenderer AriaLabel="aria" Intermediate=@Intermediate CheckBoxClass=@GetLabelClassName() CCSelectAll="true" CCClass="e-chk-hidden e-selectall" Lable="@Localizer.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                            </div>
+                                        }
+                                        if (isCurrentSelecitonFilter)
+                                        {
+                                            var checkBoxFocus = Parent.FocusModule!.ClickedCheckBoxId == "addCurrentSelection"  ? "e-chkfocus" : string.Empty;
+                                            <div class=@($"e-ftrchk {checkBoxFocus}") @onclick="@((MouseEventArgs args) => CurrentSelectionClickHandler(args))">
+                                                <CheckBoxRenderer AriaLabel="aria" Checked=@IsCurrentSelectionChecked CCClass="e-chk-hidden" CheckBoxClass="e-checkboxfiltertext" Lable="@Localizer.GetText(GridLocaleKeys.AddCurrentSelection)"></CheckBoxRenderer>                                       
+                                            </div>
+                                        }
+                                        @foreach (var val in CheckedData)
+                                        {
+                                            string key = val.Key;
+                                            var Val = (CheckBoxModel)val.Value;
+                                            var CheckBoxValue = Val?.FormattedValue ?? Val?.Value;
+                                            aria = new Dictionary<string, string>() { { "aria-labelledby", Val?.guid! } };
+                                            var checkBoxFocus = !(string.IsNullOrEmpty(Parent.FocusModule!.ClickedCheckBoxId)) && key == Parent.FocusModule!.ClickedCheckBoxId ? "e-chkfocus" : string.Empty;
+                                            if (Val?.Value != null && Val.Value.GetType().IsEnum)
+                                            {
+                                                if (Val?.Value is Enum e)
+                                                {
+                                                    Val.FormattedValue = MetadataExtension.GetDisplayName(e)!;
+                                                }
+                                            }
+                                            @if (CheckBoxValue != null && CheckBoxValue.ToString() != "null" && !string.IsNullOrEmpty(CheckBoxValue.ToString()))
+                                            {
+                                                <div class=@($"e-ftrchk {checkBoxFocus}") uid="@key" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, key))">
+                                                    <CheckBoxRenderer AriaLabel="aria" Checked=@Val!.isChecked CCClass="e-chk-hidden" CheckBoxClass=@GetLabelClassName() Column="Column" Records="Val?.Data" Lable="@(CheckBoxValue.ToString())">
+                                                    </CheckBoxRenderer>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                this.isBlank = true;
+                                                this.NullKey = key;
+                                                this.NullChecked = Val!.isChecked;
+                                                this.NullData = Val?.Data;
+                                            }
+                                        }
+                                        @if (isBlank)
+                                        {
+                                            <div class="e-ftrchk e-blanks" uid="@NullKey" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, this.NullKey!))">
+                                                <CheckBoxRenderer  AriaLabel="aria" Checked=@NullChecked CCClass="e-chk-hidden" Column="Column" Records="NullData" Lable=@Localizer.GetText(GridLocaleKeys.Blanks)>
+                                                </CheckBoxRenderer>
+                                            </div>
+                                            isBlank = false;
+                                        }
+                                    }
+                                    else if (isSearch)
+                                    {
+                                        <div class="e-checkfltrnmdiv">
+                                            <span>@Localizer.GetText(GridLocaleKeys.NoResult)</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    
+                    </Content>
+            </DialogTemplates>
+            <DialogButtons>
+                <DialogButton OnClick="@FilterBtnClick" Content=@( Parent.FilterModule!.GetFilterType(Column!) == "Excel" ? Localizer!.GetText(GridLocaleKeys.OKButton) : Localizer!.GetText(GridLocaleKeys.FilterButton)) IsPrimary="true" Disabled="@IsOkButtonDisabled" CssClass="e-primary e-flat">
+                </DialogButton>
+                <DialogButton OnClick="@ClearBtnClick" Content=@(Parent.FilterModule.GetFilterType(Column!) == "Excel" ? Localizer.GetText(GridLocaleKeys.Cancel) : Localizer.GetText(GridLocaleKeys.ClearButton)) CssClass="e-flat">
+                </DialogButton>
+            </DialogButtons>
+        </SfDialog>
+        @if (!Parent.HideGridSpinner)
+        {
+            <SfSpinner @bind-Visible="@VisibleProperty">
+            </SfSpinner>
+        } 
+
+    }
+    else if (!IsBackButtonTriggered && (Parent.EnableAdaptiveUI && ( Parent.AdaptiveUIMode.Equals(AdaptiveMode.Both) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && Parent.SyncfusionService.IsDeviceMode) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && !Parent.SyncfusionService.IsDeviceMode))))
+    {
+
+var aria = new Dictionary<string, string>() { { "aria-labelledby", Column!.Uid + "_excelDlg" } };
+<SfDialog @ref="@CheckBoxAdaptiveDialog" MinHeight="350px" AllowPrerender="true"  ID="@(($"{Column.Uid}customcheckboxfilter"))" Visible="false" HtmlAttributes="@MaxHeight" Height="100%" Width="100%" Target="@(($"#{Parent.ID}"))" CssClass="@GetAdaptiveDialogClassNames()">
+    <DialogEvents Created="AdaptiveRendered"></DialogEvents>
+    
+    <DialogTemplates>
+        <Header>
+                    <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn" @onclick="@CloseHandler" HtmlAttributes="@(new Dictionary<string, object>() { { "title", Localizer!.GetText(GridLocaleKeys.Back) } })"></SfButton>
+            <div class="e-dlg-header">
+                <div class="e-res-custom-element">
+                    <div class="e-dlg-custom-header" id="@(($"{Parent.ID}_filter_dialog_wrapper"))">@Column.HeaderText</div>
+                    <SfButton IconCss="e-btn-icon e-icon-filter-clear e-icons" CssClass="e-primary e-flat e-res-filter-clear-btn" @onclick="@ClearBtnClick"></SfButton>
+                    <SfButton CssClass="e-primary e-flat e-res-apply-btn" Content=@(Localizer.GetText(GridLocaleKeys.OKButton))  @onclick="@FilterBtnClick"></SfButton>
+                </div>
+            </div>
+        </Header>
+        <Content>
+            <div class="e-mainfilterdiv e-default-filter">
+
+                <div class="e-dialog e-checkboxfilter e-checkbox-dialog-wrapper">
+                    <div id="grid-column17customcheckboxfilter_dialog-content" class="e-dlg-content @(Parent.FilterModule!.GetFilterType(Column) == "Excel" ? "e-excel-filter-content" : "")">
+                        @if (Parent.FilterModule.GetFilterType(Column) == "Excel" && !Parent.FilterModule.ExcelDialog)
+                        {
+                            <ExcelBase Column="Column" TContent="TContent"></ExcelBase>
+                        }
+                        @{
+                            if (CheckedData?.Count() != 0 && this.Column?.Uid != ((CheckBoxModel)CheckedData!.FirstOrDefault().Value).FUid)
+                            {
+                                CheckedData?.Clear();
+                                isBlank = false;
+                            }
+                        }
+                        @if (IsContextMenuItemSelected)
+                        {
+                            <div class="e-searchcontainer @(Parent.EnableAdaptiveUI && Parent.FilterModule.GetFilterType(Column!) == "Excel" ? "e-adaptive-filter-excel" : Parent.EnableAdaptiveUI ? "e-adaptive-filter-checkbox" : "")" @onblur:stopPropagation="true" @onfocus:stopPropagation="true">
+                                <span class="e-searchbox e-fields">
+                                    <span class="e-input-group e-control-wrapper  @InputFocus">
+                                        <input type="text" id="@($"{Parent.ID}_SearchBox")" class="e-searchinput e-input" @oninput="@((e) => InputArgs(e))" @onblur="@OnBlur" @onfocus="@OnFocus" placeholder=@Localizer!.GetText(GridLocaleKeys.Search) aria-label="@Localizer!.GetText(GridLocaleKeys.Search)">
+                                        @if (CancelIcon == "e-chkcancel-icon")
+                                        {
+                                            <span class="e-searchclear e-search-icon e-icons e-input-group-icon @CancelIcon" @onclick="@((e) => CancelIconClick(e))" title=@Localizer.GetText(GridLocaleKeys.Cancel)></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="e-searchclear e-search-icon e-icons e-input-group-icon" title=@Localizer.GetText(GridLocaleKeys.Search)></span>
+                                        }
+                                    </span>
+                                </span>
+                               <div class="e-spinner">
+                                    <div class="e-checkboxlist e-fields" id="@($" {Parent.ID}{Column?.Type.ToString().ToLower(CultureInfo.InvariantCulture)}_CheckBoxList")">
+                                        @if (CheckedData?.Count() > 0)
+                                        {
+                                            @if (!Intermediate)
+                                            {
+                                                Count++;
+                                                <div class="e-ftrchk" uid="@(($" cbox{Count}"))" @onclick="@((MouseEventArgs args) => SelectAllClickHandler(($" cbox{Count}")))">
+                                                <CheckBoxRenderer AriaLabel="aria" Checked=@SelectAllChk CheckBoxClass=@GetLabelClassName() CCSelectAll="true" CCClass="e-chk-hidden e-selectall" Lable="@Localizer.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                                </div>
+                                            }
+                                            else if (Intermediate)
+                                            {
+                                                <div class="e-ftrchk" uid="@(($" cbox{Count}"))" @onclick="@((MouseEventArgs args) => SelectAllClickHandler(($" cbox{Count}")))">
+                                                    <CheckBoxRenderer AriaLabel="aria" Intermediate=@Intermediate CheckBoxClass=@GetLabelClassName() CCSelectAll="true" CCClass="e-chk-hidden e-selectall" Lable="@Localizer.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                                </div>
+                                            }
+                                            if (isCurrentSelecitonFilter)
+                                            {
+                                                var checkBoxFocus = Parent.FocusModule!.ClickedCheckBoxId == "addCurrentSelection"  ? "e-chkfocus" : string.Empty;
+                                                <div class=@($"e-ftrchk {checkBoxFocus}") @onclick="@((MouseEventArgs args) => CurrentSelectionClickHandler(args))">
+                                                    <CheckBoxRenderer AriaLabel="aria" Checked=@IsCurrentSelectionChecked CCClass="e-chk-hidden" CheckBoxClass=@GetLabelClassName() Lable="@Localizer.GetText(GridLocaleKeys.AddCurrentSelection)"></CheckBoxRenderer>                                                    
+                                                </div>
+                                            }
+                                            @foreach (var val in CheckedData)
+                                            {
+                                                string key = val.Key;
+                                                var Val = (CheckBoxModel)val.Value;
+                                                var CheckBoxValue = Val?.FormattedValue ?? Val?.Value;
+                                                aria = new Dictionary<string, string>() { { "aria-labelledby", Val?.guid! } };
+                                                if (Val?.Value != null && Val.Value.GetType().IsEnum)
+                                                {
+                                                    if (Val?.Value is Enum e)
+                                                    {
+                                                        Val.FormattedValue = MetadataExtension.GetDisplayName(e)!;
+                                                    }
+                                                }
+                                                @if (Val?.Value != null && Val.Value.ToString() != "null" && !string.IsNullOrEmpty(Val.Value.ToString()) && CheckBoxValue != null && CheckBoxValue.ToString() != "null" && !string.IsNullOrEmpty(CheckBoxValue.ToString()))
+                                                {
+                                                    <div class="e-ftrchk" uid="@key" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, key))">
+                                                    <CheckBoxRenderer AriaLabel="aria" Checked=@Val.isChecked CCClass="e-chk-hidden" CheckBoxClass=@GetLabelClassName() Column="Column" Records="Val.Data" Lable="@(CheckBoxValue.ToString())">
+                                                    </CheckBoxRenderer>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    this.isBlank = true;
+                                                    this.NullKey = key;
+                                                    this.NullChecked = Val!.isChecked;
+                                                    this.NullData = Val?.Data;
+                                                }
+                                            }
+                                            @if (isBlank)
+                                            {
+                                                <div class="e-ftrchk e-blanks" uid="@NullKey" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, this.NullKey!))">
+                                                    <CheckBoxRenderer AriaLabel="aria" Checked=@NullChecked CCClass="e-chk-hidden" Column="Column" Records="NullData" Lable=@Localizer.GetText(GridLocaleKeys.Blanks)>
+                                                    </CheckBoxRenderer>
+                                                </div>
+                                                isBlank = false;
+                                            }
+                                        }
+                                        else if (isSearch)
+                                        {
+                                            <div class="e-checkfltrnmdiv">
+                                                <span>@Localizer.GetText(GridLocaleKeys.NoResult)</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        </div>
+                </div>
+            </div>
+        </Content>
+    </DialogTemplates>    
+</SfDialog>
+        @if (!Parent.HideGridSpinner)
+        {
+            <SfSpinner @bind-Visible="@VisibleProperty">
+            </SfSpinner>
+        }
+    }
+</div>

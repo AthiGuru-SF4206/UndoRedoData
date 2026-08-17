@@ -1,0 +1,83 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="ParameterType same as constructor type">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRecords()" Toolbar="@(new List<string>() { "Add", "Edit","Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" AllowEditing="false" IsPrimaryKey="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.CustomerID) HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" AllowEditing="false" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Country" AllowEditing="false" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    public List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+    SfFixture fixture { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        var Grid = cut.Instance;
+        Assert.True(Grid.Rows.Count == 5, "Rows rendered properly");
+        await Grid.SelectRowAsync(0);
+        await Grid.StartEditAsync();
+        Assert.True(Grid.Rows.Count == 5, "Rows rendered properly");
+    }
+
+    public List<OrderDetails> GenerateRecords()
+    {
+        List<OrderDetails> OrderData = new List<OrderDetails>();
+        OrderData.Add(new OrderDetails(10248, "VINET", 32.38, "France"));
+        OrderData.Add(new OrderDetails(10249, "TOMSP", 11.61, "Germany"));
+        OrderData.Add(new OrderDetails(10250, "HANAR", 65.83, "Brazil"));
+        OrderData.Add(new OrderDetails(10251, "VICTE", 41.34, "France"));
+        OrderData.Add(new OrderDetails(10252, "SUPRD", 51.3, "Belgium"));
+        return OrderData;
+    }
+
+    public class OrderDetails
+    {
+        public static List<OrderDetails> Order = new List<OrderDetails>();
+
+        public OrderDetails()
+        {
+            Address = new OrderAddress(1);
+        }
+
+        public OrderDetails(int OrderId, string CustomerId, double freight, string shipCountry)
+            : this()
+        {
+            OrderID = OrderId;
+            CustomerID = CustomerId;
+            Freight = freight;
+            ShipCountry = shipCountry;
+
+        }
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+        public string ShipCountry { get; set; }
+        public OrderAddress Address { get; set; }
+    }
+
+    public class OrderAddress
+    {
+        public OrderAddress(OrderAddress value, int valuename)
+           : this(value.Test)
+        {
+        }
+
+        public OrderAddress(byte test)
+        {
+            Test = test;
+        }
+
+        public byte Test { get; set; }
+    }
+}

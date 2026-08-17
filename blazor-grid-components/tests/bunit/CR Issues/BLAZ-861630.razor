@@ -1,0 +1,50 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Issue with filtering long values">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowPaging="true" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+        <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Type="ColumnType.Long" Width="120px"></GridColumn>
+        </GridColumns>
+    </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        cut.FindAll(".e-filtermenudiv")[3].Click();
+        await Grid.FilterByColumnAsync("Freight", "equal", 12345678901);
+        Assert.True(Grid.CurrentViewData.Count() == 1, "Filtering of long values is working properly.");
+
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 12345678901 });
+        data.Add(new Order() { OrderID = 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 12345678902 });
+        data.Add(new Order() { OrderID = 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 12345678903 });
+        data.Add(new Order() { OrderID = 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 12345678904 });
+        data.Add(new Order() { OrderID = 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 12345678905 });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public long? Freight { get; set; }
+    }
+}

@@ -1,0 +1,64 @@
+﻿@inherits GridTestBase
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Dropdown Edit with different DataTypes">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowSorting="true" AllowFiltering="true" EnableAdaptiveUI="true" Toolbar="@(new List <string> () { "Add", "Edit", "Delete", "Cancel", "Update", "Search","ColumnChooser" })" ShowColumnChooser="true" RowRenderingMode="RowDirection.Vertical" Height="100%" Width="100%" AllowPaging="true">
+            <GridPageSettings PageSizes="true"></GridPageSettings>
+            <GridFilterSettings Type="@Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Sum" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true, Number=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) Format="C2" ShowInColumnChooser="false" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    public List<Order> GridData { get; set; }
+    SfFixture fixture { get; set; }
+
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.FindAll(".e-responsivecoldiv")[0].Click(); 
+        cut.FindAll(".e-ftrchk")[0].Click();           
+        cut.FindAll(".e-ftrchk")[1].Click();           
+                                                       
+
+        
+
+        cut.Find(".e-res-apply-btn").Click();          
+        cut.FindAll(".e-toolbar-item")[0].Click();     
+        cut.Find(".e-res-filter-clear-btn").Click();   
+        cut.Find(".e-dlg-closeicon-btn").Click();      
+
+        cut.FindAll(".e-toolbar-item")[1].Click();  
+        cut.FindAll(".columndiv")[0].Click();
+       
+        cut.Find(".e-res-apply-btn").Click();       
+
+        cut.FindAll(".e-toolbar-item")[2].Click();
+        cut.FindAll(".e-toolbar-item")[8].Click();
+
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+    }
+ }

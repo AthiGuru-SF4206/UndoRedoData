@@ -1,0 +1,88 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="BatchEdit editform checking when allowediting false">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRefs" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true"  TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" AllowEditing="false"  Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture { get; set; }
+    public SfGrid<Order> gridRefs { get; set; }
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Columns[1].AllowEditing == false);
+        var batchChanges = new BatchChanges<Order>()
+        {
+            AddedRecords = new List<Order>() { new Order() { OrderID = 1000, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15)},
+            new Order() { OrderID = 999, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15) } }
+        };
+        await cut.Instance.ApplyBatchChangesAsync(batchChanges);
+        var gridContent = cut.FindAll(".e-gridcontent");
+        var rows = gridContent[0].QuerySelectorAll("tr");
+        rows[1].QuerySelectorAll("td")[1].Click();
+        rows[1].QuerySelectorAll("td")[1].DoubleClick();
+        rows[0].QuerySelectorAll("td")[1].Click();
+        rows[0].QuerySelectorAll("td")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+    }
+}
+
+
+<SfFixture @ref="Fixture1" Test="GridBasicRendering1" Description="BatchEdit editform checking when allowadding false">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="GridRef" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" AllowAdding="false" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture Fixture1 { get; set; }
+    public SfGrid<Order> GridRef { get; set; }
+    public async void GridBasicRendering1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Columns[1].AllowAdding == false);
+        var batchChanges = new BatchChanges<Order>()
+        {
+            AddedRecords = new List<Order>() { new Order() { OrderID = 1000, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15)},
+            new Order() { OrderID = 999, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15) } }
+        };
+        await cut.Instance.ApplyBatchChangesAsync(batchChanges);
+        var gridContent = cut.FindAll(".e-gridcontent");
+        var rows = gridContent[0].QuerySelectorAll("tr");
+        rows[1].QuerySelectorAll("td")[1].Click();
+        rows[1].QuerySelectorAll("td")[1].DoubleClick();
+        rows[0].QuerySelectorAll("td")[1].Click();
+        rows[0].QuerySelectorAll("td")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() == 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() == 0);
+    }
+}

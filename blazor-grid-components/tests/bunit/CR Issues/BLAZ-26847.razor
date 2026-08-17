@@ -1,0 +1,42 @@
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="CheckBox Header not getting updated while adding and cancelling in batch mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSorting="true" AllowPaging=true Toolbar="@(new List<string>() { "Search" })">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await this.Grid.SearchAsync("1001");
+        await Task.Delay(1000).ConfigureAwait(false);
+        await Grid.Refresh();
+        cut.WaitForState(() => Grid.Rows.Count == 1);
+        Assert.True(Grid.Rows.Count == 1);
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+}

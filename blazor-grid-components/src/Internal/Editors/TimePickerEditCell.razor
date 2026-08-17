@@ -1,0 +1,60 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@inherits EditorCellBase<TCell>
+
+@using Syncfusion.Blazor.Calendars
+
+    
+@if (Column != null && Column.ValueType == typeof(TimeOnly))
+{
+    if (TimeOnly.TryParse(Value?.ToString(), out TimeOnly result)) {
+        <SfTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="TimeOnly" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode=true
+            Value="@result" ValueChanged="@ValueChanged" ValueExpression="@TimeOnlyExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <TimePickerEvents TValue="TimeOnly" ValueChange="@ValueChange"></TimePickerEvents>
+        </SfTimePicker>
+    }
+}
+else if (Column != null && Column.ValueType == typeof(TimeOnly?))
+{
+    <SfTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="TimeOnly?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode=true
+        Value="@(Value as TimeOnly?)" ValueChanged="@ValueChanged" ValueExpression="@NullableTimeOnlyExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+        <TimePickerEvents TValue="TimeOnly?" ValueChange="@ValueChange"></TimePickerEvents>
+    </SfTimePicker>
+}
+
+
+@code{
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Column != null && Column.EditorSettings is TimeEditCellParams param && param.Params != null)
+        {
+            TimePickerModel<object> model = param.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.ShowClearButton), model.ShowClearButton },
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.Readonly), model.Readonly },
+                { nameof(model.Step), model.Step },
+                { nameof(model.Format), model.Format },
+                { nameof(model.Min), model.Min },
+                { nameof(model.Max), model.Max }
+            };
+        }
+
+        Value = Parent?.PropHelper?.GetObject(Column?.Field!, RowData!);
+    }
+
+    internal void ValueChange<T>(ChangeEventArgs<T> args)
+    {
+        Value = args.Value;
+        if (Parent != null && Parent.EditModule != null)
+        Parent.EditModule.SetValue<T>(args.Value, Column?.Field!);
+    }
+}
+
+

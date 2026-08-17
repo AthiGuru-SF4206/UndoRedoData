@@ -1,0 +1,22 @@
+﻿@typeparam TValue
+@namespace Syncfusion.Blazor.Grids.Internal
+
+@code
+{
+    #region Parameters (Template Holders)
+
+    [Parameter]
+    public RenderFragment<object>? FilterComponent { get; set; }
+
+    [Parameter]
+    public RenderFragment<object>? EditorComponent { get; set; }
+
+    #endregion
+
+    #region Render Policy
+
+    // This component only stores templates; it doesn't need to re-render after initial render.
+    protected override bool ShouldRender() => false;
+
+    #endregion
+}

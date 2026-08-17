@@ -1,0 +1,111 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Web
+
+@typeparam TContent
+
+@{
+    var gridColumns = GridUtils.GetColumns(Parent!);
+    var headerText = (GridUtils.GetColumnByField(Column!, gridColumns))?.HeaderText;
+    var sortDirection = Parent?.SortModule?.GetColumnSortDirection(Column!);
+    var classNames = sortDirection == SortDirection.Ascending ? "e-ascending e-icon-ascending" : "e-descending e-icon-descending";
+    var ApplySort = sortDirection == SortDirection.Ascending ? SortDirection.Descending : SortDirection.Ascending;
+    var tabIndexValue = Parent?.IsEdit == true ? -1 : 0;
+    <div class="@GetGroupHeaderCssClass()"  @onfocus="@(() => UpdateFocusState(nameof(focusGroupedHeader), true))" @onblur="@(() => UpdateFocusState(nameof(focusGroupedHeader), false))" tabindex= "@tabIndexValue">
+        <div @onclick="((MouseEventArgs args) => Parent!.SortModule?.SortColumn(Column!, ApplySort, true)!)">
+            <span class="e-grouptext" tabindex="-1">@(headerText)</span>
+            
+            @if (Parent!.GroupSettings!.ShowToggleButton)
+            {
+                <span class="@GetToggleButtonCssClass()"
+            @onfocus="@(() => UpdateFocusState(nameof(focusToggleIcon), true))" @onblur="@(() => UpdateFocusState(nameof(focusToggleIcon), false))" 
+            title="@Localizer?.GetText(GridLocaleKeys.UnGroupButtonARIA)" role="button" tabindex="@tabIndexValue" @onclick:stopPropagation="true"
+            @onkeydown="@((KeyboardEventArgs args) => CancelIconHandler(args, Column!))" @onclick="((MouseEventArgs args) => Parent.GroupModule?.UnGroupColumn(Column!)!)"></span>
+            }
+            <span class="@GetSortIconCssClass(classNames)" role="button" title="@Parent.Localizer?.GetText(GridLocaleKeys.GroupedSortIcon) @headerText" tabindex="@tabIndexValue" @onkeydown="@((KeyboardEventArgs args) => SortIconHandler(args, ApplySort, Column!))" @onfocus="@(() => UpdateFocusState(nameof(focusSortIcon), true))" @onblur="@(() => UpdateFocusState(nameof(focusSortIcon), false))">&nbsp;&nbsp;</span>
+            <span class="@GetUngroupButtonCssClass()" role="button" @onclick="((MouseEventArgs args) => Parent.GroupModule?.UnGroupColumn(Column!)!)"
+                @onfocus="@(() => UpdateFocusState(nameof(focusCancelIcon), true))" @onblur="@(() => UpdateFocusState(nameof(focusCancelIcon), false))" 
+                title="@(Localizer?.GetText(GridLocaleKeys.Ungroup))"
+                tabindex="@tabIndexValue"
+                @onkeydown="@((KeyboardEventArgs args) => CancelIconHandler(args, Column!))" @onclick:stopPropagation="true"></span>
+        </div>
+    </div>
+}
+
+@code
+{
+    #region Grid Parameters and Localization
+    [CascadingParameter]
+    public SfGrid<TContent>? Parent { get; set; }
+
+    [Parameter]
+    public string ?Column { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer;
+    private string focusGroupedHeader = string.Empty;
+    private string focusToggleIcon = string.Empty;
+    private string focusSortIcon = string.Empty;
+    private string focusCancelIcon = string.Empty;
+    #endregion
+
+    #region Lifecycle
+    protected override void OnInitialized()
+    {
+        Localizer = Parent?.Localizer;
+    }
+    #endregion
+
+    #region Event Handlers
+    private async Task CancelIconHandler(KeyboardEventArgs args, string column)
+    {
+        if (args.Key.Equals("Enter", StringComparison.Ordinal) && Parent != null && Parent.GroupModule != null)
+        {
+            await Parent.GroupModule.UnGroupColumn(column);
+            if (Parent.AllowGrouping && Parent.GroupSettings!.Columns != null && Parent.GroupSettings.Columns.Length > 0)
+            {
+                await Parent.InvokeMethod("sfBlazor.Grid.focusFirstGroupHeader", new object[] { Parent.DataId });
+            }
+        }
+    }
+
+    private async Task SortIconHandler(KeyboardEventArgs args, SortDirection applySort, string column)
+    {
+        if (Parent != null && Parent.SortModule != null)
+        {
+            await Parent.SortModule.HandleSortKeyboardAction(args.Key, column, applySort);
+        }
+    }
+    #endregion
+
+    #region CSS Class Builders
+    private void UpdateFocusState(string fieldName, bool isFocused)
+    {
+        switch (fieldName)
+        {
+            case nameof(focusGroupedHeader):
+                focusGroupedHeader = isFocused ? "e-focus e-focused" : string.Empty;
+                break;
+            case nameof(focusToggleIcon):
+                focusToggleIcon = isFocused ? "e-focus e-focused" : string.Empty;
+                break;
+            case nameof(focusSortIcon):
+                focusSortIcon = isFocused ? "e-focus e-focused" : string.Empty;
+                break;
+            case nameof(focusCancelIcon):
+                focusCancelIcon = isFocused ? "e-focus e-focused" : string.Empty;
+                break;
+        }
+    }
+
+    private string GetGroupHeaderCssClass() => $"e-grid-icon e-groupheadercell {focusGroupedHeader}";
+
+    private string GetToggleButtonCssClass() => $"e-togglegroupbutton e-icons e-icon-ungroup e-toggleungroup {focusToggleIcon}";
+
+    private string GetSortIconCssClass(string classNames) => $"e-groupsort e-icons {classNames} {focusSortIcon}";
+
+    private string GetUngroupButtonCssClass()
+    {
+        var hiddenClass = Parent?.GroupSettings?.ShowUngroupButton == false ? "e-ungroupbutton-hidden" : string.Empty;
+        return $"e-ungroupbutton e-icons e-icon-hide {focusCancelIcon} {hiddenClass}".Trim();
+    }
+    #endregion
+}

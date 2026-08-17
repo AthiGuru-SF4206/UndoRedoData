@@ -1,0 +1,53 @@
+﻿@inherits GridTestBase
+
+<SfFixture Test="GridBasicRendering" Setup="Initialize" Description="multiple request passed for local foreign key column">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@Orderss" @ref="DefaultGrid" Height="315" AllowGrouping="true" AllowFiltering="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Left" HeaderTextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" HeaderTextAlign="TextAlign.Center" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Center" HeaderTextAlign="TextAlign.Left" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    public List<Order> Orderss { get; set; }
+    public List<EmployeeData> Employeess { get; set; }
+    private IRenderedComponent<SfGrid<Order>> cut;
+    SfFixture Fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+
+    public void Initialize(Fixture fixture)
+    {
+        Orderss = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            EmployeeID = x,
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[0].HeaderTextAlign.ToString() == "Right");
+        Assert.True(cut.Instance.Columns[0].TextAlign.ToString() == "Left");
+        Assert.True(cut.Instance.Columns[1].HeaderTextAlign.ToString() == "Center");
+        Assert.True(cut.Instance.Columns[1].TextAlign.ToString() == "Right");
+        Assert.True(cut.Instance.Columns[2].HeaderTextAlign.ToString() == "Left");
+        Assert.True(cut.Instance.Columns[2].TextAlign.ToString() == "Center");
+
+
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public int? EmployeeID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

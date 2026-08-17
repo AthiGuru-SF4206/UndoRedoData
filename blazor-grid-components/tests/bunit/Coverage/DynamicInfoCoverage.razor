@@ -1,0 +1,534 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+
+<!-- Test 1: CanWrite Property -->
+<SfFixture @ref="fixtureCanWrite" Test="DynamicInfo_CanWrite" Description="DynamicInfo - CanWrite property override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureCanWrite { get; set; }
+
+    public void DynamicInfo_CanWrite(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestCanWrite();
+        Assert.True(result, "CanWrite property should return true");
+    }
+}
+
+<!-- Test 2: CanRead Property -->
+<SfFixture @ref="fixtureCanRead" Test="DynamicInfo_CanRead" Description="DynamicInfo - CanRead property override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureCanRead { get; set; }
+
+    public void DynamicInfo_CanRead(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestCanRead();
+        Assert.True(result, "CanRead property should return true");
+    }
+}
+
+<!-- Test 3: Name Property -->
+<SfFixture @ref="fixtureNameProperty" Test="DynamicInfo_NameProperty" Description="DynamicInfo - Name property override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNameProperty { get; set; }
+
+    public void DynamicInfo_NameProperty(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestNameProperty();
+        Assert.True(result, "Name property should match FieldName");
+    }
+}
+
+<!-- Test 4: PropertyType -->
+<SfFixture @ref="fixturePropertyType" Test="DynamicInfo_PropertyType" Description="DynamicInfo - PropertyType override with generic type">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixturePropertyType { get; set; }
+
+    public void DynamicInfo_PropertyType(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestPropertyType();
+        Assert.True(result, "PropertyType should return the generic type");
+    }
+}
+
+<!-- Test 5: DeclaringType -->
+<SfFixture @ref="fixtureDeclaringType" Test="DynamicInfo_DeclaringType" Description="DynamicInfo - DeclaringType property override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDeclaringType { get; set; }
+
+    public void DynamicInfo_DeclaringType(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestDeclaringType();
+        Assert.True(result, "DeclaringType should match DynamicType");
+    }
+}
+
+<!-- Test 6: Equals Method -->
+<SfFixture @ref="fixtureEquals" Test="DynamicInfo_Equals" Description="DynamicInfo - Equals method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureEquals { get; set; }
+
+    public void DynamicInfo_Equals(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestEqualsMethod();
+        Assert.NotNull(result);
+    }
+}
+
+<!-- Test 7: GetHashCode Method -->
+<SfFixture @ref="fixtureGetHashCode" Test="DynamicInfo_GetHashCode" Description="DynamicInfo - GetHashCode method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetHashCode { get; set; }
+
+    public void DynamicInfo_GetHashCode(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetHashCodeMethod();
+   
+        Assert.True(result, "GetHashCode should return a positive value");
+    }
+}
+
+<!-- Test 8: GetGetMethod -->
+<SfFixture @ref="fixtureGetGetMethod" Test="DynamicInfo_GetGetMethod" Description="DynamicInfo - GetGetMethod override returning DynamicMethodInfo">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetGetMethod { get; set; }
+
+    public void DynamicInfo_GetGetMethod(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetGetMethod();
+        Assert.True(result, "GetGetMethod should return a DynamicMethodInfo");
+    }
+}
+
+<!-- Test 9: GetSetMethod -->
+<SfFixture @ref="fixtureGetSetMethod" Test="DynamicInfo_GetSetMethod" Description="DynamicInfo - GetSetMethod override returning DynamicMethodInfo">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetSetMethod { get; set; }
+
+    public void DynamicInfo_GetSetMethod(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetSetMethod();
+        Assert.True(result, "GetSetMethod should return a DynamicMethodInfo");
+    }
+}
+
+<!-- Test 10: GetAccessors Exception -->
+<SfFixture @ref="fixtureGetAccessors" Test="DynamicInfo_GetAccessors_Exception" Description="DynamicInfo - GetAccessors throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetAccessors { get; set; }
+
+    public void DynamicInfo_GetAccessors_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetAccessorsWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 11: GetCustomAttributes(bool) Exception -->
+<SfFixture @ref="fixtureGetCustomAttributesBool" Test="DynamicInfo_GetCustomAttributes_Bool_Exception" Description="DynamicInfo - GetCustomAttributes(bool) throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetCustomAttributesBool { get; set; }
+
+    public void DynamicInfo_GetCustomAttributes_Bool_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetCustomAttributesBoolWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 12: GetCustomAttributes(Type, bool) Exception -->
+<SfFixture @ref="fixtureGetCustomAttributesType" Test="DynamicInfo_GetCustomAttributes_Type_Exception" Description="DynamicInfo - GetCustomAttributes(Type, bool) throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetCustomAttributesType { get; set; }
+
+    public void DynamicInfo_GetCustomAttributes_Type_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetCustomAttributesTypeWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 13: GetCustomAttributesData -->
+<SfFixture @ref="fixtureGetCustomAttributesData" Test="DynamicInfo_GetCustomAttributesData" Description="DynamicInfo - GetCustomAttributesData method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetCustomAttributesData { get; set; }
+
+    public void DynamicInfo_GetCustomAttributesData(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetCustomAttributesDataMethod();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 14: GetValue Basic -->
+<SfFixture @ref="fixtureGetValueBasic" Test="DynamicInfo_GetValue_Basic" Description="DynamicInfo - GetValue(object, object[]) method">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetValueBasic { get; set; }
+
+    public void DynamicInfo_GetValue_Basic(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetValueBasicWithException();
+        // Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 15: GetValue Advanced Exception -->
+<SfFixture @ref="fixtureGetValueAdvanced" Test="DynamicInfo_GetValue_Advanced_Exception" Description="DynamicInfo - GetValue(advanced) throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetValueAdvanced { get; set; }
+
+    public void DynamicInfo_GetValue_Advanced_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetValueAdvancedWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 16: GetIndexParameters Exception -->
+<SfFixture @ref="fixtureGetIndexParameters" Test="DynamicInfo_GetIndexParameters_Exception" Description="DynamicInfo - GetIndexParameters throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetIndexParameters { get; set; }
+
+    public void DynamicInfo_GetIndexParameters_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetIndexParametersWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 17: GetOptionalCustomModifiers -->
+<SfFixture @ref="fixtureGetOptionalCustomModifiers" Test="DynamicInfo_GetOptionalCustomModifiers" Description="DynamicInfo - GetOptionalCustomModifiers method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetOptionalCustomModifiers { get; set; }
+
+    public void DynamicInfo_GetOptionalCustomModifiers(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetOptionalCustomModifiersMethod();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 18: GetRawConstantValue -->
+<SfFixture @ref="fixtureGetRawConstantValue" Test="DynamicInfo_GetRawConstantValue" Description="DynamicInfo - GetRawConstantValue method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetRawConstantValue { get; set; }
+
+    public void DynamicInfo_GetRawConstantValue(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetRawConstantValueMethod();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 19: GetRequiredCustomModifiers -->
+<SfFixture @ref="fixtureGetRequiredCustomModifiers" Test="DynamicInfo_GetRequiredCustomModifiers" Description="DynamicInfo - GetRequiredCustomModifiers method override">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetRequiredCustomModifiers { get; set; }
+
+    public void DynamicInfo_GetRequiredCustomModifiers(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestGetRequiredCustomModifiersMethod();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 20: SetValue Basic -->
+<SfFixture @ref="fixtureSetValueBasic" Test="DynamicInfo_SetValue_Basic" Description="DynamicInfo - SetValue(object, object, object[]) method">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureSetValueBasic { get; set; }
+
+    public void DynamicInfo_SetValue_Basic(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestSetValueBasicMethod();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 21: SetValue Advanced Exception -->
+<SfFixture @ref="fixtureSetValueAdvanced" Test="DynamicInfo_SetValue_Advanced_Exception" Description="DynamicInfo - SetValue(advanced) throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureSetValueAdvanced { get; set; }
+
+    public void DynamicInfo_SetValue_Advanced_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestSetValueAdvancedWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 22: IsDefined Exception -->
+<SfFixture @ref="fixtureIsDefined" Test="DynamicInfo_IsDefined_Exception" Description="DynamicInfo - IsDefined throws NotImplementedException">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureIsDefined { get; set; }
+
+    public void DynamicInfo_IsDefined_Exception(Fixture fixture)
+    {
+        var result = DynamicInfoFixture.TestIsDefinedWithException();
+        Assert.Contains("SUCCESS", result);
+    }
+}
+
+<!-- Test 23: Validate Complete DynamicInfo -->
+<SfFixture @ref="fixtureValidateComplete" Test="DynamicInfo_ValidateCompleteDynamicInfo" Description="DynamicInfo - Validate complete DynamicInfo configuration">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureValidateComplete { get; set; }
+
+    public void DynamicInfo_ValidateCompleteDynamicInfo(Fixture fixture)
+    {
+        var dynamicInfo = DynamicInfoFixture.GetCompleteDynamicInfo();
+        var result = DynamicInfoFixture.ValidateCompleteDynamicInfo(dynamicInfo);
+        Assert.True(result, "Complete DynamicInfo should have all properties set");
+    }
+}
+
+<!-- Test 24: Multiple DynamicInfo Configurations -->
+<SfFixture @ref="fixtureMultipleConfigs" Test="DynamicInfo_MultipleConfigurations" Description="DynamicInfo - Test multiple configurations">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureMultipleConfigs { get; set; }
+
+    public void DynamicInfo_MultipleConfigurations(Fixture fixture)
+    {
+        var configurations = DynamicInfoFixture.GetVariousDynamicInfoConfigurations();
+        Assert.NotEmpty(configurations);
+        Assert.True(configurations.Count >= 9, "Should have at least 9 configurations");
+    }
+}

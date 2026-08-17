@@ -1,0 +1,74 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Web
+@using Syncfusion.Blazor.Grids.Internal
+
+@typeparam T
+
+@{
+    var GCols = Parent?.GroupSettings!.Columns;
+    var GroupClass = GCols != null && GCols.Count() > 0 ? !Parent!.EnableStickyHeader? "e-grouped" : "e-grouped e-sticky" : "";
+    var GridColumns = GridUtils.GetColumns(Parent!);
+    var tabindexValue = !Parent!.IsEdit && (GCols == null || GCols.Count() == 0) ? 0 : -1;
+    <div class="@($"e-groupdroparea e-lib e-droppable e-draggable {GroupClass} {focusDropArea}")"  tabindex="@tabindexValue">
+        @if (GCols != null && GCols.Count() > 0 && GridColumns.Count() > 0 && RenderGroupDropArea() && Parent.SortSettings != null && Parent.SortSettings.Columns != null)
+        {
+            foreach (var column in GCols)
+            {
+                if (GridUtils.GetColumnByField(column, GridColumns) == null)
+                {
+                    continue;
+                }
+                
+                <GroupedHeader TContent="T" Column="@column"></GroupedHeader>
+            }
+        }
+        else
+        {
+            @(Localizer?.GetText(GridLocaleKeys.GroupDropArea)!)
+        }
+    </div>
+}
+
+@code
+{
+    #region Parameters & State
+
+    [CascadingParameter]
+    public SfGrid<T>? Parent { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer;
+    private string focusDropArea = string.Empty;
+
+    #endregion
+
+    #region Lifecycle
+
+    protected override void OnInitialized()
+    {
+        Localizer = Parent?.Localizer;
+    }
+
+    #endregion
+
+    #region Render Helpers
+
+    internal bool RenderGroupDropArea()
+    {
+        var gridColumns = GridUtils.GetColumns(Parent!);
+
+        foreach (var gcol in Parent!.GroupSettings?.Columns!)
+        {
+            bool isGridColumn = gridColumns.Any(column => column.Field == gcol);
+
+            if ((Parent.Rows.Count == 0 && !isGridColumn) ||
+                (!isGridColumn && Parent.Rows.Count != 0 && !Parent.Rows[0].IsCaptionRow))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    #endregion
+}

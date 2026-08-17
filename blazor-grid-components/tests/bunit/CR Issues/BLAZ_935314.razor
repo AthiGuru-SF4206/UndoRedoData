@@ -1,0 +1,103 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Lazy load aggregate after expanding records not in sort order">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GetAllRecords()" @ref="Grid" AllowGrouping="true" AllowSorting="true" Height="273px">
+            <GridGroupSettings EnableLazyLoading="true" Columns="@Initial"></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.OrderID) Type="AggregateType.Sum" Format="C2">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="dd/MM/yyyy - dddd" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="ShipCountry" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    public List<Order> GridData { get; set; }
+    public string[] Initial = (new string[] { "CustomerID", "OrderDate", "ShipCountry" });
+    SfGrid<Order> Grid;
+    SfFixture fixture { get; set; }
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Aggregates.Count > 0, "Aggregates enabled in grid");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "LazyLoading is true");
+        var tr = cut.FindAll("tr");
+        var cells = tr[1].QuerySelectorAll("td");
+        Assert.True(cells[0].ClassName == "e-recordpluscollapse  ");
+        cells[0].Click();
+        Assert.True(cut.FindAll("td")[0].ClassName == "e-recordplusexpand  ");
+        var GridCells = cut.FindAll("td");
+        Assert.True(cut.FindAll("tr")[2].QuerySelectorAll("td")[2].TextContent == "Order Date: 30/12/2024 - Monday - 1 item", "Sorting Order is Proper");
+
+        //Additional case to check the summary row indent cell class name
+        Assert.True(cut.FindAll("tr")[4].QuerySelectorAll("td")[1].ClassName == "e-indentcell e-indentcelltop", "Summary row indent cell class name check");
+    }
+    public class Order
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public string ShipCountry { get; set; }
+    }
+
+    public static List<Order> GetAllRecords()
+    {
+        var orders = new List<Order>();
+
+        orders.Add(new Order
+        {
+            OrderID = 10250,
+            CustomerID = "HANAR",
+            OrderDate = new DateTime(2025, 1, 3),
+            ShipCountry = "4245-Brazil"
+        });
+
+        orders.Add(new Order
+        {
+            OrderID = 10251,
+            CustomerID = "VICTE",
+            OrderDate = null,
+            ShipCountry = "France"
+        });
+
+        orders.Add(new Order
+        {
+            OrderID = 10253,
+            CustomerID = "HANAR",
+            OrderDate = new DateTime(2024, 12, 30),
+            ShipCountry = "Brazil"
+        });
+
+        orders.Add(new Order
+        {
+            OrderID = 10259,
+            CustomerID = "HILAA",
+            OrderDate = new DateTime(1996, 7, 23),
+            ShipCountry = "Mexico"
+        });
+
+        return orders;
+    }
+}

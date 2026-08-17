@@ -1,0 +1,130 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@inherits GridRowBase<TCell>
+
+@using Syncfusion.Blazor.Data
+@using System.Collections
+@using Microsoft.AspNetCore.Components.Forms
+@using Syncfusion.Blazor.Grids.Internal.Editors
+@using Microsoft.AspNetCore.Components.Web
+@if (!Parent!.EditModule!.ShouldPreventEditFormRender)
+{
+<EditForm EditContext="@Parent.EditModule.EditContext" class="e-gridform e-lib e-formvalidator e-editing">
+    @if (Parent.EditSettings?.Validator != null)
+    {
+        @Parent.EditSettings.Validator(new ValidatorTemplateContext()
+        {
+           Data = Parent.EditModule!.CloneData!,
+           EditContext = Parent.EditModule!.EditContext!,
+           ShowValidationMessage = (string field, bool isValid, string message) =>
+           {
+               Parent?.EditModule.ApplyFormValidation(new Blazor.Internal.ValidationResult()
+               {
+                   FieldName = field,
+                   IsValid = isValid,
+                   Message = message
+               });
+           }
+        });
+    }
+    else
+    {
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ColumnsValidator T="TCell" OnValidated="@(async (ValidationResult args) => await Parent.EditModule.ApplyFormValidation(args))"
+                          ValidationRules="@Parent.EditModule.ValidationRules()">
+        </ColumnsValidator>
+    }
+    @if (Cell?.Column?.EditTemplate != null)
+    {
+        edittemplateData.Column = Cell.Column;
+        Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+        @Cell.Column.EditTemplate(edittemplateData.Data!);
+    }
+    else
+    {
+        var Column = Cell?.Column;
+        var EditType = Column!.EditType;
+        EditType = Column.Type == ColumnType.CheckBox ? EditType.BooleanEdit : EditType;
+        if (!string.IsNullOrEmpty(Column.Field) || EditType == EditType.BooleanEdit)
+        {
+            @switch (EditType)
+            {
+                case EditType.DefaultEdit:
+                    <TextBoxEditCell T="TCell" Column="Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TextBoxEditCell>
+                    break;
+                case EditType.NumericEdit:
+                    <NumericEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></NumericEditCell>
+                    break;
+                case EditType.DropDownEdit:
+                    <DropDownEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DropDownEditCell>
+                    break;
+                case EditType.BooleanEdit:
+                    <BooleanEditCell T="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></BooleanEditCell>
+                    break;
+                case EditType.DatePickerEdit:
+                case EditType.DateTimePickerEdit:
+                    <DatePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DatePickerEditCell>
+                    break;
+                case EditType.TimePickerEdit:
+                    <TimePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TimePickerEditCell>
+                    break;
+            }
+        }
+    }
+    <ValidationTooltip T="TCell" Columns="Columns"></ValidationTooltip>
+</EditForm>
+}
+@code {
+
+    #region Column Setup
+
+    public List<GridColumn> Columns => GridUtils.GetColumns(Parent!);
+    
+    #endregion
+
+    #region Initialization
+    internal EditTemplateData edittemplateData = new EditTemplateData();
+
+    protected override void OnInitialized()
+    {
+        edittemplateData.Data = Parent?.EditModule!.CloneData!;
+    }
+    
+    #endregion
+
+    #region ParameterMapping
+    
+    protected override void OnParametersSet()
+    {
+        Cell = CellParameters?.Cell!;
+        Row = CellParameters?.Row!;
+    }
+
+    #endregion
+    
+    #region RenderLogic
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (Parent!.EditModule!.IsAdd && Parent.EditModule.ErrorResult?.Count > 0 && !Parent.EditModule.KeyPressed)
+            {
+                await Parent.EditModule.InvokeValidation(new List<ValidationResult>() { Parent.EditModule.ErrorResult[0] });
+            }
+            
+            if (Parent.EditModule != null)
+            {
+                Parent.EditModule.KeyPressed = false;
+            }
+            if (Cell?.Column?.EditType != EditType.NumericEdit || (Cell?.Column?.EditType == EditType.NumericEdit && Cell?.Column?.EditTemplate != null))
+            {
+                await this.Parent.InvokeMethod("sfBlazor.Grid.focusCell", Parent.DataId,
+                    Parent.EditModule?.OriginalCell?.Column?.Field, Parent.EditModule?.IsAdd, false);
+            }
+        }
+    }
+    
+    #endregion
+
+}

@@ -1,0 +1,216 @@
+@inherits GridTestBase
+
+@* 
+    Bug : Command column cells not selected when using Flow cell selection with Ctrl+Shift in Grid.
+    Fix : IterateCells in Selection.cs now includes CellType.CommandColumn in the middle-row guard
+          for Flow mode so that command column cells in intermediate rows are correctly selected
+          during a multi-row Ctrl+Shift range selection.
+*@
+@* 
+<SfFixture @ref="fixture1" TestAsync="FlowSelection_CommandColumn_MiddleRowsCellsAreSelected"
+           Description="[BLAZ-73262] Flow mode Ctrl+Shift range: command column cells selected in all rows">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GenerateCommandData()" AllowSelection="true" AllowPaging="true">
+            <GridEditSettings AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"
+                                   Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell"
+                                   CellSelectionMode="CellSelectionMode.Flow" />
+            <GridColumns>
+                <GridColumn Field=@nameof(CommandItem.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120" />
+                <GridColumn Field=@nameof(CommandItem.CustomerID) HeaderText="Customer ID" Width="150" />
+                <GridColumn Field=@nameof(CommandItem.Freight) HeaderText="Freight" Width="120" />
+                <GridCommandColumns>
+                    <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-edit", CssClass = "e-flat" })" />
+                    <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-delete", CssClass = "e-flat" })" />
+                </GridCommandColumns>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    private SfGrid<CommandItem> Grid1;
+
+    /// <summary>
+    /// Verifies that in Flow cell selection mode, a Ctrl+Shift range selection starting at row 0
+    /// and ending at row 2 selects the command column cell in the middle row (row 1).
+    /// Prior to the fix the middle-row guard condition excluded CellType.CommandColumn cells,
+    /// leaving them unselected while all other cells in those rows were correctly selected.
+    /// </summary>
+    public async Task FlowSelection_CommandColumn_MiddleRowsCellsAreSelected(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<CommandItem>>();
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid must render with data rows");
+
+        // Column layout: OrderID(0), CustomerID(1), Freight(2), CommandColumn(3)
+        int commandColIndex = 3;
+        int totalColumnsPerRow = 4;
+
+        // Step 1 – click the first data cell in row 0 to anchor the selection.
+        cut.FindAll(".e-rowcell")[0].Click(new MouseEventArgs { Type = "click" });
+
+        // Step 2 – Ctrl+Shift click the command column cell in row 2 to extend the range.
+        int row2CommandCellDomIndex = (2 * totalColumnsPerRow) + commandColIndex;
+        cut.FindAll(".e-rowcell")[row2CommandCellDomIndex]
+            .Click(new MouseEventArgs { Type = "click", CtrlKey = true, ShiftKey = true });
+
+        cut.WaitForState(() => cut.Instance.Rows.Any(r => r.IsDataRow && r.IsSelected),
+            TimeSpan.FromMilliseconds(500));
+
+        var rows = cut.Instance.Rows.Where(r => r.IsDataRow).OrderBy(r => r.Index).ToList();
+
+        // Row 0 – start row: first cell must be selected.
+        Assert.True(
+            rows[0].Cells.Any(c => c.IsSelected),
+            "Row 0 (start row) must have at least one selected cell");
+
+        // Row 2 – end row: command column cell must be selected.
+        Assert.True(
+            rows[2].Cells.Any(c => c.Index == commandColIndex && c.IsSelected),
+            "Row 2 (end row) command column cell must be selected");
+
+        // Row 1 – middle row: command column cell must be selected.
+        Assert.True(
+            rows[1].Cells.Any(c => c.Index == commandColIndex && c.IsSelected),
+            "[BLAZ-73262] Row 1 (middle row) command column cell must be selected in Flow mode range selection");
+
+        // Row 1 – middle row: all data cells must also be selected.
+        Assert.True(
+            rows[1].Cells.Where(c => c.IsDataCell).All(c => c.IsSelected),
+            "Row 1 (middle row) all data cells must be selected in Flow mode range selection");
+    }
+
+    public List<CommandItem> GenerateCommandData() =>
+        Enumerable.Range(1, 10).Select(x => new CommandItem
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[x % 5],
+            Freight = Math.Round(2.1 * x, 2)
+        }).ToList();
+
+    public class CommandItem
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="FlowSelection_CommandColumn_SelectCellsByRangeAPI"
+           Description="[BLAZ-73262] SelectCellsByRange API: command column cells included for all rows">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateCommandData()" AllowSelection="true" AllowPaging="true">
+            <GridEditSettings AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"
+                                   Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell"
+                                   CellSelectionMode="CellSelectionMode.Flow" />
+            <GridColumns>
+                <GridColumn Field=@nameof(CommandItem.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120" />
+                <GridColumn Field=@nameof(CommandItem.CustomerID) HeaderText="Customer ID" Width="150" />
+                <GridColumn Field=@nameof(CommandItem.Freight) HeaderText="Freight" Width="120" />
+                <GridCommandColumns>
+                    <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-edit", CssClass = "e-flat" })" />
+                    <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-delete", CssClass = "e-flat" })" />
+                </GridCommandColumns>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<CommandItem> Grid2;
+
+    /// <summary>
+    /// Verifies that the public SelectCellsByRangeAsync API with Flow mode selects the command column
+    /// cell (index 3) in all rows of the specified range — including the middle row (row 1).
+    /// </summary>
+    public async Task FlowSelection_CommandColumn_SelectCellsByRangeAPI(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<CommandItem>>();
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid must render with data rows");
+
+        // Select range: row 0 col 0 → row 2 col 3 (command column)
+        await cut.Instance.SelectCellsByRangeAsync((0, 0), (2, 3));
+
+        cut.WaitForState(() => cut.Instance.Rows.Any(r => r.IsDataRow && r.IsSelected),
+            TimeSpan.FromMilliseconds(500));
+
+        var rows = cut.Instance.Rows.Where(r => r.IsDataRow).OrderBy(r => r.Index).ToList();
+
+        int commandColIndex = 3;
+
+        // Row 0 (start): command column cell must be selected.
+        Assert.True(
+            rows[0].Cells.Any(c => c.Index == commandColIndex && c.IsSelected),
+            "Row 0 command column cell must be selected via SelectCellsByRangeAsync");
+
+        // Row 1 (middle): command column cell must be selected.
+        Assert.True(
+            rows[1].Cells.Any(c => c.Index == commandColIndex && c.IsSelected),
+            "[BLAZ-73262] Row 1 (middle row) command column cell must be selected via SelectCellsByRangeAsync");
+
+        // Row 2 (end): command column cell must be selected.
+        Assert.True(
+            rows[2].Cells.Any(c => c.Index == commandColIndex && c.IsSelected),
+            "Row 2 command column cell must be selected via SelectCellsByRangeAsync");
+
+        // Non-regression: normal data cells in middle row are still selected.
+        Assert.True(
+            rows[1].Cells.Where(c => c.IsDataCell).All(c => c.IsSelected),
+            "Row 1 all data cells must remain selected (non-regression)");
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="FlowSelection_NoCommandColumn_Unaffected"
+           Description="[BLAZ-73262] Non-regression: Flow mode middle-row data cells selected without command column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GenerateCommandData()" AllowSelection="true" AllowPaging="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"
+                                   Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell"
+                                   CellSelectionMode="CellSelectionMode.Flow" />
+            <GridColumns>
+                <GridColumn Field=@nameof(CommandItem.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120" />
+                <GridColumn Field=@nameof(CommandItem.CustomerID) HeaderText="Customer ID" Width="150" />
+                <GridColumn Field=@nameof(CommandItem.Freight) HeaderText="Freight" Width="120" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<CommandItem> Grid3;
+
+    /// <summary>
+    /// Non-regression guard: Flow selection on a grid without a command column must still select
+    /// all data cells in middle rows as before the fix.
+    /// </summary>
+    public async Task FlowSelection_NoCommandColumn_Unaffected(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<CommandItem>>();
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid must render with data rows");
+
+        // Click row 0, col 0 to anchor.
+        cut.FindAll(".e-rowcell")[0].Click(new MouseEventArgs { Type = "click" });
+
+        // Shift-click last cell of row 2 (col 2) to extend range.
+        cut.FindAll(".e-rowcell")[(2 * 3) + 2]
+            .Click(new MouseEventArgs { Type = "click", ShiftKey = true });
+
+        cut.WaitForState(() => cut.Instance.Rows.Any(r => r.IsDataRow && r.IsSelected),
+            TimeSpan.FromMilliseconds(500));
+
+        var rows = cut.Instance.Rows.Where(r => r.IsDataRow).OrderBy(r => r.Index).ToList();
+
+        var row1DataCells = rows[1].Cells.Where(c => c.IsDataCell).ToList();
+        Assert.True(row1DataCells.Count > 0, "Row 1 must have data cells");
+        Assert.True(
+            row1DataCells.All(c => c.IsSelected),
+            "Non-regression: Row 1 data cells must all be selected in Flow mode without command column");
+    }
+} *@

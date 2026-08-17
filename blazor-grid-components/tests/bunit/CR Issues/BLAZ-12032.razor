@@ -1,0 +1,79 @@
+﻿@inherits GridTestBase
+
+<SfFixture Test="GridBasicRendering" Setup="Initialize" Description="Exception throws while performing Grouping operation with foreign key field value as null">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@Orderss" Height="315" AllowGrouping="true" AllowFiltering="true">
+    <GridGroupSettings Columns="@(new string[]{ "EmployeeID" })">
+        <CaptionTemplate>
+            @{
+                var WMPerson = (context as CaptionTemplateContext);
+                <div><b>@GetGroupHeading(WMPerson)</b></div>
+            }
+        </CaptionTemplate>
+    </GridGroupSettings>
+    <GridColumns>
+        <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+        <GridForeignColumn TValue="EmployeeData" Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignKeyField="ID" ForeignDataSource="@Employeess" Width="150" AllowFiltering="true"></GridForeignColumn>
+        <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+        <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+    </GridColumns>
+    <GridEvents TValue="Order" DataBound="Bound"></GridEvents>
+</SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    public List<Order> Orderss { get; set; }
+    public List<EmployeeData> Employeess { get; set; }
+    private IRenderedComponent<SfGrid<Order>> grid;
+    
+    public void Initialize(Fixture fixture)
+    {
+      Orderss = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            EmployeeID = (x % 5 == 0) ? null : x,
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+
+        Employeess = Enumerable.Range(1, 75).Select(x => new EmployeeData()
+        {
+            ID = (x % 5 == 0) ? null : x,
+            FirstName = (new string[] { "Nancy", "Andrew", "Janet", "Margaret", "Steven" })[new Random().Next(5)],
+        }).ToList();
+    }
+    public void GridBasicRendering(Fixture fixture)
+    {
+        grid = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(grid.FindAll(".e-row").Count > 1, "Number of rows generated properly");
+    }
+
+    private void Bound(object a)
+    {
+        //Exception thrown and no record to display shown, now if any rows present then working properly.
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public int? EmployeeID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+    public class EmployeeData
+    {
+        public int? ID { get; set; }
+        public string FirstName { get; set; }
+    }
+    public class FData
+    {
+        public int? EmployeeID { get; set; }
+
+    }
+    public string GetGroupHeading(CaptionTemplateContext args)
+    {
+        return "sss;";
+    }
+}

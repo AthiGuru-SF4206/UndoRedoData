@@ -1,0 +1,70 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="CurrentValue and PreviousValue tested in events">
+    <ComponentUnderTest>
+        <SfGrid @ref=DefaultGrid DataSource="GenerateRows()" Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEvents CellSelecting="CellSelectingHandler" CellSelected="CellSelectedHandler" TValue="Order"></GridEvents>
+            <GridSelectionSettings CellSelectionMode="CellSelectionMode.Box" Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey=true TextAlign="TextAlign.Left" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+
+    public List<Order> Orders { get; set; } = new List<Order>();
+
+    string CurrentValue { get; set; }
+    string PreviousValue { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var rowCellIndexes = new (int Row, int Cell)[] { (1, 1), (1, 2) };
+        await cut.Instance.SelectCellsAsync(rowCellIndexes);
+        Assert.True(PreviousValue == "ANANTR");
+        Assert.True(CurrentValue == "India");
+    }
+
+    public void CellSelectingHandler(CellSelectingEventArgs<Order> args)
+    {
+        CurrentValue = args.CurrentValue?.ToString();
+        PreviousValue = args.PreviousValue?.ToString();
+    }
+
+    public void CellSelectedHandler(CellSelectEventArgs<Order> args)
+    {
+        CurrentValue = args.CurrentValue?.ToString();
+        PreviousValue = args.PreviousValue?.ToString();
+    }
+
+    public List<Order> GenerateRows()
+    {
+        int count = 1000;
+        int id = 10;
+        for (int i = 0; i < 1; i++)
+        {
+            Orders.Add(new Order() { OrderID = count + 1, CustomerID = "ALFKI", ShipCountry="UK", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2, EmployeeID = id + 1 });
+            Orders.Add(new Order() { OrderID = count + 2, CustomerID = "ANANTR", ShipCountry = "India", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2, EmployeeID = id + 2 });
+            Orders.Add(new Order() { OrderID = count + 3, CustomerID = "BLONP", ShipCountry = "Brazil", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2, EmployeeID = id + 3 });
+            Orders.Add(new Order() { OrderID = count + 4, CustomerID = "ANTON", ShipCountry = "USA", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2, EmployeeID = id + 4 });
+            Orders.Add(new Order() { OrderID = count + 5, CustomerID = "BOLID", ShipCountry = "Canada", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2, EmployeeID = id + 5 });
+            count += 5;
+            id += 5;
+        }
+        return Orders;
+    }
+
+}
+
+
+

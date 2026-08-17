@@ -1,0 +1,31 @@
+﻿@namespace Syncfusion.Blazor.Grids
+
+@using Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+<div>
+@if (!string.IsNullOrEmpty(Title))
+{
+        <div class="e-headercelldiv e-headercell-border ">
+        <span class="e-label ">@Title</span>
+    </div>
+}
+<CascadingValue Value= "@this" IsFixed="true" >
+    @ChildContent
+    </CascadingValue>
+    </div>
+@code
+{
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [CascadingParameter]
+    internal IColumnChooser? ColumnChooser { get; set; }
+    /// <summary>
+    /// Gets or sets the group title for the checkbox collections. 
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+}

@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "artifacts": [
+    {
+      "id": "art_mssti261_f7bjpi",
+      "type": "review",
+      "title": "Git Changes Impact Analysis: Undo/Redo Feature",
+      "filename": "review.md",
+      "stage": "review",
+      "status": "draft",
+      "createdAt": "2026-08-14T10:41:59.813Z",
+      "updatedAt": "2026-08-14T10:41:59.813Z"
+    }
+  ]
+}

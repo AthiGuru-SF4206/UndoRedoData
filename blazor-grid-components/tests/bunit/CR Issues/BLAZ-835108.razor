@@ -1,0 +1,58 @@
+﻿@inherits GridTestBase
+@using System.Dynamic
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="updating not work if data is null for all records in edited column">
+    <ComponentUnderTest>
+        <SfGrid @ref=Grid DataSource="GenerateRows()" Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+                <GridColumns>
+                    <GridColumn Field="OrderID" IsPrimaryKey="true" Width="120"></GridColumn>
+                    <GridColumn Field="CustomerID" Width="120"></GridColumn>
+                    <GridColumn Field="ShipCountry" Width="120"></GridColumn>
+                </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    SfGrid<ExpandoObject> Grid { get; set; }
+    public List<ExpandoObject> Orders { get; set; } = new List<ExpandoObject>();
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        await UpdateRecord();
+        IDictionary<string, object> propertyValues = Orders.FirstOrDefault();
+        var updateValue = propertyValues["ShipCountry"];
+        Assert.True(updateValue == "updated");
+    }
+
+    public List<ExpandoObject> GenerateRows()
+    {
+        Orders = Enumerable.Range(1, 2).Select((x) =>
+        {
+            dynamic d = new ExpandoObject();
+            d.OrderID = 1000+x;
+            d.CustomerID = "customerid";
+            d.ShipCountry = null;
+            return d;
+        }).Cast<ExpandoObject>().ToList<ExpandoObject>();
+        return Orders;
+    }
+
+    private async Task UpdateRecord()
+    {        
+        var cut = fixture.GetComponentUnderTest<SfGrid<ExpandoObject>>();
+        var data = (IDictionary<string, Object>)Orders[0];
+        dynamic updateData = new ExpandoObject();
+        updateData.OrderID = data["OrderID"];
+        updateData.CustomerID = data["CustomerID"];
+        updateData.ShipCountry = "updated";
+        await cut.Instance.UpdateRowAsync(0, updateData);
+    }
+
+}
+
+
+

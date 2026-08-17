@@ -1,0 +1,121 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+
+
+<SfFixture @ref="fixture1" Test="AsyncCellMerging" Description="Manual cell merging and unmerging tests">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid1 { get; set; }
+    private Fixture fixture1 { get; set; }
+
+    /// <summary>
+    /// Covers MergeCellsAsync / UnmergeCellsAsync / UnmergeAllAsync and ProcessManualMerges scenarios
+    /// </summary>
+    async void AsyncCellMerging(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Wait for rows to render
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Merge single cell with valid info
+        var mergeInfo1 = new MergeCellInfo { RowIndex = 0, ColumnIndex = 0, RowSpan = 2, ColumnSpan = 1 };
+        await cut.Instance.MergeCellsAsync(mergeInfo1);
+        cut.WaitForState(() => cut.FindAll("td[rowspan]").Count > 0, TimeSpan.FromSeconds(3));
+        
+        // DOM assertion - verify rowspan attribute
+        var mergedCell = cut.FindAll("td[rowspan='2']");
+        Assert.True(mergedCell.Count > 0, "Merged cell should have rowspan='2' attribute in DOM");
+
+        // Scenario 2: Handle null MergeCellInfo gracefully (should not throw)
+        await cut.Instance.MergeCellsAsync((MergeCellInfo)null);
+        // No exception thrown means the test passes - null is handled gracefully
+
+        // Scenario 3: Merge multiple cells
+        var mergeInfos = new[] {
+            new MergeCellInfo { RowIndex = 1, ColumnIndex = 0, RowSpan = 2, ColumnSpan = 1 },
+            new MergeCellInfo { RowIndex = 3, ColumnIndex = 1, RowSpan = 2, ColumnSpan = 1 },
+            new MergeCellInfo { RowIndex = 5, ColumnIndex = 2, RowSpan = 2, ColumnSpan = 1 }
+        };
+        await cut.Instance.MergeCellsAsync(mergeInfos);
+        cut.WaitForState(() => cut.FindAll("td[rowspan='2']").Count >= 3, TimeSpan.FromSeconds(3));
+        
+        // DOM assertion - verify multiple merged cells
+        var mergedCells = cut.FindAll("td[rowspan='2']");
+        Assert.True(mergedCells.Count >= 3, "Multiple merged cells should have rowspan='2' in DOM");
+
+        // Scenario 4: Unmerge a manually merged cell
+        var unmergeInfo = new UnmergeCellInfo { RowIndex = 0, ColumnIndex = 0 };
+        await cut.Instance.UnmergeCellsAsync(unmergeInfo);
+        cut.WaitForState(() => cut.FindAll("td[rowspan='2']").Count < mergedCells.Count, TimeSpan.FromSeconds(3));
+        
+        // DOM assertion - verify cell no longer has rowspan
+        var currentMergedCells = cut.FindAll("td[rowspan='2']");
+        Assert.True(currentMergedCells.Count < mergedCells.Count, "Unmerged cell should not have rowspan in DOM");
+
+        // Scenario 5: Exclude from automatic spanning (cell not manually merged)
+        // When UnmergeCellsAsync is called on a non-merged cell, it adds to exclusion list
+        var excludeInfo = new UnmergeCellInfo { RowIndex = 2, ColumnIndex = 0 };
+        await cut.Instance.UnmergeCellsAsync(excludeInfo);
+        // The cell is excluded internally - no DOM changes expected for this action alone
+
+        // Scenario 6: Unmerge multiple cells with mixed types
+        var unmergeInfos = new[] {
+            new UnmergeCellInfo { RowIndex = 1, ColumnIndex = 0 },
+            new UnmergeCellInfo { RowIndex = 3, ColumnIndex = 1 }
+        };
+        var beforeUnmergeCount = cut.FindAll("td[rowspan='2']").Count;
+        await cut.Instance.UnmergeCellsAsync(unmergeInfos);
+        cut.WaitForState(() => cut.FindAll("td[rowspan='2']").Count < beforeUnmergeCount, TimeSpan.FromSeconds(3));
+        
+        // DOM assertion - verify cells were unmerged
+        var afterUnmergeCount = cut.FindAll("td[rowspan='2']");
+        Assert.True(afterUnmergeCount.Count < beforeUnmergeCount, "Multiple cells should be unmerged");
+
+        // Scenario 7: UnmergeAllAsync - clear all merges and exclusions
+        await cut.Instance.UnmergeAllAsync();
+        cut.WaitForState(() => cut.FindAll("td[rowspan]").Count == 0, TimeSpan.FromSeconds(3));
+        
+        // DOM assertions - verify all rowspan/colspan removed
+        Assert.True(cut.FindAll("td[rowspan]").Count == 0, "All cells should have no rowspan after unmerge all");
+        Assert.True(cut.FindAll("td[colspan]").Count == 0, "All cells should have no colspan after unmerge all");
+
+        // Scenario 12: ProcessManualMerges - complex merge with both rowspan and colspan
+        var bigMerge = new MergeCellInfo { RowIndex = 0, ColumnIndex = 1, RowSpan = 3, ColumnSpan = 2 };
+        await cut.Instance.MergeCellsAsync(bigMerge);
+        cut.WaitForState(() => cut.FindAll("td[rowspan='3'][colspan='2']").Count > 0, TimeSpan.FromSeconds(3));
+        
+        // DOM assertion - verify both rowspan and colspan attributes in DOM
+        var bigMergedCell = cut.FindAll("td[rowspan='3'][colspan='2']");
+        Assert.True(bigMergedCell.Count > 0, "Cell should have both rowspan='3' and colspan='2' in DOM");
+    }
+
+    /// <summary>
+    /// Simple data generator for Orders used by these tests
+    /// </summary>
+    private List<Order> GenerateOrderData()
+    {
+        var list = new List<Order>();
+        for (int i = 0; i < 15; i++)
+        {
+            list.Add(new Order { OrderID = 1000 + i, CustomerID = $"C{i % 5}", ShipCountry = i % 2 == 0 ? "USA" : "UK" });
+        }
+        return list;
+    }
+}

@@ -1,0 +1,66 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Dynamically reorder columns when frozen is enabled">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" FrozenColumns="2" AllowPaging="true" AllowReordering="true" AllowSelection="true">
+            <GridEvents DataBound="DataBound" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="CustomerID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="OrderDate" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Reorder" CssClass="e-primary" Content="Reorder"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool _canAssert = false;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    public void GridBasicRendering(Fixture fixture)
+    {
+
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].HeaderText == "CustomerID");
+        Assert.True(cut.FindAll(".e-headertext")[1].InnerHtml == "CustomerID");
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+    async Task DataBound()
+    {
+        if (_canAssert)
+        {
+            _canAssert = false;
+            Assert.True(DefaultGrid.Columns[1].HeaderText == "OrderDate");
+        }
+
+    }
+    async void Reorder()
+    {
+        _canAssert = true;
+        var reorderedCols = DefaultGrid.Columns.ToList();
+        var itemNumColumn = reorderedCols.FirstOrDefault(c => c.Field == "OrderDate");
+
+        if (itemNumColumn != null)
+        {
+            reorderedCols.Remove(itemNumColumn);
+            reorderedCols.Insert(1, itemNumColumn);
+        }
+        for (int i = 0; i < reorderedCols.Count; i++)
+        {
+            reorderedCols[i].Index = i;
+        }
+
+        DefaultGrid.Columns = reorderedCols;
+        await DefaultGrid.Refresh();
+        await DefaultGrid.RefreshHeaderAsync();
+        await DefaultGrid.RefreshColumnsAsync();
+    }
+
+}

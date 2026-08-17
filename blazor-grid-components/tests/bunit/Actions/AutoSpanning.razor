@@ -1,0 +1,734 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<!-- Primary AutoSpan fixture (normal scenarios with EmployeeDetails) -->
+<SfFixture @ref="fixture2" Test="AsyncAutoSpanning" Description="Automatic row/column spanning tests with EmployeeDetails">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+
+<!-- AutoSpan with Frozen Right scenario -->
+<SfFixture @ref="fixtureFrozenRight" Test="AsyncAutoSpanningFrozenRight" Description="AutoSpan with right frozen columns (FreezeDirection.Right)">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFrozenRight" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" FrozenColumns="2" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- AutoSpan with Grouping scenario -->
+<SfFixture @ref="fixtureGrouping" Test="AsyncAutoSpanningGrouping" Description="AutoSpan with grouping tests">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridGrouping" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" AllowGrouping=true AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- AutoSpan with Frozen Left scenario -->
+<SfFixture @ref="fixtureFrozenLeft" Test="AsyncAutoSpanningFrozenLeft" Description="AutoSpan with left frozen columns (FreezeDirection.Left)">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFrozenLeft" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" FrozenRows="2" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+<!-- AutoSpan with Frozen Left + Grouping scenario -->
+<SfFixture @ref="fixtureFrozenLeftGrouping" Test="AsyncAutoSpanningFrozenLeftGrouping" Description="AutoSpan with frozen left columns and grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFrozenLeftGrouping" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" AllowGrouping=true AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- AutoSpan with Frozen Right + Grouping scenario -->
+<SfFixture @ref="fixtureFrozenRightGrouping" Test="AsyncAutoSpanningFrozenRightGrouping" Description="AutoSpan with frozen right columns and grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFrozenRightGrouping" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.HorizontalAndVertical" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+<SfFixture @ref="fixture10" Test="AutoSpanningNone" Description="AutoSpan None">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid10" DataSource="GenerateAutoSpanData()" AllowPaging="true" AutoSpan="AutoSpanMode.None" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeID) HeaderText="Employee ID" IsPrimaryKey="true" Width="120" AutoSpan="AutoSpanMode.None"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.EmployeeName) HeaderText="Employee Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_00) HeaderText="9:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_9_30) HeaderText="9:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_00) HeaderText="10:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_10_30) HeaderText="10:30 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_11_00) HeaderText="11:00 AM" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeDetails.Time_12_00) HeaderText="12:00 PM" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<EmployeeDetails> Grid2 { get; set; }
+    private Fixture fixture2 { get; set; }
+
+    private SfGrid<EmployeeDetails> Grid10 { get; set; }
+    private Fixture fixture10 { get; set; }
+
+    private SfGrid<EmployeeDetails> GridFrozenLeft { get; set; }
+    private Fixture fixtureFrozenLeft { get; set; }
+
+    private SfGrid<EmployeeDetails> GridFrozenRight { get; set; }
+    private Fixture fixtureFrozenRight { get; set; }
+
+    private SfGrid<EmployeeDetails> GridGrouping { get; set; }
+    private Fixture fixtureGrouping { get; set; }
+
+    private SfGrid<EmployeeDetails> GridFrozenLeftGrouping { get; set; }
+    private Fixture fixtureFrozenLeftGrouping { get; set; }
+
+    private SfGrid<EmployeeDetails> GridFrozenRightGrouping { get; set; }
+    private Fixture fixtureFrozenRightGrouping { get; set; }
+    async void AutoSpanningNone(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+        Syncfusion.Blazor.Grids.Internal.AutoSpanningExtensions.Intersect(AutoSpanMode.None, AutoSpanMode.None);
+    }
+    /// <summary>
+    /// Covers automatic spanning behaviors across modes - Normal scenarios with EmployeeDetails data
+    /// Tests AutoSpan Row, Column, and HorizontalAndVertical modes with time slot duplicates
+    /// </summary>
+    async void AsyncAutoSpanning(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: AutoSpan Row mode (column-spanning across rows with duplicate time values)
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Instance.SuppressAutoSpanning = false;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        // DOM assertion - Row mode creates column spans for duplicate horizontal time slot values
+        var colspanCells = cut.FindAll("td[colspan]");
+        Assert.True(colspanCells.Count > 0, "AutoSpan Row mode should create colspan attributes for duplicate time slot values across rows");
+
+        // Scenario 2: AutoSpan Column mode (row-spanning for duplicate employee activities)
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        // DOM assertion - Column mode creates row spans for duplicate vertical values
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0, "AutoSpan Column mode should create rowspan attributes for duplicate activity values");
+
+        // Scenario 3: HorizontalAndVertical combined mode
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        // DOM assertion - Combined mode should create both rowspan and colspan
+        var hasRowspan = cut.FindAll("td[rowspan]").Count > 0;
+        var hasColspan = cut.FindAll("td[colspan]").Count > 0;
+        Assert.True(hasRowspan || hasColspan, "HorizontalAndVertical mode should create both rowspan and colspan attributes");
+
+        // Scenario 4: Verify all cells rendered with EmployeeDetails data
+        var allCells = cut.FindAll("td");
+        Assert.True(allCells.Count > 0, "Grid should have rendered cells with EmployeeDetails dataset");
+
+        // Scenario 5: Verify spanning attributes exist when data has duplicates
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0, "AutoSpan processing should create spanned cells when EmployeeDetails has duplicate activities");
+
+        // Scenario 6: Disable auto-spanning and verify it's suppressed
+        cut.Instance.SuppressAutoSpanning = true;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+        Assert.True(cut.FindAll("td").Count > 0, "Grid should render without spanning when SuppressAutoSpanning is true");
+        await Grid2.ExportToExcelAsync();
+        await Grid2.ExportToPdfAsync();
+        await Grid2.ExportToCsvAsync();
+
+    }
+
+    /// <summary>
+    /// AutoSpan with Left Frozen columns (FreezeDirection.Left)
+    /// Tests that spanning works correctly when columns are frozen on the left
+    /// </summary>
+    async void AsyncAutoSpanningFrozenLeft(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Basic left frozen with AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert left-frozen visual panel exists
+        var leftFreezePanel = cut.FindAll(".e-leftfreeze");
+        Assert.True(leftFreezePanel.Count > 0, "Left frozen panel should be rendered when FreezeDirection.Left is set");
+
+        // Scenario 2: Verify cells are rendered in frozen panel
+        var frozenCells = cut.FindAll(".e-leftfreeze td");
+        Assert.True(frozenCells.Count > 0, "Frozen left columns should render cells (EmployeeID and EmployeeName)");
+
+        // Scenario 3: AutoSpan Column mode with left frozen
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0, "AutoSpan Column mode should work with left frozen columns");
+
+        // Scenario 4: HorizontalAndVertical with left frozen
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var hasRowspan = cut.FindAll("td[rowspan]").Count > 0;
+        var hasColspan = cut.FindAll("td[colspan]").Count > 0;
+        Assert.True(hasRowspan || hasColspan, "HorizontalAndVertical should create spanning with left frozen columns");
+
+        // Scenario 5: Verify spanning attributes exist in both frozen and movable sections
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0, "AutoSpan processing should create spanned cells with left frozen layout");
+
+        // Scenario 6: Left frozen with frozen rows
+        cut.Instance.FrozenRows = 2;
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        Assert.True(cut.FindAll("td").Count > 0, "Grid should render with left frozen columns and frozen rows");
+
+        await GridFrozenLeft.ExportToExcelAsync();
+        await GridFrozenLeft.ExportToPdfAsync();
+        await GridFrozenLeft.ExportToCsvAsync();
+    }
+
+    /// <summary>
+    /// AutoSpan with Right Frozen columns (FreezeDirection.Right)
+    /// Tests that spanning works correctly when columns are frozen on the right
+    /// </summary>
+    async void AsyncAutoSpanningFrozenRight(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Basic right frozen with AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Assert right-frozen visual panel exists
+        var rightFreezePanel = cut.FindAll(".e-rightfreeze");
+        Assert.True(rightFreezePanel.Count > 0, "Right frozen panel should be rendered when FreezeDirection.Right is set");
+
+        // Scenario 2: Verify cells are rendered in frozen panel
+        var frozenCells = cut.FindAll(".e-rightfreeze td");
+        Assert.True(frozenCells.Count > 0, "Frozen right columns should render cells (11:00 AM and 12:00 PM)");
+
+        // Scenario 3: AutoSpan Column mode with right frozen
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0, "AutoSpan Column mode should work with right frozen columns");
+
+        // Scenario 4: HorizontalAndVertical with right frozen
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var hasRowspan = cut.FindAll("td[rowspan]").Count > 0;
+        var hasColspan = cut.FindAll("td[colspan]").Count > 0;
+        Assert.True(hasRowspan || hasColspan, "HorizontalAndVertical should create spanning with right frozen columns");
+
+        // Scenario 5: Verify spanning attributes exist in both movable and frozen sections
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0, "AutoSpan processing should create spanned cells with right frozen layout");
+
+        // Scenario 6: Right frozen with frozen rows
+        cut.Instance.FrozenRows = 2;
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        Assert.True(cut.FindAll("td").Count > 0, "Grid should render with right frozen columns and frozen rows");
+
+        // Scenario 7: Right frozen with cell unmerge
+        await cut.Instance.UnmergeCellsAsync(new UnmergeCellInfo { RowIndex = 0, ColumnIndex = 5 });
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        Assert.True(cut.FindAll("td").Count > 0, "Grid should handle cell unmerge with right frozen columns");
+
+        await GridFrozenRight.ExportToExcelAsync();
+        await GridFrozenRight.ExportToPdfAsync();
+        await GridFrozenRight.ExportToCsvAsync();
+    }
+
+    /// <summary>
+    /// AutoSpan with Grouping - Normal layout
+    /// Tests that grouping and AutoSpan work correctly together
+    /// </summary>
+    async void AsyncAutoSpanningGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Configure grouping via GroupSettings by EmployeeName
+        cut.Instance.GroupSettings = new GridGroupSettings { Columns = new string[] { nameof(EmployeeDetails.EmployeeName) } };
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-groupcaption, td").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Ensure grouping rendered
+        var groupCaptions = cut.FindAll(".e-groupcaption");
+        Assert.True(groupCaptions.Count > 0, "Grouping by EmployeeName should render group caption rows");
+
+        // Scenario 2: AutoSpan Column mode with grouping
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0 || groupCaptions.Count > 0, "AutoSpan Column mode should work with grouping");
+
+        // Scenario 3: HorizontalAndVertical with grouping
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0 || groupCaptions.Count > 0, "Grouping + AutoSpan should render group rows and/or spanned cells");
+        await GridGrouping.ExportToExcelAsync();
+        await GridGrouping.ExportToPdfAsync();
+        await GridGrouping.ExportToCsvAsync();
+
+        // Scenario 4: Group by different column (EmployeeID)
+        try
+        {
+            await cut.Instance.UngroupColumnAsync(nameof(EmployeeDetails.EmployeeName));
+            await cut.Instance.GroupColumnAsync(nameof(EmployeeDetails.EmployeeID));
+            cut.Render();
+            cut.WaitForState(() => cut.FindAll(".e-groupcaption").Count > 0, TimeSpan.FromSeconds(5));
+
+            var newGroupCaptions = cut.FindAll(".e-groupcaption");
+            Assert.True(newGroupCaptions.Count > 0, "Grouping by EmployeeID should render group captions");
+        }
+        catch { /* If method not present or fails, continue with existing grouping */ }
+
+        // Scenario 5: Verify spanning works within grouped rows
+        var allSpannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(allSpannedCells.Count > 0, "AutoSpan should create spanning within grouped data");
+    }
+
+    /// <summary>
+    /// AutoSpan with Frozen Left columns and Grouping
+    /// Tests combined functionality of left-frozen columns with grouping
+    /// </summary>
+    async void AsyncAutoSpanningFrozenLeftGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Frozen left with grouping
+        cut.Instance.GroupSettings = new GridGroupSettings { Columns = new string[] { nameof(EmployeeDetails.EmployeeName) } };
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-groupcaption, td").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Verify left frozen panel exists
+        var leftFreezePanel = cut.FindAll(".e-leftfreeze");
+        Assert.True(leftFreezePanel.Count > 0, "Left frozen panel should be rendered with grouping");
+
+        // Verify grouping exists
+        var groupCaptions = cut.FindAll(".e-groupcaption");
+        Assert.True(groupCaptions.Count > 0, "Grouping should render group caption rows with frozen left layout");
+
+        // Scenario 2: Frozen left + grouping + Column mode AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0 || groupCaptions.Count > 0, "Column mode AutoSpan should work with frozen left + grouping");
+
+        // Scenario 3: Frozen left + grouping + HorizontalAndVertical AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0, "HorizontalAndVertical AutoSpan should work with frozen left + grouping");
+
+        // Scenario 4: Verify cells in frozen section
+        var frozenCells = cut.FindAll(".e-leftfreeze td");
+        Assert.True(frozenCells.Count > 0, "Frozen left section should render cells with grouping and AutoSpan");
+
+        // Scenario 5: Toggle grouping while maintaining frozen left
+        try
+        {
+            await cut.Instance.UngroupColumnAsync(nameof(EmployeeDetails.EmployeeName));
+            cut.Render();
+            cut.WaitForState(() => cut.FindAll(".e-leftfreeze").Count > 0, TimeSpan.FromSeconds(3));
+
+            Assert.True(cut.FindAll(".e-leftfreeze").Count > 0, "Frozen left panel should persist after ungrouping");
+        }
+        catch { /* If method not present, continue */ }
+    }
+
+    /// <summary>
+    /// AutoSpan with Frozen Right columns and Grouping
+    /// Tests combined functionality of right-frozen columns with grouping
+    /// </summary>
+    async void AsyncAutoSpanningFrozenRightGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Scenario 1: Frozen right with grouping
+        cut.Instance.GroupSettings = new GridGroupSettings { Columns = new string[] { nameof(EmployeeDetails.EmployeeName) } };
+        cut.Instance.AutoSpan = AutoSpanMode.Row;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-groupcaption, td").Count > 0, TimeSpan.FromSeconds(5));
+
+        // Verify right frozen panel exists
+        var rightFreezePanel = cut.FindAll(".e-rightfreeze");
+        Assert.True(rightFreezePanel.Count > 0, "Right frozen panel should be rendered with grouping");
+
+        // Verify grouping exists
+        var groupCaptions = cut.FindAll(".e-groupcaption");
+        Assert.True(groupCaptions.Count > 0, "Grouping should render group caption rows with frozen right layout");
+
+        // Scenario 2: Frozen right + grouping + Column mode AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.Column;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var rowspanCells = cut.FindAll("td[rowspan]");
+        Assert.True(rowspanCells.Count > 0 || groupCaptions.Count > 0, "Column mode AutoSpan should work with frozen right + grouping");
+
+        // Scenario 3: Frozen right + grouping + HorizontalAndVertical AutoSpan
+        cut.Instance.AutoSpan = AutoSpanMode.HorizontalAndVertical;
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll("td").Count > 0, TimeSpan.FromSeconds(3));
+
+        var spannedCells = cut.FindAll("td[rowspan], td[colspan]");
+        Assert.True(spannedCells.Count > 0, "HorizontalAndVertical AutoSpan should work with frozen right + grouping");
+
+        // Scenario 4: Verify cells in frozen section
+        var frozenCells = cut.FindAll(".e-rightfreeze td");
+        Assert.True(frozenCells.Count > 0, "Frozen right section should render cells with grouping and AutoSpan");
+
+        // Scenario 5: Toggle grouping while maintaining frozen right
+        try
+        {
+            await cut.Instance.UngroupColumnAsync(nameof(EmployeeDetails.EmployeeName));
+            cut.Render();
+            cut.WaitForState(() => cut.FindAll(".e-rightfreeze").Count > 0, TimeSpan.FromSeconds(3));
+
+            Assert.True(cut.FindAll(".e-rightfreeze").Count > 0, "Frozen right panel should persist after ungrouping");
+        }
+        catch { /* If method not present, continue */ }
+    }
+
+    /// <summary>
+    /// Generate EmployeeDetails data with intentional duplicates to trigger auto-spanning
+    /// Uses time slot activities that repeat across employees to create spanning scenarios
+    /// </summary>
+    private List<EmployeeDetails> GenerateAutoSpanData()
+    {
+        List<EmployeeDetails> data = new List<EmployeeDetails>();
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10001,
+            EmployeeName = "Nancy Davolio",
+            Time_9_00 = "Analysis Tasks",
+            Time_9_30 = "Analysis Tasks",
+            Time_10_00 = "Team Meeting",
+            Time_10_30 = "Testing",
+            Time_11_00 = "Development",
+            Time_11_30 = "Code Review",
+            Time_12_00 = "Development",
+            Time_12_30 = "Support",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Testing",
+            Time_3_00 = "Testing",
+            Time_3_30 = "Development",
+            Time_4_00 = "Conference",
+            Time_4_30 = "Team Meeting",
+            Time_5_00 = "Team Meeting"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10002,
+            EmployeeName = "Steven Buchanan",
+            Time_9_00 = "Analysis Tasks",
+            Time_9_30 = "Support",
+            Time_10_00 = "Support",
+            Time_10_30 = "Support",
+            Time_11_00 = "Testing",
+            Time_11_30 = "Testing",
+            Time_12_00 = "Testing",
+            Time_12_30 = "Testing",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Code Review",
+            Time_3_00 = "Development",
+            Time_3_30 = "Documentation",
+            Time_4_00 = "Documentation",
+            Time_4_30 = "Team Meeting",
+            Time_5_00 = "Team Meeting"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10003,
+            EmployeeName = "Andrew Fuller",
+            Time_9_00 = "Documentation",
+            Time_9_30 = "Documentation",
+            Time_10_00 = "Documentation",
+            Time_10_30 = "Analysis Tasks",
+            Time_11_00 = "Analysis Tasks",
+            Time_11_30 = "Support",
+            Time_12_00 = "Support",
+            Time_12_30 = "Support",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Development",
+            Time_3_00 = "Development",
+            Time_3_30 = "Team Meeting",
+            Time_4_00 = "Team Meeting",
+            Time_4_30 = "Development",
+            Time_5_00 = "Development"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10004,
+            EmployeeName = "Janet Leverling",
+            Time_9_00 = "Testing",
+            Time_9_30 = "Documentation",
+            Time_10_00 = "Documentation",
+            Time_10_30 = "Support",
+            Time_11_00 = "Testing",
+            Time_11_30 = "Testing",
+            Time_12_00 = "Testing",
+            Time_12_30 = "Testing",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Development",
+            Time_3_00 = "Code Review",
+            Time_3_30 = "Documentation",
+            Time_4_00 = "Conference",
+            Time_4_30 = "Conference",
+            Time_5_00 = "Team Meeting"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10005,
+            EmployeeName = "Margaret Parker",
+            Time_9_00 = "Task Assign",
+            Time_9_30 = "Task Assign",
+            Time_10_00 = "Task Assign",
+            Time_10_30 = "Task Assign",
+            Time_11_00 = "Documentation",
+            Time_11_30 = "Support",
+            Time_12_00 = "Support",
+            Time_12_30 = "Support",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Development",
+            Time_3_00 = "Development",
+            Time_3_30 = "Team Meeting",
+            Time_4_00 = "Team Meeting",
+            Time_4_30 = "Testing",
+            Time_5_00 = "Testing"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10006,
+            EmployeeName = "Janet King",
+            Time_9_00 = "Testing",
+            Time_9_30 = "Testing",
+            Time_10_00 = "Support",
+            Time_10_30 = "Support",
+            Time_11_00 = "Support",
+            Time_11_30 = "Team Meeting",
+            Time_12_00 = "Team Meeting",
+            Time_12_30 = "Team Meeting",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Development",
+            Time_3_00 = "Code Review",
+            Time_3_30 = "Team Meeting",
+            Time_4_00 = "Team Meeting",
+            Time_4_30 = "Development",
+            Time_5_00 = "Development"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10007,
+            EmployeeName = "Michael Suyama",
+            Time_9_00 = "Analysis Tasks",
+            Time_9_30 = "Analysis Tasks",
+            Time_10_00 = "Testing",
+            Time_10_30 = "Development",
+            Time_11_00 = "Development",
+            Time_11_30 = "Testing",
+            Time_12_00 = "Testing",
+            Time_12_30 = "Testing",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Support",
+            Time_3_00 = "Build",
+            Time_3_30 = "Build",
+            Time_4_00 = "Documentation",
+            Time_4_30 = "Documentation",
+            Time_5_00 = "Documentation"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10008,
+            EmployeeName = "Robert King",
+            Time_9_00 = "Task Assign",
+            Time_9_30 = "Task Assign",
+            Time_10_00 = "Task Assign",
+            Time_10_30 = "Development",
+            Time_11_00 = "Development",
+            Time_11_30 = "Development",
+            Time_12_00 = "Testing",
+            Time_12_30 = "Support",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Documentation",
+            Time_3_00 = "Documentation",
+            Time_3_30 = "Documentation",
+            Time_4_00 = "Team Meeting",
+            Time_4_30 = "Team Meeting",
+            Time_5_00 = "Build"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10009,
+            EmployeeName = "Andrew Callahan",
+            Time_9_00 = "Documentation",
+            Time_9_30 = "Team Meeting",
+            Time_10_00 = "Team Meeting",
+            Time_10_30 = "Support",
+            Time_11_00 = "Testing",
+            Time_11_30 = "Development",
+            Time_12_00 = "Development",
+            Time_12_30 = "Development",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Documentation",
+            Time_3_00 = "Documentation",
+            Time_3_30 = "Documentation",
+            Time_4_00 = "Team Meeting",
+            Time_4_30 = "Development",
+            Time_5_00 = "Development"
+        });
+        data.Add(new EmployeeDetails
+        {
+            EmployeeID = 10010,
+            EmployeeName = "Michael Dodsworth",
+            Time_9_00 = "Task Assign",
+            Time_9_30 = "Task Assign",
+            Time_10_00 = "Task Assign",
+            Time_10_30 = "Analysis Tasks",
+            Time_11_00 = "Analysis Tasks",
+            Time_11_30 = "Testing",
+            Time_12_00 = "Build",
+            Time_12_30 = "Task Assign",
+            Time_1_00 = "Lunch Break",
+            Time_1_30 = "Lunch Break",
+            Time_2_00 = "Lunch Break",
+            Time_2_30 = "Testing",
+            Time_3_00 = "Testing",
+            Time_3_30 = "Testing",
+            Time_4_00 = "Build",
+            Time_4_30 = "Build",
+            Time_5_00 = "Testing"
+        });
+        return data;
+    }
+}

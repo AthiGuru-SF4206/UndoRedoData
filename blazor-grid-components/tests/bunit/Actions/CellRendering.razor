@@ -1,0 +1,856 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids.Internal
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="with Column virtualization">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    bool _canAssert2 = false;
+    void GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        Assert.True("e-rowcell  e-leftalign" == row1[1].GetAttribute("class"), "e-rowcell class must be added");
+        Assert.True(true == row1[1].HasAttribute("class"), "class attribute is added");
+        Assert.True(true == row1[1].HasAttribute("tabindex"), "tabindex attribute is added");
+        Assert.True(false == row1[1].HasAttribute("style"), "style attribute is removed");
+        Assert.True(true == row1[1].HasAttribute("aria-colindex"), "aria-colindex attribute is added");
+        row1[1].ClassList.Add("e-checked");
+        Assert.True("e-rowcell e-leftalign e-checked" == row1[1].GetAttribute("class"), "checking class value");
+        row1[1].SetAttribute("style", "text-align:right");
+        Assert.True("text-align:right" == row1[1].GetAttribute("style"), "checking style value");
+        row1[1].SetAttribute("aria-label", "CustomerID");
+        Assert.True("CustomerID" == row1[1].GetAttribute("aria-label"), "checking aria-label value");
+    }
+
+    void DataBound2(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+        if (_canAssert)
+        {
+
+        }
+        IDictionary<string, IEnumerable<object>> keys = args.ForeignKeyData;
+    }
+}
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Cell Merge">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowReordering="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" QueryCellInfo="DataBound"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    bool _canAssert = false;
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        Assert.True(5 == cut.Find(".e-row").Children.Count(), "Number of cells generated properly");
+        Assert.True(20 == cut.Instance.CurrentViewData.Count(), "CurrentViewData count is proper");
+        var tr = cut.FindAll("tr");
+        var row0 = tr[0].QuerySelectorAll("th");
+        Assert.True(5 == row0.Count(), "render");
+    }
+
+    void DataBound(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="cell click">
+    <ComponentUnderTest>
+        <SfGrid @ref=DefaultGrid DataSource="GenerateOrderData()">
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool _canAssert3 = false;
+    async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        Assert.True("e-rowcell  e-leftalign" == row1[1].GetAttribute("class"), "checking class default value");
+        await this.DefaultGrid.SelectRowAsync(1);
+        Assert.True(1 == cut.Instance.SelectedRowIndexes[0], "Number of  Rows selected using SelectRow method ");
+    }
+
+    void DataBound3(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+        if (_canAssert)
+        {
+
+        }
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="cell click default value">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" QueryCellInfo="DataBound4"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+    bool _canAssert4 = false;
+    async Task GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        Assert.True("e-rowcell below-30  e-leftalign" == row1[3].GetAttribute("class"), "Adding class for value below than 30");
+        Assert.True("e-rowcell below-40  e-leftalign" == tr[10].QuerySelectorAll("td")[3].GetAttribute("class"), "Adding class for value below 40");
+        Assert.True("e-rowcell above-40  e-leftalign" == tr[15].QuerySelectorAll("td")[3].GetAttribute("class"), "Adding class for value above 40");
+        Assert.True("e-rowcell  e-leftalign" == row1[1].GetAttribute("class"), "Checking the default class value");
+    }
+
+    void DataBound4(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        if (args.Column.Field == "Freight")
+        {
+            if (args.Data.Freight < 30)
+            {
+                args.Cell.AddClass(new string[] { "below-30" });
+            }
+            else if (args.Data.Freight < 40)
+            {
+                args.Cell.AddClass(new string[] { "below-40" });
+            }
+            else
+            {
+                args.Cell.AddClass(new string[] { "above-40" });
+            }
+        }
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="GridBasicRendering5" Description="cell header">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" QueryCellInfo="DataBound5"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture5 { get; set; }
+    bool _canAssert5 = false;
+    async Task GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        var row0 = tr[0].QuerySelectorAll("th");
+        Assert.True("e-rowcell  e-leftalign" == row1[1].GetAttribute("class"), "checking class of cell 1 value");
+        Assert.True("e-row e-altrow" == tr[1].GetAttribute("class"), "checking class of row 1 value");
+        Assert.True("e-headercell e-rightalign  " == row0[0].GetAttribute("class"), "checking class of header value");
+        Assert.True("e-headercell e-leftalign  " == row0[1].GetAttribute("class"), "checking class of header value");
+        Assert.True("2" == row0[1].GetAttribute("aria-colindex"), "checking aria-colindex of header value");
+        Assert.True(5 == row0.Count(), "checking count of header row");
+        Assert.True("CustomerID" == cut.FindAll(".e-headertext")[1].InnerHtml, "checking innerHtml of header value");
+        Assert.True("e-headercell e-leftalign e-lastcell  " == row0[4].GetAttribute("class"), "checking class of header value");
+        Assert.True(null == row0[4].GetAttribute("aria-sort"), "checking aria-sort of header value");
+
+    }
+
+    void DataBound5(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+
+
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="cell header">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" QueryCellInfo="DataBound6"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture6 { get; set; }
+    bool _canAssert6 = false;
+    void GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        var row0 = tr[0].QuerySelectorAll("th");
+        row1[0].SetAttribute("class", "e-rowcell e-hide");
+        Assert.True(5 == row1.Count(), "checking count of value");
+        row0[0].SetAttribute("class", "e-headercell e-rightalign");
+        row1[0].SetAttribute("class", "e-rowcell");
+        Assert.True(5 == row0.Count(), "checking count of header row value");
+        Assert.True(5 == row1.Count(), "checking count of row 1 value");
+    }
+
+    void DataBound6(Syncfusion.Blazor.Grids.QueryCellInfoEventArgs<Order> args)
+    {
+
+
+    }
+}
+<SfFixture @ref="fixture7" TestAsync="GridBasicRendering7" Description="Grid Header Cells with Focus">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateOrderData()" AllowSorting="true" AllowGrouping="true" AllowReordering="true" AllowFiltering="true" AllowPaging="true">
+    <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> Grid;
+    private async Task GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-headercell").Count() == 6, "HeaderCells are rendered properly");
+        cut.FindAll(".e-headercell")[0].Click();
+        cut.FindAll(".e-headercell")[0].KeyDown(new KeyboardEventArgs() { Code = "Space" });
+        cut.FindAll(".e-headercell")[2].Click();
+        cut.FindAll(".e-headercell")[2].Focus();
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "Enter", ShiftKey = true });
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "Enter" });
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight",CtrlKey=true });
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft", CtrlKey = true });
+        await cut.Instance.ReorderColumnByIndexAsync(1, 2);
+        var columns = Grid.Columns;
+        Assert.True(columns[2].AllowReordering);
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight", CtrlKey = true });
+        cut.FindAll(".e-headercell")[3].Click();
+        cut.FindAll(".e-headercell")[3].Focus();
+        cut.FindAll(".e-headercell")[3].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", AltKey = true });
+        cut.FindAll(".e-headercell")[3].KeyDown(new KeyboardEventArgs() { Code = "Space", CtrlKey = true });
+
+    }
+}
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Attributes validation in template column">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2">
+                    <Template>
+                        @{
+                            var data = context as Order;
+                            var propertyValue = "1000";
+                        }
+                        <Syncfusion.Blazor.Inputs.SfTextBox @bind-Value="propertyValue"> </Syncfusion.Blazor.Inputs.SfTextBox>
+                    </Template>
+                </GridColumn>
+                <GridColumn>
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture8 { get; set; }
+    bool _canAssert8 = false;
+    void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var row1 = tr[1].QuerySelectorAll("td");
+        Assert.True(false == row1[1].HasAttribute("aria-label"), "aria-label is not added in default column");
+        Assert.True(false == row1[2].HasAttribute("aria-label"), "aria-label is not added in template column");
+        Assert.True(true == row1[2].HasAttribute("aria-colindex"), "aria-colindex is added in template column");
+        //Command Column Element Check
+        Assert.True(false == row1[3].HasAttribute("aria-label"), "aria-label is not added in command column");
+        Assert.True(true == row1[3].HasAttribute("aria-colindex"), "aria-colindex is added in command column");
+        Assert.True(true == row1[3].HasAttribute("data-uid"), "data-uid is added in command column");
+        Assert.True(true == row1[3].HasAttribute("tabindex"), "tabindex is added in command column");
+        Assert.True(true == row1[3].HasAttribute("role"), "role is added in command column");
+        Assert.True(true == row1[3].ClassList.Contains("e-unboundcell"), "command column class name proper");
+    }
+}
+
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Empty Records Template">
+    <ComponentUnderTest>
+        <SfGrid DataSource="EmptyData">
+            <GridTemplates>
+                <EmptyRecordTemplate>
+                    <div class="empty-record-custom">No Records to display here</div>
+                </EmptyRecordTemplate>
+            </GridTemplates>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    bool _canAssert9 = false;
+    List<Order> EmptyData = new List<Order>();
+    void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(0 == cut.FindAll(".e-row").Count, "Zero rows generated properly");
+        Assert.True(0 == cut.Instance.CurrentViewData.Count(), "Zero CurrentViewData count is proper");
+        cut.WaitForState(() => cut.FindAll(".empty-record-custom")[0].TextContent.Contains("No Records to display here"));
+        Assert.True(cut.FindAll(".empty-record-custom").Count > 0, "Empty record template is displayed properly");
+        var isMaskedCellCoverage = new GridCellParameters() { IsMaskedCell = false };
+        var Row = new List<Row<object>>();
+        var isContentRow = new GridContentParameters() { Rows = Row };
+    }
+}
+
+<SfFixture @ref="fixture10" TestAsync="CommandClickHandlerTest" Description="Test CommandClickHandler using reflection to invoke internal method">
+    <ComponentUnderTest>
+        <SfGrid ID="CommandGrid" @ref="CommandGrid" DataSource="GenerateRows18()" Height="400" RowHeight="38">
+            <GridEvents OnRecordClick="@RecordClickHandler" TValue="OrderCommandData"></GridEvents>
+            
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderCommandData.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderCommandData.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderCommandData.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn HeaderText="Manage Records" Width="150">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<OrderCommandData> CommandGrid;
+    public List<OrderCommandData> GridDataCommand { get; set; }
+
+    public async Task CommandClickHandlerTest(Fixture fixture18)
+    {
+        var cut = fixture18.GetComponentUnderTest<SfGrid<OrderCommandData>>();
+
+       
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+
+       
+        var gridColumn = new GridCommandColumn()
+        {
+            Type = CommandButtonType.Edit,
+            Title = "Command"
+        };
+
+        var rowData = new OrderCommandData()
+        {
+            OrderID = 1001,
+            CustomerID = "Alfki",
+            OrderDate = new DateTime(1995, 05, 15),
+            Freight = 51.4
+        };
+
+        var row = new Row<object>()
+        {
+            Data = rowData,
+            Index = 0,
+            Uid = "grid-row-1"
+        };
+
+        var cell = new Cell<object>()
+        {
+            Index = 4,
+        };
+
+
+        var rowBase = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridRowBase<OrderCommandData>>();
+
+        await rowBase.Instance.CommandClickHandler(gridColumn, row, cell);
+        cut.Instance.IsRenderedFromTreeGrid = true;
+
+        gridColumn.Type = CommandButtonType.Delete;
+        row.Index = 1;
+
+        await rowBase.Instance.CommandClickHandler(gridColumn, row, cell);
+
+        gridColumn.Type = CommandButtonType.Save;
+        row.Index = 2;
+
+        await rowBase.Instance.CommandClickHandler(gridColumn, row, cell);
+
+        gridColumn.Type = CommandButtonType.Cancel;
+        row.Index = 3;
+
+        await rowBase.Instance.CommandClickHandler(gridColumn, row, cell);
+
+
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rows still available after command click");
+        Assert.True(cut.Instance.Height != "auto", "Grid height maintained after command click");
+    }
+    public void RecordClickHandler(RecordClickEventArgs<OrderCommandData> args)
+    {
+        
+    }
+
+    public List<OrderCommandData> GenerateRows18()
+    {
+        List<OrderCommandData> data = new List<OrderCommandData>();
+        int count = 1000;
+
+        for (int i = 0; i < 50; i++)
+        {
+            data.Add(new OrderCommandData()
+            {
+                OrderID = count + 1,
+                CustomerID = "Alfki",
+                OrderDate = new DateTime(1995, 05, 15),
+                Freight = 25.7 * 2
+            });
+            data.Add(new OrderCommandData()
+            {
+                OrderID = count + 2,
+                CustomerID = "Anantr",
+                OrderDate = new DateTime(1994, 04, 04),
+                Freight = 26.7 * 2
+            });
+            count += 2;
+        }
+        GridDataCommand = data;
+        return data;
+    }
+
+    public class OrderCommandData
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+<SfFixture @ref="fixture11"
+           TestAsync="FrozenCursorTemplate_IsFrozenTrue"
+           Description="Covers RenderFrozenLineCursorTemplate: IsFrozen==true branch">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                Width="420"
+                Height="300"
+                FrozenColumns="1"
+                AllowFreezeLineMoving="true"
+                AllowResizing="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="220">
+                    <Template>
+                        @{
+                            var row = context as Order;
+                            string text = row?.OrderID.ToString();
+                        }
+                        <span>@text</span>
+                    </Template>
+                </GridColumn>
+
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="220"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+
+@code {
+    SfFixture fixture11 { get; set; }
+
+    public async Task FrozenCursorTemplate_IsFrozenTrue(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        await cut.InvokeAsync(() => Task.Delay(100));
+
+        var cursors = cut.FindAll(".e-frozen-cursor");
+
+        Assert.True(cursors.Count > 0, "Freeze-line moving should render frozen cursor overlays.");
+    }
+}
+
+<SfFixture @ref="fixture12"
+           TestAsync="FrozenCursorTemplate_NoFrozenColumns"
+           Description="Covers RenderFrozenLineCursorTemplate: GetFrozenCount()==0 branch">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                Width="420"
+                Height="300"
+                FrozenColumns="0"
+                AllowFreezeLineMoving="true"
+                AllowResizing="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="240">
+                    <Template>
+                        @{
+                            var row = context as Order;
+                            string text = row?.CustomerID;
+                        }
+                        <span>@text</span>
+                    </Template>
+                </GridColumn>
+
+                <GridColumn Field="@nameof(Order.OrderID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="220"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+
+@code {
+    SfFixture fixture12 { get; set; }
+
+    public async Task FrozenCursorTemplate_NoFrozenColumns(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.InvokeAsync(() => Task.Delay(100));
+
+        var cursors = cut.FindAll(".e-frozen-cursor");
+
+        Assert.True(cursors.Count > 0, "Freeze-line moving should render default edge cursors when no columns are frozen.");
+    }
+}
+<SfFixture @ref="fixture13"
+           TestAsync="FrozenTemplate_IsFrozenTrue_Coverage"
+           Description="Covers RenderFrozenLineCursorTemplate IsFrozen==true branch">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                Width="380"
+                Height="300"
+                AllowFreezeLineMoving="true"
+                AllowResizing="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"
+                            Width="220"
+                            IsFrozen="true"
+                            Freeze="FreezeDirection.Left">
+                    <Template>
+                        @{
+                            var o = context as Order;
+                        }
+                        <span>@o?.OrderID</span>
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="220"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture13 { get; set; }
+
+    public async Task FrozenTemplate_IsFrozenTrue_Coverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        await cut.InvokeAsync(() => Task.Delay(50));
+
+        var cursors = cut.FindAll(".e-frozen-cursor");
+        Assert.True(cursors.Count > 0);
+
+        Assert.Contains(cursors, c => c.ClassList.Contains("e-frozen-left-cursor"));
+    }
+}
+
+<SfFixture @ref="fixture14"
+           TestAsync="FrozenTemplate_NoFrozen_Coverage"
+           Description="Covers RenderFrozenLineCursorTemplate GetFrozenCount==0 branch">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                Width="380"
+                Height="300"
+                AllowFreezeLineMoving="true"
+                AllowResizing="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="240">
+                    <Template>
+                        @{
+                            var o = context as Order;
+                        }
+                        <span>@o?.CustomerID</span>
+                    </Template>
+                </GridColumn>
+
+                <GridColumn Field="@nameof(Order.OrderID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="220"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture14 { get; set; }
+
+    public async Task FrozenTemplate_NoFrozen_Coverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.InvokeAsync(() => Task.Delay(50));
+
+        var cursors = cut.FindAll(".e-frozen-cursor");
+        Assert.True(cursors.Count > 0);
+
+        Assert.Contains(cursors, c => c.ClassList.Contains("e-frozen-default-cursor"));
+
+    }
+}
+<SfFixture @ref="fixture15"
+           TestAsync="FixedFrozenCursor_Coverage"
+           Description="Covers RenderFixedFrozenCursor via FreezeDirection.Fixed">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                Width="380"
+                Height="300"
+                AllowFreezeLineMoving="true"
+                AllowResizing="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="220"></GridColumn>
+
+ 
+                <GridColumn Field="@nameof(Order.OrderID)"
+                            Width="220"
+                            IsFrozen="true"
+                            Freeze="FreezeDirection.Fixed"></GridColumn>
+
+     
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="220"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="220"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture15 { get; set; }
+
+    public async Task FixedFrozenCursor_Coverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.InvokeAsync(() => Task.Delay(50));
+        var fixedLeft = cut.FindAll(".e-frozen-fixedleft-cursor");
+        Assert.True(fixedLeft.Count > 0);
+    }
+}
+
+
+<!-- Test 16: Frozen Column with AllowFreezeLineMoving - Template with Fixed Direction -->
+<SfFixture @ref="fixture16" Test="FrozenLineCursorTemplateTest2" Description="Frozen Column with AllowFreezeLineMoving - Template with Fixed Direction">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Height="400" FrozenRows="2" AllowFreezeLineMoving="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150" IsFrozen="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Fixed">
+                    <Template>
+                        @{
+                            var data = (context as Order);
+                            {
+                                <div class="template-fixed">
+                                    <span>@data?.CustomerID - Fixed</span>
+                                </div>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture16 { get; set; }
+    void FrozenLineCursorTemplateTest2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Rows rendered with fixed frozen template column");
+        Assert.True(cut.FindAll(".template-fixed").Count > 0, "Template content rendered in fixed frozen column");
+        var frozenCells = cut.FindAll("td.e-frozen");
+        Assert.True(frozenCells.Count >= 0, "Frozen cells may be marked appropriately");
+    }
+}
+
+<!-- Test 17: Frozen Column with AllowFreezeLineMoving - with Fixed Direction -->
+<SfFixture @ref="fixture17" Test="FrozenLineCursorTemplateTest3" Description="Frozen Column with AllowFreezeLineMoving - with Fixed Direction">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" HHeight="315px" Width="200" AllowResizing="true" AllowFreezeLineMoving="true" EnableColumnVirtualization="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150" IsFrozen="true" Freeze="FreezeDirection.Fixed"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Fixed"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture17 { get; set; }
+    void FrozenLineCursorTemplateTest3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Rows rendered with fixed frozen column");
+        var frozenCells = cut.FindAll("td.e-frozen");
+        Assert.True(frozenCells.Count >= 0, "Frozen cells may be marked appropriately");
+    }
+}
+
+<!-- Test 18: Frozen Column with AllowFreezeLineMoving - Template with Fixed Direction -->
+<SfFixture @ref="fixture18" Test="FrozenLineCursorTemplateTest4" Description="Fixed frozen cursor with left and optional right cursor">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Height="400" FrozenRows="2" AllowFreezeLineMoving="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150" IsFrozen="true" Freeze="FreezeDirection.Fixed"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Fixed">
+                    <Template>
+                        @{
+                            var data = (context as Order);
+                            {
+                                <div class="template-fixed">
+                                    <span>@data?.CustomerID - Fixed</span>
+                                </div>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200">
+                    <Template>
+                        @{
+                            var data = (context as Order);
+                            {
+                                <div class="template-fixed">
+                                    <span>@data?.Freight - Fixed</span>
+                                </div>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180" IsFrozen="true" Freeze="FreezeDirection.Right">
+                    <Template>
+                        @{
+                            var data = (context as Order);
+                            {
+                                <div class="template-fixed">
+                                    <span>@data?.ShipCity - Fixed</span>
+                                </div>
+                            }
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.Country)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture18 { get; set; }
+    void FrozenLineCursorTemplateTest4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Rows rendered with fixed frozen template column");
+        Assert.True(cut.FindAll(".template-fixed").Count > 0, "Template content rendered in fixed frozen column");
+        var frozenCells = cut.FindAll("td.e-frozen");
+        Assert.True(frozenCells.Count >= 0, "Frozen cells may be marked appropriately");
+    }
+}

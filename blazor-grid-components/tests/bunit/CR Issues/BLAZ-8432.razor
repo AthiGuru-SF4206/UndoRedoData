@@ -1,0 +1,36 @@
+@inherits GridTestBase
+@using System.Timers
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Problem with multi-selection using Checkbox when having SelectionMode as Both">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridEvents TValue="Order" RowSelected="RowSelectedHandler" />
+            <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Both" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="70"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool _canAssert = false;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+
+    public async void GridBasicRendering(Fixture fixture)
+    {
+
+      cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+      await cut.Instance.SelectRowsAsync(new int[]{ 0, 1});
+   }
+
+    public void RowSelectedHandler(RowSelectEventArgs<Order> args)
+    {
+        if (_canAssert) {
+            Assert.True(1 == args.RowIndex, "RowIndex of the selected row");
+        }
+        _canAssert = args.RowIndex == 0;
+    }
+}

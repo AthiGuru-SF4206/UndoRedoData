@@ -1,0 +1,167 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Null reference exception throws on exporting pdf with custom aggregate">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" DataSource="GenerateRecords()" AllowPaging="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport" })" AllowPdfExport="false" AllowExcelExport="true">
+            <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="Product"></GridEvents>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.TotalSales) Type="AggregateType.Custom">
+                            <FooterTemplate>
+                                @{
+                                    <div>
+                                        <p>Custom: @GetWeightedAggregate()</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ProductName) HeaderText="Product Name" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.TotalSales) HeaderText="TotalSales" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Product.TotalCosts) HeaderText="TotalCosts" TextAlign="TextAlign.Right" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfGrid<Product> Grid { get; set; }
+    public List<Product> Products { get; set; }
+    SfFixture fixture { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        Grid.ExportToPdfAsync().GetAwaiter();
+        Grid.SelectRowAsync(0).GetAwaiter();
+        Assert.True(Grid.SelectedRecords.Count > 0, "Pdf Exported Successfully");
+    }
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_pdfexport")  //Id is combination of Grid's ID and itemname
+        {
+            await this.Grid.ExportToPdfAsync();
+        }
+        if (args.Item.Id == "Grid_excelexport") //Id is combination of Grid's ID and itemname
+        {
+            await this.Grid.ExportToExcelAsync();
+        }
+    }
+    public string GetWeightedAggregate()
+    {
+        // Here, we can calculate custom aggregate operations and return the result
+        return Queryable.Sum(Products.Select(x => (x.TotalSales + x.TotalCosts) / x.TotalSales).AsQueryable()).ToString();
+    }
+
+    public List<Product> GenerateRecords()
+    {
+        return Products = Enumerable.Range(1, 5).Select(x => new Product
+        {
+            ProductName = (new string[] { "Chai", "Chang", "Aniseed Syrup", "Chef Anton's Cajun Seasoning", "Chef Anton's Gumbo Mix" })[new Random().Next(5)],
+            QuantityPerUnit = (new string[] { "10 boxes x 20 bags", "24 - 12 oz bottles", "12 - 550 ml bottles", "48 - 6 oz jars", "36 boxes" })[new Random().Next(5)],
+            TotalSales = 100 * x,
+            TotalCosts = 200 * x,
+            Discontinued = (new bool[] { true, false })[new Random().Next(2)]
+        }).ToList();
+    }
+
+    public class Product
+    {
+        public string ProductName { get; set; }
+        public string QuantityPerUnit { get; set; }
+        public int TotalSales { get; set; }
+        public int TotalCosts { get; set; }
+        public bool Discontinued { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Null reference exception throws on exporting pdf with custom aggregate">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateRecord()" AllowPaging="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport" })" AllowPdfExport="true" AllowExcelExport="true">
+            <GridEvents OnToolbarClick="ToolbarClickHandler2" TValue="ProductClass"></GridEvents>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(ProductClass.TotalSales) Type="AggregateType.Custom">
+                            <FooterTemplate>
+                                @{
+                                    <div>
+                                        <p>Custom: @GetWeightedAggregate2()</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(ProductClass.ProductName) HeaderText="Product Name" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(ProductClass.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(ProductClass.TotalSales) HeaderText="TotalSales" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(ProductClass.TotalCosts) HeaderText="TotalCosts" TextAlign="TextAlign.Right" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfGrid<ProductClass> Grid2 { get; set; }
+    public List<ProductClass> ProductsList { get; set; }
+    SfFixture fixture2 { get; set; }
+
+    public void GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ProductClass>>();
+        Grid2.ExportToPdfAsync().GetAwaiter();
+        Grid2.SelectRowAsync(0).GetAwaiter();
+        Assert.True(Grid2.SelectedRecords.Count > 0, "Pdf Exported Successfully");
+    }
+
+    public async Task ToolbarClickHandler2(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_pdfexport")  //Id is combination of Grid's ID and itemname
+        {
+            await this.Grid2.ExportToPdfAsync();
+        }
+        if (args.Item.Id == "Grid_excelexport") //Id is combination of Grid's ID and itemname
+        {
+            await this.Grid2.ExportToExcelAsync();
+        }
+    }
+
+    public string GetWeightedAggregate2()
+    {
+        // Here, we can calculate custom aggregate operations and return the result
+        return Queryable.Sum(ProductsList.Select(x => (x.TotalSales + x.TotalCosts) / x.TotalSales).AsQueryable()).ToString();
+    }
+
+    public List<ProductClass> GenerateRecord()
+    {
+        return ProductsList = Enumerable.Range(1, 5).Select(x => new ProductClass
+        {
+            ProductName = (new string[] { "Chai", "Chang", "Aniseed Syrup", "Chef Anton's Cajun Seasoning", "Chef Anton's Gumbo Mix" })[new Random().Next(5)],
+            QuantityPerUnit = (new string[] { "10 boxes x 20 bags", "24 - 12 oz bottles", "12 - 550 ml bottles", "48 - 6 oz jars", "36 boxes" })[new Random().Next(5)],
+            TotalSales = 100 * x,
+            TotalCosts = 200 * x,
+            Discontinued = (new bool[] { true, false })[new Random().Next(2)]
+        }).ToList();
+    }
+
+    public class ProductClass
+    {
+        public string ProductName { get; set; }
+        public string QuantityPerUnit { get; set; }
+        public int TotalSales { get; set; }
+        public int TotalCosts { get; set; }
+        public bool Discontinued { get; set; }
+    }
+}

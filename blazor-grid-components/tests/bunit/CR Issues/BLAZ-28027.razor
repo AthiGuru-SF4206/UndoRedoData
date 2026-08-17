@@ -1,0 +1,82 @@
+@inherits GridTestBase
+
+@using System.Collections.ObjectModel
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Dynamically added rows are not show in grid with virtualization enabled">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" Height="400" EnableVirtualization="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipAddress) HeaderText="Ship Address" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippedDate) HeaderText="Shipped Date" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    public ObservableCollection<Order> GridData { get; set; } = new ObservableCollection<Order>();
+    public int count = 0;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        AddRow();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0, TimeSpan.FromSeconds(100));
+        Assert.True(cut.Instance.Rows.Count > 0);
+        AddRow();
+        cut.WaitForState(() => cut.Instance.Rows.Count == 2, TimeSpan.FromSeconds(10));
+        Assert.True(cut.Instance.Rows.Count == 2);
+    }
+
+    public ObservableCollection<Order> GenerateRows()
+    {
+        return GridData;
+    }
+
+    private void AddRow()
+    {
+        GridData.Add(new Order(count, "CLICK", 42, 42, false, new DateTime(2022, 12, 16), "Paris", "France", new DateTime(1970, 1, 1), "Champs-Elysées"));
+        count++;
+    }
+
+    private void ClearTable()
+    {
+        GridData.Clear();
+    }
+
+    public class Order
+    {
+        public Order(int OrderID, string CustomerID, int EmployeeID, double Freight, bool Verified, DateTime OrderDate, string ShipCity, string ShipCountry, DateTime ShippedDate, string ShipAddress)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerID;
+            this.EmployeeID = EmployeeID;
+            this.Freight = Freight;
+            this.Verified = Verified;
+            this.OrderDate = OrderDate;
+            this.ShipCity = ShipCity;
+            this.ShipCountry = ShipCountry;
+            this.ShippedDate = ShippedDate;
+            this.ShipAddress = ShipAddress;
+        }
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public int? EmployeeID { get; set; }
+        public double? Freight { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public bool Verified { get; set; }
+        public DateTime? ShippedDate { get; set; }
+        public string ShipCountry { get; set; }
+        public string ShipCity { get; set; }
+        public string ShipAddress { get; set; }
+    }
+}

@@ -1,0 +1,50 @@
+﻿@page "/BLAZ-18252"
+
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="FilterKeyTest" Description="Text Alignment testing">
+    <ComponentUnderTest>
+        <SfGrid @ref=Grid DataSource="@OrderData" AllowFiltering="true" Toolbar=@(new List<string>(){"Add","Edit","Delete","Update","Cancel"})>
+            <GridEditSettings AllowEditing=true AllowAdding=true AllowDeleting=true></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" IsPrimaryKey=true Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn HeaderText="Left Records" Width="150" TextAlign="TextAlign.Left">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-cancel-icon", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    public List<Order> OrderData = new List<Order>
+{
+    new Order() { OrderID = 10248, CustomerID = "VINET", EmployeeID = 4 },
+    new Order() { OrderID = 10249, CustomerID = "TOMSP", EmployeeID = 5 },
+    new Order() { OrderID = 10250, CustomerID = "HANAR", EmployeeID = 6 }
+};
+
+    async void FilterKeyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var tr = cut.FindAll("tr");
+        var th = tr[0].QuerySelectorAll("th");
+        var headerCellDiv = th[0].QuerySelector(".e-headercelldiv");
+        Assert.True("text-align:left" == headerCellDiv.GetAttribute("style"), "checking style value");
+        cut.FindAll(".e-Editbutton")[0].Click(new MouseEventArgs());
+        var form = cut.Find("form");
+        var commandColumn = form.QuerySelector(".e-unboundcell").QuerySelector(".e-unboundcelldiv");
+        Assert.True("text-align: left" == commandColumn.GetAttribute("style"), "checking style value");
+    }
+}

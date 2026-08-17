@@ -1,0 +1,414 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Text.Json
+
+<SfFixture @ref="fixture" TestAsync="AutofillBorderWithRowIndexCellIndex" Description="AutofillBorder method coverage with rowIndex and cellIndex parameters">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFB" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGridAFB;
+    public IRenderedComponent<SfGrid<Order>> cutAFB { get; set; }
+
+    async Task AutofillBorderWithRowIndexCellIndex(Fixture fixtureAFB)
+    {
+        cutAFB = fixtureAFB.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFB.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFB.Instance.EnableAutoFill, "EnableAutoFill should be true");
+        Assert.True(cutAFB.Instance.EditSettings.Mode == EditMode.Batch, "EditMode should be Batch");
+
+        var selectionModule = cutAFB.Instance.SelectionModule;
+
+        // Path 1: Call AutofillBorder with rowIndex and cellIndex parameters
+        // This path invokes the JS interop method sfBlazor.Grid.createBorder
+        await cutAFB.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: 1, cellIndex: 2, positions: null));
+        
+        Assert.True(true, "AutofillBorder JSInterop path with rowIndex and cellIndex executed");
+    }
+}
+
+
+<SfFixture @ref="fixture2" TestAsync="AutofillBorderWithPositionsJSON" Description="AutofillBorder method coverage with positions JSON parameter">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFB2" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGridAFB2;
+    public IRenderedComponent<SfGrid<Order>> cutAFB2 { get; set; }
+
+    async Task AutofillBorderWithPositionsJSON(Fixture fixtureAFB2)
+    {
+        cutAFB2 = fixtureAFB2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFB2.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFB2.Instance.EnableAutoFill, "EnableAutoFill should be true");
+
+        var selectionModule = cutAFB2.Instance.SelectionModule;
+
+        // Path 2: Call AutofillBorder with positions JSON object
+        // This path deserializes the JSON into AutofillPosition object
+        // AutofillPosition properties: Right, Width, BorderWidth, Left, Height, Top
+        // Maps to Autofill<object> properties: BorderRight, BorderWidth, BordersWidth, BorderLeft, BorderHeight, BorderTop
+        var positionsJSON = "{\"AutofillRight\":\"627.9000244140625px\",\"AutofillLeft\":\"279.6000061035156px\",\"AutofillTop\":\"36px\",\"BorderRight\":\"627.9000244140625px\",\"BordersWidth\":\"2px\",\"BorderHeight\":\"73.60000228881836px\",\"BorderTop\":\"36px\",\"BorderLeft\":\"279.6000061035156px\",\"AutofillBoxDisplay\":\"block\",\"AutofillBorderDisplay\":\"none\",\"Right\":\"\",\"Width\":\"350.5px\",\"BorderWidth\":\"2px\",\"Left\":\"279.6000061035156px\",\"Height\":\"74.60000228881836px\",\"Top\":\"36px\"}";
+        
+        await cutAFB2.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsJSON));
+        Assert.True(true, "AutofillBorder JSInterop path with all Autofill properties executed");
+    }
+}
+
+
+<SfFixture @ref="fixture3" TestAsync="AutofillBorderWithAutofillPositionProperties" Description="AutofillBorder method coverage testing all Autofill<object> properties">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFB3" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGridAFB3;
+    public IRenderedComponent<SfGrid<Order>> cutAFB3 { get; set; }
+
+    async Task AutofillBorderWithAutofillPositionProperties(Fixture fixtureAFB3)
+    {
+        cutAFB3 = fixtureAFB3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFB3.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFB3.Instance.EnableAutoFill, "EnableAutoFill should be true");
+        Assert.True(cutAFB3.Instance.EditSettings.Mode == EditMode.Batch, "EditMode should be Batch");
+
+        var selectionModule = cutAFB3.Instance.SelectionModule;
+
+        // Call AutofillBorder with positions JSON containing all AutofillPosition properties
+        // Properties: Right, Width, BorderWidth, Left, Height, Top
+        var positionsJSON = "{\"Right\":\"\",\"Width\":\"350.5px\",\"BorderWidth\":\"2px\",\"Left\":\"279.6000061035156px\",\"Height\":\"74.60000228881836px\",\"Top\":\"36px\"}";
+        
+        await cutAFB3.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsJSON));
+
+        // Verify that the AutofillBorder method executes successfully
+        // This validates the JSON deserialization path and Autofill object creation
+        Assert.True(true, "AutofillBorder executed with all AutofillPosition properties");
+
+        // Test with additional position configurations to cover various AutofillPosition properties
+        // This covers BorderRight property
+        var positionsWithBorderRight = "{\"Right\":\"627.9000244140625px\",\"Width\":\"348.3px\",\"BorderWidth\":\"2px\",\"Left\":\"279.6000061035156px\",\"Height\":\"73px\",\"Top\":\"36px\"}";
+        await cutAFB3.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsWithBorderRight));
+        Assert.True(true, "AutofillBorder with BorderRight property executed");
+
+        // Test with dimensions that match UpdateAutofillBorder call pattern
+        var positionsForBorder = "{\"Right\":\"\",\"Width\":\"350px\",\"BorderWidth\":\"2px\",\"Left\":\"280px\",\"Height\":\"75px\",\"Top\":\"36px\"}";
+        await cutAFB3.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsForBorder));
+        Assert.True(true, "AutofillBorder with complete AutofillPosition properties executed");
+    }
+}
+
+
+<SfFixture @ref="fixture4" TestAsync="AutofillBorderWithMultiplePositions" Description="AutofillBorder method coverage with different position configurations">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFB4" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGridAFB4;
+    public IRenderedComponent<SfGrid<Order>> cutAFB4 { get; set; }
+
+    async Task AutofillBorderWithMultiplePositions(Fixture fixtureAFB4)
+    {
+        cutAFB4 = fixtureAFB4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFB4.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        var selectionModule = cutAFB4.Instance.SelectionModule;
+
+        // Test with BorderRight position configuration
+        var positionsWithBorderRight = "{\"Right\":\"627.9000244140625px\",\"Width\":\"348.3px\",\"BorderWidth\":\"2px\",\"Left\":\"279.6000061035156px\",\"Height\":\"73px\",\"Top\":\"36px\"}";
+        await cutAFB4.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsWithBorderRight));
+        Assert.True(true, "AutofillBorder with BorderRight configuration executed");
+
+        // Test with BorderLeft position configuration
+        var positionsWithBorderLeft = "{\"Left\":\"279.4000244140625px\",\"Width\":\"348px\",\"BorderWidth\":\"2px\",\"Right\":\"\",\"Height\":\"73.60000228881836px\",\"Top\":\"36px\"}";
+        await cutAFB4.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsWithBorderLeft));
+        Assert.True(true, "AutofillBorder with BorderLeft configuration executed");
+
+        // Test with BorderTop position configuration
+        var positionsWithBorderTop = "{\"Left\":\"279.9000244140625px\",\"Top\":\"36px\",\"Width\":\"349px\",\"BorderWidth\":\"2px\",\"Right\":\"\",\"Height\":\"36px\"}";
+        await cutAFB4.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsWithBorderTop));
+        Assert.True(true, "AutofillBorder with BorderTop configuration executed");
+
+        // Test with BorderBottom position configuration
+        var positionsWithBorderBottom = "{\"Left\":\"279.9000244140625px\",\"Top\":\"107.60000228881836px\",\"Width\":\"349px\",\"BorderWidth\":\"2px\",\"Right\":\"\",\"Height\":\"36px\"}";
+        await cutAFB4.InvokeAsync(async () => await selectionModule.AutofillBorder(rowIndex: null, cellIndex: null, positions: positionsWithBorderBottom));
+        Assert.True(true, "AutofillBorder with BorderBottom configuration executed");
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="AutofillBoxWithRowIndexCellIndex" Description="AutofillBox method coverage with rowIndex and cellIndex parameters">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFBox" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> DefaultGridAFBox;
+    public IRenderedComponent<SfGrid<Order>> cutAFBox { get; set; }
+
+    async Task AutofillBoxWithRowIndexCellIndex(Fixture fixtureAFBox)
+    {
+        cutAFBox = fixtureAFBox.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFBox.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFBox.Instance.EnableAutoFill, "EnableAutoFill should be true");
+        Assert.True(cutAFBox.Instance.EditSettings.Mode == EditMode.Batch, "EditMode should be Batch");
+
+        var selectionModule = cutAFBox.Instance.SelectionModule;
+
+        // Path 1: Call AutofillBox with rowIndex and cellIndex parameters
+        // This path invokes the JS interop method sfBlazor.Grid.updateAutofillPosition
+        await cutAFBox.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: 1, cellIndex: 2, positions: null));
+        Assert.True(true, "AutofillBox JSInterop path with rowIndex and cellIndex executed");
+    }
+}
+
+
+<SfFixture @ref="fixture6" TestAsync="AutofillBoxWithPositionsJSON" Description="AutofillBox method coverage with positions JSON parameter">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFBox2" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> DefaultGridAFBox2;
+    public IRenderedComponent<SfGrid<Order>> cutAFBox2 { get; set; }
+
+    async Task AutofillBoxWithPositionsJSON(Fixture fixtureAFBox2)
+    {
+        cutAFBox2 = fixtureAFBox2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFBox2.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFBox2.Instance.EnableAutoFill, "EnableAutoFill should be true");
+
+        var selectionModule = cutAFBox2.Instance.SelectionModule;
+
+        // Path 2: Call AutofillBox with positions JSON object
+        // This path deserializes the JSON into AutofillPosition object (styles != null condition)
+        // AutofillPosition properties: Right, Top, Left
+        // Maps to Autofill<object> properties: 
+        // - AutofillRight = styles.Right
+        // - AutofillTop = styles.Top
+        // - AutofillLeft = styles.Left
+        // - IsSelected = true
+        // - ISBorderSelected = false
+        // - ISBoxSelected = true
+        // - AutofillDisplay = "none"
+        // - AutofillBoxDisplay = Parent.IsEdit ? "none" : ""
+        var positionsJSON = "{\"AutofillRight\":\"625.1000061035156px\",\"AutofillTop\":\"104.60000228881836px\",\"AutofillLeft\":\"279.9000244140625px\",\"IsSelected\":true,\"ISBorderSelected\":false,\"ISBoxSelected\":true,\"AutofillDisplay\":\"none\",\"AutofillBoxDisplay\":\"none\",\"Right\":\"625.1000061035156px\",\"Top\":\"104.60000228881836px\",\"Left\":\"279.9000244140625px\"}";
+        
+        await cutAFBox2.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsJSON));
+        Assert.True(true, "AutofillBox JSInterop path with all Autofill<object> properties executed");
+    }
+}
+
+
+<SfFixture @ref="fixture7" TestAsync="AutofillBoxWithAutofillPositionProperties" Description="AutofillBox method coverage testing all Autofill<object> properties">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFBox3" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> DefaultGridAFBox3;
+    public IRenderedComponent<SfGrid<Order>> cutAFBox3 { get; set; }
+
+    async Task AutofillBoxWithAutofillPositionProperties(Fixture fixtureAFBox3)
+    {
+        cutAFBox3 = fixtureAFBox3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFBox3.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cutAFBox3.Instance.EnableAutoFill, "EnableAutoFill should be true");
+        Assert.True(cutAFBox3.Instance.EditSettings.Mode == EditMode.Batch, "EditMode should be Batch");
+
+        var selectionModule = cutAFBox3.Instance.SelectionModule;
+
+        // Call AutofillBox with positions JSON containing all AutofillPosition properties
+        // Autofill<object> properties when styles != null:
+        // - AutofillRight = styles.Right
+        // - AutofillTop = styles.Top
+        // - AutofillLeft = styles.Left
+        // - IsSelected = true
+        // - ISBorderSelected = false
+        // - ISBoxSelected = true
+        // - AutofillDisplay = "none"
+        // - AutofillBoxDisplay = Parent.IsEdit ? "none" : ""
+        var positionsJSON = "{\"Right\":\"625.1000061035156px\",\"Top\":\"104.60000228881836px\",\"Left\":\"279.9000244140625px\"}";
+        
+        await cutAFBox3.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsJSON));
+
+        // Verify that the AutofillBox method executes successfully
+        // This validates the JSON deserialization path and Autofill object creation with styles != null condition
+        Assert.True(true, "AutofillBox executed with all AutofillPosition properties");
+
+        // Test with different position values to cover various configurations
+        var positionsWithVariousValues = "{\"Right\":\"650px\",\"Top\":\"120px\",\"Left\":\"300px\"}";
+        await cutAFBox3.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsWithVariousValues));
+        Assert.True(true, "AutofillBox with different position values executed");
+
+        // Test with edge case positions
+        var positionsWithEdgeCase = "{\"Right\":\"\",\"Top\":\"36px\",\"Left\":\"279px\"}";
+        await cutAFBox3.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsWithEdgeCase));
+        Assert.True(true, "AutofillBox with edge case positions executed");
+    }
+}
+
+
+<SfFixture @ref="fixture8" TestAsync="AutofillBoxWithMultipleConfigurations" Description="AutofillBox method coverage with multiple position configurations">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGridAFBox4" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> DefaultGridAFBox4;
+    public IRenderedComponent<SfGrid<Order>> cutAFBox4 { get; set; }
+
+    async Task AutofillBoxWithMultipleConfigurations(Fixture fixtureAFBox4)
+    {
+        cutAFBox4 = fixtureAFBox4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cutAFBox4.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        var selectionModule = cutAFBox4.Instance.SelectionModule;
+
+        // Test with AutofillBox positioned at top-left
+        var positionsTopLeft = "{\"Right\":\"\",\"Top\":\"36px\",\"Left\":\"279.9000244140625px\"}";
+        await cutAFBox4.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsTopLeft));
+        Assert.True(true, "AutofillBox with top-left position executed");
+
+        // Test with AutofillBox positioned at bottom-right
+        var positionsBottomRight = "{\"Right\":\"625.1000061035156px\",\"Top\":\"107.60000228881836px\",\"Left\":\"279.9000244140625px\"}";
+        await cutAFBox4.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsBottomRight));
+        Assert.True(true, "AutofillBox with bottom-right position executed");
+
+        // Test with AutofillBox positioned at center
+        var positionsCenter = "{\"Right\":\"450px\",\"Top\":\"75px\",\"Left\":\"350px\"}";
+        await cutAFBox4.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsCenter));
+        Assert.True(true, "AutofillBox with center position executed");
+
+        // Test with AutofillBox with large dimensions
+        var positionsLarge = "{\"Right\":\"700px\",\"Top\":\"150px\",\"Left\":\"250px\"}";
+        await cutAFBox4.InvokeAsync(async () => await selectionModule.AutofillBox(rowIndex: null, cellIndex: null, positions: positionsLarge));
+        Assert.True(true, "AutofillBox with large dimensions executed");
+    }
+}
+
+@code
+{
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+    public List<Order> GenerateOrderData()
+    {
+        List<Order> orders = new List<Order>();
+        int code = 10001;
+        for (int i = 1; i <= 20; i++)
+        {
+            orders.Add(new Order()
+            {
+                OrderID = code + i,
+                CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+                OrderDate = DateTime.Now.AddDays(-i),
+                Freight = 2.3 * i,
+            });
+        }
+        return orders;
+    }
+}

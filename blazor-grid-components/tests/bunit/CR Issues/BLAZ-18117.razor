@@ -1,0 +1,33 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="ColumnsPropertyTest" Description="Frozen Rendering With Columns property">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@OrderData" Columns="Cols">
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    List<GridColumn> Cols = new List<GridColumn>() {
+        new GridColumn(){Field = "OrderID", Width = "200" },
+        new GridColumn(){Field = "CustomerID", Width = "200" },
+        new GridColumn(){Field = "EmployeeID", Width = "200" },
+        };
+    public List<Order> OrderData = new List<Order>
+{
+    new Order() { OrderID = 10248, CustomerID = "VINET", EmployeeID = 4 },
+    new Order() { OrderID = 10249, CustomerID = "TOMSP", EmployeeID = 5 },
+    new Order() { OrderID = 10250, CustomerID = "HANAR", EmployeeID = 6 }
+};
+
+    void ColumnsPropertyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].Index == 1, "Index is assigned");
+        Assert.True(cut.Instance.Columns[2].Index == 2, "Index is assigned");
+        
+    }
+
+}

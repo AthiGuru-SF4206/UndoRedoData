@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../blazor-grid-components/src/Syncfusion.Blazor.Grid.csproj" />
+  <Project Path="BlazorWasmDemo.csproj" />
+</Solution>

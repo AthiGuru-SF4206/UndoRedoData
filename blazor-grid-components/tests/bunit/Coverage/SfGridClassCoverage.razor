@@ -1,0 +1,124 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids.Internal;
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="ContentClick handler">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateOrderData()">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(4 == Grid.Columns.Count);
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Rows are rendered in the columns");
+        Assert.True("110".Equals(Grid.Columns[0].Width), "1st column rendered properly");
+        Assert.True("120".Equals(Grid.Columns[1].Width), "2nd column rendered properly");
+        Assert.True("130".Equals(Grid.Columns[2].Width), "3rd column rendered properly");
+        Assert.True("100".Equals(Grid.Columns[3].Width), "4th column rendered properly");
+        Assert.True("Order ID".Equals(Grid.Columns[0].HeaderText), "1st column rendered properly");
+        Assert.True("Customer ID".Equals(Grid.Columns[1].HeaderText), "2nd column rendered properly");
+        Assert.True("Order Date".Equals(Grid.Columns[2].HeaderText), "3rd column rendered properly");
+        Assert.True("Freight".Equals(Grid.Columns[3].HeaderText), "4th column rendered properly");
+        cut.Instance.PreventEndEdit = true;
+        cut.FindAll(".e-content")[0].Click();
+        cut.Instance.PreventEndEdit = false;
+        cut.Instance.IsEdit = true;
+        cut.FindAll(".e-content")[0].Click();
+        cut.Instance.EditSettings.Mode = EditMode.Batch;
+        cut.FindAll(".e-content")[0].Click();
+        cut.Instance.PreventEndEdit = false;
+        cut.Instance.IsEdit = false;
+        cut.FindAll(".e-content")[0].Click();
+        cut.Instance.PreventEndEdit = false;
+        List<GridColumn> columns = cut.Instance.VirtualScrollModule.GetVirtualizedColumns();
+    }
+}
+
+
+<SfFixture @ref="fixturePersist" Test="GridPersistenceRendering" Description="SetPersistDataAsync coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" ID="Grid2" DataSource="GenerateOrderData()" EnablePersistence="true" AllowResizing="true" AllowPaging="true" AllowFiltering="true" AllowSorting="true" AllowGrouping="false">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridPageSettings PageSize="10"></GridPageSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu">
+                <GridFilterColumns>
+                    <GridFilterColumn Field="CustomerID" MatchCase=false Operator="Syncfusion.Blazor.Operator.StartsWith" Predicate="and" Value="@CustIdValue"></GridFilterColumn>
+                </GridFilterColumns>
+            </GridFilterSettings>
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID" Visible="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Type="ColumnType.Date" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Type="ColumnType.Double" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturePersist { get; set; }
+    private SfGrid<Order> Grid2;
+    public string CustIdValue = "R";
+    public string ShipNameValue = "Vins et alcools Chevalier";
+    void GridPersistenceRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var currentData = Grid2.GetPersistDataAsync().GetAwaiter().GetResult();
+        currentData = currentData.Replace("110", "150");
+        Grid2.SetPersistDataAsync(currentData).GetAwaiter().GetResult();
+        Grid2.ResetPersistDataAsync().GetAwaiter().GetResult();
+    }
+}
+
+
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="GetVirtualizaed Columns">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GenerateOrderData()" EnableVirtualization="true" EnableColumnVirtualization="false" FrozenColumns="2">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID" IsFrozen="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> Grid3;
+
+    void GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(4 == Grid3.Columns.Count);
+        GridClientOptions client = cut.Instance.GetClientOption();
+        cut.Instance.EnableColumnVirtualization = true;
+        client = cut.Instance.GetClientOption();
+        cut.Instance.FrozenColumns = 0;
+        client = cut.Instance.GetClientOption();
+    }
+}

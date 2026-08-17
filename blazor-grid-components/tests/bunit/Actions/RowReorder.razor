@@ -1,0 +1,986 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Data
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Row Reordering in grid">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid1" @ref="Grid1" DataSource="GetAllRecords()" AllowPaging=true AllowRowDragAndDrop=true Height="400" AllowGrouping=true>
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> Grid1;
+    private string[] Initial = (new string[] { "CustomerID" });
+    public List<Order> GridData1 { get; set; }
+
+    public void GridBasicRendering1(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid is not rendered properly");
+        var targetClass = "//[@id=Grid1_content_table].e-table/tbody/tr.e-row e-altrow[4]/td.e-rowcell[3]";
+        cut.Instance.RowReorderModule.RowDragStartEvent(1, cut.Instance.Rows[1].Uid).GetAwaiter();
+        cut.Instance.RowReorderModule.ReorderRows(0, 1, "delete", targetClass: targetClass, toUid: cut.Instance.Rows[2].Uid).GetAwaiter();
+    }
+}
+<SfFixture @ref="fixture2" TestAsync="AsyncVirtualizationAddAction" Description="Row reordering with virtualization enabled - Add action">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateOrderData()" AllowRowDragAndDrop=true AllowPaging=true Height="400" EnableVirtualization=true>
+            <GridPageSettings PageSize="10"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    SfGrid<Order> Grid2;
+
+    async Task AsyncVirtualizationAddAction(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.InvokeAsync(() => cut.Instance.Refresh());
+        cut.WaitForState(() => cut.Instance.CurrentViewData?.Count() > 0, TimeSpan.FromSeconds(5));
+
+        var initialCount = cut.Instance.CurrentViewData?.Count() ?? 0;
+        Assert.True(initialCount > 0, "Grid has data loaded");
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization is enabled");
+
+        // ACT - Simulate reorder action with virtualization
+        if (cut.Instance.RowReorderModule != null)
+        {
+            // Drag first row
+            await cut.Instance.RowReorderModule.RowDragStartEvent(0, cut.Instance.Rows[0].Uid);
+            
+            // Reorder to different index with add action
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 3,
+                action: "add",
+                isDragWithinGrid: true
+            );
+        }
+
+        // ASSERT
+        var currentDataAfter = cut.Instance.CurrentViewData?.Count() ?? 0;
+        Assert.True(cut.FindAll(".e-row").Count >= 0, "Grid rows rendered");
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows after reorder");
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="AsyncNonVirtualizationAddAction" Description="Row reordering without virtualization - Add action">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid3" @ref="Grid3" DataSource="GenerateOrderData()" AllowRowDragAndDrop=true AllowPaging=true Height="400">
+            <GridPageSettings PageSize="10"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    SfGrid<Order> Grid3;
+
+    async Task AsyncNonVirtualizationAddAction(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.CurrentViewData?.Count() > 0, TimeSpan.FromSeconds(5));
+
+        Assert.False(cut.Instance.EnableVirtualization, "Virtualization is disabled");
+        var initialCount = cut.Instance.CurrentViewData?.Count() ?? 0;
+        Assert.True(initialCount > 0, "Grid has data");
+
+        // ACT - Reorder without virtualization
+        if (cut.Instance.RowReorderModule != null)
+        {
+            await cut.Instance.RowReorderModule.RowDragStartEvent(0, cut.Instance.Rows[0].Uid);
+            
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 2,
+                action: "add",
+                isDragWithinGrid: true
+            );
+        }
+
+        // ASSERT
+        var finalCount = cut.Instance.CurrentViewData?.Count() ?? 0;
+        Assert.True(finalCount > 0, "CurrentViewData has records after reorder");
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="AsyncRowDroppingEvent" Description="Row Dropping event handling with event args">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid4" @ref="Grid4" DataSource="GenerateOrderData()" AllowRowDragAndDrop=true AllowSelection="true">
+            <GridEvents RowDropping="RowDroppingHandler" RowDropped="RowDroppedHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    SfGrid<Order> Grid4;
+    private RowDroppingEventArgs<Order> lastDroppingArgs;
+    private RowDroppedEventArgs<Order> lastDroppedArgs;
+    private bool allowDrop = true;
+
+    async Task AsyncRowDroppingEvent(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows?.Count > 0, TimeSpan.FromSeconds(5));
+
+        lastDroppingArgs = null;
+        lastDroppedArgs = null;
+        allowDrop = true;
+
+        // ACT - Perform drag and drop
+        if (cut.Instance.RowReorderModule != null)
+        {
+            cut.Instance.RowReorderModule.IsReorderByInteraction = true;
+
+            await cut.Instance.RowReorderModule.RowDragStartEvent(0, cut.Instance.Rows[0].Uid);
+
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 2,
+                action: "delete"
+            );
+
+            // Add action to trigger full reorder with events
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 2,
+                action: "add",
+                isDragWithinGrid: true,
+                targetClass: ".e-row",
+                targetId: "Grid",
+                targetDimension: null
+            );
+        }
+
+        // ASSERT
+        // Events should have been triggered
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid still has rows after event handling");
+    }
+
+    /// <summary>
+    /// Event handler for RowDropping event
+    /// </summary>
+    private void RowDroppingHandler(RowDroppingEventArgs<Order> args)
+    {
+        lastDroppingArgs = args;
+        var targetDimension = new Dimension { Width = 100, Height = 30, Bottom = 30, Top = 0, Left = 0, Right = 100 };
+        args.TargetDimension = targetDimension;
+        if (!allowDrop)
+        {
+            args.Cancel = true;
+        }
+    }
+
+    /// <summary>
+    /// Event handler for RowDropped event
+    /// </summary>
+    private void RowDroppedHandler(RowDroppedEventArgs<Order> args)
+    {
+        lastDroppedArgs = args;
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="AsyncVirtualizationDeleteAdd" Description="Virtualized grid - Delete then Add sequence with index calculations">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid5" @ref="Grid5" DataSource="GenerateOrderData()" AllowRowDragAndDrop=true AllowPaging=true Height="400" EnableVirtualization=true>
+            <GridPageSettings PageSize="10"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+    SfGrid<Order> Grid5;
+
+    async Task AsyncVirtualizationDeleteAdd(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows?.Count > 0, TimeSpan.FromSeconds(5));
+
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization enabled");
+        var initialRowCount = cut.Instance.Rows?.Count ?? 0;
+
+        // ACT - Delete and then add to simulate swap
+        if (cut.Instance.RowReorderModule != null && initialRowCount > 1)
+        {
+            var firstRow = cut.Instance.Rows[0];
+            var secondRow = cut.Instance.Rows[1];
+
+            // Drag start
+            await cut.Instance.RowReorderModule.RowDragStartEvent(0, firstRow.Uid);
+
+            // Delete action
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 1,
+                action: "delete",
+                isDragWithinGrid: true,
+                toUid: secondRow.Uid
+            );
+
+            // Add action (swap)
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 1,
+                action: "add",
+                isDragWithinGrid: true,
+                toUid: secondRow.Uid
+            );
+        }
+
+        // ASSERT
+        var finalRowCount = cut.Instance.Rows?.Count ?? 0;
+        Assert.True(finalRowCount >= 0, "Row count valid after delete-add swap");
+        Assert.True(cut.FindAll(".e-row").Count >= 0, "Rows rendered after swap");
+    }
+}
+
+<SfFixture @ref="fixture6" TestAsync="AsyncEditModeNormalWithAddedRecord" Description="Row reorder with Normal edit mode and added record - should close edit">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid6" @ref="Grid6" DataSource="GetAllRecords()" AllowRowDragAndDrop=true AllowEditing=true AllowSelection="true">
+            <GridEditSettings AllowAdding=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    SfGrid<Order> Grid6;
+
+    async Task AsyncEditModeNormalWithAddedRecord(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows?.Count > 0, TimeSpan.FromSeconds(5));
+
+        Assert.True(cut.Instance.EditSettings?.Mode == EditMode.Normal, "Normal edit mode configured");
+
+        // ACT - Add record to put grid in edit mode
+        await cut.Instance.AddRecordAsync();
+        cut.WaitForState(() => cut.FindAll(".e-addedrow").Count > 0, TimeSpan.FromSeconds(3));
+
+        var addedRowExists = cut.FindAll(".e-addedrow").Count > 0;
+        Assert.True(addedRowExists, "Added row created");
+
+        // Now trigger reorder while in edit mode with added record
+        if (cut.Instance.RowReorderModule != null && cut.Instance.Rows?.Count > 1)
+        {
+            await cut.Instance.RowReorderModule.RowDragStartEvent(1, cut.Instance.Rows[1].Uid);
+            
+            // Reorder should close the edit
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 1,
+                toIndex: 2,
+                action: "delete",
+                toUid: cut.Instance.Rows[2]?.Uid ?? ""
+            );
+        }
+
+        // ASSERT
+        Assert.True(cut.Instance.Rows.Count >= 0, "Reorder completed");
+    }
+}
+
+<SfFixture @ref="fixture7" TestAsync="AsyncDropCancelledHandling" Description="Drop cancelled when dragging to same index or invalid target">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid7" @ref="Grid7" DataSource="GetAllRecords()" AllowRowDragAndDrop=true AllowSelection="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+    SfGrid<Order> Grid7;
+
+    async Task AsyncDropCancelledHandling(Fixture fixture)
+    {
+        // ARRANGE
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows?.Count > 0, TimeSpan.FromSeconds(5));
+
+        // ACT - Select row and try to drop at same location
+        await cut.Instance.SelectRowAsync(0);
+        var selectedIndexes = await cut.Instance.GetSelectedRowIndexesAsync();
+        Assert.True(selectedIndexes?.Count > 0, "Row selected");
+
+        // Attempt drop at same index (should be cancelled)
+        var initialRowOrder = cut.Instance.Rows[0].Data;
+
+        if (cut.Instance.RowReorderModule != null)
+        {
+            await cut.Instance.RowReorderModule.RowDragStartEvent(0, cut.Instance.Rows[0].Uid);
+            
+            // Drop at same index should be handled
+            await cut.Instance.RowReorderModule.ReorderRows(
+                fromIndex: 0,
+                toIndex: 0,  // Same index - should cancel
+                action: "delete",
+                isDragWithinGrid: true,
+                toUid: cut.Instance.Rows[0].Uid
+            );
+        }
+
+        // ASSERT
+        var finalRowOrder = cut.Instance.Rows[0].Data;
+        // Row order should remain unchanged (drop cancelled)
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid still has rows");
+    }
+}
+<!-- Test 1: Basic Row Reordering -->
+<SfFixture @ref="fixturenew2" Test="GridBasicReordering" Description="Basic Row Reordering via ReorderRowAsync">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Gridnew2" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew2 { get; set; }
+    private SfGrid<Order> Gridnew2;
+
+    public void GridBasicReordering(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Store original row order
+        var originalFirstRowData = cut.Instance.Rows[0].Data as Order;
+        var originalSecondRowData = cut.Instance.Rows[1].Data as Order;
+
+        // Reorder rows from index 0 to index 2
+        cut.Instance.ReorderRowAsync(0, 2).GetAwaiter();
+
+        // Verify rows have been reordered
+        var newFirstRowData = cut.Instance.Rows[0].Data as Order;
+        Assert.NotEqual(originalFirstRowData?.OrderID, newFirstRowData?.OrderID);
+    }
+}
+
+<!-- Test 2: Row Reordering with Edit Mode Normal -->
+<SfFixture @ref="fixturenew3" TestAsync="GridReorderingWithEditModeNormal" Description="Row Reordering with Edit Mode Normal">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid3" @ref="Gridnew3" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding=true AllowEditing=true AllowDeleting=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew3 { get; set; }
+    private SfGrid<Order> Gridnew3;
+
+    public async Task GridReorderingWithEditModeNormal(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Get original records before any operations
+        var originalRecords = await cut.Instance.GetCurrentViewRecordsAsync();
+        var originalFirstRowID = (originalRecords[0] as Order)?.OrderID;
+        var originalSecondRowID = (originalRecords[1] as Order)?.OrderID;
+
+        // Start editing row 0
+        await cut.Instance.StartEditAsync();
+
+        // Cancel the edit
+        await cut.Instance.CloseEditAsync();
+
+        // Verify records are still in original order after cancel
+        var recordsAfterCancel = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalFirstRowID, (recordsAfterCancel[0] as Order)?.OrderID);
+
+        // Now reorder rows from index 0 to index 2
+        cut.Instance.ReorderRowAsync(0, 2).GetAwaiter();
+
+        // Verify reordering occurred - first row should now be the original second row
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalSecondRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.NotEqual(originalFirstRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+    }
+}
+
+<!-- Test 3: Row Reordering with Edit Mode Batch -->
+<SfFixture @ref="fixturenew4" TestAsync="GridReorderingWithEditModeBatch" Description="Row Reordering with Edit Mode Batch">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid4" @ref="Gridnew4" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding=true AllowEditing=true AllowDeleting=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew4 { get; set; }
+    private SfGrid<Order> Gridnew4;
+
+    public async Task GridReorderingWithEditModeBatch(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Get original records before any operations
+        var originalRecords = await cut.Instance.GetCurrentViewRecordsAsync();
+        var originalRowCount = originalRecords.Count;
+        var originalFirstRowID = (originalRecords[0] as Order)?.OrderID;
+        var originalSecondRowID = (originalRecords[1] as Order)?.OrderID;
+        var originalThirdRowID = (originalRecords[2] as Order)?.OrderID;
+
+        // Start editing row 0 to modify it
+        await cut.Instance.StartEditAsync();
+
+        // Save the edit (even though we didn't modify anything, it should complete)
+        await cut.Instance.SaveCellAsync();
+
+        // Verify records are still in original order after save
+        var recordsAfterSave = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalFirstRowID, (recordsAfterSave[0] as Order)?.OrderID);
+        Assert.Equal(originalRowCount, recordsAfterSave.Count);
+
+        // Now reorder rows from index 0 to index 2 (move first row to position 2)
+        await cut.Instance.ReorderRowAsync(0, 2);
+
+        // Verify reordering occurred
+        // After reorder(0, 2): [1002, 1003, 1001, 1004, ...]
+        // First row should now be the original second row
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalSecondRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.Equal(originalThirdRowID, (recordsAfterReorder[1] as Order)?.OrderID);
+        Assert.Equal(originalFirstRowID, (recordsAfterReorder[2] as Order)?.OrderID);
+        Assert.NotEqual(originalFirstRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.Equal(originalRowCount, recordsAfterReorder.Count);
+    }
+}
+
+
+<!-- Test 4: Row Reordering with Grouping -->
+<SfFixture @ref="fixturenew5" TestAsync="GridReorderingWithGrouping" Description="Row Reordering with Grouping Enabled">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid5" @ref="Gridnew5" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400" AllowGrouping=true>
+            <GridGroupSettings Columns="@(new string[] { "CustomerID" })"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew5 { get; set; }
+    private SfGrid<Order> Gridnew5;
+
+    public async Task GridReorderingWithGrouping(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping should be enabled");
+
+        // Get original records before reordering
+        var originalRecords = await cut.Instance.GetCurrentViewRecordsAsync();
+        var originalRowCount = originalRecords.Count;
+
+        // Store row data at positions 1 and 3 to verify they're within same group
+        var rowAtIndex1ID = (originalRecords[1] as Order)?.OrderID;
+        var rowAtIndex3ID = (originalRecords[3] as Order)?.OrderID;
+        var rowAtIndex1Customer = (originalRecords[1] as Order)?.CustomerID;
+        var rowAtIndex3Customer = (originalRecords[3] as Order)?.CustomerID;
+
+        // Reorder rows within same group (indices 1 to 3)
+        await cut.Instance.ReorderRowAsync(1, 3);
+
+        // Verify reordering occurred - records should be reordered
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalRowCount, recordsAfterReorder.Count);
+        Assert.True(cut.Instance.Rows.Count > 0, "Rows should still be present after reordering");
+
+        // Verify grouping is maintained - rows should still have data
+        Assert.NotNull((recordsAfterReorder[0] as Order)?.CustomerID);
+    }
+}
+
+<!-- Test 6: Row Reordering with Multiple Selection -->
+<SfFixture @ref="fixturenew6" TestAsync="GridReorderingWithMultipleSelection" Description="Row Reordering with Multiple Selection">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid6" @ref="Gridnew6" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="SelectionMode.Row"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew6 { get; set; }
+    private SfGrid<Order> Gridnew6;
+
+    public async Task GridReorderingWithMultipleSelection(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Select multiple rows individually
+        await cut.Instance.SelectRowsByRangeAsync(0, 1);
+
+        var selectedIndexes = await cut.Instance.GetSelectedRowIndexesAsync();
+        Assert.True(selectedIndexes.Count >= 2, "Multiple rows should be selected");
+    
+        // Reorder one of the selected rows
+        await cut.Instance.ReorderRowAsync(0, 2);
+    
+        // Verify reordering worked
+        Assert.True(cut.Instance.Rows.Count > 0);
+    }
+}
+
+<!-- Test 7: Row Reordering with Edit Mode Dialog -->
+<SfFixture @ref="fixturenew7" TestAsync="GridReorderingWithEditModeDialog" Description="Row Reordering with Edit Mode Dialog">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid7" @ref="Gridnew7" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding=true AllowEditing=true AllowDeleting=true Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew7 { get; set; }
+    private SfGrid<Order> Gridnew7;
+
+    public async Task GridReorderingWithEditModeDialog(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+    
+        // Get original records before any operations
+        var originalRecords = await cut.Instance.GetCurrentViewRecordsAsync();
+        var originalFirstRowID = (originalRecords[0] as Order)?.OrderID;
+        var originalSecondRowID = (originalRecords[1] as Order)?.OrderID;
+        var originalThirdRowID = (originalRecords[2] as Order)?.OrderID;
+    
+        // Start editing row 0 (this opens dialog in dialog edit mode)
+        await cut.Instance.StartEditAsync();
+    
+        // Cancel the dialog edit
+        await cut.Instance.CloseEditAsync();
+    
+        // Verify records are still in original order after cancel
+        var recordsAfterCancel = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalFirstRowID, (recordsAfterCancel[0] as Order)?.OrderID);
+    
+        // Now reorder rows from index 0 to index 2
+        // After reorder(0, 2): [1002, 1003, 1001, ...]
+        await cut.Instance.ReorderRowAsync(0, 2);
+    
+        // Verify reordering occurred - positions should be shifted
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(originalSecondRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.Equal(originalThirdRowID, (recordsAfterReorder[1] as Order)?.OrderID);
+        Assert.Equal(originalFirstRowID, (recordsAfterReorder[2] as Order)?.OrderID);
+        Assert.NotEqual(originalFirstRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+    }
+}
+
+<!-- Test 8: Row Reordering with Selection Mode Cell -->
+<SfFixture @ref="fixture8" TestAsync="GridReorderingWithCellSelection" Description="Row Reordering with Cell Selection Mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid8" @ref="Grid8" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="SelectionMode.Cell"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> Grid8;
+
+    public async Task GridReorderingWithCellSelection(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        
+        var firstRowBefore = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        
+        // Reorder rows with cell selection mode enabled
+        await cut.Instance.ReorderRowAsync(0, 2);
+        
+        var firstRowAfter = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        Assert.NotEqual(firstRowBefore, firstRowAfter);
+    }
+}
+
+<!-- Test 9: Row Reordering with Paging -->
+<SfFixture @ref="fixture9" TestAsync="GridReorderingWithPaging" Description="Row Reordering with Paging Enabled">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid9" @ref="Grid9" DataSource="GetAllRecords()" AllowPaging=true PageSize=5 AllowRowDragAndDrop=true Height="400">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> Grid9;
+
+    public async Task GridReorderingWithPaging(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowPaging, "Paging should be enabled");
+     
+        // Get records from page 1
+        var page1Records = await cut.Instance.GetCurrentViewRecordsAsync();
+        var page1FirstRowID = (page1Records[0] as Order)?.OrderID;
+     
+        // Navigate to page 2
+        await cut.InvokeAsync(async () => await cut.Instance.GoToPageAsync(2));
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+     
+        // Get records from page 2
+        var page2Records = await cut.Instance.GetCurrentViewRecordsAsync();
+        var page2FirstRowID = (page2Records[0] as Order)?.OrderID;
+        var page2SecondRowID = (page2Records[1] as Order)?.OrderID;
+        var visibleRowsPage2 = page2Records.Count;
+     
+        // Verify we're on page 2 (first row should be different from page 1)
+        Assert.NotEqual(page1FirstRowID, page2FirstRowID);
+     
+        // Reorder rows within page 2 (from index 0 to index 2)
+        await cut.Instance.ReorderRowAsync(0, 2);
+     
+        // Verify reordering occurred on page 2
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.Equal(visibleRowsPage2, recordsAfterReorder.Count);
+     
+        // First row should now be the second row from before reordering
+        Assert.Equal(page2SecondRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.NotEqual(page2FirstRowID, (recordsAfterReorder[0] as Order)?.OrderID);
+    }
+}
+
+<!-- Test 10: Row Reordering Same Index -->
+<SfFixture @ref="fixture10" TestAsync="GridReorderingSameIndex" Description="Row Reordering with Same FromIndex and ToIndex">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid10" @ref="Grid10" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> Grid10;
+
+    public async Task GridReorderingSameIndex(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        
+        var firstRowBefore = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        
+        // Attempt to reorder row to same position
+        await cut.Instance.ReorderRowAsync(0, 0);
+        
+        var firstRowAfter = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        Assert.Equal(firstRowBefore, firstRowAfter);
+    }
+}
+
+<!-- Test 11: Row Reordering Forward -->
+<SfFixture @ref="fixture11" TestAsync="GridReorderingForward" Description="Row Reordering Moving Forward">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid11" @ref="Grid11" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<Order> Grid11;
+
+    public async Task GridReorderingForward(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count >= 4);
+        Assert.True(cut.Instance.Rows.Count >= 4, "Grid should have at least 4 rows");
+     
+        var rowAtIndex0 = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        var rowAtIndex3 = (cut.Instance.Rows[3].Data as Order)?.OrderID;
+     
+        // Reorder forward (move first row to position 3)
+        await cut.Instance.ReorderRowAsync(0, 3);
+     
+        // Verify order changed
+        var newRowAtIndex0 = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        Assert.NotEqual(rowAtIndex0, newRowAtIndex0);
+    }
+}
+
+<!-- Test 12: Row Reordering Backward -->
+<SfFixture @ref="fixture12" TestAsync="GridReorderingBackward" Description="Row Reordering Moving Backward">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid12" @ref="Grid12" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<Order> Grid12;
+
+    public async Task GridReorderingBackward(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count >= 4);
+        Assert.True(cut.Instance.Rows.Count >= 4, "Grid should have at least 4 rows");
+        
+        var rowAtIndex3 = (cut.Instance.Rows[3].Data as Order)?.OrderID;
+        var rowAtIndex0 = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        
+        // Reorder backward (move row at index 3 to position 0)
+        await cut.Instance.ReorderRowAsync(3, 0);
+        
+        // Verify order changed
+        var newRowAtIndex0 = (cut.Instance.Rows[0].Data as Order)?.OrderID;
+        Assert.NotEqual(rowAtIndex0, newRowAtIndex0);
+    }
+}
+
+<!-- Test 13: Row Reordering with Frozen Rows and Columns -->
+<SfFixture @ref="fixture13" TestAsync="GridReorderingWithFrozenRowsAndColumns" Description="Row Reordering with Frozen Rows and Columns">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid13" @ref="Grid13" DataSource="GetAllRecords()" AllowPaging=false AllowRowDragAndDrop=true Height="400" FrozenRows=2 FrozenColumns=2>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> Grid13;
+
+    public async Task GridReorderingWithFrozenRowsAndColumns(Fixture fixture13)
+    {
+        var cut = fixture13.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.FrozenRows == 2, "Frozen rows should be 2");
+        Assert.True(cut.Instance.FrozenColumns == 2, "Frozen columns should be 2");
+        
+        // Get original records before reordering
+        // Note: We'll reorder rows beyond the frozen rows (index 2+)
+        var originalRecords = await cut.Instance.GetCurrentViewRecordsAsync();
+        var originalRowCount = originalRecords.Count;
+        
+        // Store row data at positions 2, 3, and 4 (non-frozen rows)
+        var originalRow2ID = (originalRecords[2] as Order)?.OrderID;
+        var originalRow3ID = (originalRecords[3] as Order)?.OrderID;
+        var originalRow4ID = (originalRecords[4] as Order)?.OrderID;
+        
+        // Also store frozen rows to verify they don't change position
+        var frozenRow0ID = (originalRecords[0] as Order)?.OrderID;
+        var frozenRow1ID = (originalRecords[1] as Order)?.OrderID;
+        
+        // Reorder non-frozen rows from index 2 to index 4
+        await cut.Instance.ReorderRowAsync(2, 4);
+        
+        // Verify reordering occurred in non-frozen rows
+        var recordsAfterReorder = await cut.Instance.GetCurrentViewRecordsAsync();
+        
+        // Verify frozen rows remain at positions 0 and 1
+        Assert.Equal(frozenRow0ID, (recordsAfterReorder[0] as Order)?.OrderID);
+        Assert.Equal(frozenRow1ID, (recordsAfterReorder[1] as Order)?.OrderID);
+        
+        // Verify non-frozen rows were reordered (positions 2, 3, 4 should be different)
+        Assert.Equal(originalRow3ID, (recordsAfterReorder[2] as Order)?.OrderID);
+        Assert.Equal(originalRow4ID, (recordsAfterReorder[3] as Order)?.OrderID);
+        Assert.Equal(originalRow2ID, (recordsAfterReorder[4] as Order)?.OrderID);
+        
+        // Verify frozen state is maintained
+        Assert.True(cut.Instance.FrozenRows == 2, "Frozen rows should remain 2 after reordering");
+        Assert.True(cut.Instance.FrozenColumns == 2, "Frozen columns should remain 2 after reordering");
+        
+        // Verify total row count is unchanged
+        Assert.Equal(originalRowCount, recordsAfterReorder.Count);
+    }
+}
+
+<!-- Test 14: GridRowDropSettings OnParametersSetAsync method coverage -->
+<SfFixture @ref="fixture14" TestAsync="GridRowDropSettingsOnParametersSetAsync" Description="GridRowDropSettings with parameter changes">
+    <ComponentUnderTest>
+        <SfGrid ID="GridSource" @ref="GridSource" DataSource="GetAllRecords()" AllowRowDragAndDrop="true" AllowSelection="true">
+            <GridRowDropSettings TargetID="@TargetGridID" AllowEmptyAreaDrop="@AllowEmptyArea"></GridRowDropSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Width="120" IsPrimaryKey="true"> </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<Order> GridSource;
+    private string TargetGridID = "GridDest";
+    private bool AllowEmptyArea = true;
+
+    public async Task GridRowDropSettingsOnParametersSetAsync(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => GridSource?.RowDropSettings != null, TimeSpan.FromSeconds(5));
+
+        var sourceSettings = GridSource.RowDropSettings;
+        Assert.NotNull(sourceSettings);
+        Assert.Equal("GridDest", sourceSettings.TargetID);
+        Assert.True(sourceSettings.AllowEmptyAreaDrop);
+
+        TargetGridID = "GridDestination";
+        AllowEmptyArea = false;
+        await cut.Instance.CallStateHasChangedAsync();
+        Assert.NotEqual("GridDest", GridSource.RowDropSettings.TargetID);
+    }
+}

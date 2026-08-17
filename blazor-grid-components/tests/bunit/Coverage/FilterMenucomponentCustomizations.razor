@@ -1,0 +1,694 @@
+﻿@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Navigations
+@using System.Dynamic
+@inherits GridTestBase
+
+<!-- Test Case 0: All Filters Combined -->
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Filter Menu Customization for Separate compoenents">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+                <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+                <GridPageSettings PageCount="5"></GridPageSettings>
+                <GridColumns>
+                    <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" FilterEditorSettings="OrderIdFilterSettings"></GridColumn>
+                    <GridColumn Field="CustomerID" HeaderText="Customer ID" Width="150" FilterEditorSettings="CustomerIdFilterSettings"></GridColumn>
+                    <GridColumn Field="Freight" TextAlign="TextAlign.Right" Width="120" Format="C2" ></GridColumn>
+                    <GridColumn Field="OrderTime" HeaderText="Order Time" Type="ColumnType.TimeOnly" TextAlign="TextAlign.Right" Width="160" FilterEditorSettings="OrderTimeFilterSettings"></GridColumn>
+                    <GridColumn Field="ShipCity" HeaderText="Ship City" Width="150" FilterEditorSettings="ShipCityFilterSettings"></GridColumn>
+                    <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.DateOnly" TextAlign="TextAlign.Right" Width="150" FilterEditorSettings="DatePickerFilterSettings"></GridColumn>
+                    <GridColumn Field="OrderDateOff" HeaderText="DateTime" Type="ColumnType.DateTime" TextAlign="TextAlign.Right" Width="150" FilterEditorSettings="DateTimePickerFilterSettings"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 1: NumericFilterParams - OrderID Column -->
+<SfFixture @ref="fixture3" Test="NumericFilterParamsTest" Description="Testing NumericFilterParams for OrderID column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef3" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" FilterEditorSettings="OrderIdFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 2: AutoCompleteFilterParams - CustomerID Column -->
+<SfFixture @ref="fixture4" Test="AutoCompleteFilterParamsTest1" Description="Testing AutoCompleteFilterParams for CustomerID column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef4" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="CustomerID" HeaderText="Customer ID" Width="150" FilterEditorSettings="CustomerIdFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 3: TimeFilterParams - OrderTime Column -->
+<SfFixture @ref="fixture5" Test="TimeFilterParamsTest" Description="Testing TimeFilterParams for OrderTime column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef5" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="OrderTime" HeaderText="Order Time" Type="ColumnType.TimeOnly" TextAlign="TextAlign.Right" Width="160" FilterEditorSettings="OrderTimeFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 4: AutoCompleteFilterParams - ShipCity Column -->
+<SfFixture @ref="fixture6" Test="AutoCompleteFilterParamsTest2" Description="Testing AutoCompleteFilterParams for ShipCity column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef6" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" Width="150" FilterEditorSettings="ShipCityFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 5: DateFilterParams - OrderDate Column -->
+<SfFixture @ref="fixture7" Test="DateFilterParamsTest" Description="Testing DateFilterParams for OrderDate column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef7" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.DateOnly" TextAlign="TextAlign.Right" Width="150" FilterEditorSettings="DatePickerFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 6: DateTimeFilterParams - OrderDateOff Column -->
+<SfFixture @ref="fixture8" Test="DateTimeFilterParamsTest" Description="Testing DateTimeFilterParams for OrderDateOff column">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef8" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="OrderDateOff" HeaderText="DateTime" Type="ColumnType.DateTime" TextAlign="TextAlign.Right" Width="150" FilterEditorSettings="DateTimePickerFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 7: ColumnMenu - Testing Column Menu Functionality -->
+<SfFixture @ref="fixture9" TestAsync="ColumnMenuBasicRendering" Description="ColumnMenu code coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridColumnMenu" DataSource="@GenerateColumnMenuRows()" AllowFiltering="true" AllowGrouping="true" AllowPaging="true" ShowColumnMenu="true" ColumnMenuItems="@MenuItems">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents OnColumnMenuOpen="ColumnMenuOpenHandler" ColumnMenuItemClicked="ColumnMenuClickHandler" TValue="ColumnMenuOrder"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 8: Nested Object Filtering - Dynamic Dictionary with CustomerID.Name and ShipCountry.Country -->
+<SfFixture @ref="fixture10" Test="NestedObjectFilteringTest" Description="Testing nested object filtering with DynamicDictionary for CustomerID.Name and ShipCountry.Country">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridNestedObjects" DataSource="@GenerateDynamicOrderData()" AllowFiltering="true" AllowPaging="true" AllowSorting="true" AllowGrouping="true" Toolbar="@ToolbarItems">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID.Name" HeaderText="Customer Name" Width="150" FilterEditorSettings="NestedCustomerFilterSettings"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" EditType="EditType.DatePickerEdit" Width="130"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCountry.Country" HeaderText="Ship Country" Width="150" FilterEditorSettings="NestedCountryFilterSettings"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 9: FilterDialogOpenedEventArgs - Excel Filter Type -->
+<SfFixture @ref="fixture11" Test="FilterDialogOpenedEventArgsExcelTest" Description="Testing FilterDialogOpenedEventArgs event with Excel filter type">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFilterDialogExcel" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridEvents FilterDialogOpened="FilterDialogOpenedHandlerExcel" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 10: FilterDialogOpenedEventArgs - CheckBox Filter Type -->
+<SfFixture @ref="fixture12" Test="FilterDialogOpenedEventArgsCheckBoxTest" Description="Testing FilterDialogOpenedEventArgs event with CheckBox filter type">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFilterDialogCheckBox" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridEvents FilterDialogOpened="FilterDialogOpenedHandlerCheckBox" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    SfFixture fixture3 { get; set; }
+    SfFixture fixture4 { get; set; }
+    SfFixture fixture5 { get; set; }
+    SfFixture fixture6 { get; set; }
+    SfFixture fixture7 { get; set; }
+    SfFixture fixture8 { get; set; }
+    SfFixture fixture9 { get; set; }
+    SfFixture fixture10 { get; set; }
+    SfFixture fixture11 { get; set; }
+    SfFixture fixture12 { get; set; }
+
+    private SfGrid<Order> GridRef;
+    private SfGrid<Order> GridRef3;
+    private SfGrid<Order> GridRef4;
+    private SfGrid<Order> GridRef5;
+    private SfGrid<Order> GridRef6;
+    private SfGrid<Order> GridRef7;
+    private SfGrid<Order> GridRef8;
+    private SfGrid<ColumnMenuOrder> GridColumnMenu;
+    private SfGrid<DynamicDictionary> GridNestedObjects;
+    private SfGrid<Order> GridFilterDialogExcel;
+    private SfGrid<Order> GridFilterDialogCheckBox;
+
+    bool _canAssert2 = false;
+    private string[] MenuItems = new string[] { "Group", "Ungroup", "ColumnChooser", "Filter" };
+    private bool preventColumnMenuRendering { get; set; }
+    public List<ColumnMenuOrder> ColumnMenuGridData { get; set; }
+    private List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" };
+    public List<DynamicDictionary> DynamicOrders = new List<DynamicDictionary>() { };
+
+    // FilterDialogOpenedEventArgs test properties
+    private FilterDialogOpenedEventArgs capturedFilterDialogArgsExcel { get; set; }
+    private FilterDialogOpenedEventArgs capturedFilterDialogArgsCheckBox { get; set; }
+    private int filterDialogOpenedCountExcel { get; set; }
+    private int filterDialogOpenedCountCheckBox { get; set; }
+
+    public class FilterType
+    {
+        public string? id { get; set; }
+        public string? type { get; set; }
+    }
+    public IFilterSettings CustomerIdFilterSettings = new AutoCompleteFilterParams
+        {
+            AutoCompleteParams = new AutoCompleteModel
+            {
+                DebounceDelay = 2000,
+                Autofill = false,
+            }
+        };
+    public IFilterSettings OrderIdFilterSettings = new NumericFilterParams
+        {
+            NumericTextBoxParams = new NumericTextBoxModel<object>
+            {
+                ShowClearButton = true,
+                Min = 10000,
+            }
+        };
+    public IFilterSettings ShipCityFilterSettings = new AutoCompleteFilterParams
+        {
+            AutoCompleteParams = new AutoCompleteModel
+            {
+                MinLength = 2,
+                Autofill = true,
+            }
+        };
+    public IFilterSettings OrderTimeFilterSettings = new TimeFilterParams
+        {
+            TimePickerParams = new Syncfusion.Blazor.Calendars.TimePickerModel<object>
+            {
+                Step = 10
+            }
+        };
+    public IFilterSettings DatePickerFilterSettings = new DateFilterParams
+        {
+            DatePickerParams = new Syncfusion.Blazor.Calendars.DatePickerModel
+            {
+                ShowClearButton = true,
+                Format = "d",
+                FirstDayOfWeek = 1,
+                EnableRtl = false
+            }
+        };
+    public IFilterSettings DateTimePickerFilterSettings = new DateTimeFilterParams
+        {
+            DateTimePickerParams = new Syncfusion.Blazor.Calendars.DateTimePickerModel<object>
+            {
+                ShowClearButton = true,
+                Format = "G",
+                TimeFormat = "T",
+                FirstDayOfWeek = 1,
+                EnableRtl = false
+            }
+        };
+    public IFilterSettings NestedCustomerFilterSettings = new AutoCompleteFilterParams
+        {
+            AutoCompleteParams = new AutoCompleteModel
+            {
+                DebounceDelay = 1000,
+                Autofill = false,
+            }
+        };
+    public IFilterSettings NestedCountryFilterSettings = new AutoCompleteFilterParams
+        {
+            AutoCompleteParams = new AutoCompleteModel
+            {
+                DebounceDelay = 1000,
+                Autofill = true,
+            }
+        };
+    void GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Verify grid renders with data
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+        Assert.True(12 == cut.FindAll(".e-row").Count, "Page size should display 5 rows");
+
+        // Verify filter columns are configured correctly
+        var columns = GridRef.Columns;
+        Assert.True(columns != null, "Columns should be configured");
+
+        // Verify OrderID column has NumericTextBox filter settings
+        var orderIdColumn = columns.FirstOrDefault(c => c.Field == "OrderID");
+        Assert.True(orderIdColumn != null, "OrderID column should exist");
+        Assert.True(orderIdColumn.FilterEditorSettings != null, "OrderID column should have FilterEditorSettings");
+        Assert.True(orderIdColumn.FilterEditorSettings is NumericFilterParams, "OrderID should use NumericFilterParams");
+
+        // Verify CustomerID column has AutoComplete filter settings
+        var customerIdColumn = columns.FirstOrDefault(c => c.Field == "CustomerID");
+        Assert.True(customerIdColumn != null, "CustomerID column should exist");
+        Assert.True(customerIdColumn.FilterEditorSettings != null, "CustomerID column should have FilterEditorSettings");
+        Assert.True(customerIdColumn.FilterEditorSettings is AutoCompleteFilterParams, "CustomerID should use AutoCompleteFilterParams");
+
+        // Verify ShipCity column has AutoComplete filter settings with MinLength
+        var shipCityColumn = columns.FirstOrDefault(c => c.Field == "ShipCity");
+        Assert.True(shipCityColumn != null, "ShipCity column should exist");
+        Assert.True(shipCityColumn.FilterEditorSettings != null, "ShipCity column should have FilterEditorSettings");
+        Assert.True(shipCityColumn.FilterEditorSettings is AutoCompleteFilterParams, "ShipCity should use AutoCompleteFilterParams");
+
+        // Verify OrderTime column has TimePicker filter settings
+        var orderTimeColumn = columns.FirstOrDefault(c => c.Field == "OrderTime");
+        Assert.True(orderTimeColumn != null, "OrderTime column should exist");
+        Assert.True(orderTimeColumn.FilterEditorSettings != null, "OrderTime column should have FilterEditorSettings");
+        Assert.True(orderTimeColumn.FilterEditorSettings is TimeFilterParams, "OrderTime should use TimeFilterParams");
+
+        // Verify Date column has DatePicker filter settings
+        var dateColumn = columns.FirstOrDefault(c => c.Field == "OrderDate");
+        Assert.True(dateColumn != null, "Date column should exist");
+        Assert.True(dateColumn.FilterEditorSettings != null, "Date column should have FilterEditorSettings");
+        Assert.True(dateColumn.FilterEditorSettings is DateFilterParams, "Date column should use DateFilterParams");
+
+        // Verify DateTime column has DateTimePicker filter settings
+        var dateTimeColumn = columns.FirstOrDefault(c => c.Field == "OrderDateOff");
+        Assert.True(dateTimeColumn != null, "DateTime column should exist");
+        Assert.True(dateTimeColumn.FilterEditorSettings != null, "DateTime column should have FilterEditorSettings");
+        Assert.True(dateTimeColumn.FilterEditorSettings is DateTimeFilterParams, "DateTime column should use DateTimeFilterParams");
+
+        // Verify total item count
+        Assert.True(20 == cut.Instance.TotalItemCount, "Total item count should be 14");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+        cut.FindAll(".e-icon-filter")[1].Click();
+        Task.Delay(1500).Wait();
+        cut.FindAll(".e-icon-filter")[2].Click();
+        Task.Delay(500).Wait();
+        cut.FindAll(".e-icon-filter")[3].Click();
+        Task.Delay(1500).Wait();
+        cut.FindAll(".e-icon-filter")[4].Click();
+        Task.Delay(1500).Wait();
+        cut.FindAll(".e-icon-filter")[5].Click();
+        Task.Delay(1500).Wait();
+        cut.FindAll(".e-icon-filter")[6].Click();
+        Task.Delay(1500).Wait();
+        var filter = new FilterUI
+        {
+            Field = "OrderID",
+            FirstOperator = "equal",
+            Operator = "and",
+            SecondOperator = "equal",
+        };
+        string field = filter.Field;
+        string firstOperator = filter.FirstOperator;   
+        string operator1 = filter.Operator;
+        string secondOperator = filter.SecondOperator;
+
+    }
+
+    void NumericFilterParamsTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef3.Columns;
+        var orderIdColumn = columns.FirstOrDefault(c => c.Field == "OrderID");
+        Assert.True(orderIdColumn != null, "OrderID column should exist");
+        Assert.True(orderIdColumn.FilterEditorSettings != null, "OrderID column should have FilterEditorSettings");
+        Assert.True(orderIdColumn.FilterEditorSettings is NumericFilterParams, "OrderID should use NumericFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    void AutoCompleteFilterParamsTest1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef4.Columns;
+        var customerIdColumn = columns.FirstOrDefault(c => c.Field == "CustomerID");
+        Assert.True(customerIdColumn != null, "CustomerID column should exist");
+        Assert.True(customerIdColumn.FilterEditorSettings != null, "CustomerID column should have FilterEditorSettings");
+        Assert.True(customerIdColumn.FilterEditorSettings is AutoCompleteFilterParams, "CustomerID should use AutoCompleteFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    void TimeFilterParamsTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef5.Columns;
+        var orderTimeColumn = columns.FirstOrDefault(c => c.Field == "OrderTime");
+        Assert.True(orderTimeColumn != null, "OrderTime column should exist");
+        Assert.True(orderTimeColumn.FilterEditorSettings != null, "OrderTime column should have FilterEditorSettings");
+        Assert.True(orderTimeColumn.FilterEditorSettings is TimeFilterParams, "OrderTime should use TimeFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    void AutoCompleteFilterParamsTest2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef6.Columns;
+        var shipCityColumn = columns.FirstOrDefault(c => c.Field == "ShipCity");
+        Assert.True(shipCityColumn != null, "ShipCity column should exist");
+        Assert.True(shipCityColumn.FilterEditorSettings != null, "ShipCity column should have FilterEditorSettings");
+        Assert.True(shipCityColumn.FilterEditorSettings is AutoCompleteFilterParams, "ShipCity should use AutoCompleteFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    void DateFilterParamsTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef7.Columns;
+        var dateColumn = columns.FirstOrDefault(c => c.Field == "OrderDate");
+        Assert.True(dateColumn != null, "OrderDate column should exist");
+        Assert.True(dateColumn.FilterEditorSettings != null, "OrderDate column should have FilterEditorSettings");
+        Assert.True(dateColumn.FilterEditorSettings is DateFilterParams, "OrderDate should use DateFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    void DateTimeFilterParamsTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+
+        var columns = GridRef8.Columns;
+        var dateTimeColumn = columns.FirstOrDefault(c => c.Field == "OrderDateOff");
+        Assert.True(dateTimeColumn != null, "OrderDateOff column should exist");
+        Assert.True(dateTimeColumn.FilterEditorSettings != null, "OrderDateOff column should have FilterEditorSettings");
+        Assert.True(dateTimeColumn.FilterEditorSettings is DateTimeFilterParams, "OrderDateOff should use DateTimeFilterParams");
+
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1500).Wait();
+    }
+
+    async Task ColumnMenuBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ColumnMenuOrder>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+
+        preventColumnMenuRendering = false;
+        cut.FindAll(".e-columnmenu")[1].Click(new MouseEventArgs());
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 1);
+        Assert.True(cut.FindAll(".e-menu-item").Count == 4, "Column menu items are rendered properly.");
+        cut.FindAll(".e-menu-item")[3].MouseOver();
+        await Task.Delay(500);
+        // var sfContextMenuComponent = cut.FindComponent<SfContextMenu<MenuItem>>().Instance;
+        // cut.Render();
+        // Assert.True(cut.FindAll(".e-menu-item").Count == 0, "Column menu items are closed after click.");
+        // Assert.True(cut.FindAll(".e-groupheadercell").Count == 1, "Grouping done");
+    }
+
+    void NestedObjectFilteringTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        
+        // Verify grid renders with data
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+        Assert.True(cut.Instance.TotalItemCount == 15, "Total item count should be 15");
+
+        // Verify nested columns are configured correctly
+        var columns = GridNestedObjects.Columns;
+        Assert.True(columns != null, "Columns should be configured");
+
+        // Verify CustomerID.Name column exists with AutoComplete filter settings
+        var customerNameColumn = columns.FirstOrDefault(c => c.Field == "CustomerID.Name");
+        Assert.True(customerNameColumn != null, "CustomerID.Name column should exist");
+        Assert.True(customerNameColumn.FilterEditorSettings != null, "CustomerID.Name column should have FilterEditorSettings");
+        Assert.True(customerNameColumn.FilterEditorSettings is AutoCompleteFilterParams, "CustomerID.Name should use AutoCompleteFilterParams");
+
+        // Verify ShipCountry.Country column exists with AutoComplete filter settings
+        var countryColumn = columns.FirstOrDefault(c => c.Field == "ShipCountry.Country");
+        Assert.True(countryColumn != null, "ShipCountry.Country column should exist");
+        Assert.True(countryColumn.FilterEditorSettings != null, "ShipCountry.Country column should have FilterEditorSettings");
+        Assert.True(countryColumn.FilterEditorSettings is AutoCompleteFilterParams, "ShipCountry.Country should use AutoCompleteFilterParams");
+
+        // Click filter icon for CustomerID.Name column (index 1)
+        cut.FindAll(".e-icon-filter")[1].Click();
+        Task.Delay(1000).Wait();
+
+        // Find the input field and type 'A'
+        var filterInputs = cut.FindAll(".e-input");
+        Assert.True(filterInputs.Count > 0, "Filter input field should be available");
+        cut.FindAll(".e-input")[1].Change("A");
+        // Type 'A' in the input field
+        filterInputs[1].Change("A");
+        Task.Delay(1000).Wait();
+
+        
+    }
+
+    void FilterDialogOpenedEventArgsExcelTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Verify grid renders with data
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+        Assert.True(cut.Instance.TotalItemCount == 20, "Total item count should be 20");
+
+        // Click filter icon for OrderID column (index 0)
+        cut.FindAll(".e-icon-filter")[0].Click();
+        Task.Delay(1000).Wait();
+
+        // Verify FilterDialogOpenedEventArgs was triggered
+        Assert.True(filterDialogOpenedCountExcel > 0, "FilterDialogOpened event should be triggered");
+        Assert.True(capturedFilterDialogArgsExcel != null, "FilterDialogOpenedEventArgs should be captured");
+
+        // Verify ColumnName property
+        Assert.True(capturedFilterDialogArgsExcel.ColumnName == "OrderID", "ColumnName should be 'OrderID'");
+
+        // Verify CheckboxListData property (for Excel filter it should have data)
+        // Assert.True(capturedFilterDialogArgsExcel.CheckboxListData != null, "CheckboxListData should not be null for Excel filter");
+        // Assert.True(capturedFilterDialogArgsExcel.CheckboxListData.Count() > 0, "CheckboxListData should contain items");
+
+        // Verify FilterChoiceCount property
+        Assert.True(capturedFilterDialogArgsExcel.FilterChoiceCount >= 0, "FilterChoiceCount should be non-negative");
+
+        // Click filter icon for CustomerID column (index 1)
+        cut.FindAll(".e-icon-filter")[1].Click();
+        Task.Delay(1000).Wait();
+
+        // Verify ColumnName property changed for CustomerID
+        Assert.True(capturedFilterDialogArgsExcel.ColumnName == "CustomerID", "ColumnName should be 'CustomerID'");
+
+        // Verify CheckboxListData for CustomerID column
+        // Assert.True(capturedFilterDialogArgsExcel.CheckboxListData != null, "CheckboxListData should not be null for CustomerID column");
+        // Assert.True(capturedFilterDialogArgsExcel.CheckboxListData.Count() > 0, "CheckboxListData should contain customer IDs");
+    }
+
+    void FilterDialogOpenedEventArgsCheckBoxTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Verify grid renders with data
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Grid rows should be rendered");
+        Assert.True(cut.Instance.TotalItemCount == 20, "Total item count should be 20");
+
+        // Click filter icon for Freight column (index 2)
+        cut.FindAll(".e-icon-filter")[2].Click();
+        Task.Delay(1000).Wait();
+
+        // Verify FilterDialogOpenedEventArgs was triggered
+        Assert.True(filterDialogOpenedCountCheckBox > 0, "FilterDialogOpened event should be triggered");
+        Assert.True(capturedFilterDialogArgsCheckBox != null, "FilterDialogOpenedEventArgs should be captured");
+
+        // Verify ColumnName property
+        Assert.True(capturedFilterDialogArgsCheckBox.ColumnName == "Freight", "ColumnName should be 'Freight'");
+
+        // Verify CheckboxListData property (for CheckBox filter it should have data)
+        // Assert.True(capturedFilterDialogArgsCheckBox.CheckboxListData != null, "CheckboxListData should not be null for CheckBox filter");
+        // Assert.True(capturedFilterDialogArgsCheckBox.CheckboxListData.Count() > 0, "CheckboxListData should contain freight values");
+
+        // Verify FilterChoiceCount property
+        Assert.True(capturedFilterDialogArgsCheckBox.FilterChoiceCount >= 0, "FilterChoiceCount should be non-negative");
+
+        // Click filter icon for OrderDate column (index 3)
+        cut.FindAll(".e-icon-filter")[3].Click();
+        Task.Delay(1000).Wait();
+
+        // Verify ColumnName property changed for OrderDate
+        Assert.True(capturedFilterDialogArgsCheckBox.ColumnName == "OrderDate", "ColumnName should be 'OrderDate'");
+
+        // Verify CheckboxListData for OrderDate column
+        // Assert.True(capturedFilterDialogArgsCheckBox.CheckboxListData != null, "CheckboxListData should not be null for OrderDate column");
+        // Assert.True(capturedFilterDialogArgsCheckBox.CheckboxListData.Count() > 0, "CheckboxListData should contain order dates");
+    }
+
+    public void FilterDialogOpenedHandlerExcel(FilterDialogOpenedEventArgs args)
+    {
+        capturedFilterDialogArgsExcel = args;
+        filterDialogOpenedCountExcel++;
+
+        // Verify that ColumnName is set
+        Assert.True(!string.IsNullOrEmpty(args.ColumnName), "ColumnName should not be null or empty");
+
+        // Verify that CheckboxListData is populated for Excel filter
+        // Assert.True(args.CheckboxListData != null, "CheckboxListData should not be null");
+
+        // Log the properties for verification
+        // ColumnName will be verified in test method
+        // CheckboxListData will be verified in test method
+        // FilterChoiceCount will be verified in test method
+    }
+
+    public void FilterDialogOpenedHandlerCheckBox(FilterDialogOpenedEventArgs args)
+    {
+        capturedFilterDialogArgsCheckBox = args;
+        filterDialogOpenedCountCheckBox++;
+
+        // Verify that ColumnName is set
+        Assert.True(!string.IsNullOrEmpty(args.ColumnName), "ColumnName should not be null or empty");
+
+        // Verify that CheckboxListData is populated for CheckBox filter
+        // Assert.True(args.CheckboxListData != null, "CheckboxListData should not be null");
+
+        // Log the properties for verification
+        // ColumnName will be verified in test method
+        // CheckboxListData will be verified in test method
+        // FilterChoiceCount will be verified in test method
+    }
+
+    public void ColumnMenuOpenHandler(ColumnMenuOpenEventArgs args)
+    {
+        if (preventColumnMenuRendering)
+        {
+            args.Cancel = true;
+            return;
+        }
+        Assert.True(args.Column.Field == "CustomerID");
+        Assert.True(args.Items.Count == 4);
+        Assert.True(args.ParentItem == null);
+        Assert.True(args.ColumnMenuIndex == 0);
+    }
+
+    public void ColumnMenuClickHandler(ColumnMenuClickEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+        Assert.True(args.Item.Text == "Group by this column");
+        Assert.True(args.Event is MouseEventArgs);
+        Assert.True(args.Element.Id == null);
+    }
+
+    public List<ColumnMenuOrder> GenerateColumnMenuRows()
+    {
+        return ColumnMenuGridData = Enumerable.Range(1, 30).Select(x => new ColumnMenuOrder()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public List<DynamicDictionary> GenerateDynamicOrderData()
+    {
+        return DynamicOrders = Enumerable.Range(1, 15).Select((x) =>
+        {
+            dynamic Order = new DynamicDictionary();
+            dynamic customerName = new DynamicDictionary();
+            dynamic countryName = new DynamicDictionary();
+            Order.OrderID = 1000 + x;
+            customerName.Name = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "" })[new Random().Next(5)];
+            Order.CustomerID = customerName;
+            Order.Freight = (new double[] { 2, 1, 4, 5, 3 })[new Random().Next(5)] * x;
+            Order.OrderDate = (new DateTime[] { new DateTime(1996, 11, 5), new DateTime(1996, 10, 3), new DateTime(1996, 9, 9), new DateTime(1996, 8, 2), new DateTime(1996, 4, 11) })[new Random().Next(5)];
+            countryName.Country = (new string[] { "USA", "UK" })[new Random().Next(2)];
+            Order.ShipCountry = countryName;
+            return Order;
+        }).Cast<DynamicDictionary>().ToList<DynamicDictionary>();
+    }
+
+    public class ColumnMenuOrder
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+    public class DynamicDictionary : DynamicObject
+    {
+        Dictionary<string, object> dictionary = new Dictionary<string, object>();
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            string name = binder.Name;
+            return dictionary.TryGetValue(name, out result);
+        }
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            dictionary[binder.Name] = value;
+            return true;
+        }
+        public override System.Collections.Generic.IEnumerable<string> GetDynamicMemberNames()
+        {
+            return this.dictionary?.Keys;
+        }
+    }
+}

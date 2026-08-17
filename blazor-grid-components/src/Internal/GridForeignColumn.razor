@@ -1,0 +1,340 @@
+﻿@using Microsoft.AspNetCore.Components;
+@using System.Text.Json.Serialization;
+@using System.ComponentModel;
+@using System.Collections.Generic
+@using Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Data
+
+@namespace Syncfusion.Blazor.Grids
+@typeparam TValue
+@inherits GridColumn
+@implements IGridColumn
+
+
+<CascadingValue Value="@this" IsFixed="true">
+    @ChildContent
+
+    <ForeignKeySubComponents @ref="foreignKeyColumn" TValue="TValue">
+        <FilterComponent Context="filterModel">            
+            @{
+                var Model = filterModel as FilterAutoCompleteModel;
+                if (Model!.Id!.EndsWith("secondvalue"))
+                {
+                    secondAutoCompleteModel = (filterModel as FilterAutoCompleteModel)!;
+                }
+                else
+                {
+                    firstAutoCompleteModel = (filterModel as FilterAutoCompleteModel)!;
+                }
+            }
+            @if (Model.Id.EndsWith("secondvalue"))
+            {
+                <SfAutoComplete @ref="@SecondAutoComplete" @key="@Model.Id" ID="@Model.Id" Autofill="true" Enabled=@(!(Model.FilterOperator=="isempty" || Model.FilterOperator=="isnotempty")) Placeholder="@Model.PlaceHolder" TItem="TValue" TValue="string" @bind-Value=@(Model.FilterValue)>
+                     <SfDataManager Headers=@Model.DataManager?.Headers Url=@Model.DataManager?.Url Json="@Model.Json"
+                                   GraphQLAdaptorOptions=@Model.DataManager!.GraphQLAdaptorOptions
+                                   AdaptorInstance="@Model.DataManager.AdaptorInstance" Adaptor="@Model.DataManager.Adaptor" Offline="@Model.DataManager.Offline">
+                        @if (IsForeignColumn()) //custom adaptor
+                        {
+                            @DataManager?.ChildContent
+                        }
+                        else
+                        {
+                            @Parent!.DataManager?.ChildContent
+                        }
+                    </SfDataManager>
+                    <AutoCompleteFieldSettings Value="@(IsForeignColumn() ? ForeignKeyValue : Field)"></AutoCompleteFieldSettings>
+                    <AutoCompleteEvents TItem="TValue" TValue="string" OnActionBegin="SecondBeginHandler"></AutoCompleteEvents>
+                </SfAutoComplete>
+            }
+            else
+            {
+                <SfAutoComplete @ref="@FirstAutoComplete" @key="@Model.Id" ID="@Model.Id" Autofill="true" Enabled=@(!(Model.FilterOperator=="isempty" || Model.FilterOperator=="isnotempty"))  Placeholder="@Model.PlaceHolder" TItem="TValue" TValue="string" @bind-Value=@(Model.FilterValue)>
+                   <SfDataManager Headers=@Model.DataManager?.Headers Url=@Model.DataManager?.Url Json="@Model.Json"
+                                   GraphQLAdaptorOptions=@Model.DataManager?.GraphQLAdaptorOptions
+                                   AdaptorInstance="@Model.DataManager?.AdaptorInstance" Adaptor="@Model.DataManager!.Adaptor" Offline="@Model.DataManager.Offline">
+                        @if (IsForeignColumn()) //custom adaptor
+                        {
+                            @DataManager?.ChildContent
+                        }
+                        else
+                        {
+                            @Parent!.DataManager?.ChildContent
+                        }
+                    </SfDataManager>
+                    <AutoCompleteFieldSettings Value="@(IsForeignColumn() ? ForeignKeyValue : Field)"></AutoCompleteFieldSettings>
+                    <AutoCompleteEvents TItem="TValue" TValue="string" OnActionBegin="FirstBeginHandler"></AutoCompleteEvents>
+                </SfAutoComplete>
+            }
+
+        </FilterComponent>
+        <EditorComponent Context="editorModel">
+            @{
+                var model = editorModel as EditorDropDownModel;
+                var gridColumns = GridUtils.GetColumns(Parent?.BaseParent!);
+                var duplicateForeignKeyColumns = ForeignKey<TValue>.GetForeignKeyColumnsAsync(gridColumns).Where(x => x.Field == Field).ToList();
+                @if (duplicateForeignKeyColumns.Count > 1)
+                {
+                    isColumnUidRequired = true;
+                    duplicateForeignkeyField = Field;
+                }
+                var foreignKeyColumnParameters = new GridForeignKeyColumnParameters()
+                {
+                    IsColumnUidRequired = isColumnUidRequired,
+                    DuplicateForeignkeyField = duplicateForeignkeyField
+                };
+                @if(ActualType == null)
+                {
+                    return;
+                }
+                @if (ActualType.Equals(typeof(Guid)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="Guid" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(Guid?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="Guid?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(int?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="int?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(int)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="int" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(string)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="string" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(double)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="double" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(double?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="double?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(float)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="float" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(float?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="float?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(long)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="long" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(long?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="long?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(ulong)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="ulong" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(ulong?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="ulong?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(short)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="short" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(short?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="short?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(ushort)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="ushort" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(ushort?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="ushort?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(uint)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="uint" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(uint?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="uint?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(decimal)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="object" TValue="decimal" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(decimal?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="object" TValue="decimal?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(byte)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="byte" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(byte?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="byte?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(sbyte)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="sbyte" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+                else if (ActualType.Equals(typeof(sbyte?)))
+                {
+                    <ForeignKeyEditCell Model="model" TItem="TValue" TValue="sbyte?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+                }
+            }
+        </EditorComponent>
+    </ForeignKeySubComponents>
+</CascadingValue>
+
+@code{
+    #region Public Properties
+
+    /// <summary>
+    /// Defines the column data source  which will act as foreign data source.
+    /// </summary>
+    /// <remarks>List or any IEnumerable type value is accepted as foreign data source.
+    /// For custom binding or using remote service as foreign data source use
+    /// <see cref="Syncfusion.Blazor.Grids.GridForeignColumn{TValue}"/> component and configure data source using
+    /// <see cref="Syncfusion.Blazor.Data.SfDataManager"/>.</remarks>
+    [Parameter]
+    [DefaultValue(null)]
+    [JsonIgnore]
+    [JsonPropertyName("foreignDataSource")]
+    public IEnumerable<TValue>? ForeignDataSource { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private ForeignKeySubComponents<TValue>? foreignKeyColumn;
+
+    private SfAutoComplete<string, TValue>? FirstAutoComplete { get; set; }
+
+    private SfAutoComplete<string, TValue>? SecondAutoComplete { get; set; }
+
+    private IEnumerable<TValue>? _foreignDataSource { get; set; }
+
+    private bool isForeignDataUpdated { get; set; }
+
+    private bool isColumnUidRequired { get; set; }
+
+    private string? duplicateForeignkeyField { get; set; }
+
+    private FilterAutoCompleteModel? firstAutoCompleteModel { get; set; }
+
+    private FilterAutoCompleteModel? secondAutoCompleteModel { get; set; }
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override void OnInitialized()
+    {
+        ValueType = typeof(TValue).GetProperty(ForeignKeyValue!)?.PropertyType!;
+        ForeignKeyField = ForeignKeyField ?? Field;
+        if (ForeignKeySorting == null && ForeignDataSource != null && ForeignDataSource.Count() > 0 && ForeignKeyValue != null)
+        {
+            ForeignKeySorting = new ForeignKeySortManager(this.ForeignKeyField, this.ForeignKeyValue, (IEnumerable<object>)this.ForeignDataSource);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_foreignDataSource == null && ForeignDataSource != null && ForeignDataSource.Count() > 0 && Parent!.IsRendered || (_foreignDataSource != null && !_foreignDataSource.Equals(ForeignDataSource))) //Handles delayed data assigning.
+        {
+            isForeignDataUpdated = true;
+        }
+        ForeignDataSource = this._foreignDataSource = ForeignDataSource!;
+        SetDataManager<TValue>(ForeignDataSource);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+
+        if (isForeignDataUpdated)
+        {
+            isForeignDataUpdated = false;
+            await BaseParent?.UpdateForeignData()!;
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    internal override RenderFragment<object> GetAutoComplete() => foreignKeyColumn?.FilterComponent!;
+
+    internal override RenderFragment<object> GetDropDown() => foreignKeyColumn?.EditorComponent!;
+
+    internal override void AutoCompleteDispose()
+    {
+        FirstAutoComplete?.Dispose();
+        SecondAutoComplete?.Dispose();
+    }
+
+    public override bool IsForeignColumn()
+    {
+        IsGridForeignColumn = true;
+        return true;
+    }
+
+    internal override object GetForeignDataSource(GridColumn column, object data, IEnumerable<object> fkData)
+    {
+        var field = column.ForeignKeyField ?? column.Field;
+        var uniqueKeys = new HashSet<object>();
+        var PredicateList = new List<WhereFilter>();
+
+        foreach (var rec in (data as IEnumerable<object>)!)
+        {
+            var key = DataUtil.GetObject(column.Field, rec);
+            if (uniqueKeys.Add(key))
+            {
+                PredicateList.Add(new WhereFilter()
+                {
+                    Field = field,
+                    value = key,
+                    IgnoreCase = false,
+                    Operator = "equal"
+                });
+            }
+        }
+
+        var query = new List<WhereFilter> { WhereFilter.Or(PredicateList) };
+        return DataOperations.PerformFiltering(fkData.Cast<TValue>(), query, "and").ToList();
+    }
+
+    internal override List<object> GetForeignkeyFilteredData(IEnumerable<object> data, List<WhereFilter> filterQuery)
+            => DataOperations.PerformFiltering<TValue>(data.OfType<TValue>(), filterQuery, "and").Cast<object>().ToList();
+
+    private async void FirstBeginHandler(ActionBeginEventArgs args)
+    {
+        FirstAutoComplete!.FilterOperator = firstAutoCompleteModel?.FilterOperator;
+    }
+
+    private async void SecondBeginHandler(ActionBeginEventArgs args)
+    {
+        SecondAutoComplete!.FilterOperator = secondAutoCompleteModel?.FilterOperator;
+    }
+
+    public override async Task<object> GetData(DataManagerRequest dataManagerRequest)
+    {
+        return this.DataManager != null ? await this.DataManager.ExecuteQuery<TValue>(dataManagerRequest) : null!;
+    }
+
+    /// <summary>
+    /// Get Foreign Data
+    /// </summary>
+    public override object GetForeignData()
+    {
+        return ForeignDataSource!;
+    }
+
+    #endregion
+}

@@ -1,0 +1,107 @@
+﻿@inherits GridTestBase
+@using System.Dynamic
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Exception throws on adding a record to an empty datasource while using GridForeignColumn with DynamicObject databinding.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowPaging="true" AllowFiltering="true" AllowSorting="true" AllowGrouping="true" Toolbar="@ToolbarItems">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID.Name" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" EditType="EditType.DatePickerEdit" Width="130"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignKeyField="EmployeeID" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" };
+    public List<DynamicDictionary> Orders = new List<DynamicDictionary>() { };
+    public List<EmployeeData> Employees { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        Assert.True(cut.Instance.IsEdit == true, "Add input form is rendered properly");
+        AddRow();
+        Assert.True(cut.Instance.Rows.Count == 1, "Record added to the grid properly.");
+    }
+    private void AddRow()
+    {
+        dynamic data = new DynamicDictionary();
+        data.OrderID = 1001; 
+        data.CustomerID = "ANTON"; 
+        data.Freight = 10.5;
+        Orders.Add(data);
+    }
+    public List<DynamicDictionary> GenerateRows()
+    {
+        return Orders = GetData();
+        Employees = GetEmployeeRecords();
+    }
+
+    public List<DynamicDictionary> GetData()
+    {
+        for (int i = 1; i <= 0; i++)
+        {
+            dynamic d = new DynamicDictionary();
+            dynamic combo = new DynamicDictionary();
+            d.OrderID = 1000 + i;
+            d.EmployeeID = i;
+            combo.Name = "Anton" + i;
+            d.CustomerID = combo;
+            d.Freight = i * 2;
+            d.OrderDate = i % 2 == 0 ? new DateTime(2010, 11, 5) : i % 5 == 0 ? new DateTime(2018, 10, 3) : i % 11 == 0 ? new DateTime(1995, 9, 9) : new DateTime(2012, 8, 2);
+            Orders.Add(d);
+        }
+        return Orders = Orders.Cast<DynamicDictionary>().ToList<DynamicDictionary>();
+    }
+
+
+    public List<EmployeeData> GetEmployeeRecords()
+    {
+        List<EmployeeData> data = new List<EmployeeData>();
+        int employeeId = 0;
+        for (int i = 0; i <= 0; i++)
+        {
+            data.Add(new EmployeeData() { EmployeeID = employeeId + 1, FirstName = "Nancy" });
+            data.Add(new EmployeeData() { EmployeeID = employeeId + 2, FirstName = "Andrew" });
+            data.Add(new EmployeeData() { EmployeeID = employeeId + 3, FirstName = "Janet" });
+            data.Add(new EmployeeData() { EmployeeID = employeeId + 4, FirstName = "Margaret" });
+            data.Add(new EmployeeData() { EmployeeID = employeeId + 5, FirstName = "Steven" });
+            employeeId += 5;
+        }
+
+        return data;
+    }
+    public class EmployeeData
+    {
+        public int? EmployeeID { get; set; }
+        public string FirstName { get; set; }
+    }
+
+    public class DynamicDictionary : DynamicObject
+    {
+        Dictionary<string, object> dictionary = new Dictionary<string, object>();
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            string name = binder.Name;
+            return dictionary.TryGetValue(name, out result);
+        }
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            dictionary[binder.Name] = value;
+            return true;
+        }
+
+        public override System.Collections.Generic.IEnumerable<string> GetDynamicMemberNames()
+        {
+            return this.dictionary?.Keys;
+        }
+    }
+}

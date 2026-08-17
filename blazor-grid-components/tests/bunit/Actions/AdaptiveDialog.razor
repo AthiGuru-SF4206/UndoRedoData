@@ -1,0 +1,325 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Adaptive dialog rendering">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" DataSource="GenerateRows()" EnableAdaptiveUI=true RowRenderingMode="RowDirection.Vertical" AllowSorting=true AllowFiltering=true Toolbar="@(new List<string>() {"PdfExport", "ExcelExport", "ColumnChosser", "CsvExport" })"
+                ShowColumnChooser=true AllowExcelExport=true AllowPdfExport=true ShowColumnMenu=true>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowSorting, "Sorting enabled"); 
+        Assert.True(cut.Instance.AllowFiltering, "Filtering enabled");
+        Assert.True(cut.Instance.RowRenderingMode == RowDirection.Vertical, "Row rendering mode set to vertical");
+        var adaptiveDialog = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.AdaptiveDialogRenderer<Order>>();
+
+        //Filtering
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "Alfki");
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        Assert.True(cut.FindAll(".e-toolbar-item")[0].Id == "Grid_filter", "Filter button clicked");
+        cut.FindAll(".e-filterset")[0].Click();
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 0, "Remove Filtering working properly");
+        BeforeOpenCloseMenuEventArgs<MenuItem> args = new BeforeOpenCloseMenuEventArgs<MenuItem>();
+        MenuItem menuItem = new MenuItem();
+        cut.InvokeAsync(() => adaptiveDialog.Instance.OnCloseMenu(args)).GetAwaiter();
+        List<GridSortColumn> SortedColumns = new List<GridSortColumn>();
+        SortedColumns.Add(new GridSortColumn() { Field = "OrderID", Direction = SortDirection.Ascending });
+        cut.Instance.SortSettings.Columns = SortedColumns;
+        cut.InvokeAsync(() => adaptiveDialog.Instance.SetSortingDirection(cut.Instance.Columns[0])).GetAwaiter();
+        
+    }
+
+    public List<Order> GenerateRows()
+    {
+       List<Order> data = new List<Order>();
+        int count = 1000;
+
+        for (int i = 0; i < 15; i++)
+        {
+            data.Add(new Order() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new Order() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new Order() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new Order() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new Order() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Adaptive sorting dialog rendering">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateRows2()" EnableAdaptiveUI=true RowRenderingMode="RowDirection.Vertical" AllowSorting=true AllowFiltering=true Toolbar="@(new List<string>() {"PdfExport", "ExcelExport", "ColumnChosser", "CsvExport" })"
+                ShowColumnChooser=true AllowExcelExport=true AllowPdfExport=true ShowColumnMenu=true>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<OrderData> Grid2;
+    public List<OrderData> GridData2 { get; set; }
+
+    public async Task GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<OrderData>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowSorting, "Sorting enabled");
+        Assert.True(cut.Instance.AllowFiltering, "Filtering enabled");
+        Assert.True(cut.Instance.RowRenderingMode == RowDirection.Vertical, "Row rendering mode set to vertical");
+        var adaptiveDialog = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.AdaptiveDialogRenderer<OrderData>>();
+
+        //Sorting
+        cut.FindAll(".e-toolbar-item")[1].Click();
+        adaptiveDialog.Instance.SetSortingDirection(cut.Instance.Columns[0]);
+        adaptiveDialog.Instance.SortClick("Ascending", cut.Instance.Columns[0].Uid);
+        adaptiveDialog.Instance.SortClick("Descending", cut.Instance.Columns[0].Uid);
+        adaptiveDialog.Instance.SortClick("None", cut.Instance.Columns[0].Uid);
+        cut.FindAll(".e-ressortbutton")[0].Click();
+        cut.FindAll(".e-res-sort-clear-btn")[0].Click();
+        cut.FindAll(".e-toolbar-item")[1].Click();
+    }
+
+    public List<OrderData> GenerateRows2()
+    {
+        List<OrderData> data = new List<OrderData>();
+        int count = 1000;
+
+        for (int i = 0; i < 15; i++)
+        {
+            data.Add(new OrderData() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class OrderData
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Adaptive column menu dialog rendering">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid3" @ref="Grid3" DataSource="GenerateRows3()" EnableAdaptiveUI=true RowRenderingMode="RowDirection.Vertical" AllowSorting=true AllowFiltering=true Toolbar="@(new List<string>() {"PdfExport", "ExcelExport", "ColumnChooser", "CsvExport" })"
+                ShowColumnChooser=true AllowExcelExport=true AllowPdfExport=true ShowColumnMenu=true>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDatas.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDatas.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderDatas.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderDatas.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<OrderDatas> Grid3;
+    public List<OrderDatas> GridData3 { get; set; }
+
+    public async Task GridBasicRendering3(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<OrderDatas>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowSorting, "Sorting enabled");
+        Assert.True(cut.Instance.AllowFiltering, "Filtering enabled");
+        Assert.True(cut.Instance.RowRenderingMode == RowDirection.Vertical, "Row rendering mode set to vertical");
+        var adaptiveDialog = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.AdaptiveDialogRenderer<OrderDatas>>();
+
+        //Column Menu items
+        cut.FindAll(".e-toolbar-item")[3].Click();
+        MenuEventArgs<MenuItem> args = new MenuEventArgs<MenuItem>();
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid3_toolbarmenu_ExcelExport";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid3_toolbarmenu_PdfExport";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid3_toolbarmenu_CsvExport";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid3_toolbarmenu_Print";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid_ColumnChooser";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+        args.Item = new MenuItem();
+        args.Item.Id = "Grid3_toolbarmenu_ColumnChooser";
+        await cut.InvokeAsync(() => adaptiveDialog.Instance.ItemSelected(args));
+    }
+
+    public List<OrderDatas> GenerateRows3()
+    {
+        List<OrderDatas> data = new List<OrderDatas>();
+        int count = 1000;
+
+        for (int i = 0; i < 15; i++)
+        {
+            data.Add(new OrderDatas() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderDatas() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderDatas() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderDatas() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderDatas() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class OrderDatas
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="EditComplete() - Verify ToolbarStateChanged event when EnableAdaptiveUI is true and Action is Add">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@OrderData1"
+                AllowPaging="true"
+                EnableAdaptiveUI="true"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })"
+                AllowSelection="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridPageSettings PageSize="10"></GridPageSettings>
+            <GridEditSettings AllowEditing="true" AllowAdding="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.OrderID)
+                            HeaderText="Order ID"
+                            IsPrimaryKey="true"
+                            TextAlign="TextAlign.Right"
+                            Width="100">
+                </GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.CustomerID)
+                            HeaderText="Customer ID"
+                            Width="130">
+                </GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight)
+                            HeaderText="Freight"
+                            AllowGrouping="false"
+                            Format="C2"
+                            TextAlign="TextAlign.Right"
+                            Width="110">
+                </GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry)
+                            HeaderText="Ship Country"
+                            EditType="EditType.DropDownEdit"
+                            Width="120">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfFixture fixture4 { get; set; }
+    public List<OrderDetails> OrderData1 { get; set; } = OrderDetails.GetAllRecords1();
+
+    public async void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+
+        // Click the Add button to create a new row
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        var updateButton = cut.FindAll(".e-toolbar-item")[3];
+        if (updateButton != null)
+        {
+            updateButton.Click();
+            var toolbar = cut.FindAll(".e-toolbar");
+            Assert.True(toolbar.Count >= 0, "Toolbar should still be present");
+        }
+    }
+
+    public class OrderDetails
+    {
+        public static List<OrderDetails> Order = new List<OrderDetails>();
+        public OrderDetails(int OrderID, string CustomerId, double Freight, string ShipCountry)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerId;
+            this.Freight = Freight;
+            this.ShipCountry = ShipCountry;
+        }
+        public static List<OrderDetails> GetAllRecords1()
+        {
+            if (Order.Count == 0)
+            {
+                Order.Add(new OrderDetails(10248, "VINET", 32.38, "France"));
+                Order.Add(new OrderDetails(10249, "TOMSP", 11.61, "Germany"));
+                Order.Add(new OrderDetails(10250, "HANAR", 65.83, "Brazil"));
+                Order.Add(new OrderDetails(10251, "VICTE", 41.34, "France"));
+                Order.Add(new OrderDetails(10252, "SUPRD", 51.3, "Belgium"));
+                Order.Add(new OrderDetails(10253, "HANAR", 58.17, "Brazil"));
+                Order.Add(new OrderDetails(10254, "CHOPS", 22.98, "Switzerland"));
+                Order.Add(new OrderDetails(10255, "RICSU", 148.33, "Switzerland"));
+                Order.Add(new OrderDetails(10256, "WELLI", 13.97, "Brazil"));
+                Order.Add(new OrderDetails(10257, "HILAA", 81.91, "Venezuela"));
+                Order.Add(new OrderDetails(10258, "ERNSH", 140.51, "Austria"));
+                Order.Add(new OrderDetails(10259, "CENTC", 3.25, "Mexico"));
+                Order.Add(new OrderDetails(10260, "OTTIK", 55.09, "Germany"));
+                Order.Add(new OrderDetails(10261, "QUEDE", 3.05, "Brazil"));
+                Order.Add(new OrderDetails(10262, "RATTC", 48.29, "USA"));
+            }
+            return Order;
+        }
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}

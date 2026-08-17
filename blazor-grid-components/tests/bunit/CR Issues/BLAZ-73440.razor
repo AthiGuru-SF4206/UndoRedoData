@@ -1,0 +1,67 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using System.Dynamic
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Greaterthan operator with Dynamic object filter throws exception">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowFiltering="true" AllowPaging="true" Toolbar="@ToolbarItems">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText="Order Date" Format="d" Type="Syncfusion.Blazor.Grids.ColumnType.Date" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" EditType="Syncfusion.Blazor.Grids.EditType.DatePickerEdit" Width="130"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel", "Search" };
+    public List<DynamicDictionary> Orders = new List<DynamicDictionary>() { };
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        var grid = cut.Instance;
+        Assert.True(grid.TotalItemCount == 5, "Before Filtering");
+        Assert.True(cut.Instance.AllowFiltering, "Filtering enabled");
+        grid.FilterByColumnAsync("OrderID", "greaterthan", "1002");
+        Assert.True(grid.TotalItemCount == 3, "After Filtering");
+    }
+
+    public List<DynamicDictionary> GenerateRows()
+    {
+        Orders = Enumerable.Range(1, 5).Select((x) =>
+       {
+           dynamic d = new DynamicDictionary();
+           d.OrderID = 1000 + x;
+           d.CustomerID = (new string[] { "ALFKI", "ANANTR" })[x % 2];
+           d.Freight = (new double[] { 2, 1 })[x % 2] * x;
+           d.OrderDate = (new DateTime[] { new DateTime(2010, 11, 5), new DateTime(2018, 10, 3) })[x % 2];
+           return d;
+       }).Cast<DynamicDictionary>().ToList<DynamicDictionary>();
+        return Orders;
+    }
+    public class DynamicDictionary : DynamicObject
+    {
+        Dictionary<string, object> dictionary = new Dictionary<string, object>();
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            string name = binder.Name;
+            return dictionary.TryGetValue(name, out result);
+        }
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            dictionary[binder.Name] = value;
+            return true;
+        }
+        public override System.Collections.Generic.IEnumerable<string> GetDynamicMemberNames()
+        {
+            return this.dictionary?.Keys;
+        }
+    }
+}

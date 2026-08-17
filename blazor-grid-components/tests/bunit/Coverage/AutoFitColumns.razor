@@ -1,0 +1,298 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixtureAutoFit1"
+           TestAsync="AutoFitColumnsAsync_NoParam_SetsIsAutoFitEnabled"
+           Description="AutoFitColumnsAsync_NoParam_SetsAutoFitFlag">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid1" DataSource="GenerateOrderData()">
+            <EventRegisterAsync Name="DummyEvent" Handler="DummyHandler" T="Order"></EventRegisterAsync>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)"   Width="150" HeaderText="Ship City"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit1 { get; set; }
+    private SfGrid<Order> autoFitGrid1;
+    async Task DummyHandler(Task incomingTask, object args)
+    {
+        
+    }
+    public async Task AutoFitColumnsAsync_NoParam_SetsIsAutoFitEnabled(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.False(grid.IsAutoFitEnabled, "IsAutoFitEnabled should be false before calling AutoFitColumnsAsync()");
+
+        await grid.AutoFitColumnsAsync();
+
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must be set to true after AutoFitColumnsAsync()");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be present after AutoFitColumnsAsync()");
+
+        var cols = await grid.GetColumnsAsync();
+        Assert.True(cols.Count == 4, "All 4 columns must still be present after AutoFitColumnsAsync()");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit2"
+           TestAsync="AutoFitColumnsAsync_WithFields_NoPersistence_SetsAutoFitFlagOnly"
+           Description="AutoFitColumnsAsync_Fields_NoPersistence_Branch">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid2" DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)"   Width="150" HeaderText="Ship City"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit2 { get; set; }
+    private SfGrid<Order> autoFitGrid2;
+
+    public async Task AutoFitColumnsAsync_WithFields_NoPersistence_SetsAutoFitFlagOnly(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.False(grid.EnablePersistence, "EnablePersistence should be false by default");
+
+        string[] fieldsToFit = { nameof(Order.OrderID), nameof(Order.CustomerID) };
+
+        await grid.AutoFitColumnsAsync(fieldsToFit);
+
+        Assert.True(grid.IsAutoFitEnabled,
+            "IsAutoFitEnabled must be true after AutoFitColumnsAsync(string[]) without persistence");
+
+        var cols = await grid.GetColumnsAsync();
+        Assert.True(cols.All(c => !c.IsPersistAutoFit),
+            "IsPersistAutoFit must remain false on all columns when EnablePersistence=false (Branch NP)");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be rendered after AutoFitColumnsAsync()");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit3"
+           TestAsync="AutoFitColumnsAsync_WithFields_WithPersistence_SetsAllPersistFlags"
+           Description="AutoFitColumnsAsync_Fields_WithPersistence_Branch">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid3" DataSource="GenerateOrderData()" EnablePersistence="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)"   Width="150" HeaderText="Ship City"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit3 { get; set; }
+    private SfGrid<Order> autoFitGrid3;
+
+    public async Task AutoFitColumnsAsync_WithFields_WithPersistence_SetsAllPersistFlags(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.EnablePersistence, "EnablePersistence must be true for this fixture");
+
+        string[] fieldsToFit = { nameof(Order.OrderID), nameof(Order.CustomerID), nameof(Order.Freight) };
+
+        await grid.AutoFitColumnsAsync(fieldsToFit);
+
+        Assert.True(grid.IsAutoFitEnabled,
+            "IsAutoFitEnabled must be true after AutoFitColumnsAsync(string[]) with persistence");
+
+        var cols = await grid.GetColumnsAsync();
+        Assert.True(cols.All(c => c.IsPersistAutoFit),
+            "IsPersistAutoFit must be true on ALL columns when EnablePersistence=true (Branch P)");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be rendered after AutoFitColumnsAsync()");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit4"
+           TestAsync="AutoFitColumnAsync_SingleField_DelegatesToArrayOverload"
+           Description="AutoFitColumnAsync_SingleField_Delegates_NoPersist">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid4" DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit4 { get; set; }
+    private SfGrid<Order> autoFitGrid4;
+
+    public async Task AutoFitColumnAsync_SingleField_DelegatesToArrayOverload(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.False(grid.IsAutoFitEnabled, "IsAutoFitEnabled should be false before the call");
+
+        await grid.AutoFitColumnAsync(nameof(Order.OrderID));
+
+        Assert.True(grid.IsAutoFitEnabled,
+            "IsAutoFitEnabled must be true after AutoFitColumnAsync(string)");
+
+        var cols = await grid.GetColumnsAsync();
+        Assert.True(cols.All(c => !c.IsPersistAutoFit),
+            "IsPersistAutoFit must remain false when EnablePersistence=false");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be present after AutoFitColumnAsync()");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit5"
+           TestAsync="AutoFitColumnsAsync_CalledMultipleTimes_RemainsStable"
+           Description="AutoFitColumnsAsync_MultipleCall_Idempotent">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid5" DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)"   Width="150" HeaderText="Ship City"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit5 { get; set; }
+    private SfGrid<Order> autoFitGrid5;
+
+    public async Task AutoFitColumnsAsync_CalledMultipleTimes_RemainsStable(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        string[] firstSet  = { nameof(Order.OrderID), nameof(Order.CustomerID) };
+        string[] secondSet = { nameof(Order.Freight), nameof(Order.ShipCity) };
+
+        await grid.AutoFitColumnsAsync(firstSet);
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must be true after first call");
+
+        await grid.AutoFitColumnsAsync(secondSet);
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must remain true after second call");
+
+        await grid.AutoFitColumnsAsync();
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must remain true after no-param call");
+
+        var cols = await grid.GetColumnsAsync();
+        Assert.True(cols.Count == 4, "Column count must remain 4 after multiple AutoFit calls");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be rendered");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit6"
+           TestAsync="AutoFitColumnsAsync_WithHiddenColumn_DoesNotThrow"
+           Description="AutoFitColumnsAsync_HiddenColumn_Ignored">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid6" DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)"   Width="150" HeaderText="Ship City"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit6 { get; set; }
+    private SfGrid<Order> autoFitGrid6;
+
+    public async Task AutoFitColumnsAsync_WithHiddenColumn_DoesNotThrow(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var visibleCols = (await grid.GetColumnsAsync()).Where(c => c.Visible).ToList();
+        Assert.True(visibleCols.Count == 3, "Three visible columns should be present initially");
+
+        await grid.AutoFitColumnsAsync();
+
+        Assert.True(grid.IsAutoFitEnabled,
+            "IsAutoFitEnabled must be true even when a hidden column is present");
+
+        string[] fields = { nameof(Order.OrderID), nameof(Order.Freight) };
+        await grid.AutoFitColumnsAsync(fields);
+
+        Assert.True(grid.IsAutoFitEnabled,
+            "IsAutoFitEnabled must remain true after AutoFitColumnsAsync with specific fields");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be rendered with a hidden column");
+    }
+}
+
+<SfFixture @ref="fixtureAutoFit7"
+           TestAsync="AutoFitColumnAsync_WithPersistence_StampsFlag_NoParamDoesNot"
+           Description="AutoFitColumnAsync_Persist_vs_NoParam_Persist">
+    <ComponentUnderTest>
+        <SfGrid @ref="autoFitGrid7" DataSource="GenerateOrderData()" EnablePersistence="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)"    Width="150" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"    Width="150" HeaderText="Freight" Format="C2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAutoFit7 { get; set; }
+    private SfGrid<Order> autoFitGrid7;
+
+    public async Task AutoFitColumnAsync_WithPersistence_StampsFlag_NoParamDoesNot(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.EnablePersistence, "EnablePersistence must be true for this fixture");
+
+        await grid.AutoFitColumnAsync(nameof(Order.OrderID));
+
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must be true after AutoFitColumnAsync");
+
+        var colsAfterSingle = await grid.GetColumnsAsync();
+        Assert.True(colsAfterSingle.All(c => c.IsPersistAutoFit),
+            "AutoFitColumnAsync delegates to array overload which stamps IsPersistAutoFit when EnablePersistence=true");
+
+        colsAfterSingle.ForEach(c => c.IsPersistAutoFit = false);
+
+        await grid.AutoFitColumnsAsync();  
+
+        Assert.True(grid.IsAutoFitEnabled, "IsAutoFitEnabled must remain true after no-param AutoFitColumnsAsync");
+
+        var colsAfterNoParam = await grid.GetColumnsAsync();
+        Assert.True(colsAfterNoParam.All(c => !c.IsPersistAutoFit),
+            "No-param AutoFitColumnsAsync does NOT enter the EnablePersistence branch → IsPersistAutoFit stays false");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must still be rendered");
+    }
+}

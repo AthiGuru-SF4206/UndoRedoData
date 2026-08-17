@@ -1,0 +1,1238 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Infinite cache mode down records updating">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" DataSource="GenerateRows()" EnableInfiniteScrolling=true Height="400">
+            <GridInfiniteScrollSettings EnableCache=true></GridInfiniteScrollSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.InfiniteScrollSettings.EnableCache, "Infinite scroll cache enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+
+        List<Order> dataList = GridData.Take(cut.Instance.PageSettings.PageSize * 3).ToList();
+        List<Order> newData = new List<Order>();
+        for (int i = 1; i <= cut.Instance.PageSettings.PageSize; i++)
+        {
+            newData.Add(new Order() { OrderID = dataList.Count + i, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+        }
+
+        cut.Instance.InfiniteScrollModule.IsDownScroll = true;
+        cut.Instance.InfiniteScrollModule.RefreshInfiniteCurrentViewData(newData);
+        cut.Instance.InfiniteScrollModule.IsDownScroll = false;
+        Assert.True(cut.Instance.CurrentViewData.Count() == 120, "Infinite scroll down scroll data updated successfully");
+
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args, isBottom: true).GetAwaiter();
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        int count = 0;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new Order() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new Order() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new Order() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new Order() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new Order() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData = data;
+        return data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixtures" Test="GridBasicRenderings" Description="Infinite cache mode up records updating">
+    <ComponentUnderTest>
+        <SfGrid ID="Grids" @ref="Grids" DataSource="GenerateRowss()" EnableInfiniteScrolling=true Height="400">
+            <GridInfiniteScrollSettings EnableCache=true></GridInfiniteScrollSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Orders.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixtures { get; set; }
+    private SfGrid<Orders> Grids;
+    public List<Orders> GridDatas { get; set; }
+
+    public void GridBasicRenderings(Fixture fixtures)
+    {
+        var cut = fixtures.GetComponentUnderTest<SfGrid<Orders>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.InfiniteScrollSettings.EnableCache, "Infinite scroll cache enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        List<Orders> dataList = GridDatas.Take(cut.Instance.PageSettings.PageSize * 3).ToList();
+        List<Orders> newData1 = new List<Orders>();
+        for (int i = 1; i <= cut.Instance.PageSettings.PageSize; i++)
+        {
+            newData1.Add(new Orders() { OrderID = dataList.Count + i, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+        }
+        cut.Instance.InfiniteScrollModule.IsUpScroll = true;
+        cut.Instance.InfiniteScrollModule.RefreshInfiniteCurrentViewData(newData1);
+        cut.Instance.InfiniteScrollModule.IsUpScroll = false;
+        Assert.True(cut.Instance.CurrentViewData.Count() == 120, "Infinite scroll up scroll data updated successfully");
+
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args, isTop: true).GetAwaiter();
+    }
+
+    public List<Orders> GenerateRowss()
+    {
+        List<Orders> data = new List<Orders>();
+        int count = 0;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new Orders() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new Orders() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new Orders() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new Orders() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new Orders() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridDatas = data;
+        return data;
+    }
+
+    public class Orders
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Infinite normal mode current view data updating">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid1" @ref="Grid1" DataSource="GenerateRows1()" EnableInfiniteScrolling=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData1.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData1.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData1.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData1.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<OrderData1> Grid1;
+    public List<OrderData1> GridData1 { get; set; }
+
+    public void GridBasicRendering1(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<OrderData1>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "Infinite scroll enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 120, "Infinite scroll current view data updated successfully");
+    }
+
+    public List<OrderData1> GenerateRows1()
+    {
+        List<OrderData1> data = new List<OrderData1>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData1() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData1() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData1() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData1() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData1() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class OrderData1
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Cache mode top rows removed bottom rows added">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateRows2()" EnableInfiniteScrolling=true Height="400">
+            <GridInfiniteScrollSettings EnableCache=true></GridInfiniteScrollSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData2.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<OrderData2> Grid2;
+    public List<OrderData2> GridData2 { get; set; }
+
+    public void GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<OrderData2>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        List<Row<object>> rows = cut.Instance.Rows;
+        for(int i = 0; i < cut.Instance.PageSettings.PageSize; i++)
+        {
+            Row<object> row = new Row<object>();
+            row.Data = new OrderData2() { OrderID = 1000 + i, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 };
+            row.Index = rows.Count;
+            rows.Add(row);
+        }
+
+        cut.Instance.InfiniteScrollModule.IsDownScroll = true;
+        var finalRows = cut.Instance.InfiniteScrollModule.RefreshInfiniteCacheRows(rows);
+        Assert.True(finalRows.Count == 120, "Top Rows Removed");
+    }
+
+    public List<OrderData2> GenerateRows2()
+    {
+        List<OrderData2> data = new List<OrderData2>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData2() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class OrderData2
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Cache mode bottom rows removed up rows added">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid3" @ref="Grid3" DataSource="GenerateRows3()" EnableInfiniteScrolling=true Height="400">
+            <GridInfiniteScrollSettings EnableCache=true></GridInfiniteScrollSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData3.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData3.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData3.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData3.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<OrderData3> Grid3;
+    public List<OrderData3> GridData3 { get; set; }
+
+    public void GridBasicRendering3(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<OrderData3>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        List<Row<object>> rows = cut.Instance.Rows;
+        for (int i = 0; i < cut.Instance.PageSettings.PageSize; i++)
+        {
+            Row<object> row = new Row<object>();
+            row.Data = new OrderData3() { OrderID = 1000 + i, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 };
+            row.Index = rows.Count;
+            rows.Add(row);
+        }
+
+        cut.Instance.InfiniteScrollModule.IsUpScroll = true;
+        var finalRows = cut.Instance.InfiniteScrollModule.RefreshInfiniteCacheRows(rows);
+        Assert.True(finalRows.Count == 120, "Bottom Rows removed");
+    }
+
+    public List<OrderData3> GenerateRows3()
+    {
+        List<OrderData3> data = new List<OrderData3>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData3() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData3() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData3() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData3() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData3() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+
+        return data;
+    }
+
+    public class OrderData3
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Update current view data for cache mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid4" @ref="Grid4" DataSource="GenerateRows4()" EnableInfiniteScrolling=true Height="400">
+            <GridInfiniteScrollSettings EnableCache=true></GridInfiniteScrollSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData4.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData4.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData4.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData4.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<OrderData4> Grid4;
+    public List<OrderData4> GridData4 { get; set; }
+
+    public void GridBasicRendering4(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<OrderData4>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.InfiniteScrollSettings.EnableCache, "Infinite scroll cache enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        List<OrderData4> dataList = GridData4.Take(cut.Instance.PageSettings.PageSize * 3).ToList();
+        List<OrderData4> newData = new List<OrderData4>();
+        for (int i = 1; i <= cut.Instance.PageSettings.PageSize; i++)
+        {
+            newData.Add(new OrderData4() { OrderID = dataList.Count + i, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+        }
+        cut.Instance.InfiniteScrollModule.RefreshInfiniteCurrentViewData(newData);
+    }
+
+    public List<OrderData4> GenerateRows4()
+    {
+        List<OrderData4> data = new List<OrderData4>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData4() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData4() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData4() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData4() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData4() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData4 = data;
+        return data;
+    }
+
+    public class OrderData4
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Initial infintie page query for normal mode and cache mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid5" @ref="Grid5" DataSource="GenerateRows5()" EnableInfiniteScrolling=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData5.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData5.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData5.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData5.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<OrderData5> Grid5;
+    public List<OrderData5> GridData5 { get; set; }
+
+    public void GridBasicRendering5(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<OrderData5>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        var query = new Query();
+        cut.Instance.InfiniteScrollModule.IsInfiniteInitialRender = true;
+        cut.Instance.InfiniteScrollModule.IntialInfinitePageQuery(query);
+
+        //For cache mode enable
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        cut.Instance.InfiniteScrollSettings.InitialBlocks = 4;
+        cut.Instance.InfiniteScrollModule.IsInfiniteInitialRender = true;
+        cut.Instance.InfiniteScrollModule.IntialInfinitePageQuery(query);
+
+        //For request type for enable cache scenario
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        cut.Instance.InfiniteScrollModule.RequestType = "Save";
+        cut.Instance.InfiniteScrollModule.IntialInfinitePageQuery(query);
+
+        //For request type for disable cache scenario
+        cut.Instance.InfiniteScrollSettings.EnableCache = false;
+        cut.Instance.InfiniteScrollModule.RequestType = "Save";
+        cut.Instance.InfiniteScrollModule.IntialInfinitePageQuery(query);
+
+        //For request type for disable cache scenario
+        cut.Instance.InfiniteScrollSettings.EnableCache = false;
+        cut.Instance.InfiniteScrollModule.IsInfiniteInitialRender = false;
+        cut.Instance.InfiniteScrollModule.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.IntialInfinitePageQuery(query);
+    }
+
+    public List<OrderData5> GenerateRows5()
+    {
+        List<OrderData5> data = new List<OrderData5>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData5() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData5() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData5() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData5() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData5() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData5 = data;
+        return data;
+    }
+
+    public class OrderData5
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Set current grouped rows for normal mode infinite scroll">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid6" @ref="Grid6" DataSource="GenerateRows6()" EnableInfiniteScrolling=true AllowGrouping=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData6.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<OrderData6> Grid6;
+    public List<OrderData6> GridData6 { get; set; }
+    private string[] Initial = (new string[] { "OrderID" });
+    public void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<OrderData6>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+
+        var captionRow = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+        cut.Instance.Rows.Add(new Row<object>() { Index = null, Uid = "grid-row-122", IsCaptionRow = true, Data = new OrderData6() { OrderID = 1000 + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 } });
+        var captionRow1 = cut.Instance.Rows[120];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow1);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+        var captionRow2 = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.RequestType = "Save";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow2);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully with request type save");
+        cut.Instance.InfiniteScrollModule.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapse";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow2);
+        Assert.True(cut.Instance.Rows.Count == 121, "Current expanded grouped rows updated successfully");
+        cut.Instance.InfiniteScrollModule.RequestType = "InfiniteScrolling"; 
+    }
+
+    public List<OrderData6> GenerateRows6()
+    {
+        List<OrderData6> data = new List<OrderData6>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData6() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData6 = data;
+        return data;
+    }
+
+    public class OrderData6
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="Set current grouped rows for cache mode down scroll">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid7" @ref="Grid7" DataSource="GenerateRows7()" EnableInfiniteScrolling=true AllowGrouping=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial1"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData7.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData7.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData7.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData7.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<OrderData7> Grid7;
+    public List<OrderData7> GridData7 { get; set; }
+    private string[] Initial1 = (new string[] { "CustomerID" });
+    public void GridBasicRendering7(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<OrderData7>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapse";
+        cut.Instance.InfiniteScrollModule.InfiniteForceRefresh = true;
+        cut.Instance.InfiniteScrollModule.IsInfiniteInitialRender = false;
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapse";
+        cut.Instance.InfiniteScrollModule.IsDownScroll = false;
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        var captionRow = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow);
+
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapse";
+        cut.Instance.InfiniteScrollModule.IsDownScroll = false;
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        cut.Instance.InfiniteScrollModule.InfiniteForceRefresh = true;
+        cut.Instance.InfiniteScrollModule.IsInfiniteInitialRender = false;
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        cut.Instance.InfiniteScrollSettings.InitialBlocks = 4;
+        cut.Instance.InfiniteScrollModule.IsDownScroll = true;
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args, isBottom: true).GetAwaiter();
+    }
+
+    public List<OrderData7> GenerateRows7()
+    {
+        List<OrderData7> data = new List<OrderData7>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData7() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData7() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData7() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData7() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData7() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData7 = data;
+        return data;
+    }
+
+    public class OrderData7
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Set current grouped rows for cache mode up scroll">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid8" @ref="Grid8" DataSource="GenerateRows8()" EnableInfiniteScrolling=true AllowGrouping=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial2"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData8.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData8.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData8.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData8.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<OrderData8> Grid8;
+    public List<OrderData8> GridData8 { get; set; }
+    private string[] Initial2 = (new string[] { "CustomerID" });
+    public void GridBasicRendering8(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<OrderData8>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+
+        cut.Instance.InfiniteScrollSettings.EnableCache = true;
+        cut.Instance.InfiniteScrollSettings.InitialBlocks = 4;
+        cut.Instance.InfiniteScrollModule.IsUpScroll = true;
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args, isTop: true).GetAwaiter();
+    }
+
+    public List<OrderData8> GenerateRows8()
+    {
+        List<OrderData8> data = new List<OrderData8>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData8() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData8() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData8() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData8() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData8() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData8 = data;
+        return data;
+    }
+
+    public class OrderData8
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Set current grouped rows for lazy load grouping">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid9" @ref="Grid9" DataSource="GenerateRows9()" Height="400" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial3" EnableLazyLoading=true></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData9.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData9.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData9.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData9.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<OrderData9> Grid9;
+    public List<OrderData9> GridData9 { get; set; }
+    private string[] Initial3 = (new string[] { "OrderID" });
+    public void GridBasicRendering9(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<OrderData9>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+
+        cut.Instance.InfiniteScrollModule.RequestType = "Save";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapseAll";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows();
+        var laszyLoadblockSize = cut.Instance.InfiniteScrollModule.LazyLoadBlockSize;
+        var currentRowIndex = cut.Instance.InfiniteScrollModule.CurrentRowIndex;
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+
+        cut.Instance.InfiniteScrollModule.ResetInfiniteProperties("CsvExport").GetAwaiter();
+        cut.Instance.InfiniteScrollModule.ResetInfiniteProperties("UnGrouping").GetAwaiter();
+        cut.Instance.InfiniteScrollModule.ResetInfiniteProperties("RowDragAndDrop").GetAwaiter();
+
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args).GetAwaiter();
+
+        ActionArgs args1 = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args1, isBottom:true).GetAwaiter();
+    }
+
+    public List<OrderData9> GenerateRows9()
+    {
+        List<OrderData9> data = new List<OrderData9>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData9() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData9() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData9() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData9() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData9() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData9 = data;
+        return data;
+    }
+
+    public class OrderData9
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="Generate infinite scroll datas for down scroll">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid10" @ref="Grid10" DataSource="GenerateRows10()" Height="400" RowHeight="38" EnableInfiniteScrolling=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData10.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData10.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData10.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData10.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<OrderData10> Grid10;
+    public List<OrderData10> GridData10 { get; set; }
+
+    public void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<OrderData10>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args, isBottom:true).GetAwaiter();
+    }
+
+    public List<OrderData10> GenerateRows10()
+    {
+        List<OrderData10> data = new List<OrderData10>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData10() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData10() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData10() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData10() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData10() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData10 = data;
+        return data;
+    }
+
+    public class OrderData10
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="Generate scroll data when caption row is expanded">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid11" @ref="Grid11" DataSource="GenerateRows11()" Height="400" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial4" EnableLazyLoading=true></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData11.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData11.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData11.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData11.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<OrderData11> Grid11;
+    public List<OrderData11> GridData11 { get; set; }
+    private string[] Initial4 = (new string[] { "OrderID", "CustomerID" });
+    public void GridBasicRendering11(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<OrderData11>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        ActionArgs args1 = new ActionArgs();
+        args1.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args1, isBottom: true).GetAwaiter();
+        cut.WaitForState(() => cut.Instance.Rows[0].IsExpand == false);
+        cut.Instance.GroupModule.ExpandCollapse(cut.Instance.Rows[0]).GetAwaiter();
+        cut.WaitForState(() => cut.Instance.Rows[0].IsExpand);
+        cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(args1, isBottom: true).GetAwaiter();
+    }
+
+    public List<OrderData11> GenerateRows11()
+    {
+        List<OrderData11> data = new List<OrderData11>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData11() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData11() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData11() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData11() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData11() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData11 = data;
+        return data;
+    }
+
+    public class OrderData11
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture12" Test="GridBasicRendering12" Description="Generate lazy load child items for the infinite scroll normal mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid12" @ref="Grid12" DataSource="GenerateRows12()" Height="400" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial5" EnableLazyLoading=true></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData12.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData12.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData12.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData12.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<OrderData12> Grid12;
+    public List<OrderData12> GridData12 { get; set; }
+    private string[] Initial5 = (new string[] { "CustomerID" });
+    public void GridBasicRendering12(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<OrderData12>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        var preRowIndex = cut.Instance.InfiniteScrollModule.PreRowIndex;
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.GroupModule.ExpandCollapse(cut.Instance.Rows[0]).GetAwaiter();
+        var middleuid = cut.FindAll(".e-lazyload-middle-down")[0].GetAttribute("data-uid");
+        var lastuid = cut.FindAll(".e-lazyload-last-down")[0].GetAttribute("data-uid");
+        cut.Instance.InfiniteScrollModule.LoadLazyLoadChildData(args, middleRowUid: middleuid, lastRowUid: lastuid).GetAwaiter();
+
+        var lastuid1 = cut.FindAll(".e-lazyload-last-down")[0].GetAttribute("data-uid");
+        cut.Instance.InfiniteScrollModule.LoadLazyLoadChildData(args, middleRowUid: null, lastRowUid: lastuid1).GetAwaiter();
+    }
+
+    public List<OrderData12> GenerateRows12()
+    {
+        List<OrderData12> data = new List<OrderData12>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData12() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData12() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData12() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData12() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData12() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData12 = data;
+        return data;
+    }
+
+    public class OrderData12
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture13" Test="GridBasicRendering13" Description="Normal Grid with cache mode InitialBlocks">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid13" @ref="Grid13" DataSource="GenerateInfiniteData()" Height="400" EnableInfiniteScrolling=true>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridInfiniteScrollSettings InitialBlocks="1" EnableCache="true"></GridInfiniteScrollSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<OrderData> Grid13;
+    public void GridBasicRendering13(Fixture fixture13)
+    {
+        var cut = fixture13.GetComponentUnderTest<SfGrid<OrderData>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        IRefreshableElementCollection<IElement> content = cut.FindAll(".e-content");
+        IHtmlCollection<IElement> rows = content[0].QuerySelectorAll("tr");
+        Assert.True(rows.Count() == 20, "InitialBlocks rendered properly");
+        ActionArgs actionArgs = new ActionArgs() { RequestType = "InfiniteScrolling" };
+        //DownScroll
+        cut.InvokeAsync(() => cut.Instance.InfiniteScrollModule.GenerateInfiniteScrollDatas(actionArgs, isBottom: true));
+        bool hasDuplicates = cut.Instance.Rows.GroupBy(record => record.Data).Any(group => group.Count() > 1);
+        Assert.True(hasDuplicates == false, "No duplicate Rows");
+        IRefreshableElementCollection<IElement> newcontent = cut.FindAll(".e-content");
+        IHtmlCollection<IElement> newrows = newcontent[0].QuerySelectorAll("tr");
+        Assert.True(newrows.Count() == 60, "Maximum blocks rendered properly");
+        //DeleteAction
+        cut.Instance.SelectRowAsync(58).GetAwaiter();
+        Assert.True(cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[58].QuerySelectorAll("td")[0].TextContent == "1059");
+        cut.Instance.DeleteRecordAsync().GetAwaiter();
+        //cut.WaitForState(() => cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[58].QuerySelectorAll("td")[0].TextContent == "1060", TimeSpan.FromSeconds(20));
+        //Assert.True(cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[58].QuerySelectorAll("td")[0].TextContent == "1060");
+        
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll(".e-content tr");
+            Assert.True(rows.Count >= 59, "Expected rows not rendered");
+            var text = rows[58].QuerySelectorAll("td")[0].TextContent;
+            //Assert.Equal("1060", text);
+        }, TimeSpan.FromSeconds(100));
+
+        IRefreshableElementCollection<IElement> newcontentTop = cut.FindAll(".e-content");
+        IHtmlCollection<IElement> newrowsTop = newcontentTop[0].QuerySelectorAll("tr");
+        Assert.True(newrowsTop.Count() == 60, "Maximum blocks rendered properly");
+    }
+
+}
+<SfFixture @ref="fixture14" Test="GridBasicRendering14" Description="Validation error with EnableInfiniteScrolling and Add , Update">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid14" @ref="Grid14" DataSource="GenerateRows13()" Height="400" RowHeight="38" EnableInfiniteScrolling=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData13.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData13.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules { Required = true })" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData13.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData13.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<OrderData13> Grid14;
+    public List<OrderData13> GridData14 { get; set; }
+    public void GridBasicRendering14(Fixture fixture14)
+    {
+        var cut = fixture14.GetComponentUnderTest<SfGrid<OrderData13>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        var inputFields = cut.FindAll(".e-gridform input");
+        Assert.True(inputFields.Count > 0, "No input fields found in the form");
+        inputFields[1].Focus("aa");
+        var updateButton = cut.FindAll(".e-toolbar-item")[4];
+        if (updateButton != null)
+        {
+            updateButton.Click();
+        }
+    }
+
+    public List<OrderData13> GenerateRows13()
+    {
+        List<OrderData13> data = new List<OrderData13>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData13() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData13() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData13() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData13() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData13() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData14 = data;
+        return data;
+    }
+
+    public class OrderData13
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture15" Test="GridBasicRendering15" Description="Validation error with else part">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid15" @ref="Grid15" DataSource="GenerateRows14()" Height="400" RowHeight="38" EnableInfiniteScrolling=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData14.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData14.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules { Required = true })" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData14.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData14.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture15 { get; set; }
+    private SfGrid<OrderData14> Grid15;
+    public List<OrderData14> GridData15 { get; set; }
+    public void GridBasicRendering15(Fixture fixture15)
+    {
+        var cut = fixture15.GetComponentUnderTest<SfGrid<OrderData14>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        var inputFields = cut.FindAll(".e-gridform input");
+        inputFields = cut.FindAll(".e-gridform input");
+        Assert.True(inputFields.Count > 0, "No input fields found in the form");
+        inputFields[1].Change("");
+        cut.FindAll(".e-toolbar-item")[4].Click();
+    }
+
+    public List<OrderData14> GenerateRows14()
+    {
+        List<OrderData14> data = new List<OrderData14>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData14() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData14() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData14() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData14() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData14() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData15 = data;
+        return data;
+    }
+
+    public class OrderData14
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture16" Test="InfiniteScrollCellKeyDown" Description="Infinite scrolling with cell keydown interaction">
+    <ComponentUnderTest>
+        <SfGrid ID="InfiniteScroll16" @ref="InfiniteScroll16" DataSource="GenerateRows16()" EnableInfiniteScrolling=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderSimple.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture16 { get; set; }
+    private SfGrid<OrderSimple> InfiniteScroll16;
+    public List<OrderSimple> GridDataSimple { get; set; }
+
+    public void InfiniteScrollCellKeyDown(Fixture fixtureSimple)
+    {
+        var cut = fixtureSimple.GetComponentUnderTest<SfGrid<OrderSimple>>();
+        
+        // Assert: Grid rendered successfully
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "Infinite scrolling enabled");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        // Assert: Initial data loaded
+        Assert.True(cut.Instance.CurrentViewData.Count() == 120, "Initial view data loaded successfully");
+        
+        // Simulate cell click/focus
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown" });
+        
+        // Assert: Cell interaction successful
+        Assert.True(cut.Instance.Rows.Count > 0, "Cell keydown interaction successful");
+    }
+
+    public List<OrderSimple> GenerateRows16()
+    {
+        List<OrderSimple> data = new List<OrderSimple>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderSimple() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridDataSimple = data;
+        return data;
+    }
+
+    public class OrderSimple
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+

@@ -1,0 +1,97 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+@using System.Dynamic
+@using System.Collections
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Problem in filtering grid with DynamicObject when having null values in column">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowFiltering="true" AllowPaging="true" Height="315">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    public static List<DynamicDictionary> Orders = new List<DynamicDictionary>() { };
+    SfFixture fixture { get; set; }
+
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ANTON").GetAwaiter();
+        cut.WaitForState(() => cut.Instance.FilterSettings.Columns.Count == 1);
+        Assert.True(cut.Instance.Rows.Count < 50, "Filtering performed properly");
+
+    }
+
+    public List<DynamicDictionary> GenerateRows()
+    {
+        for (int i = 1; i <= 50; i++)
+        {
+            dynamic d = new DynamicDictionary();
+            if (i == 1)
+            {
+                d.OrderID = i;
+                d.CustomerID = "RAM";
+                d.Freight = 123;
+                d.OrderDate = DateTime.Now;
+                d.ShipCountry = "USA";
+                d.Verified = false;
+                Orders.Add(d);
+            }
+            else if (i == 2)
+            {
+                d.OrderID = i;
+                d.CustomerID = null;
+                d.Freight = 123;
+                d.OrderDate = DateTime.Now;
+                d.ShipCountry = "USA";
+                d.Verified = false;
+                Orders.Add(d);
+            }
+            else
+            {
+                d.OrderID = i;
+                d.CustomerID = "ANTON";
+                d.Freight = 123;
+                d.OrderDate = DateTime.Now.AddDays(i);
+                d.ShipCountry = "USA";
+                d.Verified = false;
+                Orders.Add(d);
+            }
+
+        }
+        return Orders;
+    }
+
+    public class DynamicDictionary : System.Dynamic.DynamicObject
+    {
+        Dictionary<string, object> dictionary = new Dictionary<string, object>();
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            string name = binder.Name;
+            return dictionary.TryGetValue(name, out result);
+        }
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            dictionary[binder.Name] = value;
+            return true;
+        }
+        //The GetDynamicMemberNames method of DynamicObject class must be  overridden and return the property names to perform data operation and editing while using DynamicObject.
+
+        public override System.Collections.Generic.IEnumerable<string> GetDynamicMemberNames()
+        {
+            return this.dictionary?.Keys;
+        }
+    }
+}

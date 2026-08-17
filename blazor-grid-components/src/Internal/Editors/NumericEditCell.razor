@@ -1,0 +1,253 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@inherits EditorCellBase<TCell>
+
+@using Syncfusion.Blazor.Inputs
+
+
+@{
+    if (Column != null && Column.ValueType == typeof(double?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="double?" Value="@((double?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableDoubleExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(double?)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ?(double?)Convert.ToDouble(maxValue) : double.MaxValue"
+                          Step="@(step != null ? (double?)Convert.ToDouble(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="double?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(double))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="double" Value="@((double)Value!)" ValueChanged="@ValueChanged" ValueExpression="@DoubleExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(double)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ?(double)Convert.ToDouble(maxValue) : double.MaxValue"
+                          Step="@(step != null ? (double)Convert.ToDouble(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="double"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(int))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="int" Value="@((int)Value!)" ValueChanged="@ValueChanged" ValueExpression="@IntExp"
+                      Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(int)minValue : int.MinValue" Max="maxValue != null ?(int)maxValue : int.MaxValue"
+                      Step="@(step != null ? (int)step : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="int"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(int?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="int?" Value="@((int?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableIntExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(int?)minValue : int.MinValue" Max="maxValue != null ?(int?)maxValue : int.MaxValue"
+                          Step="@(step != null ? (int?)step : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="int?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(Int64))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="Int64" Value="@((Int64)Value!)" ValueChanged="@ValueChanged" ValueExpression="@IntExp1"
+                      Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? Convert.ToInt64(minValue) : Int64.MinValue" Max="maxValue != null ? Convert.ToInt64(maxValue) : Int64.MaxValue"
+                      Step="@(step != null ? Convert.ToInt64(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="Int64"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+
+    else if (Column != null && Column.ValueType == typeof(float))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="float" Value="@((float)Value!)" ValueChanged="@ValueChanged" ValueExpression="@FloatExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? Convert.ToSingle(minValue) : float.MinValue" Max="maxValue != null ? Convert.ToSingle(maxValue) : float.MaxValue"
+                          Step="@(step != null ? Convert.ToSingle(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="float"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(float?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="float?" Value="@((float?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableFloatExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? (float?)Convert.ToSingle(minValue) : float.MinValue" Max="maxValue != null ?(float?)Convert.ToSingle(maxValue) : float.MaxValue"
+                          Step="@(step != null ? (float?)Convert.ToSingle(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="float?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(decimal))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="decimal" Value="@((decimal)Value!)" ValueChanged="@ValueChanged" ValueExpression="@DecimalExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? Convert.ToDecimal(minValue) : decimal.MinValue" Max="maxValue != null ? Convert.ToDecimal(maxValue) : decimal.MaxValue"
+                          Step="@(step != null ? Convert.ToDecimal(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="decimal"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(decimal?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="decimal?" Value="@((decimal?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableDecimalExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? (decimal?)Convert.ToDecimal(minValue) : decimal.MinValue" Max="maxValue != null ? (decimal?)Convert.ToDecimal(maxValue) : decimal.MaxValue"
+                          Step="@(step != null ? (decimal?)Convert.ToDecimal(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="decimal?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column != null && Column.ValueType == typeof(long))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="long" Value="@((long)Value!)" ValueChanged="@ValueChanged" ValueExpression="@LongExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? (long)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ?(long)Convert.ToInt64(maxValue) : long.MaxValue"
+                          Step="@(step != null ? (long)Convert.ToInt64(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="long"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(long?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="long?" Value="@((long?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableLongExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ? (long?)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ?(long?)Convert.ToInt64(maxValue): long.MaxValue"
+                          Step="@(step != null ? (long?)Convert.ToInt64(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="long?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(ulong))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="ulong" Value="@((ulong)Value!)" ValueChanged="@ValueChanged" ValueExpression="@UlongExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(ulong)Convert.ToUInt64(minValue) : ulong.MinValue" Max="maxValue != null ?(ulong)Convert.ToUInt64(maxValue) : ulong.MaxValue"
+                          Step="@(step != null ? (ulong)Convert.ToUInt64(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="ulong"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(ulong?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="ulong?" Value="@((ulong?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableUlongExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(ulong?)Convert.ToUInt64(minValue) : ulong.MinValue" Max="maxValue != null ?(ulong?)Convert.ToUInt64(maxValue) : ulong.MaxValue"
+                          Step="@(step != null ? (ulong?)Convert.ToUInt64(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="ulong?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(ushort))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="ushort" Value="@((ushort)Value!)" ValueChanged="@ValueChanged" ValueExpression="@UshortExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(ushort)Convert.ToUInt16(minValue) : ushort.MinValue" Max="maxValue != null ?(ushort)Convert.ToUInt16(maxValue) : ushort.MaxValue"
+                          Step="@(step != null ? (ushort)Convert.ToUInt16(step) : (ushort)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="ushort"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(ushort?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="ushort?" Value="@((ushort?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableUshortExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(ushort?)Convert.ToUInt16(minValue) : ushort.MinValue" Max="maxValue != null ?(ushort?)Convert.ToUInt16(maxValue) : ushort.MaxValue"
+                          Step="@(step != null ? (ushort?)Convert.ToUInt16(step) : (ushort?)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="ushort?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null &&  Column.ValueType == typeof(short))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="short" Value="@((short)Value!)" ValueChanged="@ValueChanged" ValueExpression="@ShortExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(short)Convert.ToInt16(minValue) : short.MinValue" Max="maxValue != null ?(short)Convert.ToInt16(maxValue) : short.MaxValue"
+                          Step="@(step != null ? (short)Convert.ToInt16(step) : (short)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="short"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(short?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="short?" Value="@((short?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableShortExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(short?)Convert.ToInt16(minValue) : short.MinValue" Max="maxValue != null ?(short?)Convert.ToInt16(maxValue) : short.MaxValue"
+                          Step="@(step != null ? (short?)Convert.ToInt16(step) : (short?)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="short?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(uint))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="uint" Value="@((uint)Value!)" ValueChanged="@ValueChanged" ValueExpression="@UintExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(uint)Convert.ToUInt32(minValue) : uint.MinValue" Max="maxValue != null ?(uint)Convert.ToUInt32(maxValue) : uint.MaxValue"
+                          Step="@(step != null ? (uint)Convert.ToUInt32(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="uint"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(uint?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="uint?" Value="@((uint?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableUintExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(uint?)Convert.ToUInt32(minValue) : uint.MinValue" Max="maxValue != null ?(uint?)Convert.ToUInt32(maxValue) : uint.MaxValue"
+                          Step="@(step != null ? (uint?)Convert.ToUInt32(step) : 1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="uint?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(byte))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="byte" Value="@((byte)Value!)" ValueChanged="@ValueChanged" ValueExpression="@ByteExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(byte)Convert.ToUInt32(minValue) : byte.MinValue" Max="maxValue != null ?(byte)Convert.ToUInt32(maxValue) : byte.MaxValue"
+                          Step="@(step != null ? (byte)Convert.ToUInt32(step) : (byte)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="byte"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(byte?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="byte?" Value="@((byte?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableByteExp"
+                          Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(byte?)Convert.ToUInt32(minValue) : byte.MinValue" Max="maxValue != null ?(byte?)Convert.ToUInt32(maxValue) : byte.MaxValue"
+                          Step="@(step != null ? (byte?)Convert.ToUInt32(step) : (byte?)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="byte?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(sbyte))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="sbyte" Value="@((sbyte)Value!)" ValueChanged="@ValueChanged" ValueExpression="@SbyteExp"
+                  Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(sbyte)Convert.ToUInt32(minValue) : sbyte.MinValue" Max="maxValue != null ?(sbyte)Convert.ToUInt32(maxValue) : sbyte.MaxValue"
+                  Step="@(step != null ? (sbyte)Convert.ToUInt32(step) :(sbyte)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="sbyte"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+    else if (Column != null && Column.ValueType == typeof(sbyte?))
+    {
+        <SfNumericTextBox ID="@FieldName" TValue="sbyte?" Value="@((sbyte?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableSbyteExp"
+                  Enabled="@(PreventAddForm ? false : Enabled)" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" Min="minValue != null ?(sbyte?)Convert.ToUInt32(minValue) : sbyte.MinValue" Max="maxValue != null ?(sbyte?)Convert.ToUInt32(maxValue) : sbyte.MaxValue"
+                  Step="@(step != null ? (sbyte?)Convert.ToUInt32(step) : (sbyte?)1)" @attributes="attributes">
+            <NumericTextBoxEvents ValueChange="ValueChange" Created="@CreatedHandler" TValue="sbyte?"></NumericTextBoxEvents>
+        </SfNumericTextBox>
+    }
+}
+
+@code{
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    private object? minValue { get; set; }
+
+    private object? maxValue { get; set; }
+
+    private object? step { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Column != null && Column.EditorSettings is NumericEditCellParams param && param.Params != null)
+        {
+            NumericTextBoxModel<object> model = param.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.Decimals), model.Decimals! },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.Format), model.Format },
+                { nameof(model.Placeholder), model.Placeholder ?? PlaceHolder },
+                { nameof(model.ShowClearButton), model.ShowClearButton },
+                { nameof(model.ShowSpinButton), model.ShowSpinButton },
+                { nameof(model.ValidateDecimalOnType), model.ValidateDecimalOnType }
+            };
+            minValue = model.Min;
+            maxValue = model.Max;
+            step = model.Step;
+        }
+
+        if (Column != null && Column.IsPrimaryKey)
+        {
+            attributes.AddOrUpdateItem("ShowSpinButton", false);
+        }
+        Value = Parent?.PropHelper?.GetObject(Column?.Field!, RowData!)!;
+    }
+
+    internal void ValueChange<T>(ChangeEventArgs<T> args)
+    {
+        if (args.Value != null)
+        {
+            Value = args.Value;
+            if (Parent != null && Parent.EditModule != null)
+            Parent.EditModule.SetValue<T>(args.Value, Column?.Field!);
+        }
+    }
+
+    internal async Task CreatedHandler(Object args)
+    {
+        if (Parent != null && Parent.EditSettings!.Mode == EditMode.Batch && Parent.EditModule != null)
+        {
+            await this.Parent.InvokeMethod("sfBlazor.Grid.focusCell", Parent.DataId,
+                    Parent.EditModule.OriginalCell?.Column?.Field, Parent.EditModule.IsAdd);
+        }
+    }
+}

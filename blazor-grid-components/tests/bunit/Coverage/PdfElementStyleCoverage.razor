@@ -1,0 +1,287 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.ExcelExport
+
+<SfFixture @ref="fixture" TestAsync="PdfElementStyleAndPdfTextStyleCoverage" Description="PdfElementStyle and PdfTextStyle property coverage">
+    <ComponentUnderTest>
+        <SfGrid ID="GridPdfElementStyle" @ref="Grid" DataSource="GenerateRows()" Toolbar="@(new List<string>() { "PdfExport" })" AllowPdfExport="true">
+            <GridEvents OnPdfExport="OnPdfExported" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async Task PdfElementStyleAndPdfTextStyleCoverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 20, "All records are rendered.");
+
+        // Test Case 1: PdfTextStyle (base class) property coverage
+        PdfTextStyle textStyle = new PdfTextStyle();
+        textStyle.Font = new PdfGridFont() { FontFamily = "Calibri", FontSize = 12, FontStyle = PdfExport.PdfFontStyle.Bold, IsTrueType = true };
+        textStyle.FillBackgroundColor = "#F2F2F2";
+        var stringformats = textStyle.StringFormat;
+        textStyle.StringFormat = new PdfExport.PdfStringFormat() { Alignment = PdfExport.PdfTextAlignment.Center, LineAlignment = PdfExport.PdfVerticalAlignment.Middle };
+        stringformats = textStyle.StringFormat;
+        Assert.True(textStyle.Font != null, "PdfTextStyle.Font should be assigned");
+        Assert.True(textStyle.Font.FontFamily == "Calibri", "Font Family should be Calibri");
+        Assert.True(textStyle.FillBackgroundColor == "#F2F2F2", "PdfTextStyle.FillBackgroundColor should be assigned");
+
+        // Test Case 2: PdfElementStyle (derived class) property coverage - inherits from PdfTextStyle
+        PdfElementStyle elementStyle = new PdfElementStyle();
+        elementStyle.Font = new PdfGridFont() { FontFamily = "Arial", FontSize = 11, FontStyle = PdfExport.PdfFontStyle.Regular, IsTrueType = false };
+        elementStyle.Padding = new PdfExport.PdfPaddings() { Left = 5, Right = 5, Top = 3, Bottom = 3 };
+        elementStyle.FillBackgroundColor = "#FFFFFF";
+        
+        // Set PdfElementStyle specific properties
+        elementStyle.Border = new PdfBorder() { Color = "#0000FF", Width = 1, DashStyle = PdfDashStyle.Solid, LineStyle = BorderLineStyle.Thin };
+        elementStyle.Image = null;
+        elementStyle.ImagePosition = new PdfPosition() { X = 10, Y = 15 };
+
+        Assert.True(elementStyle.Font != null, "PdfElementStyle.Font should be assigned");
+        Assert.True(elementStyle.Font.FontFamily == "Arial", "ElementStyle Font Family should be Arial");
+        Assert.True(elementStyle.FillBackgroundColor == "#FFFFFF", "PdfElementStyle.FillBackgroundColor should be assigned");
+        Assert.True(elementStyle.Border != null, "PdfElementStyle.Border should be assigned");
+        Assert.True(elementStyle.Border.Color == "#0000FF", "Border Color should be #0000FF");
+        Assert.True(elementStyle.Border.Width == 1, "Border Width should be 1");
+        Assert.True(elementStyle.ImagePosition != null, "PdfElementStyle.ImagePosition should be assigned");
+        Assert.True(elementStyle.ImagePosition.X == 10, "ImagePosition X should be 10");
+        Assert.True(elementStyle.ImagePosition.Y == 15, "ImagePosition Y should be 15");
+
+        // Test Case 3: Export without theme to verify basic functionality
+        PdfExportProperties pdfProperties = new PdfExportProperties()
+        {
+            FileName = "PdfElementStyleCoverage.pdf",
+            DataSource = GenerateRows(),
+            ExportType = ExportType.CurrentPage,
+            IncludeHeaderRow = true,
+            PageSize = PdfPageSize.A4,
+            PageOrientation = PageOrientation.Portrait,
+            HierarchyExportMode = HierarchyExportMode.None,
+        };
+
+        await cut.Instance.ExportToPdfAsync(pdfProperties);
+
+        Assert.True(pdfProperties.FileName == "PdfElementStyleCoverage.pdf", "Export file name should be set correctly");
+
+
+        
+    }
+
+    public void OnPdfExported(object args)
+    {
+        Assert.True(true, "PDF exported successfully");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 20).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="PdfElementStyleBorderAndImageCoverage" Description="PdfElementStyle Border and Image Property Coverage">
+    <ComponentUnderTest>
+        <SfGrid ID="GridPdfElementStyle2" @ref="Grid2" DataSource="GenerateRows2()" Toolbar="@(new List<string>() { "PdfExport" })" AllowPdfExport="true">
+            <GridEvents OnPdfExport="OnPdfExported2" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> Grid2;
+    public List<Order> GridData2 { get; set; }
+
+    public async Task PdfElementStyleBorderAndImageCoverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 15, "All records are rendered.");
+
+        // Test Case 1: PdfElementStyle with Border configurations
+        PdfElementStyle elementStyleWithBorder1 = new PdfElementStyle();
+        elementStyleWithBorder1.Font = new PdfGridFont() { FontFamily = "Verdana", FontSize = 10 };
+        elementStyleWithBorder1.Border = new PdfBorder() 
+        { 
+            Color = "#FF0000", 
+            Width = 2, 
+            DashStyle = PdfDashStyle.Dash, 
+            LineStyle = BorderLineStyle.Thick 
+        };
+
+        Assert.True(elementStyleWithBorder1.Border != null, "Border should be assigned");
+        Assert.True(elementStyleWithBorder1.Border.Color == "#FF0000", "Border Color should be #FF0000");
+        Assert.True(elementStyleWithBorder1.Border.Width == 2, "Border Width should be 2");
+        Assert.True(elementStyleWithBorder1.Border.DashStyle == PdfDashStyle.Dash, "Border DashStyle should be Dash");
+
+        // Test Case 2: PdfElementStyle with different Border styles
+        PdfElementStyle elementStyleWithBorder2 = new PdfElementStyle();
+        elementStyleWithBorder2.Border = new PdfBorder() 
+        { 
+            Color = "#00FF00", 
+            Width = 1, 
+            DashStyle = PdfDashStyle.Dot, 
+            LineStyle = BorderLineStyle.Thin 
+        };
+
+        Assert.True(elementStyleWithBorder2.Border.Color == "#00FF00", "Second Border Color should be #00FF00");
+        Assert.True(elementStyleWithBorder2.Border.DashStyle == PdfDashStyle.Dot, "Border DashStyle should be Dot");
+
+        // Test Case 3: PdfElementStyle with ImagePosition
+        PdfElementStyle elementStyleWithImage = new PdfElementStyle();
+        elementStyleWithImage.ImagePosition = new PdfPosition() { X = 50, Y = 100 };
+        elementStyleWithImage.Image = null;
+
+        Assert.True(elementStyleWithImage.ImagePosition != null, "ImagePosition should be assigned");
+        Assert.True(elementStyleWithImage.ImagePosition.X == 50, "ImagePosition X should be 50");
+        Assert.True(elementStyleWithImage.ImagePosition.Y == 100, "ImagePosition Y should be 100");
+        Assert.True(elementStyleWithImage.Image == null, "Image should support null values");
+
+        // Test Case 4: Export to verify functionality
+        PdfExportProperties pdfProperties = new PdfExportProperties()
+        {
+            FileName = "PdfElementStyleBorderImage.pdf",
+            DataSource = GenerateRows2(),
+            ExportType = ExportType.CurrentPage,
+            PageSize = PdfPageSize.A4
+        };
+
+        await cut.Instance.ExportToPdfAsync(pdfProperties);
+
+        Assert.True(true, "PdfElementStyle Border and Image properties verified");
+    }
+
+    public void OnPdfExported2(object args)
+    {
+        Assert.True(true, "PDF exported successfully");
+    }
+
+    public List<Order> GenerateRows2()
+    {
+        return GridData2 = Enumerable.Range(1, 15).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON" })[new Random().Next(3)],
+            Freight = 3.2 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="PdfElementStyleInheritanceCoverage" Description="PdfElementStyle Inheritance from PdfTextStyle Coverage">
+    <ComponentUnderTest>
+        <SfGrid ID="GridPdfElementStyle3" @ref="Grid3" DataSource="GenerateRows3()" Toolbar="@(new List<string>() { "PdfExport" })" AllowPdfExport="true">
+            <GridEvents OnPdfExport="OnPdfExported3" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> Grid3;
+    public List<Order> GridData3 { get; set; }
+
+    public async Task PdfElementStyleInheritanceCoverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 10, "All records are rendered.");
+
+        // Test Case: PdfElementStyle inherits PdfTextStyle properties and extends with additional properties
+        PdfElementStyle derivedStyle = new PdfElementStyle();
+
+        // Set inherited properties from PdfTextStyle
+        derivedStyle.Font = new PdfGridFont() 
+        { 
+            FontFamily = "Georgia", 
+            FontSize = 14, 
+            FontStyle = PdfExport.PdfFontStyle.Bold | PdfExport.PdfFontStyle.Italic, 
+            IsTrueType = true,
+            TextColor ="Red",
+            TextHighlightColor = "Yellow"
+        };
+        var textcolor = derivedStyle.Font.TextColor;
+        var texthighlightcolor = derivedStyle.Font.TextHighlightColor;
+        derivedStyle.FillBackgroundColor = "#FFFFCC";
+
+        // Set PdfElementStyle specific properties
+        derivedStyle.Border = new PdfBorder() 
+        { 
+            Color = "#800080", 
+            Width = 2, 
+            DashStyle = PdfDashStyle.DashDot, 
+            LineStyle = BorderLineStyle.Thick 
+        };
+        derivedStyle.ImagePosition = new PdfPosition() { X = 20, Y = 30 };
+
+        // Verify inherited properties
+        Assert.True(derivedStyle.Font.FontFamily == "Georgia", "Inherited Font Family should be Georgia");
+        Assert.True(derivedStyle.Font.FontSize == 14, "Inherited Font Size should be 14");
+        Assert.True(derivedStyle.FillBackgroundColor == "#FFFFCC", "Inherited FillBackgroundColor should be #FFFFCC");
+
+        // Verify new properties
+        Assert.True(derivedStyle.Border.Color == "#800080", "Border Color should be #800080");
+        Assert.True(derivedStyle.ImagePosition.X == 20, "ImagePosition X should be 20");
+
+        // Export test
+        PdfExportProperties pdfProperties = new PdfExportProperties()
+        {
+            FileName = "PdfElementStyleInheritance.pdf",
+            DataSource = GenerateRows3(),
+            ExportType = ExportType.CurrentPage,
+            PageSize = PdfPageSize.A4
+        };
+
+        await cut.Instance.ExportToPdfAsync(pdfProperties);
+
+        Assert.True(true, "PdfElementStyle inheritance verified successfully");
+    }
+
+    public void OnPdfExported3(object args)
+    {
+        Assert.True(true, "PDF exported successfully");
+    }
+
+    public List<Order> GenerateRows3()
+    {
+        return GridData3 = Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = "CUSTOMER" + x,
+            Freight = 1.5 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+}

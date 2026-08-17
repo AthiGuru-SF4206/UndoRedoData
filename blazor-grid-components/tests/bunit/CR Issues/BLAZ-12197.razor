@@ -1,0 +1,76 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+
+<SfFixture @ref="fixture" Test="CommandColumnAlign" Description="Text Align For command column">
+    <ComponentUnderTest>
+        <SfGrid  DataSource="@GenerateRecord()" TValue="Order" AllowPaging="true" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="120" TextAlign="TextAlign.Right"></GridColumn>
+                <GridColumn HeaderText="None Records" Width="120">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-cancel-icon", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+                <GridColumn HeaderText="Left Records" Width="150" TextAlign="TextAlign.Left">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-cancel-icon", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+                <GridColumn HeaderText="Right Records" Width="150" TextAlign="TextAlign.Right">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-cancel-icon", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public SfGrid<Order> DefaultGrid;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    public void CommandColumnAlign(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count == 2);
+        cut.WaitForState(() => cut.Instance.TotalItemCount == 2);
+        Assert.True(cut.Instance.EnableRtl == false);
+        Assert.True(cut.Instance.Columns[1].Commands.Count == 4);
+        cut.FindAll("e-rowcell e-unboundcell").Count();
+        var a = cut.Instance.Columns[1];
+        Assert.True(cut.Instance.Columns[0].TextAlign.Equals(Syncfusion.Blazor.Grids.TextAlign.Right));
+        var content = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+        Assert.True(content[0].QuerySelectorAll("td")[1].GetAttribute("class") == "e-rowcell e-unboundcell  e-rightalign ");
+        Assert.True(content[0].QuerySelectorAll("td")[2].GetAttribute("class") == "e-rowcell e-unboundcell  e-leftalign ");
+        Assert.True(cut.Instance.Columns[2].TextAlign.Equals(Syncfusion.Blazor.Grids.TextAlign.Left));
+        Assert.True(cut.Instance.Columns[3].TextAlign.Equals(Syncfusion.Blazor.Grids.TextAlign.Right));
+    }
+
+    public List<Order> Orders { get; set; }
+    public List<Order> GenerateRecord()
+    {
+        return Orders = Enumerable.Range(1, 2).Select(x => new Order()
+        {
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public string CustomerID { get; set; }
+    }
+
+}
+

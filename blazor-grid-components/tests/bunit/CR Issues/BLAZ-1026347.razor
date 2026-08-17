@@ -1,0 +1,95 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture1" Test="CommandClickHandler" Description="Command Column role attribute">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef1" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn HeaderText="Manage Records">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-close", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    public SfGrid<Order> gridRef1 { get; set; }
+
+
+    public async void CommandClickHandler(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var tdElement = cut.Find("td.e-unboundcell");
+        Assert.True(tdElement.HasAttribute("role"), "TD element should have 'role' attribute");
+        Assert.True(tdElement.GetAttribute("role") == "gridcell", "TD element 'role' attribute should be 'gridcell'");
+    }
+}
+
+<SfFixture @ref="fixture2" Test="CommandClickHandler1" Description="Group caption and template role attribute">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef2" AllowPaging="true" AllowGrouping="true">
+            <GridGroupSettings Columns=@GroupedColumn></GridGroupSettings>
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var Unit = (context as AggregateTemplateContext);
+                                    <div>
+                                        Total units: @Unit?.Sum
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Max">
+                            <GroupCaptionTemplate>
+                                @{
+                                    var Maxcount = (context as AggregateTemplateContext);
+                                    <div>
+                                        Maximum: @Maxcount?.Max
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+    public SfGrid<Order> gridRef2 { get; set; }
+    private string[] GroupedColumn = new string[] { "CustomerID" };
+
+
+    public async void CommandClickHandler1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var tdElement = cut.Find("td.e-summarycell");
+        Assert.True(tdElement.HasAttribute("role"), "TD element should have 'role' attribute");
+        Assert.True(tdElement.GetAttribute("role") == "gridcell", "TD element 'role' attribute should be 'gridcell'");
+    }
+}

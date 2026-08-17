@@ -1,0 +1,2081 @@
+﻿@using Syncfusion.Blazor.Data
+@using System.Globalization;
+@using Microsoft.AspNetCore.Components.Web;
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Inputs
+@using System.Dynamic
+
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+@{
+    if (Parent!.FilterSettings?.Columns != null && Parent.FilterSettings.Columns.Count != 0)
+    {
+        var CurrentFilterColumns = Parent.FilterSettings.Columns.Where(e => e.Uid == Column?.Uid);
+        Fcount = CurrentFilterColumns.Count();
+        isFiltered = Fcount != 0 ? true : false;
+        @if (Fcount == 1 || Fcount == 2)
+        {
+            var count = 0;
+            foreach (var Fcol in CurrentFilterColumns)
+            {
+                count++;
+                if (count == 1)
+                {
+                    var firstFilterOperator = Fcol.Operator.ToString().ToLower(CultureInfo.InvariantCulture);
+                    FirstFoperator = SelectedFoperator == "customfilter" || (SelectedFoperator == "between" && Fcount != 1) || SelectedFoperator == null ? firstFilterOperator : SelectedFoperator;
+                    var firstFilterValue = (SelectedFoperator != null && firstFilterOperator != SelectedFoperator) ? null : Fcol.Value?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(Fcol.Value, Column?.ValueType) : Fcol.Value;
+                    FirstValue = SelectedFoperator == "customfilter" || (SelectedFoperator == "between" && Fcount != 1) ? Fcol.Value! : firstFilterValue!;
+                    Fpredicate = Fcol.Predicate!;
+                    FmatchCase = Fcol.MatchCase;
+                    if (Column?.FilterTemplate != null)
+                        Filter<TContent>.UpdateFilterModel(ModelInstance1!, Fcol, FirstValue, Column.ValueType);
+                }
+                else
+                {
+                    var secondFilterOperator = Fcol.Operator.ToString().ToLower(CultureInfo.InvariantCulture);
+                    SecondFoperator = SelectedFoperator == "customfilter" || (SelectedFoperator == "between") || SelectedFoperator == null ? secondFilterOperator : null;
+                    SecondValue = SecondFoperator == null ? null! : (Fcol.Value?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(Fcol.Value, Column?.ValueType)! : Fcol.Value!);
+                    if (Column?.FilterTemplate != null)
+                        Filter<TContent>.UpdateFilterModel(ModelInstance2!, Fcol, SecondValue, Column.ValueType);
+                }
+            }
+        }
+
+    }
+
+}
+@if (IsSubMenuDialog && Parent.EnableAdaptiveUI)
+{
+    <SfDialog ID="@(($"{Column?.Field}_customfilter_submenu"))" AllowPrerender="true" MinHeight="100%" HtmlAttributes="@Border" CssClass="e-filter-popup e-resfilterdiv e-responsive-dialog e-bigger e-resfilter e-row-responsive-filter e-dlg-fullscreen e-excelfilter" Height="100%" @bind-Visible="IsSubMenuDialog" Target="@(($"#{Parent.ID}"))">
+        <DialogEvents Created="RenderedSubmenu"></DialogEvents>
+        <DialogTemplates>
+            <Header>
+                <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn" @onclick="@CloseHandler" HtmlAttributes="@title"></SfButton>
+                <div class="e-dlg-header">
+                    <div class="e-res-custom-element">
+                        <div class="e-dlg-custom-header" id="@(($"{Parent.ID}_excel_submenu_wrapper"))">@SelectedText</div>
+                    </div>
+                </div>
+            </Header>
+            <Content>
+                <SfContextMenu @ref="SubMenuRef" Items="@SubMenuItems">
+                    <MenuEvents TValue="MenuItem" Created="OnSubMenuCreated" ItemSelected="ItemSelected" OnClose="OnCloseMenu"></MenuEvents>
+                </SfContextMenu>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+}
+@if (!isDialogClosed)
+{
+    @if (Parent.EnableAdaptiveUI)
+    {
+        <SfContextMenu @ref="contextMenu" TValue="MenuItem" CssClass="e-contextmenu-wrapper e-grid-filter-menu" ShowItemOnClick="true" EnableRtl="@Parent.EnableRtl">
+            <MenuItems>
+                @foreach (MenuItem item in BuildDefaultItems())
+                {
+                    <MenuItem IconCss="@item.IconCss" Text="@item.Text" Items="@item.Items" Separator="@item.Separator"></MenuItem>
+                }
+            </MenuItems>
+            <MenuEvents TValue="MenuItem" Created="OnMenuCreated" ItemSelected="ItemSelected" OnClose="OnCloseMenu"></MenuEvents>
+        </SfContextMenu>
+    }
+    else
+    {
+        <SfContextMenu @ref="contextMenu" CssClass="e-grid-filter-menu" EnableRtl="@Parent.EnableRtl" Items="BuildDefaultItems()">
+            <MenuEvents TValue="MenuItem" Opened="OnSubMenuOpened" Created="OnMenuCreated" ItemSelected="ItemSelected" OnClose="OnCloseMenu"></MenuEvents>
+        </SfContextMenu>
+    }
+}
+@if (isSubMenuItemSelected && !Parent.EnableAdaptiveUI)
+{
+    <SfDialog @ref="CustomFilterDialog" ID="@(($"{Column?.Field}-xlflmenu"))" AllowPrerender="true" Width="430" HtmlAttributes="@gridClass" Target="body" Visible="true" IsModal="true" CloseOnEscape="true" ShowCloseIcon="true" EnableRtl="Parent.EnableRtl">
+        <DialogEvents OnClose="Closed"></DialogEvents>
+        <DialogTemplates>
+            <Header>
+
+                @Localizer!.GetText(GridLocaleKeys.CustomFilter)
+
+            </Header>
+            <Content>
+
+                <div class="e-xlfl-maindiv" id="@(($"{Column!.Field}-xlflmenu"))">
+                    <div class="e-xlfl-dlgfields">
+                        @Localizer!.GetText(GridLocaleKeys.ShowRowsWhere)
+                    </div>
+                    <div class="e-xlfl-fieldset">@Column.HeaderText</div>
+                    <table class="e-xlfl-table">
+                        <colgroup>
+                            <col>
+                            <col>
+                        </colgroup>
+                        <tr class="e-xlfl-fields">
+                            <td class="e-xlfl-optr">
+                                <div class="e-xlfl-optrdiv">
+                                    @switch (Column.Type)
+                                    {
+                                        case ColumnType.Date:
+                                        case ColumnType.DateOnly:
+                                        case ColumnType.TimeOnly:
+                                        case ColumnType.DateTime:
+                                        case ColumnType.Integer:
+                                        case ColumnType.Double:
+                                        case ColumnType.Long:
+                                        case ColumnType.Decimal:
+
+                                            var NumberIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : (!string.IsNullOrEmpty(FirstFoperator) && (FirstFoperator != "between")) ? NumberDropDown?.FindIndex(e => e.Value == FirstFoperator) : (SelectedFoperator == "between" ? NumberDropDown?.FindIndex(e => e.Value == "greaterthanorequal") : NumberDropDown?.FindIndex(e => e.Value == SelectedFoperator));
+                                            if (NumberIndex < 0 && SelectedFoperator == "customfilter")
+                                            {
+                                                NumberIndex = 0;
+                                            }
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-frstoptr"))" @ref="FirstNumberOperatorDropDown" @key="@(($"{Column.Uid}-frstoptr"))" Index="@NumberIndex" TValue="string" TItem="Operator" DataSource=@NumberDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="FirstNumberDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+                                        default:
+                                            var StringIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : !string.IsNullOrEmpty(FirstFoperator) ? StringDropDown?.FindIndex(e => e.Value == FirstFoperator) : StringDropDown?.FindIndex(e => e.Value == SelectedFoperator);
+                                            if (StringIndex < 0 && SelectedFoperator == "customfilter")
+                                            {
+                                                StringIndex = 0;
+                                            }
+                                            
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-frstoptr"))" @key="@(($"{Column.Uid}-frstoptr"))" Index="@StringIndex" @ref="FirstStringOperatorDropDown" TValue="string" TItem="Operator" DataSource=@StringDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="FirstDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+
+                                    }
+                                </div>
+                            </td>
+                            <td class="e-xlfl-value">
+                                <div class="e-xlfl-valuediv">
+                                    @if (Column.FilterTemplate != null)
+                                    {
+                                        ModelInstance1!.GetType()?.GetProperty("Uid")?.SetValue(ModelInstance1, Column.Uid);
+                                        string? filterOperator = GetFirstColumnFilterOperator();
+                                        ModelInstance1.GetType()?.GetProperty("Operator")?.SetValue(ModelInstance1, Filter<TContent>.GetFilterOperator(filterOperator!));
+                                        @Column.FilterTemplate(ModelInstance1)
+                                        ;
+                                    }
+                                    else if (Column.ValueType != null)
+                                    {
+                                        var NumberIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : (!string.IsNullOrEmpty(FirstFoperator) && (FirstFoperator != "between")) ? NumberDropDown?.FindIndex(e => e.Value == FirstFoperator) : (SelectedFoperator == "between" ? NumberDropDown?.FindIndex(e => e.Value == "greaterthanorequal") : NumberDropDown?.FindIndex(e => e.Value == SelectedFoperator));
+                                        FirstValue = FirstAutoComplete != null ? FirstAutoComplete.Value! : FirstValue?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(FirstValue, Column.ValueType)! : FirstValue!;
+                                        _isInteger = (Parent.FilterModule != null && Parent.FilterModule.IntConvertedList.ContainsKey(Column.ValueType));
+                                        _isLong = (Parent.FilterModule != null && Parent.FilterModule.LongConvertedList.ContainsKey(Column.ValueType));
+                                        @if ((Column.Type == ColumnType.Integer || Column.Type == ColumnType.Double || Column.Type == ColumnType.Long || Column.Type == ColumnType.Decimal))
+                                        {
+                                            
+                                            var ConvertedValue = Filter<TContent>.TryParseNullable(FirstValue?.ToString()!, Parent.FilterModule!.IntConvertedList.ContainsKey(Column.ValueType), Parent.FilterModule.LongConvertedList.ContainsKey(Column.ValueType));
+                                            @if (_isInteger)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasInt" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((int?)ConvertedValue)" TValue="int?" Step="@(step != null ? (int?)step : 1)" Min="minValue != null ? (int)minValue : int.MinValue" Max="maxValue != null ? (int)maxValue : int.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else if (_isLong)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasLong" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui -{Column.Uid}"))" Value="@((long?)ConvertedValue)" TValue="long?" Step="@(step != null ? (long?)Convert.ToInt64(step) : 1)" Min="minValue != null ? (long?)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ? (long?)Convert.ToInt64(maxValue) : long.MaxValue" @attributes=numericTextBoxAttributes></SfNumericTextBox>
+                                            }
+                                            else
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasDouble" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((double?)ConvertedValue)" TValue="double?" Step="@(step != null ? (double?)Convert.ToDouble(step) : 1)" Min="minValue != null ? (double?)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ? (double?)Convert.ToDouble(maxValue) : double.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.Date)
+                                        {
+                                            @if (FirstValue != null && FirstValue is DateTimeOffset)
+                                            {
+                                                isDateTimeOffsetType = true;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDatePickerOffsetType" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTimeOffset?" Value=(DateTimeOffset?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                            else
+                                            {
+                                                isDateTimeOffsetType = false;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDatePicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                                // TODO Ensured Globalization
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.DateOnly)
+                                        {
+                                            <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDateOnlyPicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateOnly?" Value=(DateOnly?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.TimeOnly)
+                                        {
+                                            <SfTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstTimeOnlyPicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.ChooseTime))" TValue="TimeOnly?" Value=(TimeOnly?)FirstValue @attributes=timePickerAttributes></SfTimePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.DateTime)
+                                        {
+                                            <SfDateTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" ID="@(($"{Column.Field}-xlfl-frstvalue"))" @ref="FirstDateTimePicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" @key="Column.Uid" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)FirstValue @attributes=dateTimePickerAttributes></SfDateTimePicker>
+                                        }
+
+                                        @if (Column.Type == ColumnType.String)
+                                        {
+                                            DataManager filterDataManager = (Column.IsForeignColumn() ? Column.DataManager : Parent.DataManager) ?? new DataManager();
+                                            IEnumerable<object>? Json = filterDataManager?.Json != null ? Column.IsForeignColumn() ? DataUtil.GetDistinct(filterDataManager.Json, Column.ForeignKeyValue ?? "") : (IEnumerable<object>)DataUtil.GetDistinct<TContent>(filterDataManager.Json.Cast<TContent>(), Column.Field) : null!;
+
+                                            if (Column.IsForeignColumn() && Column.IsGridForeignColumn)
+                                            {
+                                                filterModel1 = new FilterAutoCompleteModel()
+                                                {
+                                                    DataManager = Column.DataManager,
+                                                    Column = Column,
+                                                    FilterValue = FirstValue?.ToString()!,
+                                                    Json = Json,
+                                                    Id = Column.Field + "-xlfl-firstvalue",
+                                                    FilterOperator = Filter<TContent>.GetFilterType(FirstStringOperatorDropDown?.Value!),
+                                                    PlaceHolder = Localizer.GetText(GridLocaleKeys.EnterValue)
+                                                };
+                                                @Column.GetAutoComplete()!(filterModel1)
+                                                ;
+                                            }
+                                            else if (Column.Field.Contains('.') && Parent.IsRenderedFromTreeGrid)
+                                            {
+                                                var StringIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : !string.IsNullOrEmpty(FirstFoperator) ? StringDropDown?.FindIndex(e => e.Value == FirstFoperator) : StringDropDown?.FindIndex(e => e.Value == SelectedFoperator);
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstAutoComplete" @key="@(($"{Column.Field}-xlfl-frstvalue"))" Enabled="@GetClass(StringIndex, StringDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(FirstValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager Headers=@filterDataManager?.Headers GraphQLAdaptorOptions="@filterDataManager!.GraphQLAdaptorOptions" HttpClientInstance="@filterDataManager.HttpClientInstance" Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" CustomValueSpecifier="CustomValueHandler" Created="@CreatedHandler" Filtering="FirstCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                            else
+                                            {
+                                                var StringIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : !string.IsNullOrEmpty(FirstFoperator) ? StringDropDown?.FindIndex(e => e.Value == FirstFoperator) : StringDropDown?.FindIndex(e => e.Value == SelectedFoperator);
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstAutoComplete" @key="@(($"{Column.Field}-xlfl-frstvalue"))" Enabled="@GetClass(StringIndex, StringDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(FirstValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager Headers=@filterDataManager?.Headers GraphQLAdaptorOptions="@filterDataManager!.GraphQLAdaptorOptions" HttpClientInstance="@filterDataManager.HttpClientInstance" Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" Filtering="FirstCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="e-xlfl-predicate">
+                            <td class="e-xlfl-radio" colspan="2">
+                                <div class="e-xlfl-radiodiv">
+                                    @{
+                                        AndRadioButton = AndRadioButton == null ? ((Fpredicate == null || Fpredicate == "and") ? "and" : "or") : AndRadioButton;
+
+                                        <SfRadioButton Label="@(Localizer.GetText(GridLocaleKeys.AND))" @onclick="@(e => RadioButtonClickHandler("and"))" Name="options" Checked="@AndRadioButton" Value="and"></SfRadioButton>
+                                        <SfRadioButton Label="@(Localizer.GetText(GridLocaleKeys.OR))" @onclick="@(e => RadioButtonClickHandler("or"))" Name="options" Checked="@AndRadioButton" Value="or"></SfRadioButton>
+                                    }
+
+                                </div>
+                                @if (Column.Type == ColumnType.String)
+                                {
+                                    <div class="e-xlfl-matchcasediv">
+                                        <SfCheckBox @ref="MatchCaseCheckBox" Checked=@FmatchCase ID="@(($"{Column.Field}-xlfl-predicate"))" Label="@Localizer.GetText(GridLocaleKeys.MatchCase)"></SfCheckBox>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="e-xlfl-fields">
+                            <td class="e-xlfl-optr">
+                                <div class="e-xlfl-optrdiv">
+                                    @switch (Column.Type)
+                                    {
+                                        case ColumnType.Date:
+                                        case ColumnType.DateOnly:
+                                        case ColumnType.TimeOnly:
+                                        case ColumnType.DateTime:
+                                        case ColumnType.Integer:
+                                        case ColumnType.Double:
+                                        case ColumnType.Long:
+                                        case ColumnType.Decimal:
+                                            var SecondNumIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)NumberDropDown?.FindIndex(e => e.Value == SecondFoperator) : (SelectedFoperator == "between" ? (int?)NumberDropDown?.FindIndex(e => e.Value == "lessthanorequal") : null);
+                                            if (Column.FilterTemplate != null && SecondNumIndex == null && !string.IsNullOrEmpty(SecondNumberOperatorDropDown?.Value))
+                                            {
+                                                SecondNumIndex = (int?)NumberDropDown?.FindIndex(e => e.Value == SecondNumberOperatorDropDown.Value);
+                                            }
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-secndoptr"))" @ref="SecondNumberOperatorDropDown" @key="@(($"{Column.Uid}-secndoptr"))" Index="@SecondNumIndex" TValue="string" TItem="Operator" DataSource=@NumberDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="SecondNumberDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+                                        default:
+                                            var SecondStringIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)StringDropDown?.FindIndex(e => e.Value == SecondFoperator) : null;
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-secndoptr"))" @key="@(($"{Column.Uid}-secndoptr"))" Index="@SecondStringIndex" @ref="SecondStringOperatorDropDown" TValue="string" TItem="Operator" DataSource=@StringDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="SecondDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+
+                                    }
+                                </div>
+                            </td>
+                            <td class="e-xlfl-value">
+                                <div class="e-xlfl-valuediv">
+                                    @if (Column.FilterTemplate != null)
+                                    {
+                                        ModelInstance2!.GetType()?.GetProperty("Uid")?.SetValue(ModelInstance2, Column.Uid);
+                                        string? filterOperator = GetSecondColumnFilterOperator();
+                                        ModelInstance2.GetType()?.GetProperty("Operator")?.SetValue(ModelInstance2, Filter<TContent>.GetFilterOperator(filterOperator!));
+                                        @Column.FilterTemplate(ModelInstance2)
+                                    }
+                                    else if (Column.ValueType != null)
+                                    {
+                                        var SecondNumIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)NumberDropDown?.FindIndex(e => e.Value == SecondFoperator) : (SelectedFoperator == "between" ? (int?)NumberDropDown?.FindIndex(e => e.Value == "lessthanorequal") : null);
+                                        SecondValue = SecondAutoComplete != null ? SecondAutoComplete.Value! : SecondValue?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(FirstValue, Column.ValueType)! : SecondValue!;
+
+                                        @if (Column.Type == ColumnType.Integer || Column.Type == ColumnType.Double || Column.Type == ColumnType.Long || Column.Type == ColumnType.Decimal)
+                                        {
+                                            
+                                            var ConvertedValue = Filter<TContent>.TryParseNullable(SecondValue?.ToString()!, (Parent.FilterModule != null && Parent.FilterModule.IntConvertedList.ContainsKey(Column.ValueType)), Parent.FilterModule!.LongConvertedList.ContainsKey(Column.ValueType));
+                                            @if (_isInteger)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasInt" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((int?)ConvertedValue)" TValue="int?" Step="@(step != null ? (int?)step : 1)" Min="minValue != null ? (int)minValue : int.MinValue" Max="maxValue != null ? (int)maxValue : int.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else if (_isLong)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasLong" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((long?)ConvertedValue)" TValue="long?" Step="@(step != null ? (long?)Convert.ToInt64(step) : 1)" Min="minValue != null ? (long?)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ? (long?)Convert.ToInt64(maxValue) : long.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasDouble" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((double?)ConvertedValue)" TValue="double?" Step="@(step != null ? (double?)Convert.ToDouble(step) : 1)" Min="minValue != null ? (double?)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ? (double?)Convert.ToDouble(maxValue) : double.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                        }
+
+                                        @if (Column.Type == ColumnType.Date)
+                                        {
+                                            if (SecondValue != null && SecondValue is DateTimeOffset)
+                                            {
+                                                isDateTimeOffsetType = true;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDatePickerOffsetType" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTimeOffset?" Value=(DateTimeOffset?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                            else
+                                            {
+                                                isDateTimeOffsetType = false;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDatePicker" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.DateOnly)
+                                        {
+                                            <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDateOnlyPicker" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateOnly?" Value=(DateOnly?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.TimeOnly)
+                                        {
+                                            <SfTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondTimeOnlyPicker" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.ChooseTime))" TValue="TimeOnly?" Value=(TimeOnly?)SecondValue @attributes=timePickerAttributes></SfTimePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.DateTime)
+                                        {
+                                            <SfDateTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" ID="@(($"{Column.Field}-xlfl-secondvalue"))" @ref="SecondDateTimePicker" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" @key="Column.Uid" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)SecondValue @attributes=dateTimePickerAttributes></SfDateTimePicker>
+                                        }
+
+                                        @if (Column.Type == ColumnType.String)
+                                        {
+                                            
+                                            DataManager filterDataManager = (Column.IsForeignColumn() ? Column.DataManager : Parent.DataManager) ?? new DataManager();
+                                            IEnumerable<object>? Json = filterDataManager?.Json != null ? Column.IsForeignColumn() ? DataUtil.GetDistinct(filterDataManager.Json, Column.ForeignKeyValue ?? "") : (IEnumerable<object>)DataUtil.GetDistinct<TContent>(filterDataManager.Json.Cast<TContent>(), Column.Field) : null!;
+
+                                            if (Column.IsForeignColumn() && Column.IsGridForeignColumn)
+                                            {
+                                                filterModel2 = new FilterAutoCompleteModel()
+                                                {
+                                                    DataManager = Column.DataManager,
+                                                    Column = Column,
+                                                    Json = Json!,
+                                                    Id = Column.Field + "-xlfl-secondvalue",
+                                                    FilterValue = SecondValue?.ToString()!,
+                                                    FilterOperator = Filter<TContent>.GetFilterType(SecondStringOperatorDropDown?.Value!),
+                                                    PlaceHolder = Localizer.GetText(GridLocaleKeys.EnterValue)
+                                                };
+                                                @Column.GetAutoComplete()!(filterModel2)
+                                                ;
+                                            }
+                                            else if (Column.Field.Contains('.') && Parent.IsRenderedFromTreeGrid)
+                                            {
+                                                var SecondStringIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)StringDropDown?.FindIndex(e => e.Value == SecondFoperator) : null;
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondAutoComplete" @key="Column.Uid" Enabled="@GetClass(SecondStringIndex, StringDropDown!)" ID="@(($"strui-{Column.Uid}"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(SecondValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager HttpClientInstance="@filterDataManager!.HttpClientInstance" GraphQLAdaptorOptions="@filterDataManager.GraphQLAdaptorOptions" Headers=@filterDataManager.Headers Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" CustomValueSpecifier="CustomValueHandler" Created="@CreatedHandler" Filtering="SecondCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                            else
+                                            {
+                                                var SecondStringIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)StringDropDown?.FindIndex(e => e.Value == SecondFoperator) : null;
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondAutoComplete" @key="Column.Uid" Enabled="@GetClass(SecondStringIndex, StringDropDown!)" ID="@(($"strui-{Column.Uid}"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(SecondValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager HttpClientInstance="@filterDataManager!.HttpClientInstance" GraphQLAdaptorOptions="@filterDataManager.GraphQLAdaptorOptions" Headers=@filterDataManager.Headers Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" Filtering="SecondCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton OnClick="@FilterBtnClick" Content=@(Localizer!.GetText(GridLocaleKeys.OKButton)) IsPrimary="true" CssClass="e-primary e-flat">
+            </DialogButton>
+            <DialogButton OnClick="@ClearBtnClick" Content=@(Localizer.GetText(GridLocaleKeys.CancelButton)) CssClass="e-flat">
+            </DialogButton>
+        </DialogButtons>
+
+    </SfDialog>
+}
+else if (Parent.EnableAdaptiveUI && isSubMenuItemSelected)
+{
+    <SfDialog @ref="CustomFilterDialog" ID="@(($"{Column?.Field}-xlflmenu"))" AllowPrerender="true" MinHeight="372px" Width="100%" Height="100%" HtmlAttributes="@Border" CssClass="sf-grid-dlg e-xlflmenu e-resfilterdiv e-responsive-dialog e-resfilter  e-bigger e-dlg-fullscreen" Target="@(($"#{Parent.ID}"))" @bind-Visible="@isSubMenuItemSelected" EnableRtl="Parent.EnableRtl">
+        <DialogEvents Created="RenderedCustomFilter" OnOpen="AdaptiveCustomFilterDialog"></DialogEvents>
+        <DialogTemplates>
+            <Header>
+                <SfButton IconCss="e-icon-dlg-close e-icons e-btn-icon" CssClass="e-dlg-closeicon-btn" @onclick="@CloseCustomDialogHandler" HtmlAttributes="@title"></SfButton>
+                <div class="e-dlg-header">
+                    <div class="e-res-custom-element">
+                        <div class="e-dlg-custom-header" id="@(($"{Parent.ID}_excel_custommenu_wrapper"))">Custom Filter</div>
+                        <SfButton CssClass="e-primary e-flat e-res-apply-btn" Content=@(Localizer!.GetText(GridLocaleKeys.OKButton)) @onclick="@FilterBtnClick"></SfButton>
+                    </div>
+                </div>
+            </Header>
+            <Content>
+
+                <div class="e-xlfl-maindiv" id="@(($"{Column!.Field}-xlflmenu"))">
+                    <div class="e-xlfl-dlgfields">
+                        @Localizer!.GetText(GridLocaleKeys.ShowRowsWhere)
+                    </div>
+                    <div class="e-xlfl-fieldset">@Column.HeaderText</div>
+                    <table class="e-xlfl-table">
+                        <colgroup>
+                            <col>
+                            <col>
+                        </colgroup>
+                        <tr class="e-xlfl-fields">
+                            <td class="e-xlfl-optr">
+                                <div class="e-xlfl-optrdiv">
+                                    @switch (Column.Type)
+                                    {
+                                        case ColumnType.Date:
+                                        case ColumnType.DateOnly:
+                                        case ColumnType.TimeOnly:
+                                        case ColumnType.DateTime:
+                                        case ColumnType.Integer:
+                                        case ColumnType.Double:
+                                        case ColumnType.Long:
+                                        case ColumnType.Decimal:
+
+                                            var NumberIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : (!string.IsNullOrEmpty(FirstFoperator) && (FirstFoperator != "between")) ? NumberDropDown?.FindIndex(e => e.Value == FirstFoperator) : (SelectedFoperator == "between" ? NumberDropDown?.FindIndex(e => e.Value == "greaterthanorequal") : NumberDropDown?.FindIndex(e => e.Value == SelectedFoperator));
+                                            if (NumberIndex < 0 && SelectedFoperator == "customfilter")
+                                            {
+                                                NumberIndex = 0;
+                                            }
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-frstoptr"))" @ref="FirstNumberOperatorDropDown" @key="@(($"{Column.Uid}-frstoptr"))" Index="@NumberIndex" TValue="string" TItem="Operator" DataSource=@NumberDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="FirstNumberDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+                                        default:
+                                            var StringIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : !string.IsNullOrEmpty(FirstFoperator) ? StringDropDown?.FindIndex(e => e.Value == FirstFoperator) : StringDropDown?.FindIndex(e => e.Value == SelectedFoperator);
+                                            if (StringIndex < 0 && SelectedFoperator == "customfilter")
+                                            {
+                                                StringIndex = 0;
+                                            }
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-frstoptr"))" @key="@(($"{Column.Uid}-frstoptr"))" Index="@StringIndex" @ref="FirstStringOperatorDropDown" TValue="string" TItem="Operator" DataSource=@StringDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="FirstDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+
+                                    }
+                                </div>
+                            </td>
+                            <td class="e-xlfl-value">
+                                <div class="e-xlfl-valuediv">
+                                    @if (Column.FilterTemplate != null)
+                                    {
+                                        ModelInstance1!.GetType()?.GetProperty("Uid")?.SetValue(ModelInstance1, Column.Uid);
+                                        string? filterOperator = GetFirstColumnFilterOperator();
+                                        ModelInstance1.GetType()?.GetProperty("Operator")?.SetValue(ModelInstance1, Filter<TContent>.GetFilterOperator(filterOperator!));
+                                        @Column.FilterTemplate(ModelInstance1)
+                                        ;
+                                    }
+                                    else
+                                    {
+                                        var NumberIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : (!string.IsNullOrEmpty(FirstFoperator) && (FirstFoperator != "between")) ? NumberDropDown?.FindIndex(e => e.Value == FirstFoperator) : (SelectedFoperator == "between" ? NumberDropDown?.FindIndex(e => e.Value == "greaterthanorequal") : NumberDropDown?.FindIndex(e => e.Value == SelectedFoperator));
+                                        FirstValue = FirstAutoComplete != null ? FirstAutoComplete.Value! : FirstValue?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(FirstValue, Column.ValueType)! : FirstValue!;
+                                        _isInteger = (Parent.FilterModule != null && Parent.FilterModule.IntConvertedList.ContainsKey(Column.ValueType!));
+                                        _isLong = (Parent.FilterModule != null && Parent.FilterModule.LongConvertedList.ContainsKey(Column.ValueType!));
+
+                                        @if (Column.Type == ColumnType.Integer || Column.Type == ColumnType.Double || Column.Type == ColumnType.Long || Column.Type == ColumnType.Decimal)
+                                        {
+                                            var ConvertedValue = Filter<TContent>.TryParseNullable(FirstValue?.ToString()!, Parent.FilterModule!.IntConvertedList.ContainsKey(Column.ValueType!), Parent.FilterModule.LongConvertedList.ContainsKey(Column.ValueType!));
+                                            @if (_isInteger)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasInt" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((int?)ConvertedValue)" TValue="int?" Step="@(step != null ? (int?)step : 1)" Min="minValue != null ? (int)minValue : int.MinValue" Max="maxValue != null ? (int)maxValue : int.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else if (_isLong)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasLong" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((long?)ConvertedValue)" TValue="long?" Step="@(step != null ? (long?)Convert.ToInt64(step) : 1)" Min="minValue != null ? (long?)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ? (long?)Convert.ToInt64(maxValue) : long.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstNumericValueasDouble" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((double?)ConvertedValue)" TValue="double?" Step="@(step != null ? (double?)Convert.ToDouble(step) : 1)" Min="minValue != null ? (double?)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ? (double?)Convert.ToDouble(maxValue) : double.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.Date)
+                                        {
+                                            @if (FirstValue != null && FirstValue is DateTimeOffset)
+                                            {
+                                                isDateTimeOffsetType = true;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDatePickerOffsetType" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTimeOffset?" Value=(DateTimeOffset?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                            else
+                                            {
+                                                isDateTimeOffsetType = false;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDatePicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.DateOnly)
+                                        {
+                                            <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstDateOnlyPicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateOnly?" Value=(DateOnly?)FirstValue @attributes=datePickerAttributes></SfDatePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.TimeOnly)
+                                        {
+                                            <SfTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstTimeOnlyPicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.ChooseTime))" TValue="TimeOnly?" Value=(TimeOnly?)FirstValue @attributes=timePickerAttributes></SfTimePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.DateTime)
+                                        {
+                                            <SfDateTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" ID="@(($"{Column.Field}-xlfl-frstvalue"))" @ref="FirstDateTimePicker" Enabled="@GetNumberClass(NumberIndex, NumberDropDown!)" Format="@Column.Format" @key="Column.Uid" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)FirstValue @attributes=dateTimePickerAttributes></SfDateTimePicker>
+                                        }
+
+                                        @if (Column.Type == ColumnType.String)
+                                        {
+                                            DataManager filterDataManager = (Column.IsForeignColumn() ? Column.DataManager : Parent.DataManager) ?? new DataManager();
+                                            IEnumerable<object>? Json = filterDataManager?.Json != null ? Column.IsForeignColumn() ? DataUtil.GetDistinct(filterDataManager.Json, Column.ForeignKeyValue ?? "") : (IEnumerable<object>)DataUtil.GetDistinct<TContent>((IEnumerable<TContent>)filterDataManager.Json, Column.Field) : null;
+
+                                            if (Column.IsForeignColumn() && Column.IsGridForeignColumn)
+                                            {
+                                                filterModel1 = new FilterAutoCompleteModel()
+                                                {
+                                                    DataManager = Column.DataManager,
+                                                    Column = Column,
+                                                    FilterValue = FirstValue?.ToString()!,
+                                                    Json = Json!,
+                                                    Id = Column.Field + "-xlfl-firstvalue",
+                                                    FilterOperator = Filter<TContent>.GetFilterType(FirstStringOperatorDropDown?.Value!),
+                                                    PlaceHolder = Localizer.GetText(GridLocaleKeys.EnterValue)
+                                                };
+                                                @Column.GetAutoComplete()!(filterModel1)
+                                                ;
+                                            }
+                                            else
+                                            {
+                                                var StringIndex = firstDropdownChangedIndex != -1 ? firstDropdownChangedIndex : !string.IsNullOrEmpty(FirstFoperator) ? StringDropDown?.FindIndex(e => e.Value == FirstFoperator) : StringDropDown?.FindIndex(e => e.Value == SelectedFoperator);
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="FirstAutoComplete" @key="@(($"{Column.Field}-xlfl-frstvalue"))" Enabled="@GetClass(StringIndex, StringDropDown!)" ID="@(($"{Column.Field}-xlfl-frstvalue"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(FirstValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager HttpClientInstance="@filterDataManager!.HttpClientInstance" GraphQLAdaptorOptions="@filterDataManager.GraphQLAdaptorOptions" Headers=@filterDataManager.Headers Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" Filtering="FirstCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="e-xlfl-predicate">
+                            <td class="e-xlfl-radio" colspan="2">
+                                <div class="e-xlfl-radiodiv">
+                                    @{
+                                        AndRadioButton = AndRadioButton == null ? ((Fpredicate == null || Fpredicate == "and") ? "and" : "or") : AndRadioButton;
+
+                                        <SfRadioButton Label="@(Localizer.GetText(GridLocaleKeys.AND))" Name="options" @bind-Checked="@AndRadioButton" Value="and"></SfRadioButton>
+                                        <SfRadioButton Label="@(Localizer.GetText(GridLocaleKeys.OR))" Name="options" @bind-Checked="@AndRadioButton" Value="or"></SfRadioButton>
+                                    }
+
+                                </div>
+                                @if (Column.Type == ColumnType.String)
+                                {
+                                    <div class="e-xlfl-matchcasediv">
+                                        <SfCheckBox @ref="MatchCaseCheckBox" Checked=@FmatchCase ID="@(($"{Column.Field}-xlfl-predicate"))" Label="@Localizer.GetText(GridLocaleKeys.MatchCase)"></SfCheckBox>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                        <tr class="e-xlfl-fields">
+                            <td class="e-xlfl-optr">
+                                <div class="e-xlfl-optrdiv">
+                                    @switch (Column.Type)
+                                    {
+                                        case ColumnType.Date:
+                                        case ColumnType.DateOnly:
+                                        case ColumnType.TimeOnly:
+                                        case ColumnType.DateTime:
+                                        case ColumnType.Integer:
+                                        case ColumnType.Double:
+                                        case ColumnType.Long:
+                                        case ColumnType.Decimal:
+                                            var SecondNumInde = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)NumberDropDown?.FindIndex(e => e.Value == SecondFoperator) : (SelectedFoperator == "between" ? (int?)NumberDropDown?.FindIndex(e => e.Value == "lessthanorequal") : null);
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-secndoptr"))" @ref="SecondNumberOperatorDropDown" @key="@(($"{Column.Uid}-secndoptr"))" Index="@SecondNumInde" TValue="string" TItem="Operator" DataSource=@NumberDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="SecondNumberDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+                                        default:
+                                            var SecondStringInde = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)StringDropDown?.FindIndex(e => e.Value == SecondFoperator) : null;
+                                            <SfDropDownList aria-label="@(Localizer.GetText(GridLocaleKeys.FilterOperator))" ID="@(($"{Column.Field}-xlfl-secndoptr"))" @key="@(($"{Column.Uid}-secndoptr"))" Index="@SecondStringInde" @ref="SecondStringOperatorDropDown" TValue="string" TItem="Operator" DataSource=@StringDropDown>
+                                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                                                <DropDownListEvents ValueChange="SecondDropdownChangeHandler" TValue="string" TItem="Operator"></DropDownListEvents>
+                                            </SfDropDownList>
+                                            break;
+
+                                    }
+                                </div>
+                            </td>
+                            <td class="e-xlfl-value">
+                                <div class="e-xlfl-valuediv">
+                                    @if (Column.FilterTemplate != null)
+                                    {
+                                        SecondValue = SecondValue?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(FirstValue, Column.ValueType)! : SecondValue!;
+                                        ModelInstance2!.GetType().GetProperty("Uid")?.SetValue(ModelInstance2, Column.Uid);
+                                        string? filterOperator = GetSecondColumnFilterOperator();
+                                        ModelInstance2.GetType()?.GetProperty("Operator")?.SetValue(ModelInstance2, Filter<TContent>.GetFilterOperator(filterOperator!));
+                                        @Column.FilterTemplate(ModelInstance2)
+                                    }
+                                    else
+                                    {
+                                        var SecondNumIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)NumberDropDown?.FindIndex(e => e.Value == SecondFoperator) : (SelectedFoperator == "between" ? (int?)NumberDropDown?.FindIndex(e => e.Value == "lessthanorequal") : null);
+                                        SecondValue = SecondAutoComplete != null ? SecondAutoComplete.Value! : SecondValue?.GetType().Name == "JsonElement" ? SfBaseUtils.ChangeType(FirstValue, Column.ValueType)! : SecondValue!;
+
+                                        @if (Column.Type == ColumnType.Integer || Column.Type == ColumnType.Double || Column.Type == ColumnType.Long || Column.Type == ColumnType.Decimal)
+                                        {
+                                            var ConvertedValue = Filter<TContent>.TryParseNullable(SecondValue?.ToString()!, (Parent.FilterModule != null && Parent.FilterModule.IntConvertedList.ContainsKey(Column.ValueType!)));
+                                            @if (_isInteger)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasInt" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((int?)ConvertedValue)" TValue="int?" Step="@(step != null ? (int?)step : 1)" Min="minValue != null ? (int)minValue : int.MinValue" Max="maxValue != null ? (int)maxValue : int.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else if (_isLong)
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasLong" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((long?)ConvertedValue)" TValue="long?" Step="@(step != null ? (long?)Convert.ToInt64(step) : 1)" Min="minValue != null ? (long?)Convert.ToInt64(minValue) : long.MinValue" Max="maxValue != null ? (long?)Convert.ToInt64(maxValue) : long.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                            else
+                                            {
+                                                <SfNumericTextBox aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondNumericValueasDouble" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.EnterValue))" ID="@(($"numberui-{Column.Uid}"))" Value="@((double?)ConvertedValue)" TValue="double?" Step="@(step != null ? (double?)Convert.ToDouble(step) : 1)" Min="minValue != null ? (double?)Convert.ToDouble(minValue) : double.MinValue" Max="maxValue != null ? (double?)Convert.ToDouble(maxValue) : double.MaxValue" @attributes=numericTextBoxAttributes> </SfNumericTextBox>
+                                            }
+                                        }
+
+                                        @if (Column.Type == ColumnType.Date)
+                                        {
+                                            if (SecondValue != null && SecondValue is DateTimeOffset)
+                                            {
+                                                isDateTimeOffsetType = true;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDatePickerOffsetType" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTimeOffset?" Value=(DateTimeOffset?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                            else
+                                            {
+                                                isDateTimeOffsetType = false;
+                                                <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDatePicker" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                                //TODO Ensured Globalization
+                                            }
+                                        }
+                                        @if (Column.Type == ColumnType.DateOnly)
+                                        {
+                                            <SfDatePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondDateOnlyPicker" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateOnly?" Value=(DateOnly?)SecondValue @attributes=datePickerAttributes></SfDatePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.TimeOnly)
+                                        {
+                                            <SfTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondTimeOnlyPicker" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" ID="@(($"{Column.Field}-xlfl-secondvalue"))" Format="@Column.Format" Placeholder="@(Localizer.GetText(GridLocaleKeys.ChooseTime))" TValue="TimeOnly?" Value=(TimeOnly?)SecondValue @attributes=timePickerAttributes></SfTimePicker>
+                                        }
+                                        @if (Column.Type == ColumnType.DateTime)
+                                        {
+                                            <SfDateTimePicker aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" ID="@(($"{Column.Field}-xlfl-secondvalue"))" @ref="SecondDateTimePicker" Enabled="@GetNumberClass(SecondNumIndex, NumberDropDown!)" Format="@Column.Format" @key="Column.Uid" Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterDatePlaceHolder))" TValue="DateTime?" Value=(DateTime?)SecondValue @attributes=dateTimePickerAttributes></SfDateTimePicker>
+                                        }
+
+                                        @if (Column.Type == ColumnType.String)
+                                        {
+
+                                            DataManager filterDataManager = (Column.IsForeignColumn() ? Column.DataManager : Parent.DataManager) ?? new DataManager();
+                                            IEnumerable<object>? Json = filterDataManager?.Json != null ? Column.IsForeignColumn() ? DataUtil.GetDistinct(filterDataManager.Json, Column.ForeignKeyValue ?? "") : (IEnumerable<object>)DataUtil.GetDistinct<TContent>((IEnumerable<TContent>)filterDataManager.Json, Column.Field) : null!;
+
+                                            if (Column.IsForeignColumn() && Column.IsGridForeignColumn)
+                                            {
+                                                filterModel2 = new FilterAutoCompleteModel()
+                                                {
+                                                    DataManager = Column.DataManager,
+                                                    Column = Column,
+                                                    Json = Json,
+                                                    Id = Column.Field + "-xlfl-secondvalue",
+                                                    FilterValue = SecondValue?.ToString()!,
+                                                    FilterOperator = Filter<TContent>.GetFilterType(SecondStringOperatorDropDown?.Value!),
+                                                    PlaceHolder = Localizer.GetText(GridLocaleKeys.EnterValue)
+                                                };
+                                                @Column.GetAutoComplete()!(filterModel2)
+                                                ;
+                                            }
+                                            else
+                                            {
+                                                var SecondStringIndex = secondDropdownChangedIndex != -1 ? secondDropdownChangedIndex : !string.IsNullOrEmpty(SecondFoperator) ? (int?)StringDropDown?.FindIndex(e => e.Value == SecondFoperator) : null;
+                                                <SfAutoComplete aria-label="@(Localizer.GetText(GridLocaleKeys.FilterValue))" @ref="SecondAutoComplete" @key="Column.Uid" Enabled="@GetClass(SecondStringIndex, StringDropDown!)" ID="@(($"strui-{Column.Uid}"))" Query="@Parent.Query" Autofill=enableAutoFill Placeholder="@(Localizer.GetText(GridLocaleKeys.CustomFilterPlaceHolder))" TItem="TContent" TValue="string" Value=@(SecondValue?.ToString()) @attributes=autoCompleteAttributes>
+                                                    <SfDataManager HttpClientInstance="@filterDataManager!.HttpClientInstance" GraphQLAdaptorOptions="@filterDataManager.GraphQLAdaptorOptions" Headers=@filterDataManager.Headers Url=@filterDataManager.Url Json="@Json" AdaptorInstance="@filterDataManager.AdaptorInstance" Adaptor="@filterDataManager.Adaptor" Offline="@filterDataManager.Offline">
+                                                        @filterDataManager.ChildContent
+                                                    </SfDataManager>
+                                                    <AutoCompleteFieldSettings Value="@(Column.IsForeignColumn() ? Column.ForeignKeyValue : Column.Field)"></AutoCompleteFieldSettings>
+                                                    <AutoCompleteEvents TItem="TContent" TValue="string" Filtering="SecondCustomFilterQuery"></AutoCompleteEvents>
+                                                </SfAutoComplete>
+                                            }
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </Content>
+        </DialogTemplates>
+    </SfDialog>
+}
+
+@code {
+
+    #region Private Fields
+
+    #region Cascading Parameters
+    [CascadingParameter]
+    public SfGrid<TContent>? Parent { get; set; }
+    #endregion
+
+    #region Component Parameters
+    [Parameter]
+    public GridColumn? Column { get; set; }
+
+    [Parameter]
+    public bool isFiltered { get; set; }
+    #endregion
+
+    #region Component References
+    private SfContextMenu<MenuItem>? contextMenu;
+    private SfContextMenu<MenuItem>? SubMenuRef;
+    private SfDialog? CustomFilterDialog { get; set; }
+    #endregion
+
+    #region Filter State Fields
+    private bool IsSubMenuDialog { get; set; }
+    private string? FirstFoperator { get; set; }
+    private string? SecondFoperator { get; set; }
+    private object FirstValue { get; set; } = null!;
+    private object SecondValue { get; set; } = null!;
+    private string? SelectedFoperator { get; set; }
+    private string Fpredicate { get; set; } = null!;
+    private bool FmatchCase { get; set; } = false;
+    private int Fcount { get; set; } = 0;
+    private int firstDropdownChangedIndex { get; set; } = -1;
+    private int secondDropdownChangedIndex { get; set; } = -1;
+    private bool isDateTimeOffsetType { get; set; }
+    private bool isSubMenuItemSelected = false;
+    private bool isDialogClosed = false;
+    #endregion
+
+    #region Dialog Component References
+    private SfDropDownList<string, Operator>? FirstNumberOperatorDropDown { get; set; }
+    private SfDropDownList<string, Operator>? SecondNumberOperatorDropDown { get; set; }
+    private SfDropDownList<string, Operator>? FirstStringOperatorDropDown { get; set; }
+    private SfDropDownList<string, Operator>? SecondStringOperatorDropDown { get; set; }
+    private SfDropDownList<object, TContent>? FirstBoolDropDown { get; set; }
+    private SfDropDownList<object, TContent>? SecondBoolDropDown { get; set; }
+    private string? AndRadioButton { get; set; }
+    private SfCheckBox<bool>? MatchCaseCheckBox { get; set; }
+    private List<Operator>? NumberDropDown { get; set; }
+    private List<Operator>? StringDropDown { get; set; }
+    private SfAutoComplete<string, TContent>? FirstAutoComplete { get; set; }
+    private SfDatePicker<DateTime?>? FirstDatePicker { get; set; }
+    private SfDatePicker<DateOnly?>? FirstDateOnlyPicker { get; set; }
+    private SfTimePicker<TimeOnly?>? FirstTimeOnlyPicker { get; set; }
+    private SfDatePicker<DateTimeOffset?>? FirstDatePickerOffsetType { get; set; }
+    private SfDateTimePicker<DateTime?>? FirstDateTimePicker { get; set; }
+    private SfNumericTextBox<int?>? FirstNumericValueasInt { get; set; }
+    private SfNumericTextBox<long?>? FirstNumericValueasLong { get; set; }
+    private SfNumericTextBox<double?>? FirstNumericValueasDouble { get; set; }
+    private SfAutoComplete<string, TContent>? SecondAutoComplete { get; set; }
+    private SfDatePicker<DateTime?>? SecondDatePicker { get; set; }
+    private SfDatePicker<DateOnly?>? SecondDateOnlyPicker { get; set; }
+    private SfTimePicker<TimeOnly?>? SecondTimeOnlyPicker { get; set; }
+    private SfDatePicker<DateTimeOffset?>? SecondDatePickerOffsetType { get; set; }
+    private SfDateTimePicker<DateTime?>? SecondDateTimePicker { get; set; }
+    private SfNumericTextBox<int?>? SecondNumericValueasInt { get; set; }
+    private SfNumericTextBox<long?>? SecondNumericValueasLong { get; set; }
+    private SfNumericTextBox<double?>? SecondNumericValueasDouble { get; set; }
+    private SfAutoComplete<string, TContent>? AutoComplete { get; set; }
+    #endregion
+
+    #region UI Configuration
+    private List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+    private List<MenuItem> NumberSubMenuItems { get; set; } = new List<MenuItem>();
+    private List<MenuItem> StringSubMenuItems { get; set; } = new List<MenuItem>();
+    private List<MenuItem> SubMenuItems { get; set; } = new List<MenuItem>();
+    private IDictionary<string, object> autoCompleteAttributes = new Dictionary<string, object>();
+    private IDictionary<string, object> numericTextBoxAttributes = new Dictionary<string, object>();
+    private IDictionary<string, object> dateTimePickerAttributes = new Dictionary<string, object>();
+    private IDictionary<string, object> datePickerAttributes = new Dictionary<string, object>();
+    private IDictionary<string, object> timePickerAttributes = new Dictionary<string, object>();
+    private IDictionary<string, object> dropDownListAttributes = new Dictionary<string, object>();
+    private Dictionary<string, object> title = new Dictionary<string, object>()
+    {
+        { "title", "Close"}
+    };
+    private Dictionary<string, object> closeAttr = new Dictionary<string, object>()
+    {
+        { "display", "none"}
+    };
+    private Dictionary<string, object> Border = new Dictionary<string, object>()
+    {
+        { "data-sf-style", "border:1px"}
+    };
+    private Dictionary<string, object> gridClass = new Dictionary<string, object>()
+    {
+        { "class", "sf-grid-dlg e-xlflmenu"}
+    };
+    private bool enableAutoFill { get; set; } = true;
+    private object? step { get; set; }
+    private object? minValue { get; set; }
+    private object? maxValue { get; set; }
+    #endregion
+
+    #region Localization & Flags
+    private ISyncfusionStringLocalizer? Localizer;
+    private FilterAutoCompleteModel filterModel1 = null!;
+    private FilterAutoCompleteModel filterModel2 = null!;
+    private string? excelFilterValue { get; set; }
+    private TContent? CustomFilterItem { get; set; }
+    private object? ModelInstance1 { get; set; }
+    private object? ModelInstance2 { get; set; }
+    private string? SelectedText { get; set; }
+    private bool _isInteger { get; set; }
+    private bool _isLong { get; set; }
+    #endregion
+
+    #endregion
+
+    #region Lifecycle Hooks
+
+    protected override void OnInitialized()
+    {
+        Localizer = Parent?.Localizer!;
+        Type colType = Column?.ValueType!;
+        Type myGeneric = typeof(PredicateModel<>);
+        if (colType != null)
+        {
+            Type constructedClass = myGeneric.MakeGenericType(colType);
+            ModelInstance1 = Activator.CreateInstance(constructedClass)!;
+            ModelInstance2 = Activator.CreateInstance(constructedClass)!;
+        }
+        GetData();
+        if (Column?.FilterEditorSettings is AutoCompleteFilterParams autoParam && autoParam.AutoCompleteParams != null)
+        {
+            AutoCompleteModel model = autoParam.AutoCompleteParams;
+            autoCompleteAttributes = new Dictionary<string, object>()
+            {
+                { nameof(model.MinLength), model.MinLength },
+                { nameof(model.ShowClearButton),model.ShowClearButton},
+                { nameof(model.ShowPopupButton),model.ShowPopupButton},
+                { nameof(model.DebounceDelay),model.DebounceDelay},
+                { nameof(model.Highlight),model.Highlight},
+                { nameof(model.EnableVirtualization),model.EnableVirtualization},
+                { nameof(model.SuggestionCount),model.SuggestionCount}
+            };
+            enableAutoFill = model.Autofill;
+        }
+        else if (Column?.FilterEditorSettings is DateTimeFilterParams dateTimeParam && dateTimeParam.DateTimePickerParams != null)
+        {
+            DateTimePickerModel<object> model = dateTimeParam.DateTimePickerParams;
+            dateTimePickerAttributes = new Dictionary<string, object>
+            {
+                {nameof(model.CssClass),model.CssClass},
+                {nameof(model.EnableRtl),model.EnableRtl},
+                {nameof(model.HtmlAttributes),model.HtmlAttributes},
+                {nameof(model.Readonly),model.Readonly},
+                {nameof(model.Format),model.Format},
+                {nameof(model.ShowClearButton),model.ShowClearButton},
+                { nameof(model.TimeFormat), model.TimeFormat },
+                { nameof(model.FirstDayOfWeek), model.FirstDayOfWeek }
+            };
+        }
+        else if (Column?.FilterEditorSettings is TimeFilterParams timeParam && timeParam.TimePickerParams != null)
+        {
+            TimePickerModel<object> model = timeParam.TimePickerParams;
+            timePickerAttributes = new Dictionary<string, object>
+            {
+                {nameof(model.CssClass),model.CssClass},
+                {nameof(model.EnableRtl),model.EnableRtl},
+                {nameof(model.HtmlAttributes),model.HtmlAttributes},
+                {nameof(model.Readonly),model.Readonly},
+                {nameof(model.ShowClearButton),model.ShowClearButton},
+                {nameof(model.Step),model.Step},
+                { nameof(model.Format), model.Format },
+                { nameof(model.Min), model.Min },
+                { nameof(model.Max), model.Max }
+            };
+        }
+        else if (Column?.FilterEditorSettings is DateFilterParams dateParam && dateParam.DatePickerParams != null)
+        {
+            DatePickerModel model = dateParam.DatePickerParams;
+            datePickerAttributes = new Dictionary<string, object>
+            {
+                {nameof(model.CssClass),model.CssClass},
+                {nameof(model.EnableRtl),model.EnableRtl},
+                {nameof(model.Readonly),model.Readonly},
+                {nameof(model.ShowClearButton),model.ShowClearButton},
+                {nameof(model.Format),model.Format},
+                {nameof(model.FirstDayOfWeek),model.FirstDayOfWeek},
+                {nameof(model.HtmlAttributes),model.HtmlAttributes}
+            };
+        }
+        else if (Column?.FilterEditorSettings is NumericFilterParams numericParam && numericParam.NumericTextBoxParams != null)
+        {
+            NumericTextBoxModel<object> model = numericParam.NumericTextBoxParams;
+            numericTextBoxAttributes = new Dictionary<string, object>
+            {
+                {nameof(model.CssClass),model.CssClass},
+                {nameof(model.EnableRtl),model.EnableRtl},
+                {nameof(model.Readonly),model.Readonly},
+                {nameof(model.ShowClearButton),model.ShowClearButton},
+                {nameof(model.HtmlAttributes),model.HtmlAttributes},
+                {nameof(model.Currency),model.Currency},
+                {nameof(model.Decimals),model.Decimals!},
+                { nameof(model.ValidateDecimalOnType), model.ValidateDecimalOnType }
+            };
+            step = model.Step;
+            minValue = model.Min;
+            maxValue = model.Max;
+        }
+    }
+
+    internal void Dispose()
+    {
+        if (IsSubMenuDialog)
+        {
+            this.contextMenu!.Close();
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers - Dropdown
+
+    /// <summary>
+    /// Handles operator dropdown value change for the first filter condition (string/date columns).
+    /// Tracks the selected operator index in the StringDropDown list.
+    /// </summary>
+    /// <param name="args">The change event arguments containing the selected operator value.</param>
+    /// <remarks>
+    /// Updates firstDropdownChangedIndex by finding the position of the selected operator
+    /// in the StringDropDown collection. This index is used later during filter application
+    /// to retrieve operator text and build the appropriate filter predicate.
+    /// </remarks>
+    private void FirstDropdownChangeHandler(ChangeEventArgs<string, Operator> args)
+    {
+        firstDropdownChangedIndex = StringDropDown?.FindIndex(e => e.Value == args.Value) ?? -1;
+    }
+
+    /// <summary>
+    /// Handles operator dropdown value change for the second filter condition (string/date columns).
+    /// Tracks the selected operator index in the StringDropDown list.
+    /// </summary>
+    /// <param name="args">The change event arguments containing the selected operator value.</param>
+    /// <remarks>
+    /// Updates secondDropdownChangedIndex by finding the position of the selected operator
+    /// in the StringDropDown collection. This index is used later during filter application
+    /// to retrieve operator text and build the AND/OR predicate combination.
+    /// </remarks>
+    private void SecondDropdownChangeHandler(ChangeEventArgs<string, Operator> args)
+    {
+        secondDropdownChangedIndex = StringDropDown?.FindIndex(e => e.Value == args.Value) ?? -1;
+    }
+
+    /// <summary>
+    /// Handles operator dropdown value change for the first filter condition (numeric columns).
+    /// Tracks the selected operator index in the NumberDropDown list.
+    /// </summary>
+    /// <param name="args">The change event arguments containing the selected operator value.</param>
+    /// <remarks>
+    /// Updates firstDropdownChangedIndex by finding the position of the selected operator
+    /// in the NumberDropDown collection. This index is used later during filter application
+    /// to retrieve operator text for numeric comparisons (equal, notequal, greaterthan, etc.).
+    /// </remarks>
+    private void FirstNumberDropdownChangeHandler(ChangeEventArgs<string, Operator> args)
+    {
+        firstDropdownChangedIndex = NumberDropDown?.FindIndex(e => e.Value == args.Value) ?? -1;
+    }
+
+    /// <summary>
+    /// Handles operator dropdown value change for the second filter condition (numeric columns).
+    /// Tracks the selected operator index in the NumberDropDown list.
+    /// </summary>
+    /// <param name="args">The change event arguments containing the selected operator value.</param>
+    /// <remarks>
+    /// Updates secondDropdownChangedIndex by finding the position of the selected operator
+    /// in the NumberDropDown collection. This index is used later during filter application
+    /// to build dual-condition numeric filters with AND/OR logic (e.g., Between queries).
+    /// </remarks>
+    private void SecondNumberDropdownChangeHandler(ChangeEventArgs<string, Operator> args)
+    {
+        secondDropdownChangedIndex = NumberDropDown?.FindIndex(e => e.Value == args.Value) ?? -1;
+    }
+
+    #endregion
+
+    #region Event Handlers - Dialog
+
+    /// <summary>
+    /// Handles the close button click event in the Excel filter dialog.
+    /// Transitions between filter UI states and manages context menu visibility.
+    /// </summary>
+    /// <remarks>
+    /// This method:
+    /// 1. Notifies parent of "OpenAdaptiveCheckBoxDialog" event (for adaptive UI mode)
+    /// 2. Opens the context menu to show available filter operators
+    /// 3. Closes any open submenu dialogs (custom filter or column-specific options)
+    /// 4. Resets IsSubMenuDialog flag to indicate no submenu is active
+    ///
+    /// This orchestrates the UI flow when users close the main dialog to select operators
+    /// from the context menu instead.
+    /// </remarks>
+    private void CloseHandler()
+    {
+        Parent?.Notify("OpenAdaptiveCheckBoxDialog", null!);
+        this.contextMenu?.OpenAsync();
+        SubMenuRef?.Close();
+        IsSubMenuDialog = false;
+    }
+
+    #endregion
+
+    #region Event Handlers - AutoComplete
+
+    /// <summary>
+    /// Handles AutoComplete component creation event.
+    /// Restores persisted filter values and initializes custom filter value items.
+    /// </summary>
+    /// <param name="args">The component creation event arguments.</param>
+    /// <remarks>
+    /// On AutoComplete creation, this method:
+    /// 1. Checks if persistence is enabled (EnablePersistence == true)
+    /// 2. Retrieves the ActualValue from FilterSettings.Columns[0] if any filters exist
+    /// 3. Sets excelFilterValue for use in subsequent CustomFilterValueMaintain calls
+    /// 4. Calls CustomFilterValueMaintain to populate AutoComplete items
+    ///
+    /// This ensures that when the dialog reopens, previously selected filter values
+    /// are restored from localStorage (if persistence enabled) or from the current filter state.
+    /// </remarks>
+    private async Task CreatedHandler(Object args)
+    {
+        if ((Parent?.FilterSettings?.Columns != null && Parent.FilterSettings.Columns.Any() && Parent.EnablePersistence) || (Parent?.FilterSettings?.Columns != null && Parent.FilterSettings.Columns.Any()))
+        {
+            var actualValue = Parent.FilterSettings.Columns[0].ActualValue;
+            excelFilterValue = actualValue != null ? actualValue.ToString()! : null!;
+        }
+        await CustomFilterValueMaintain();
+    }
+
+    /// <summary>
+    /// Handles custom value input in the AutoComplete field.
+    /// Processes free-text entries and creates corresponding filter items.
+    /// </summary>
+    /// <param name="args">The custom value event arguments containing the user-typed text.</param>
+    /// <remarks>
+    /// This handler:
+    /// 1. Stores the typed text in excelFilterValue
+    /// 2. Calls CustomFilterValueMaintain to build a custom item (handles nested properties/complex objects)
+    /// 3. Sets args.Item to the constructed CustomFilterItem for AutoComplete to display
+    ///
+    /// Enables custom values not in the predefined dropdown list to be entered as filter values.
+    /// </remarks>
+    private async Task CustomValueHandler(CustomValueSpecifierEventArgs<TContent> args)
+    {
+        excelFilterValue = args.Text;
+        await CustomFilterValueMaintain();
+        args.Item = CustomFilterItem!;
+    }
+
+    /// <summary>
+    /// Handles AutoComplete filtering event for the first filter condition.
+    /// Applies the selected string operator to the filter query.
+    /// </summary>
+    /// <param name="args">The AutoComplete filtering event arguments.</param>
+    /// <remarks>
+    /// Sets FirstAutoComplete.FilterOperator to the value selected in FirstStringOperatorDropDown.
+    /// This ensures the AutoComplete filtering behavior respects the selected operator
+    /// (e.g., if user selects "contains", the filter will search for partial matches).
+    /// </remarks>
+    private async Task FirstCustomFilterQuery(Syncfusion.Blazor.DropDowns.FilteringEventArgs args)
+    {
+        FirstAutoComplete!.FilterOperator = FirstStringOperatorDropDown?.Value;
+    }
+
+    /// <summary>
+    /// Handles AutoComplete filtering event for the second filter condition.
+    /// Applies the selected string operator to the filter query.
+    /// </summary>
+    /// <param name="args">The AutoComplete filtering event arguments.</param>
+    /// <remarks>
+    /// Sets SecondAutoComplete.FilterOperator to the value selected in SecondStringOperatorDropDown.
+    /// This ensures the second condition AutoComplete filtering respects the selected operator
+    /// for proper multi-condition AND/OR filtering behavior.
+    /// </remarks>
+    private async void SecondCustomFilterQuery(Syncfusion.Blazor.DropDowns.FilteringEventArgs args)
+    {
+        SecondAutoComplete!.FilterOperator = SecondStringOperatorDropDown?.Value;
+    }
+    #endregion
+
+    #region Custom Filter Value Handling
+
+    /// <summary>
+    /// Maintains and constructs complex filter values for custom filter inputs.
+    /// Handles nested properties, dynamic objects, expando objects, and tree grid scenarios.
+    /// Adds the constructed item to AutoComplete component sources.
+    /// </summary>
+    /// <remarks>
+    /// This method handles complex data scenarios:
+    /// 1. Parses nested field paths (e.g., "Address.City" → splits into segments)
+    /// 2. Creates instances of TContent for complex object construction
+    /// 3. Supports tree grid data structures (DataItem property)
+    /// 4. Handles DynamicObject and ExpandoObject types
+    /// 5. Recursively sets nested property values
+    /// 6. Adds the constructed item to First/Second AutoComplete for custom filter
+    ///
+    /// The method ensures that custom filter values are properly typed and
+    /// structured to match the column's expected data type for comparison.
+    /// </remarks>
+    private async Task CustomFilterValueMaintain()
+    {
+        if (excelFilterValue != null && typeof(TContent).GetConstructor(Type.EmptyTypes) != null)
+        {
+            var filterValue = excelFilterValue;
+            var splits = this.Column?.Field.Split(".");
+            var item = (TContent)Activator.CreateInstance(typeof(TContent))!;
+            bool treegridInstance = splits!.Contains("DataItem");
+            dynamic data = (TContent)Activator.CreateInstance(typeof(TContent))!; string column = splits!.Length > 1 ? splits[splits.Length - 1] : this.Column!.Field;
+            dynamic treeComplexData = (TContent)Activator.CreateInstance(typeof(TContent))!;
+            dynamic complexData = (TContent)Activator.CreateInstance(typeof(TContent))!;
+            if (splits.Length > 1)
+            {
+                string complexColumn = splits[splits.Length - 2];
+                string treeComplexColumn = splits.Length == 3 ? splits[splits.Length - 3] : "";
+                if (splits.Contains("DataItem"))
+                {
+                    var propInfo = item?.GetType().GetProperty(treeComplexColumn != "" ? treeComplexColumn : complexColumn);
+                    data = ReflectionExtension.TryCreateInstance(propInfo?.PropertyType);
+                    treeComplexData = CloneUtils.Clone(data, propInfo!.GetType());
+                }
+                if (data is DynamicObject)
+                {
+                    if (!treegridInstance)
+                    {
+                        ReflectionExtension.SetValueToDynamicObject(data, column, filterValue);
+                        ReflectionExtension.SetValueToDynamicObject(complexData, complexColumn, data);
+                    }
+                    else
+                    {
+                        if (treeComplexColumn != "")
+                        {
+                            ReflectionExtension.SetValueToDynamicObject(treeComplexData, column, filterValue);
+                            ReflectionExtension.SetValueToDynamicObject(data, complexColumn, treeComplexData);
+                            ReflectionExtension.SetValue(complexData, treeComplexColumn, data);
+                        }
+                        else
+                        {
+                            ReflectionExtension.SetValueToDynamicObject(data, column, filterValue);
+                            ReflectionExtension.SetValue(complexData, complexColumn, data);
+                        }
+                    }
+                }
+                else if (data is ExpandoObject)
+                {
+                    if (!treegridInstance)
+                    {
+                        ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)data, column, filterValue);
+                        ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)complexData, complexColumn, data);
+                    }
+                    else
+                    {
+                        if (treeComplexColumn != "")
+                        {
+                            ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)treeComplexData, column, filterValue);
+                            ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)data, complexColumn, treeComplexData);
+                            ReflectionExtension.SetValue(complexData, treeComplexColumn, data);
+                        }
+                        else
+                        {
+                            ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)data, column, filterValue);
+                            ReflectionExtension.SetValue(complexData, complexColumn, data);
+                        }
+                    }
+
+                }
+                else
+                {
+                    if (treeComplexColumn != "")
+                    {
+                        var propInfo = item?.GetType().GetProperty(treeComplexColumn);
+                        var tempObj = ReflectionExtension.TryCreateInstance(propInfo?.PropertyType);
+                        var prop = tempObj?.GetType().GetProperty(complexColumn);
+                        treeComplexData = ReflectionExtension.TryCreateInstance(prop?.PropertyType);
+                        ReflectionExtension.SetValue(treeComplexData, column, filterValue);
+                        ReflectionExtension.SetValue(tempObj, complexColumn, treeComplexData);
+                        ReflectionExtension.SetValue(complexData, treeComplexColumn, tempObj);
+                    }
+                    else
+                    {
+                        var propInfo = item?.GetType().GetProperty(splits[splits.Length - 2]);
+                        var tempObj = ReflectionExtension.TryCreateInstance(propInfo!.PropertyType);
+                        tempObj.GetType().GetProperty(column)?.SetValue(tempObj, filterValue);
+                        ReflectionExtension.SetValue(complexData, complexColumn, tempObj);
+                    }
+                }
+                item = (TContent)complexData;
+            }
+            else
+            {
+                if (data is DynamicObject)
+                {
+                    ReflectionExtension.SetValueToDynamicObject(data, column, filterValue);
+                }
+                else if (data is ExpandoObject)
+                {
+                    ReflectionExtension.SetValueToExpandoObject((IDictionary<string, object>)data, column, filterValue);
+                }
+                else
+                {
+                    ReflectionExtension.SetValue(data, column, filterValue);
+                }
+                item = (TContent)data;
+            }
+            CustomFilterItem = item;
+            if (FirstAutoComplete != null)
+            {
+                await FirstAutoComplete.AddItemsAsync(new List<TContent>() { item });
+            }
+            if (SecondAutoComplete != null)
+            {
+                await SecondAutoComplete.AddItemsAsync(new List<TContent>() { item });
+            }
+
+        }
+    }
+
+   
+
+    /// <summary>
+    /// Handles custom filter dialog render completion.
+    /// Applies JavaScript interop styling and event hooks to the rendered dialog.
+    /// </summary>
+    /// <remarks>
+    /// Called via DialogEvents.Created after the custom filter dialog renders.
+    /// Invokes "sfBlazor.Grid.customFilterDialog" JS method to:
+    /// 1. Apply CSS styling classes to the dialog
+    /// 2. Attach JS event handlers to the dialog DOM elements
+    /// 3. Set up dialog-specific keyboard navigation
+    /// 4. Initialize toolbar button states
+    ///
+    /// Uses Column.Field to construct unique selector for targeting the specific
+    /// column's filter dialog (xlflmenu = Excel-style filter menu).
+    /// </remarks>
+    private async Task RenderedCustomFilter()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Column!.Field}-xlflmenu" });
+    }
+
+    /// <summary>
+    /// Handles submenu dialog render completion.
+    /// Applies JavaScript interop styling to the custom filter submenu dialog.
+    /// </summary>
+    /// <remarks>
+    /// Called after the submenu (opened from menu items) renders.
+    /// Similar to RenderedCustomFilter but targets the submenu selector
+    /// (_customfilter_submenu = custom filter submenu dialog).
+    /// </remarks>
+    private async Task RenderedSubmenu()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Column!.Field}_customfilter_submenu" });
+    }
+
+    /// <summary>
+    /// Handles submenu component creation and display.
+    /// Opens the submenu dialog after the SubMenuRef component is created.
+    /// </summary>
+    /// <remarks>
+    /// Called during SubMenuRef component lifecycle initialization.
+    /// Opens the submenu asynchronously to display nested filter options
+    /// (e.g., custom filter operators, between conditions) when triggered by menu item selection.
+    /// </remarks>
+    internal async void OnSubMenuCreated()
+    {
+        await this.SubMenuRef!.OpenAsync();
+    }
+
+    #endregion
+
+    #region Event Handlers - Menu
+
+    /// <summary>
+    /// Handles AND/OR radio button selection in the custom filter dialog.
+    /// Sets the logical operator for combining multiple filter conditions.
+    /// </summary>
+    /// <param name="predicate">The selected logical operator ("and" or "or").</param>
+    /// <remarks>
+    /// Updates the AndRadioButton field to store the user's choice for how to combine
+    /// the first and second filter conditions. This predicate is used later during
+    /// FilterBtnClick to build the appropriate multi-condition filter predicate.
+    /// </remarks>
+    private void RadioButtonClickHandler(string predicate)
+    {
+        AndRadioButton = predicate;
+    }
+
+    /// <summary>
+    /// Handles the close button click event in the custom filter dialog.
+    /// Resets submenu state and triggers filter UI update events.
+    /// </summary>
+    /// <remarks>
+    /// This method:
+    /// 1. Resets isSubMenuItemSelected flag to indicate submenu is closed
+    /// 2. Triggers "CloseAdaptiveDialog" event to close any open adaptive dialogs
+    /// 3. Resets Parent.FilterModule.FilterIconIsClicked flag
+    /// 4. Triggers "FilterComponentUpdate" event to refresh filter icon state in grid
+    ///
+    /// This ensures the grid's filter icon and UI state remain synchronized when closing
+    /// the custom filter dialog, particularly in adaptive (mobile) mode.
+    /// </remarks>
+    private void CloseCustomDialogHandler()
+    {
+        isSubMenuItemSelected = false;
+        Parent!.EventAggregator.Trigger("CloseAdaptiveDialog", null!);
+        Parent.FilterModule!.FilterIconIsClicked = false;
+        Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+
+    }
+
+    /// <summary>
+    /// Handles adaptive dialog initialization and layout adjustment.
+    /// Applies adaptive-mode-specific CSS padding to custom filter dialog content.
+    /// </summary>
+    /// <remarks>
+    /// Called during adaptive dialog OnOpen event. Invokes JavaScript interop method
+    /// "sfBlazor.Grid.setCustomFilterDialogPadding" to adjust the dialog content padding
+    /// based on the grid's DataId and the current column's field name.
+    ///
+    /// This ensures proper dialog layout and spacing in adaptive (mobile/tablet) UI modes.
+    /// </remarks>
+    private async Task AdaptiveCustomFilterDialog()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.setCustomFilterDialogPadding", new object[] { Parent.DataId, $"{Column?.Field}-xlflmenu_dialog-content" });
+    }
+
+    #endregion
+
+    #region Menu Item Management
+
+    /// <summary>
+    /// Constructs the default menu items for the custom filter context menu.
+    /// Generates type-specific operator menus with icon indicators for current filter state.
+    /// </summary>
+    /// <returns>The complete menu items list including type filters and custom filter options.</returns>
+    /// <remarks>
+    /// This method creates a hierarchical menu structure:
+    /// 1. NumberSubMenuItems: Numeric/Date/Time operators (equal, notequal, greaterthan, etc.)
+    /// 2. StringSubMenuItems: String operators (startswith, endswith, contains, etc.)
+    /// 3. Type-specific menus: TextFilter, NumberFilter, DateFilter, TimeFilter, DateTimeFilter
+    /// 4. ClearFilter menu item (disabled if no filter active)
+    /// 5. Custom filter options (with icon indicators showing active state)
+    ///
+    /// Icon indicators:
+    /// - e-icon-check: Filter type is currently active
+    /// - e-excl-filter-icon e-emptyicon: No operator selected yet
+    /// - Hidden icon: Different filter state
+    ///
+    /// The operator menus are mapped by column type to provide context-aware filtering options.
+    /// </remarks>
+    private List<MenuItem> BuildDefaultItems()
+    {
+        MenuItems.Clear();
+
+        NumberSubMenuItems = new List<MenuItem> {
+#pragma warning disable BL0005
+            new MenuItem(){ Text = @Localizer!.GetText(GridLocaleKeys.Equal), IconCss = (Fcount == 1 && FirstFoperator == "equal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon")), Id="equal" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.NotEqual), IconCss = (Fcount == 1 && FirstFoperator == "notequal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="notequal" },
+            new MenuItem() { Separator= true},
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.LessThan), IconCss = (Fcount == 1 && FirstFoperator == "lessthan" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="lessthan" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.LessThanOrEqual),  IconCss = (Fcount == 1 && FirstFoperator == "lessthanorequal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="lessthanorequal" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.GreaterThan), IconCss = (Fcount == 1 && FirstFoperator == "greaterthan" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="greaterthan" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.GreaterThanOrEqual), IconCss = (Fcount == 1 && FirstFoperator == "greaterthanorequal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="greaterthanorequal" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.Between), IconCss = (Fcount == 2 && FirstFoperator == "greaterthanorequal" && SecondFoperator == "lessthanorequal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="between" },
+            new MenuItem() { Separator= true},
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.CustomFilter),IconCss = (Fcount == 2 && !(FirstFoperator == "greaterthanorequal" && SecondFoperator == "lessthanorequal") ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="customfilter" }
+            #pragma warning restore BL0005
+        };
+
+        StringSubMenuItems = new List<MenuItem> {
+#pragma warning disable BL0005
+            new MenuItem(){ Text = @Localizer.GetText(GridLocaleKeys.Equal) , IconCss = (Fcount == 1 && FirstFoperator == "equal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="equal" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.NotEqual),  IconCss = (Fcount == 1 && FirstFoperator == "notequal" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="notequal" },
+            new MenuItem() { Separator= true},
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.StartsWith),  IconCss = (Fcount == 1 && FirstFoperator == "startswith" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="startswith" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.EndsWith),  IconCss = (Fcount == 1 && FirstFoperator == "endswith" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="endswith" },
+            new MenuItem() { Separator= true},
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.Contains),  IconCss = (Fcount == 1 && FirstFoperator == "contains" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="contains" },
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.DoesNotContain),  IconCss = (Fcount == 1 && FirstFoperator == "doesnotcontain" ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon") ), Id="doesnotcontain" },
+            new MenuItem() { Separator= true},
+            new MenuItem() { Text = @Localizer.GetText(GridLocaleKeys.CustomFilter), IconCss = (Fcount == 2 ? "e-icons e-icon-check" : (Fcount == 0 || Fcount > 2 ? "" : "e-icons e-excl-filter-icon e-emptyicon")), Id="customfilter" },
+
+#pragma warning restore BL0005
+        };
+
+#pragma warning disable BL0005
+        if (!(Parent?.EnableAdaptiveUI == true) || (Parent?.EnableAdaptiveUI == true && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && !Parent.SyncfusionService.IsDeviceMode))
+        {
+            MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.ClearFilter), Disabled = !isFiltered, IconCss = isFiltered ? "e-icons e-excl-filter-icon e-filtered" : "e-icons e-excl-filter-icon" });
+        }
+        switch (Column?.Type)
+        {
+            case ColumnType.Integer:
+            case ColumnType.Double:
+            case ColumnType.Long:
+            case ColumnType.Decimal:
+                MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.NumberFilter), IconCss = (Fcount > 0 ? "e-icons e-icon-check" : "e-icons e-excl-filter-icon e-emptyicon"), Items = NumberSubMenuItems });
+                break;
+            case ColumnType.Date:
+            case ColumnType.DateOnly:
+                MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.DateFilter), IconCss = (Fcount > 0 ? "e-icons e-icon-check" : "e-icons e-excl-filter-icon e-emptyicon"), Items = NumberSubMenuItems });
+                break;
+            case ColumnType.TimeOnly:
+                MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.TimeFilter), IconCss = (Fcount > 0 ? "e-icons e-icon-check" : "e-icons e-excl-filter-icon e-emptyicon"), Items = NumberSubMenuItems });
+                break;
+            case ColumnType.DateTime:
+                MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.DateTimeFilter), IconCss = (Fcount > 0 ? "e-icons e-icon-check" : "e-icons e-excl-filter-icon e-emptyicon"), Items = NumberSubMenuItems });
+                break;
+            case ColumnType.String:
+                MenuItems.Add(new MenuItem { Text = Localizer.GetText(GridLocaleKeys.TextFilter), IconCss = (Fcount > 0 ? "e-icons e-icon-check" : "e-icons e-excl-filter-icon e-emptyicon"), Items = StringSubMenuItems });
+                break;
+#pragma warning restore BL0005
+        }
+        return MenuItems;
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Handles the menu close event to update sub-menu dialog state and validate parent item.
+    /// Handles context menu before-close event.
+    /// Prevents closing of menus without valid parent items and manages submenu state.
+    /// </summary>
+    /// <param name="Args">The menu event arguments from the Syncfusion context menu, containing parent item information and cancellation flag.</param>
+    /// <remarks>
+    /// This method:
+    /// 1. Resets IsSubMenuDialog flag only when NOT in adaptive UI mode
+    ///    (In adaptive mode, submenu state persists across menu close events)
+    /// 2. Validates that a ParentItem exists before allowing menu close
+    ///    If ParentItem is null, cancels the close event to prevent orphaned menus
+    ///
+    /// This ensures proper menu hierarchy maintenance and prevents UI state corruption
+    /// in both desktop and adaptive (mobile) UI modes.
+    /// </remarks>
+    internal void OnCloseMenu(BeforeOpenCloseMenuEventArgs<MenuItem> Args)
+    {
+        if (!(Parent?.EnableAdaptiveUI == true))
+        {
+            IsSubMenuDialog = false;
+        }
+        
+        if (Args.ParentItem == null)
+        {
+            Args.Cancel = true;
+        }
+    }
+
+    /// <summary>
+    /// Marks the sub-menu dialog as opened when menu item is selected.
+    /// </summary>
+    private void OnSubMenuOpened()
+    {
+        IsSubMenuDialog = true;
+    }
+
+    /// <summary>
+    /// Opens the context menu asynchronously after component creation.
+    /// </summary>
+    /// <summary>
+    /// Handles context menu creation event.
+    /// Opens the context menu asynchronously after component initialization.
+    /// </summary>
+    /// <remarks>
+    /// Called during contextMenu component lifecycle (MenuEvents.Created).
+    /// Opens the menu to display the list of available filter operators and options
+    /// that users can select to configure their filter conditions.
+    /// </remarks>
+    internal async void OnMenuCreated()
+    {
+        await this.contextMenu!.OpenAsync();
+    }
+
+    /// <summary>
+    /// Gets a match case value based on the provided string index and operator list.
+    /// </summary>
+    /// <param name="stringIndex">The index of the selected operator.</param>
+    /// <param name="StringDropDownValue">The list of available operators.</param>
+    /// <returns>The match case value for the selected operator, or false if not found.</returns>
+    private bool GetMatchCaseValue(int? stringIndex, List<Operator> StringDropDownValue)
+    {
+        if (stringIndex.HasValue && stringIndex >= 0 && stringIndex < StringDropDownValue?.Count)
+        {
+            if (StringDropDownValue[stringIndex.Value] is Operator operatorItem)
+            {
+                string value = operatorItem.Value!;
+                return value == "startswith" || value == "endswith" || value == "contains" || value == "doesnotcontain" || value == "doesnotstartwith" || value == "doesnotendwith";
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Initializes operator lists for numeric and string column types.
+    /// Populates NumberDropDown and StringDropDown with localized operator options.
+    /// </summary>
+    /// <remarks>
+    /// Creates two operator lists:
+    ///
+    /// NumberDropDown (numeric/date/time columns):
+    /// - equal, notequal
+    /// - greaterthan, greaterthanorequal
+    /// - lessthan, lessthanorequal
+    /// - isnull, isnotnull
+    ///
+    /// StringDropDown (string columns):
+    /// - startswith, doesnotstartwith
+    /// - endswith, doesnotendwith
+    /// - contains, doesnotcontain
+    /// - equal, notequal
+    /// - isempty, isnotempty
+    /// - like
+    ///
+    /// All text values are localized using ISyncfusionStringLocalizer.
+    /// </remarks>
+    private void GetData()
+    {
+        List<Operator> NumberData = new List<Operator>();
+        NumberData.Add(new Operator { Value = "equal", Text = Localizer!.GetText(GridLocaleKeys.Equal) });
+        NumberData.Add(new Operator { Value = "notequal", Text = Localizer.GetText(GridLocaleKeys.NotEqual) });
+        NumberData.Add(new Operator { Value = "greaterthan", Text = Localizer.GetText(GridLocaleKeys.GreaterThan) });
+        NumberData.Add(new Operator { Value = "greaterthanorequal", Text = Localizer.GetText(GridLocaleKeys.GreaterThanOrEqual) });
+        NumberData.Add(new Operator { Value = "lessthan", Text = Localizer.GetText(GridLocaleKeys.LessThan) });
+        NumberData.Add(new Operator { Value = "lessthanorequal", Text = Localizer.GetText(GridLocaleKeys.LessThanOrEqual) });
+        NumberData.Add(new Operator { Value = "isnull", Text = Localizer.GetText(GridLocaleKeys.IsNull) });
+        NumberData.Add(new Operator { Value = "isnotnull", Text = Localizer.GetText(GridLocaleKeys.IsNotNull) });
+        this.NumberDropDown = NumberData;
+
+
+        List<Operator> StringData = new List<Operator>();
+        StringData.Add(new Operator { Value = "startswith", Text = Localizer.GetText(GridLocaleKeys.StartsWith) });
+        StringData.Add(new Operator { Value = "doesnotstartwith", Text = Localizer.GetText(GridLocaleKeys.DoesNotStartWith) });
+        StringData.Add(new Operator { Value = "endswith", Text = Localizer.GetText(GridLocaleKeys.EndsWith) });
+        StringData.Add(new Operator { Value = "doesnotendwith", Text = Localizer.GetText(GridLocaleKeys.DoesNotEndWith) });
+        StringData.Add(new Operator { Value = "contains", Text = Localizer.GetText(GridLocaleKeys.Contains) });
+        StringData.Add(new Operator { Value = "doesnotcontain", Text = Localizer.GetText(GridLocaleKeys.DoesNotContain) });
+        StringData.Add(new Operator { Value = "equal", Text = Localizer.GetText(GridLocaleKeys.Equal) });
+        StringData.Add(new Operator { Value = "notequal", Text = Localizer.GetText(GridLocaleKeys.NotEqual) });
+        StringData.Add(new Operator { Value = "isempty", Text = Localizer.GetText(GridLocaleKeys.IsEmpty) });
+        StringData.Add(new Operator { Value = "isnotempty", Text = Localizer.GetText(GridLocaleKeys.IsNotEmpty) });
+        StringData.Add(new Operator { Value = "like", Text = Localizer.GetText(GridLocaleKeys.Like) });
+        this.StringDropDown = StringData;
+    }
+
+    #endregion
+
+    #region Filter Processing
+
+    /// <summary>
+    /// Applies the filter based on the current operator and value selections.
+    /// Validates input, builds filter predicates, and updates the FilterSettings.
+    /// Handles both single and dual condition filters with AND/OR logic.
+    /// </summary>
+    /// <remarks>
+    /// This method:
+    /// 1. Retrieves operator and value for first and second conditions
+    /// 2. Determines if custom filter (two conditions) or single condition
+    /// 3. For single condition: calls FilterByColumn through FilterModule
+    /// 4. For dual conditions: creates GridFilterColumn entries with appropriate operators
+    /// 5. Triggers ModelChanged event with FilteringEventArgs
+    /// 6. Closes dialogs and updates UI state
+    ///
+    /// Follows Excel filter behavior with support for:
+    /// - Custom filters with AND/OR predicates
+    /// - Foreign key columns (uses ForeignKeyValue instead of Field)
+    /// - Match case sensitivity based on operator type
+    /// - Template-based and type-based value retrieval
+    /// </remarks>
+    internal async Task FilterBtnClick()
+    {
+        object value1 = "";
+        object value2 = "";
+        var filterOperator1 = "";
+        var filterOperator2 = "";
+        isDialogClosed = true;
+        isSubMenuItemSelected = false;
+        if (Parent?.FilterModule != null)
+            Parent.FilterModule.IsSubMenuClick = false;
+        if (Column?.FilterTemplate != null)
+        {
+            filterOperator1 = GetFirstColumnFilterOperator();
+            filterOperator2 = GetSecondColumnFilterOperator();
+            value1 = filterOperator1 == null ? null! : ModelInstance1?.GetType().GetProperty("Value")?.GetValue(ModelInstance1)!;
+            value2 = filterOperator2 == null ? null! : ModelInstance2?.GetType().GetProperty("Value")?.GetValue(ModelInstance2)!;
+        }
+        else if (Column?.ValueType != null)
+        {
+            filterOperator1 = GetFirstColumnFilterOperator();
+            filterOperator2 = GetSecondColumnFilterOperator();
+            value1 = GetFirstColumnFilterValue()!;
+            value2 = GetSecondColumnFilterValue()!;
+        }
+#pragma warning disable BL0005
+        if (Parent?.FilterSettings?.Columns == null)
+        {
+            Parent!.FilterSettings!.Columns = new List<GridFilterColumn>();
+        }
+
+        List<PredicateModel<object>> predicateModels = new List<PredicateModel<object>>();
+#pragma warning restore BL0005
+        bool isCustomFilter = filterOperator1 != null && filterOperator2 != null;
+        if (((value2 == null && value1 != null) || (value1 == null && value2 != null) || (value1 == null && value2 == null) || (value1 != null && value2 != null && filterOperator1 != null && filterOperator2 == null)) && (!isCustomFilter || (Parent.IsRenderedFromTreeGrid && value1 == null && value2 == null)))
+        {
+            object? value = (value1 == null && AndRadioButton == "or" && filterOperator2 != null) ? value2 : value1;
+            string? filterOperator = (value == value1) ? filterOperator1 : filterOperator2;
+            Parent.FilterModule!.FilterIconIsClicked = false;
+            Parent.FilterModule.ExcelDialog = true;
+            FirstAutoComplete?.Dispose();
+            Parent.EventAggregator.Trigger("CloseAdaptiveDialog", null!);
+            Parent.EventAggregator.Trigger("CloseColumnMenuAdaptiveDialog", null!);
+            await Parent.FilterModule.FilterDialogInstance?.HideAsync()!;
+            await Parent.FilterSettings.UpdateProperties("Columns", Parent.FilterSettings.Columns);
+            await Parent.FilterModule.FilterByColumn(this.Column?.Field!, Filter<TContent>.GetOperator(filterOperator!), value!, null, MatchCaseCheckBox?.Checked, Parent.FilterSettings.IgnoreAccent, null, null, Column?.Uid);
+        }
+        else
+        {
+            var removeFilterColumns = Parent.FilterSettings.Columns?.Where(col => col.Field == this.Column?.Field).ToList();
+            foreach (var col in removeFilterColumns!)
+            {
+                Parent.FilterSettings.Columns?.Remove(col);
+            }
+            for (var i = 0; i < 2; i++)
+            {
+                var filterColumn = new GridFilterColumn()
+                {
+#pragma warning disable BL0005
+                    Field = this.Column?.IsForeignColumn() == true ? this.Column.ForeignKeyValue! : this.Column?.Field!,
+                    Operator = i == 0 ? Filter<TContent>.GetEnumOperator(filterOperator1!) : Filter<TContent>.GetEnumOperator(filterOperator2!),
+                    Value = i == 0 ? value1! : value2!,
+                    MatchCase = MatchCaseCheckBox != null ? MatchCaseCheckBox.Checked ? MatchCaseCheckBox.Checked : Parent.FilterSettings.EnableCaseSensitivity : false,
+                    IgnoreAccent = Parent.FilterSettings.IgnoreAccent,
+                    Uid = this.Column?.Uid!,
+                    Predicate = AndRadioButton,
+                    ColumnType = Filter<TContent>.GetColumnType(this.Column?.Type)!,
+#pragma warning restore BL0005
+                };
+
+                var predicateModel = new PredicateModel<object>()
+                {
+#pragma warning disable BL0005
+                    Field = this.Column?.IsForeignColumn() == true ? this.Column.ForeignKeyValue! : this.Column?.Field!,
+                    Operator = i == 0 ? Filter<TContent>.GetEnumOperator(filterOperator1!) : Filter<TContent>.GetEnumOperator(filterOperator2!),
+                    Value = i == 0 ? value1! : value2!,
+                    MatchCase = MatchCaseCheckBox != null ? MatchCaseCheckBox.Checked ? MatchCaseCheckBox.Checked : Parent.FilterSettings.EnableCaseSensitivity : false,
+                    IgnoreAccent = Parent.FilterSettings.IgnoreAccent,
+                    Uid = this.Column?.Uid!,
+                    Predicate = AndRadioButton,
+#pragma warning restore BL0005
+                };
+                Parent.FilterSettings.Columns?.Add(filterColumn);
+                predicateModels.Add(predicateModel);
+            }
+            if (Parent.FilterModule != null)
+                Parent.FilterModule.FilterIconIsClicked = false;
+            SecondAutoComplete?.Dispose();
+            Parent.EventAggregator.Trigger("CloseAdaptiveDialog", null!);
+            Parent.EventAggregator.Trigger("CloseColumnMenuAdaptiveDialog", null!);
+            await Parent.FilterModule!.FilterDialogInstance?.HideAsync()!;
+            await Parent.FilterSettings.UpdateProperties("Columns", Parent.FilterSettings.Columns!);
+            var filteringArgs = new Syncfusion.Blazor.Grids.FilteringEventArgs()
+            {
+                ColumnName = this.Column?.Field!,
+                FilterPredicates = predicateModels,
+            };
+            await Parent.ModelChanged(new ActionEventArgs<TContent>() { Columns = predicateModels, CurrentFilteringColumn = this.Column?.Field!, RequestType = Grids.Action.Filtering }, eventArgs: filteringArgs, requestType: "Filtering");
+            isDialogClosed = true;
+            Parent.FilterModule.ExcelDialog = false;
+        }
+        Parent.EventAggregator.Trigger("CloseAdaptiveDialog", null!);
+        Parent.EventAggregator.Trigger("CloseColumnMenuAdaptiveDialog", null!);
+        await Parent.FilterModule.FilterDialogInstance?.HideAsync()!;
+        Parent.FilterModule.FilterIconIsClicked = false;
+        Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+        Parent.FilterModule.ExcelDialog = false;
+    }
+
+    #endregion
+
+    #region Data Validation & Retrieval
+
+    private bool GetClass(int? stringIndex, List<Operator> StringDropDownValue)
+    {
+        if (stringIndex.HasValue && stringIndex >= 0 && stringIndex < StringDropDownValue?.Count)
+        {
+            if (StringDropDownValue[stringIndex.Value] is Operator operatorItem)
+            {
+                string value = operatorItem.Value!;
+                string text = operatorItem.Text!;
+
+                if (value == "isempty" || value == "isnotempty")
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private bool GetNumberClass(int? stringIndex, List<Operator> NumberDropDown)
+    {
+        if (stringIndex.HasValue && stringIndex >= 0 && stringIndex < NumberDropDown?.Count)
+        {
+            if (NumberDropDown[stringIndex.Value] is Operator operatorItem)
+            {
+                string value = operatorItem.Value!;
+                string text = operatorItem.Text!;
+
+                if (value == "isnull" || value == "isnotnull")
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    #endregion
+
+    #region Data Initialization
+
+    /// <summary>
+    /// Handles the clear button click event in the custom filter dialog.
+    /// Resets dialog state and triggers filter component update.
+    /// </summary>
+    /// <remarks>
+    /// This method:
+    /// 1. Marks the dialog as closed
+    /// 2. Resets filter module state (IsSubMenuClick, FilterIconIsClicked)
+    /// 3. Sets ExcelDialog flag to false
+    /// 4. Triggers FilterComponentUpdate event for UI refresh
+    ///
+    /// Used when user clicks "Clear" button to reset custom filter conditions without applying.
+    /// </remarks>
+    internal async void ClearBtnClick()
+    {
+        isDialogClosed = true;
+        if (Parent?.FilterModule != null)
+        {
+            Parent.FilterModule.IsSubMenuClick = false;
+            Parent.FilterModule.FilterIconIsClicked = false;
+            Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+            Parent.FilterModule.ExcelDialog = false;
+        }
+    }
+
+    /// <summary>
+    /// Handles the dialog close event before the dialog is actually closed.
+    /// Disposes of dropdown components and resets filter module state.
+    /// </summary>
+    /// <param name="args">The dialog close event arguments, used to control close behavior.</param>
+    /// <remarks>
+    /// This method:
+    /// 1. Cancels the close operation if dialog was not previously closed (prevents immediate closure)
+    /// 2. Disposes all dropdown list components (string, number, and boolean)
+    /// 3. Resets filter module state flags
+    /// 4. Triggers UI update event
+    ///
+    /// Ensures proper resource cleanup before dialog closure.
+    /// </remarks>
+    internal async void Closed(BeforeCloseEventArgs args)
+    {
+        if (!isDialogClosed && Parent?.FilterModule != null)
+        {
+            args.Cancel = true;
+            isDialogClosed = true;
+            Parent.FilterModule!.FilterIconIsClicked = false;
+            FirstStringOperatorDropDown?.Dispose();
+            SecondStringOperatorDropDown?.Dispose();
+            FirstNumberOperatorDropDown?.Dispose();
+            SecondNumberOperatorDropDown?.Dispose();
+            FirstBoolDropDown?.Dispose();
+            SecondBoolDropDown?.Dispose();
+            Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+            Parent.FilterModule.ExcelDialog = false;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the first filter operator from the appropriate dropdown based on column type.
+    /// </summary>
+    /// <returns>The operator string (e.g., "equal", "startswith") or null if not set.</returns>
+    /// <remarks>
+    /// Handles type-specific operator retrieval:
+    /// - Numeric/Date/Time types: Uses FirstNumberOperatorDropDown
+    /// - String/Other types: Uses FirstStringOperatorDropDown
+    ///
+    /// The operator value is used to determine the filter comparison method.
+    /// </remarks>
+    internal string? GetFirstColumnFilterOperator()
+    {
+
+        switch (Column?.Type)
+        {
+            case ColumnType.Integer:
+            case ColumnType.Double:
+            case ColumnType.Long:
+            case ColumnType.Decimal:
+            case ColumnType.Date:
+            case ColumnType.DateOnly:
+            case ColumnType.TimeOnly:
+            case ColumnType.DateTime:
+                return FirstNumberOperatorDropDown?.Value?.ToString();
+            default:
+                return FirstStringOperatorDropDown?.Value?.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the first filter condition value from the appropriate editor component based on column type.
+    /// </summary>
+    /// <returns>The filter value for the first condition, or null if not set.</returns>
+    /// <remarks>
+    /// Handles type-specific value retrieval:
+    /// - Numeric types: Returns value from appropriate NumericTextBox (Int, Long, or Double)
+    /// - Date/Time types: Returns value from DatePicker, DateTimePicker, or TimePicker (with offset support)
+    /// - String/Other types: Returns value from AutoComplete, considering foreign key filtering
+    /// </remarks>
+    internal object? GetFirstColumnFilterValue()
+    {
+        switch (Column?.Type)
+        {
+            case ColumnType.Integer:
+            case ColumnType.Double:
+            case ColumnType.Long:
+            case ColumnType.Decimal:
+                return _isInteger ? FirstNumericValueasInt?.Value : _isLong ? FirstNumericValueasLong?.Value : FirstNumericValueasDouble?.Value;
+            case ColumnType.Date:
+                if (isDateTimeOffsetType)
+                {
+                    return FirstDatePickerOffsetType?.Value;
+                }
+                else
+                {
+                    return FirstDatePicker?.Value;
+                }
+            case ColumnType.DateOnly:
+                return FirstDateOnlyPicker?.Value;
+            case ColumnType.TimeOnly:
+                return FirstTimeOnlyPicker?.Value;
+            case ColumnType.DateTime:
+                return FirstDateTimePicker?.Value;
+            default:
+                return Column?.IsForeignColumn() == true && filterModel1 != null ? filterModel1.FilterValue ?? FirstAutoComplete?.Value : FirstAutoComplete?.Value;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves the second filter operator from the appropriate dropdown based on column type.
+    /// Used for dual-condition filters (Custom Filter with AND/OR logic).
+    /// </summary>
+    /// <returns>The operator string for the second condition (e.g., "lessthan", "endswith") or null if not set.</returns>
+    /// <remarks>
+    /// Handles type-specific operator retrieval:
+    /// - Numeric/Date/Time types: Uses SecondNumberOperatorDropDown
+    /// - String/Other types: Uses SecondStringOperatorDropDown
+    ///
+    /// Mirrors GetFirstColumnFilterOperator logic for the second condition.
+    /// </remarks>
+    internal string? GetSecondColumnFilterOperator()
+    {
+        switch (Column?.Type)
+        {
+            case ColumnType.Integer:
+            case ColumnType.Double:
+            case ColumnType.Long:
+            case ColumnType.Decimal:
+            case ColumnType.Date:
+            case ColumnType.DateOnly:
+            case ColumnType.TimeOnly:
+            case ColumnType.DateTime:
+                return SecondNumberOperatorDropDown?.Value?.ToString();
+            default:
+                return SecondStringOperatorDropDown?.Value?.ToString();
+        }
+    }
+
+
+    /// <summary>
+    /// Retrieves the second filter condition value from the appropriate editor component based on column type.
+    /// Used for dual-condition filters (Custom Filter with AND/OR logic).
+    /// </summary>
+    /// <returns>The filter value for the second condition, or null if not set.</returns>
+    /// <remarks>
+    /// Handles type-specific value retrieval:
+    /// - Numeric types: Returns value from appropriate NumericTextBox (Int, Long, or Double)
+    /// - Date/Time types: Returns value from DatePicker, DateTimePicker, or TimePicker (with offset support)
+    /// - String/Other types: Returns value from AutoComplete, considering foreign key filtering
+    ///
+    /// Mirrors GetFirstColumnFilterValue logic for the second condition.
+    /// </remarks>
+    internal object? GetSecondColumnFilterValue()
+    {
+        switch (Column?.Type)
+        {
+            case ColumnType.Integer:
+            case ColumnType.Double:
+            case ColumnType.Long:
+            case ColumnType.Decimal:
+                return _isInteger ? SecondNumericValueasInt?.Value : _isLong ? SecondNumericValueasLong?.Value : SecondNumericValueasDouble?.Value;
+            case ColumnType.Date:
+                if (isDateTimeOffsetType)
+                {
+                    return SecondDatePickerOffsetType?.Value;
+                }
+                else
+                {
+                    return SecondDatePicker?.Value;
+                }
+            case ColumnType.DateOnly:
+                return SecondDateOnlyPicker?.Value;
+            case ColumnType.TimeOnly:
+                return SecondTimeOnlyPicker?.Value;
+            case ColumnType.DateTime:
+                return SecondDateTimePicker?.Value;
+            default:
+                return Column?.IsForeignColumn() == true && filterModel2 != null ? filterModel2.FilterValue ?? SecondAutoComplete?.Value : SecondAutoComplete?.Value;
+        }
+    }
+
+    /// <summary>
+    /// Handles menu item selection event in the custom filter context menu.
+    /// Manages operator selection, dialog transitions, and submenu navigation.
+    /// </summary>
+    /// <param name="Args">The menu event arguments containing the selected menu item.</param>
+    /// <remarks>
+    /// This method:
+    /// 1. Extracts selected menu item text and sub-items
+    /// 2. Closes parent dialogs (adaptive UI context menus)
+    /// 3. Determines if selected item is a filter type (TextFilter, NumberFilter, etc.)
+    /// 4. For operator items: sets SelectedFoperator and transitions to custom filter dialog
+    /// 5. For ClearFilter item: removes filter predicates via FilterModule
+    /// 6. Handles adaptive UI mode with different dialog behavior
+    /// 7. Manages context menu and column menu visibility
+    ///
+    /// Supports both desktop and adaptive (mobile) UI modes with appropriate transitions.
+    /// </remarks>
+    internal async Task ItemSelected(MenuEventArgs<MenuItem> Args)
+    {
+        IsSubMenuDialog = true;
+        SubMenuItems = Args.Item?.Items!;
+        SelectedText = Args.Item?.Text!;
+        if ((Parent?.EnableAdaptiveUI == true) && SubMenuItems != null)
+        {
+            this.contextMenu?.Close();
+            Parent.Notify("CloseAdaptiveCheckBoxDialog", null!);
+        }
+        if (Parent!.ColumnMenuInstance != null)
+        {
+#pragma warning disable BL0005
+            Parent.ColumnMenuInstance.CssClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+#pragma warning restore BL0005
+            Parent.ColumnMenuClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+            Parent.IsColumnMenuFilter = false;
+            Parent.ColumnMenuInstance?.Close();
+        }
+        if (Args.Item?.Text != Localizer!.GetText(GridLocaleKeys.ClearFilter) &&
+            Args.Item?.Text != Localizer.GetText(GridLocaleKeys.TextFilter) &&
+            Args.Item?.Text != Localizer.GetText(GridLocaleKeys.NumberFilter) &&
+            Args.Item?.Text != Localizer.GetText(GridLocaleKeys.DateFilter) &&
+            Args.Item?.Text != Localizer.GetText(GridLocaleKeys.DateTimeFilter) &&
+            Args.Item?.Text != Localizer.GetText(GridLocaleKeys.TimeFilter))
+        {
+            isSubMenuItemSelected = true;
+            Parent.FilterModule!.IsSubMenuClick = true;
+            if (Args.Item != null && !string.IsNullOrEmpty(Args.Item.Id))
+            {
+                SelectedFoperator = Args.Item.Id;
+            }
+            if (!Parent.EnableAdaptiveUI)
+            {
+                await Parent.FilterModule.FilterDialogInstance?.HideAsync()!;
+                this.contextMenu?.Close();
+            }
+            else
+            {
+                IsSubMenuDialog = false;
+                isDialogClosed = true;
+                this.SubMenuRef?.Close();
+                Parent.EventAggregator.Trigger("CloseAdaptiveDialog", null!);
+                await Parent.FilterModule.FilterDialogInstance?.HideAsync()!;
+            }
+        }
+        else if (Args.Item?.Text == Localizer.GetText(GridLocaleKeys.ClearFilter))
+        {
+            isDialogClosed = true;
+            Parent.FilterModule!.FilterIconIsClicked = false;
+            Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+            await Parent.FilterModule.RemoveFilterColumnByField(this.Column?.Field!, this.Column?.Uid!);
+        }
+    }
+
+    #endregion
+
+    #region Inner Classes
+
+    /// <summary>
+    /// Represents a filter operator with localized display text and internal value.
+    /// Used to populate the operator dropdown lists in custom filter dialogs.
+    /// </summary>
+    /// <remarks>
+    /// This class models the key-value pair structure for dropdown items:
+    /// - Value: The internal operator identifier (e.g., "equal", "contains", "between")
+    ///   Used in filter predicate building and GridFilterColumn.Operator assignment
+    /// - Text: The localized display text shown in the UI dropdown
+    ///   Retrieved from ISyncfusionStringLocalizer (e.g., "Equals", "Contains", "Between")
+    ///
+    /// Instances are collected in NumberSubMenuItems and StringSubMenuItems lists
+    /// and bound to SfDropDownList/SfAutoComplete components for operator selection.
+    /// </remarks>
+    internal class Operator
+    {
+        public string? Value { get; set; }
+        public string? Text { get; set; }
+    }
+
+    #endregion
+
+}

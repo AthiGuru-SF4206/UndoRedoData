@@ -1,0 +1,24 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public Func<Task, object, Task>? Handler { get; set; }
+
+    [CascadingParameter]
+    public SfGrid<T>? Parent { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        if (Parent != null)
+        {
+            if (Name == null)
+                throw new MissingMemberException($"Name must be provided to add event");
+            Parent.EventAggregator.AddAsync(Name, Handler!);
+        }
+    }
+}

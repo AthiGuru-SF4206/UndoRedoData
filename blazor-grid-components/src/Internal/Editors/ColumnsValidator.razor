@@ -1,0 +1,210 @@
+@using Microsoft.AspNetCore.Components.Forms;
+@using System.Reflection;
+@using System.Dynamic
+@using Syncfusion.Blazor.Grids.Internal;
+@using DataAnnotations = System.ComponentModel.DataAnnotations;
+
+@typeparam T
+
+@ChildContent
+
+@code {
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public IDictionary<string, object>? ValidationRules { get; set; }
+
+    [CascadingParameter]
+    public EditContext? CurrentEditContext { get; set; }
+
+    [CascadingParameter]
+    public SfGrid<T>? Parent { get; set; }
+
+    [Parameter]
+    public Action<ValidationResult>? OnValidated { get; set; }
+
+    internal Validator Validator { get; set; } = new Validator();
+    ValidationMessageStore? _store;
+    ValidationMessageStore? _customStore;
+
+    protected override void OnInitialized()
+    {
+        _store = new ValidationMessageStore(CurrentEditContext!);
+        _customStore = new ValidationMessageStore(CurrentEditContext!);
+        CurrentEditContext!.OnFieldChanged += ValidateField!;
+        CurrentEditContext.OnValidationRequested += ValidateRequested!;
+    }
+
+    private void ValidateFieldIdentifier(FieldIdentifier identifier, bool hasFailed = false, bool isComplexField = true, string uid = null!)
+    {
+        string fieldName = identifier.FieldName;
+        Type? modelType = identifier.Model?.GetType();
+        PropertyInfo? type = modelType?.GetProperty(fieldName);
+        object? value = (bool)(modelType?.BaseType?.Name?.Equals("ComponentBase", StringComparison.Ordinal) ?? false) 
+            ? ReflectionExtension.GetValue(identifier.Model, fieldName) 
+            : Parent?.PropHelper?.GetObject(fieldName, identifier.Model!);
+
+        string? originalField = null;
+
+        if (!(ValidationRules?.ContainsKey(uid) == true) || hasFailed)
+        {
+            originalField = !string.IsNullOrEmpty(fieldName) ? ValidationRules?.Keys.ToList().
+                Find(k => identifier.Equals(Parent!.EditModule!.ModelExpressions(k))) : null!;
+            if ((string.IsNullOrEmpty(originalField) || hasFailed) && isComplexField)
+            {
+                IEnumerable<string>? messages = CurrentEditContext?.GetValidationMessages(identifier);
+                bool isInValid = messages!.Any();
+                ValidationResult customResult = new ValidationResult()
+                {
+                    FieldName = identifier.FieldName,
+                    IsValid = !isInValid,
+                    Message = isInValid ? messages?.First() : null,
+                    Uid = uid
+                };
+                OnValidated?.Invoke(customResult);
+                return;
+            }
+        }
+
+        ValidationContext context = new ValidationContext()
+        {
+            FieldName = originalField ?? fieldName,
+            ValidationRules = ValidationRules?[originalField ?? uid]
+        };
+
+        ValidationResult result = new ValidationResult()
+        {
+            FieldName = originalField ?? fieldName,
+            Uid = uid
+        };
+        if(value != null && type?.PropertyType != null)
+        {
+            Validator?.TryValidate(value, type.PropertyType, context, result);
+        }
+        FieldIdentifier complexFieldIdentifier = default;
+        if (fieldName.Contains("."))
+        {
+            string? complexFieldName = fieldName.Split(".")?.Last();
+            complexFieldIdentifier = Parent!.EditModule!.ComplexEditContext[fieldName].Field(complexFieldName!);
+        }
+        if (result.IsValid)      
+        {       
+            _store?.Clear(identifier);
+            if(fieldName.Contains("."))
+            {
+                _store?.Clear(complexFieldIdentifier);
+            }
+        }
+        else
+        {
+            result.FieldName = fieldName.Contains(".") ? complexFieldIdentifier.FieldName : result.FieldName;
+            var storeIdentifier = (fieldName.Contains(".") && modelType?.Name != "ExpandoObject" && modelType?.BaseType?.Name != "DynamicObject") 
+                ? complexFieldIdentifier 
+                : identifier;
+            if(result.Message != null)
+            {
+                _store?.Add(storeIdentifier, result.Message);
+            }
+            
+        }
+        OnValidated?.Invoke(result);
+    }
+
+    internal void ValidateField(object editContext, FieldChangedEventArgs fieldChangedEventArgs)
+    {
+        FieldIdentifier identifier = fieldChangedEventArgs.FieldIdentifier;
+        var Cols = GridUtils.GetColumns(Parent!);
+        bool isComplexColumn = Cols?.Any(x => x.Field?.Contains(".") ?? false) ?? false;
+        var validationColumn = isComplexColumn 
+            ? Cols?.Find(x => x.Field?.Contains(identifier.FieldName) ?? false) 
+            : Cols?.Find(x => x.Field == identifier.FieldName);
+        bool metaData = true;
+        if (isComplexColumn && validationColumn != null)
+        {
+            metaData = MetadataExtension.GetMetadataForProperty(typeof(T), validationColumn.Field) != null;
+        }
+        if (metaData || validationColumn?.ValidationRules != null || !isComplexColumn)
+        {
+            if (validationColumn != null)
+            {
+                bool isInvalid = DataAnnotationHandler(identifier);
+                ValidateFieldIdentifier(identifier, isInvalid, metaData, uid: validationColumn.Uid);
+            }
+        }
+    }
+
+    private void ValidateRequested(object editContext, ValidationRequestedEventArgs validationEventArgs)
+    {
+        FieldIdentifier[] identifiers = GridUtils.GetColumns((IGrid)Parent!)
+        .Where(col => !col.Type.Equals(ColumnType.CheckBox))
+        .Select(col => CurrentEditContext!.Field(col.Field))
+        .ToArray();
+
+        List<string> uidList = new List<string>();
+        var columns = GridUtils.GetColumns((IGrid)Parent!);
+        foreach (var identifier in identifiers)
+        {
+            foreach (var col in columns)
+            {
+                if (col.ValidationRules == null && col.Field.Split('.').Length > 1)
+                    continue;
+
+                if (col.Field == identifier.FieldName)
+                {
+                    if (!uidList.Contains(col.Uid))
+                    {
+                        uidList.Add(col.Uid);
+                        bool isInvalid = DataAnnotationHandler(identifier);
+                        ValidateFieldIdentifier(identifier, isInvalid, uid: col.Uid);
+                    }
+                }
+            }
+        }
+    }
+
+    // This method performs data annotation validation given by user.
+    // Performs property wise validation.
+    private bool DataAnnotationHandler(FieldIdentifier identifier)
+    {
+        object model = identifier.Model;
+        string identifierFieldName = identifier.FieldName;
+        if (model is ExpandoObject || model is DynamicObject ||
+            string.IsNullOrEmpty(identifierFieldName))  
+        {
+            return false;
+        }
+        else if (identifierFieldName.Contains('.'))
+        {
+            var fieldSegments = identifierFieldName.Split('.');
+            foreach (var segment in fieldSegments.Take(fieldSegments.Length - 1))
+            {
+                var property = model.GetType().GetProperty(segment);
+                if (property?.CanRead != true)
+                    return false;
+                model = property.GetValue(model)!;
+                if (model == null || model is ExpandoObject || model is DynamicObject )
+                    return false;
+            }
+        
+            identifierFieldName = fieldSegments.Last();
+        }
+
+        var validationContext = new DataAnnotations.ValidationContext(model) { MemberName = identifierFieldName };
+        var results = new List<DataAnnotations.ValidationResult>();
+        object value = (bool)(validationContext?.ObjectType?.BaseType?.Name?.Equals("ComponentBase", StringComparison.Ordinal) == true) 
+            ? ReflectionExtension.GetValue(model, identifierFieldName) 
+            : Parent?.PropHelper?.GetObject(identifierFieldName, model)!;
+
+        DataAnnotations.Validator.TryValidateProperty(value, validationContext!, results);
+
+        _customStore?.Clear(identifier);
+
+        bool isInValid = results.Any();
+        if (isInValid)
+        {
+            _customStore?.Add(identifier, results?.Select(result => result.ErrorMessage!)!);
+        }
+
+        return isInValid;
+    }
+}

@@ -1,0 +1,74 @@
+﻿<h3>BLAZ-26907</h3>
+
+@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Filter with AsQueryable DataSource">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowPaging="true" AllowFiltering="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="false" AllowEditing="false" AllowDeleting="false" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu" ShowFilterBarStatus="true" EnableCaseSensitivity="false"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" ValidationRules="@(new ValidationRules { Required = true })" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code 
+{
+    SfFixture fixture { get; set; }
+    public IQueryable<Order> GridData { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[1].Click();
+        var FilterRenderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.True(FilterRenderer.Instance != null);
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        Assert.True(cut.FindAll(".e-filter-popup").Count > 0, "filter dialog opened");
+    }
+
+    public IQueryable<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 10001, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 10002, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 10003, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 10004, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 10005, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 10006, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 10007, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 10008, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 10009, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100010, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2 });
+        data.Add(new Order() { OrderID = 100011, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 100012, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 100013, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 100014, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 100015, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 100016, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 100017, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 100018, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 100019, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100020, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2 });
+        
+        GridData = data.AsQueryable();
+        return GridData;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+

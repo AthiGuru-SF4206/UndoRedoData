@@ -1,0 +1,473 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="ColumnMenu code coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSorting="true" AllowGrouping=true AllowPaging=true ShowColumnMenu=true ColumnMenuItems=@MenuItems>
+            <GridGroupSettings ShowGroupedColumn=true></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents OnColumnMenuOpen="ColumnMenuOpenHandler" ColumnMenuItemClicked="ColumnMenuClickHandler" ColumnVisibilityChanged="ColumnVisibilityChangedHandler" 
+                        OnActionComplete="ActionCompletedHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    private string[] MenuItems = new string[] { "SortAscending", "SortDescending", "AutoFit", "AutoFitAll", "ColumnChooser", "Filter", "Group", "Ungroup" };
+
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        await ClickAllItemsOfColumnMenu(cut);
+
+        await ColumnChooserItemCheckbox(cut);
+
+        await ClickSecondColumnMenu(cut);
+        await ClickSecondColumnMenu(cut);
+        await ColumnChooserItemCheckbox(cut, true);
+    }
+
+
+    private async Task ClickAllItemsOfColumnMenu(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        for (int i = 0; i < MenuItems.Length; i++)
+        {
+            await ClickSecondColumnMenu(cut);
+            Assert.True(cut.FindAll(".e-menu-item").Count == 8, "Column menu items are rendered properly.");
+            await cut.InvokeAsync(() =>
+            {
+                cut.FindAll(".e-menu-item")[i].Click(new MouseEventArgs());
+            });
+            if (i == 0)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-rowcell")[0].TextContent.Contains("1005"));
+                Assert.True((cut.Instance.CurrentViewData.ToList()[0] as Order).OrderID == 1005, "Ascending Order sorting works Properly");
+            }
+            else if (i == 1)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-rowcell")[0].TextContent.Contains("1004"));
+                Assert.True((cut.Instance.CurrentViewData.ToList()[0] as Order).OrderID == 1004, "Descending Order sorting works Properly");
+            }
+            else if (i == 6)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-groupheadercell").Count > 0);
+                Assert.True(cut.FindAll(".e-groupheadercell").Count == 1, "Grouping done");
+            }
+            else if (i == 7)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-groupheadercell").Count == 0);
+                Assert.True(cut.FindAll(".e-groupheadercell").Count == 0, "Ungrouping done");
+            }
+        }
+    }
+
+    private async Task ClickSecondColumnMenu(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(() =>
+        {
+            cut.FindAll(".e-columnmenu")[1].Click(new MouseEventArgs());
+        });
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 1);
+    }
+
+    private async Task ColumnChooserItemCheckbox(IRenderedComponent<SfGrid<Order>> cut, bool show = false)
+    {
+        await ClickSecondColumnMenu(cut);
+        await cut.InvokeAsync(() =>
+        {
+            var columnChooserMenuItem = cut.FindAll(".e-menu-item")[4];
+            var mouseoverArgs = new MouseEventArgs
+            {
+                Type = "mouseover",
+                Buttons = 0
+            };
+            columnChooserMenuItem?.TriggerEvent("onmouseover", mouseoverArgs);
+        });
+
+        // Wait for submenu to appear with checkboxes
+        cut.WaitForState(() => cut.FindAll(".e-checkbox-wrapper").Count > 0);
+
+        var checkboxWrappers = cut.FindAll(".e-checkbox-wrapper");
+        var orderDateCheckboxWrapper = checkboxWrappers
+            .FirstOrDefault(cb => cb.TextContent.Contains("Order Date"));
+
+        Assert.True(orderDateCheckboxWrapper != null, "Order Date checkbox found");
+
+        await cut.InvokeAsync(() =>
+        {
+            var checkboxInput = orderDateCheckboxWrapper?.QuerySelector("input[type='checkbox']") as IElement;
+            checkboxInput?.Click(new MouseEventArgs());
+        });
+        if (show)
+        {
+            cut.WaitForState(() => cut.Instance.Columns?.Any(c => c.Field == "OrderDate" && c.Visible) == true, TimeSpan.FromSeconds(2));
+        }
+        else
+        {
+            cut.WaitForState(() => cut.Instance.Columns?.Any(c => c.Field == "OrderDate" && !c.Visible) == true, TimeSpan.FromSeconds(2));
+        }
+    }
+
+    public void ColumnMenuOpenHandler(ColumnMenuOpenEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void ColumnMenuClickHandler(ColumnMenuClickEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void ColumnVisibilityChangedHandler(ColumnVisibilityChangedEventArgs args)
+    {}
+    public void ActionCompletedHandler(ActionEventArgs<Order> args)
+    {}
+}
+
+
+
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="ColumnMenu with EnableAdaptive UI">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateRows()" EnableAdaptiveUI="true" AllowSorting="true" AllowGrouping=true AllowPaging=true ShowColumnMenu=true ColumnMenuItems=@MenuItems2>
+            <GridGroupSettings ShowGroupedColumn=true></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents OnColumnMenuOpen="ColumnMenuOpenHandler2" ColumnMenuItemClicked="ColumnMenuClickHandler2" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> Grid2;
+    private string[] MenuItems2 = new string[] { "SortAscending", "SortDescending", "AutoFit", "AutoFitAll", "ColumnChooser", "Filter", "Group", "Ungroup" };
+    private bool preventColumnMenuRendering2 { get; set; }
+
+    public async Task GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+
+        preventColumnMenuRendering2 = false;
+        await ClickAllItemsOfColumnMenu2(cut);
+        await ColumnChooserItemCheckbox2(cut);
+        preventColumnMenuRendering2 = true;
+        await ClickSecondColumnMenu2(cut);
+    }
+
+    private async Task ClickSecondColumnMenu2(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(() =>
+        {
+            cut.FindAll(".e-columnmenu")[1].Click(new MouseEventArgs());
+        });
+        // Wait for dialog to open instead of context menu
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0);
+    }
+
+    private async Task ColumnChooserItemCheckbox2(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await ClickSecondColumnMenu2(cut);
+        
+        // Find and click the ColumnChooser (Columns) item in the dialog
+        var columnChooserItem = cut.FindAll(".e-responsivecoldiv")
+            .FirstOrDefault(div => div.TextContent.Contains("Columns"));
+        
+        Assert.True(columnChooserItem != null, "Columns menu item found in dialog");
+        
+        await cut.InvokeAsync(() =>
+        {
+            columnChooserItem?.Click(new MouseEventArgs());
+        });
+        
+        // Wait for the "Choose Column" dialog to appear with checkboxes
+        cut.WaitForState(() => cut.FindAll(".e-checkbox-wrapper").Count > 0, TimeSpan.FromSeconds(2));
+        
+        var checkboxWrappers = cut.FindAll(".e-checkbox-wrapper");
+        var orderDateCheckboxWrapper = checkboxWrappers
+            .FirstOrDefault(cb => cb.TextContent.Contains("Order Date"));
+        
+        Assert.True(orderDateCheckboxWrapper != null, "Order Date checkbox found");
+        
+        await cut.InvokeAsync(() =>
+        {
+            var checkboxInput = orderDateCheckboxWrapper?.QuerySelector("input[type='checkbox']") as IElement;
+            checkboxInput?.Click(new MouseEventArgs());
+            var okButton = cut.FindAll(".e-btn").FirstOrDefault(cb => cb.TextContent.Contains("OK"));
+            okButton?.Click(new MouseEventArgs());
+        });
+        
+        cut.WaitForState(() => cut.Instance.Columns?.Any(c => c.Field == "OrderDate" && !c.Visible) == true, TimeSpan.FromSeconds(2));
+    }
+
+    private async Task ClickAllItemsOfColumnMenu2(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        // Map of menu item text to corresponding responsive div class pattern
+        string[] MenuItemsAdaptive = new string[] { "Ascending", "Descending", "Autofit this column", "Autofit all columns", "Columns", "Filter", "Group", "Ungroup" };
+        
+        for (int i = 0; i < MenuItemsAdaptive.Length; i++)
+        {
+            await ClickSecondColumnMenu2(cut);
+            
+            // Verify dialog items are rendered
+            var dialogItems = cut.FindAll(".e-responsivecoldiv");
+            Assert.True(dialogItems.Count > 0, "Dialog menu items are rendered properly.");
+            
+            // Find the item by text content instead of index
+            var menuItem = dialogItems.FirstOrDefault(item => item.TextContent.Contains(MenuItemsAdaptive[i]));
+            Assert.True(menuItem != null, $"{MenuItemsAdaptive[i]} menu item found");
+            
+            await cut.InvokeAsync(() =>
+            {
+                menuItem?.Click(new MouseEventArgs());
+            });
+            
+            if (i == 0)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-rowcell")[0].TextContent.Contains("1005"));
+                Assert.True((cut.Instance.CurrentViewData.ToList()[0] as Order).OrderID == 1005, "Ascending Order sorting works Properly");
+            }
+            else if (i == 1)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-rowcell")[0].TextContent.Contains("1004"));
+                Assert.True((cut.Instance.CurrentViewData.ToList()[0] as Order).OrderID == 1004, "Descending Order sorting works Properly");
+            }
+            else if (i == 6)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-groupheadercell").Count > 0);
+                Assert.True(cut.FindAll(".e-groupheadercell").Count == 1, "Grouping done");
+            }
+            else if (i == 7)
+            {
+                cut.WaitForState(() => cut.FindAll(".e-groupheadercell").Count == 0);
+                Assert.True(cut.FindAll(".e-groupheadercell").Count == 0, "Ungrouping done");
+            }
+        }
+    }
+
+    public void ColumnMenuOpenHandler2(ColumnMenuOpenEventArgs args)
+    {
+        if (preventColumnMenuRendering2)
+        {
+            args.Cancel = true;
+            return;
+        }
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void ColumnMenuClickHandler2(ColumnMenuClickEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+}
+
+
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="ColumnMenu Open Events Prevent">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GenerateRows()" AllowSorting="true" AllowGrouping=true AllowPaging=true ShowColumnMenu=true ColumnMenuItems=@MenuItems3>
+            <GridGroupSettings ShowGroupedColumn=true></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents OnColumnMenuOpen="ColumnMenuOpenHandler3" ColumnMenuItemClicked="ColumnMenuClickHandler3" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> Grid3;
+    private string[] MenuItems3 = new string[] { "SortAscending", "SortDescending", "AutoFit", "AutoFitAll", "ColumnChooser", "Filter", "Group", "Ungroup" };
+    private bool preventColumnMenuRendering3 { get; set; }
+    
+
+    public async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        preventColumnMenuRendering3 = true;
+        await ClickSecondColumnMenu3(cut);
+        // cut.Instance._jsAdaptor.PreventColumnMenuClose(true);
+    }
+
+    private async Task ClickSecondColumnMenu3(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(() =>
+        {
+            cut.FindAll(".e-columnmenu")[1].Click(new MouseEventArgs());
+        });
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 1);
+    }
+    public void ColumnMenuOpenHandler3(ColumnMenuOpenEventArgs args)
+    {
+        if (preventColumnMenuRendering3)
+        {
+            args.Cancel = true;
+            return;
+        }
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void ColumnMenuClickHandler3(ColumnMenuClickEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="ColumnMenu with Custom ColumnMenuItemModel">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GenerateRows()" AllowSorting="true" AllowGrouping=true AllowPaging=true ShowColumnMenu=true ColumnMenuItems=@MenuItems4>
+            <GridGroupSettings ShowGroupedColumn=true></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents OnColumnMenuOpen="ColumnMenuOpenHandler4" ColumnMenuItemClicked="ColumnMenuClickHandler4" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> Grid4;
+    private List<ColumnMenuItemModel> MenuItems4 = new List<ColumnMenuItemModel>()
+    {
+        new ColumnMenuItemModel { Text = "Clear Sorting", Id = "sort", IconCss = "e-icons e-sort" },
+        new ColumnMenuItemModel { Text = "Clear Grouping", Id = "group", IconCss = "e-icons e-group" },
+        new ColumnMenuItemModel
+        {
+            Text = "Hide Grouping",
+            Id = "hide-grouping",
+            IconCss = "e-icons e-group e-hide",
+            Hide = true,
+            Separator = false,
+            Url = string.Empty,
+            Items = null
+        }
+    };
+    private bool preventColumnMenuRendering4 { get; set; }
+    private bool clearSortingClicked { get; set; }
+    private bool clearGroupingClicked { get; set; }
+
+    public async Task GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+
+        preventColumnMenuRendering4 = false;
+        await ClickSecondColumnMenu4(cut);
+        await ClickCustomMenuItem4(cut, "Clear Sorting");
+        Assert.True(clearSortingClicked, "Clear Sorting menu item was clicked");
+        
+        preventColumnMenuRendering4 = false;
+        await ClickSecondColumnMenu4(cut);
+        await ClickCustomMenuItem4(cut, "Clear Grouping");
+        Assert.True(clearGroupingClicked, "Clear Grouping menu item was clicked");
+    }
+
+    private async Task ClickSecondColumnMenu4(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(() =>
+        {
+            cut.FindAll(".e-columnmenu")[1].Click(new MouseEventArgs());
+        });
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 1);
+    }
+
+    private async Task ClickCustomMenuItem4(IRenderedComponent<SfGrid<Order>> cut, string menuItemText)
+    {
+        
+        await cut.InvokeAsync(() =>
+        {
+            var customMenuItem = cut.FindAll(".e-menu-item")
+                .FirstOrDefault(item => item.TextContent.Contains(menuItemText));
+        
+            Assert.True(customMenuItem != null, $"{menuItemText} custom menu item found");
+            customMenuItem?.Click(new MouseEventArgs());
+        });
+        
+        cut.WaitForState(() => true, TimeSpan.FromMilliseconds(500));
+    }
+
+    public void ColumnMenuOpenHandler4(ColumnMenuOpenEventArgs args)
+    {
+        if (preventColumnMenuRendering4)
+        {
+            args.Cancel = true;
+            return;
+        }
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void ColumnMenuClickHandler4(ColumnMenuClickEventArgs args)
+    {
+        Assert.True(args.Column.Field == "CustomerID");
+        
+        // Handle custom menu item clicks
+        if (args.Item.Id == "sort")
+        {
+            clearSortingClicked = true;
+            Grid4.ClearSortingAsync();
+        }
+        else if (args.Item.Id == "group")
+        {
+            clearGroupingClicked = true;
+            Grid4.ClearGroupingAsync();
+        }
+    }
+}
+
+@code{    
+    public List<Order> GridData { get; set; }
+    public List<Order> GenerateRows()
+    {
+        string[] customers = new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" };
+        return GridData = Enumerable.Range(1, 30).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = customers[x % customers.Length],
+            Freight = 2.1 * x,
+            OrderDate = new DateTime(2026,01,01).AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

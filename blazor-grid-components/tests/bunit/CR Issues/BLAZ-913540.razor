@@ -1,0 +1,60 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Special Character filter not working properly">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="GenerateRows()" AllowPaging="true" AllowFiltering='true'>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="80"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Type="ColumnType.Date" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await grid.FilterByColumnAsync("CustomerID", "startswith", "ALF%");
+        Assert.True(grid.TotalItemCount == 15);
+
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return Orders = GetAllRecords();
+    }
+
+    public List<Order> GetAllRecords()
+    {
+        List<Order> data = new List<Order>();
+        int count = 1000;
+
+        for (int i = 1; i <= 15; i++)
+        {
+            data.Add(new Order() { OrderID = count + 1, CustomerID = "ALF%KI", OrderDate = new DateTime(1995, 05, 15), Freight = 1 * i });
+            data.Add(new Order() { OrderID = count + 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 2 * i });
+            data.Add(new Order() { OrderID = count + 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 3 * i });
+            data.Add(new Order() { OrderID = count + 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 4 * i });
+            data.Add(new Order() { OrderID = count + 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 5 * i });
+            count += 5;
+        }
+        return data;
+
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

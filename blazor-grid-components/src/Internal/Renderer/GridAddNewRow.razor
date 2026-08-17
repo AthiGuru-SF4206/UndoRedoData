@@ -1,0 +1,103 @@
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TRow
+
+
+<tr class="@( $"e-row e-altrow e-showAddNewRow")">
+    @{
+        isDisableRow = Parent!.IsEdit && isPreventAddForm ? true : false;
+        var normalEditParameters = new GridCellParameters()
+        {
+           Row = Parent.EditModule?.GetModelGenerator(true)
+        };
+        <NormalEdit TCell="TRow" Row="normalEditParameters.Row" PreventShowAddForm="@isPreventAddForm" IsShowNewAddForm="true" IsDisableRow="@isDisableRow"  Cells="normalEditParameters.Row?.Cells"></NormalEdit>
+    }
+</tr>
+
+@code
+{
+    #region Cascading Parameter
+
+    [CascadingParameter]
+    public SfGrid<TRow>? Parent { get; set; }
+
+    #endregion
+
+    #region State
+
+    private bool isPreventAddForm { get; set; }
+    private bool isDisableRow { get; set; }
+
+    #endregion
+
+    #region Computed / Helpers
+
+    private bool IsDisableRow => Parent?.IsEdit == true && isPreventAddForm;
+
+    private GridCellParameters NormalEditParameters => new GridCellParameters()
+    {
+        Row = Parent?.EditModule?.GetModelGenerator(true)
+    };
+
+    private void WireEventsOnce()
+    {
+        Parent?.EventAggregator.Add("DisableOrEnableAddForm", DisableOrEnableAddForm);
+        Parent?.EventAggregator.Add("ResetAddFormValues", ResetAddFormValues);
+    }
+
+    #endregion
+
+    #region Lifecycle
+
+    protected override void OnInitialized()
+    {
+        if (Parent == null) return;
+
+        WireEventsOnce();
+        Parent?.EditModule?.AddFormDetails();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            Parent?.EditModule?.AddFormDetails();
+            _ = InvokeAsync(StateHasChanged);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private void DisableOrEnableAddForm(object args)
+    {
+        bool requestedDisable = args is bool b && b;
+        isPreventAddForm = Parent?.IsEdit == true || requestedDisable;
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void ResetAddFormValues(object args)
+    {
+        _ = ResetAddFormValuesAsync(args);
+    }
+
+    private async Task ResetAddFormValuesAsync(object args)
+    {
+        if (args != null && (string)args == "Edit" && Parent!.IsEdit)
+        {
+            return;
+        }
+        Parent?.EditModule?.AddFormDetails(args!);
+        await InvokeAsync(() => StateHasChanged());
+        if (args != null && (string)args != "Save" && (string)args != "Edit" && (string)args != "Delete")
+        {
+            var frozenEdit = Parent!.FreezeModule?.GetFrozenCount() > 0;
+            await Parent.EditModule!.FocusEditableCell(frozenEdit);
+        }
+    }
+
+    #endregion
+}

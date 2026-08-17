@@ -1,0 +1,177 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="CheckBoxOnly without Persist Selection">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRecords()" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })" Height="315" AllowSorting="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridSelectionSettings CheckboxOnly="true"/>
+            <GridColumns>
+                <GridColumn Type="Syncfusion.Blazor.Grids.ColumnType.CheckBox" Width="50" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" />
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="130" Type="Syncfusion.Blazor.Grids.ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    public List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+    SfFixture fixture { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        //Edit and cancel Unselected Row
+        var row = cut.FindAll(".e-row")[0];
+        Assert.True(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-uncheck"), "That the row is not in selected state");
+        row.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[0].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[0].IsEdit == true, "Row is in editable state.");
+        cut.Instance.CloseEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[0].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Cancel the Edit");
+
+        //Edit and update Unselected Row
+        var row2 = cut.FindAll(".e-row")[1];
+        Assert.True(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-uncheck"), "That the row is not in selected state");
+        row2.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[1].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[1].IsEdit == true, "Row is in editable state.");
+        cut.Instance.EndEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[1].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Update the Edit");
+
+        //Edit and cancel Selected Row
+        var row3 = cut.FindAll(".e-row")[2];
+        cut.Instance.SelectRowAsync(2).GetAwaiter();
+        var newRow3 = cut.FindAll(".e-row")[2];
+        newRow3.Children[2].DoubleClick();
+        
+        Assert.True(cut.FindAll(".e-row")[2].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[2].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[2].IsEdit == true, "Row is in edtable state.");
+        cut.Instance.CloseEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[2].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[2].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Cancel the Edit");
+
+        //Edit and Update Selected Row
+        var row4 = cut.FindAll(".e-row")[3];
+        cut.Instance.SelectRowAsync(3).GetAwaiter();
+        var newRow4 = cut.FindAll(".e-row")[3];
+        newRow4.Children[2].DoubleClick();
+
+        Assert.True(cut.FindAll(".e-row")[3].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[3].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[3].IsEdit == true, "Row is in edtable state.");
+        cut.Instance.EndEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[3].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[3].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Update the Edit");
+    }
+
+ 
+
+    public List<Order> GenerateRecords()
+    {
+        return Orders = Enumerable.Range(1, 15).Select(x => new Order
+            {
+                OrderID = 1000 + x,
+                CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+                Freight = 2.1 * x,
+                OrderDate = DateTime.Now.AddDays(-x),
+            }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="CheckBoxOnly with Persist Selection">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2"  DataSource="GenerateRecords()" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })" Height="315" AllowSorting="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridSelectionSettings CheckboxOnly="true" PersistSelection="true" />
+            <GridColumns>
+                <GridColumn Type="Syncfusion.Blazor.Grids.ColumnType.CheckBox" Width="50" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center" />
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="130" Type="Syncfusion.Blazor.Grids.ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfGrid<Order> Grid2;
+    SfFixture fixture2 { get; set; }
+    public async void GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        //Edit and cancel Unselected Row
+        var row = cut.FindAll(".e-row")[0];
+        Assert.True(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-uncheck"), "That the row is not in selected state");
+        row.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[0].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[0].IsEdit == true, "Row is in editable state.");
+        cut.Instance.CloseEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[0].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[0].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Cancel the Edit");
+
+        //Edit and update Unselected Row
+        var row2 = cut.FindAll(".e-row")[1];
+        Assert.True(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-uncheck"), "That the row is in selected state");
+        row2.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[1].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.False(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(Grid.Rows[1].IsEdit == true, "Row is in editable state.");
+        cut.Instance.EndEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[1].IsEdit == false, "Row is not in editable state.");
+        Assert.False(cut.FindAll(".e-row")[1].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is not in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State After Update the Edit");
+
+        //Edit and cancel Selected Row
+        var row3 = cut.FindAll(".e-row")[2];
+        cut.Instance.SelectRowAsync(2).GetAwaiter();
+        row3.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[2].ClassList.Contains("e-editedrow"), "Row is in editable state.");
+        Assert.True(cut.FindAll(".e-row")[2].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is in selected state");
+        Assert.True(Grid.Rows[2].IsEdit == true, "Row is in edtable state.");
+        cut.Instance.CloseEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[2].IsEdit == false, "Row is not in editable state.");
+        Assert.True(cut.FindAll(".e-row")[2].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.Intermediate), "CheckBox State After Cancel the Edit");
+
+        //Edit and Update Selected Row
+        var row4 = cut.FindAll(".e-row")[3];
+        cut.Instance.SelectRowAsync(3).GetAwaiter();
+        row4.Children[2].DoubleClick();
+        Assert.True(cut.FindAll(".e-row")[3].ClassList.Contains("e-editedrow"));
+        Assert.True(cut.FindAll(".e-row")[3].QuerySelector(".e-checkbox-wrapper").Children[0].Children[1].ClassList.Contains("e-check"), "That the edited row is in selected state");
+        Assert.True(Grid.Rows[3].IsEdit == true, "Row is in edtable state.");
+        cut.Instance.EndEditAsync().GetAwaiter();
+        Assert.True(Grid.Rows[3].IsEdit == false, "Row is not in editable state.");
+        Assert.True(cut.FindAll(".e-row")[3].QuerySelector(".e-checkbox-wrapper").Children[1].ClassList.Contains("e-check"), "That the edited row is in selected state");
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.Intermediate), "CheckBox State After Update the Edit");
+    }
+}

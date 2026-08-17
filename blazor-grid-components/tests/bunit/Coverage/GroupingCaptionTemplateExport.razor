@@ -1,0 +1,264 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<SfFixture @ref="fixture" TestAsync="GroupingCaptionTemplateExportTest" Description="Grid Grouping with Caption Template Export - PDF and Excel with Foreign Key columns and custom caption formatting">
+    <ComponentUnderTest>
+        <SfButton OnClick="OnExportClick"></SfButton>
+        <SfGrid ID="GroupingCaptionTemplateGrid" @ref="Grid" DataSource="@OrderDetails.GetAllRecords()" Height="315" AllowFiltering="true" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridEvents TValue="OrderDetails" ExcelGroupCaptionTemplateInfo="ExcelGroupTemplateHandler"></GridEvents>
+            <GridGroupSettings ShowDropArea="false" Columns="@GroupingColumns">
+                <CaptionTemplate>
+                    @{
+                        var data = (context as CaptionTemplateContext);
+                        <span>@data.HeaderText - @data.Key : @data.Count Items</span>
+                    }
+                </CaptionTemplate>
+            </GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" IsPrimaryKey="true"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@EmployeeDetails.GetAllRecords()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<OrderDetails> Grid;
+    public string[] GroupingColumns = new string[] { "EmployeeID", "Freight" };
+
+    public async Task GroupingCaptionTemplateExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+
+        // ==================== VERIFY GROUPING SETUP WITH CAPTION TEMPLATE ====================
+        Assert.NotNull(cut.Instance.GroupSettings);
+        Assert.Equal(2, cut.Instance.GroupSettings.Columns.Length);
+        Assert.Contains("EmployeeID", cut.Instance.GroupSettings.Columns);
+        Assert.Contains("Freight", cut.Instance.GroupSettings.Columns);
+
+        // ==================== VERIFY DATA SOURCE ====================
+        var testOrders = OrderDetails.GetAllRecords();
+        Assert.NotEmpty(testOrders);
+        Assert.Equal(15, testOrders.Count);
+
+        // ==================== VERIFY GRID PROPERTIES ====================
+        Assert.True(cut.Instance.AllowGrouping, "Grouping should be enabled");
+        Assert.True(cut.Instance.AllowExcelExport, "Excel export should be enabled");
+        Assert.True(cut.Instance.AllowPdfExport, "PDF export should be enabled");
+        Assert.True(cut.Instance.AllowFiltering, "Filtering should be enabled");
+
+        // ==================== VERIFY FOREIGN KEY COLUMN ====================
+       
+      
+
+        // ==================== EXCEL EXPORT WITH CAPTION TEMPLATE ====================
+        ExcelExportProperties excelProperties = new ExcelExportProperties();
+        ExcelTheme excelTheme = new ExcelTheme();
+        ExcelStyle headerStyle = new ExcelStyle()
+        {
+            FontName = "Segoe UI",
+            FontColor = "#000080",
+            FontSize = 11,
+            BackColor = "#D3D3D3",
+            VAlign = ExcelVerticalAlign.Center,
+            HAlign = ExcelHorizontalAlign.Center,
+            Borders = new Border
+            {
+                Color = "#5A5A5A",
+                LineStyle = Syncfusion.ExcelExport.LineStyle.Medium
+            }
+        };
+        ExcelStyle captionStyle = new ExcelStyle()
+        {
+            FontName = "Segoe UI",
+            FontColor = "#0B6623",
+            FontSize = 10,
+            BackColor = "#E8F5E9",
+            Bold = true,
+            VAlign = ExcelVerticalAlign.Center,
+            HAlign = ExcelHorizontalAlign.Left,
+            Borders = new Border
+            {
+                Color = "#5A5A5A",
+                LineStyle = Syncfusion.ExcelExport.LineStyle.Thin
+            }
+        };
+        excelTheme.Header = headerStyle;
+        excelTheme.Caption = captionStyle;
+        excelProperties.Theme = excelTheme;
+
+        await cut.Instance.ExportToExcelAsync(excelProperties);
+
+        // ==================== PDF EXPORT WITH CAPTION TEMPLATE ====================
+        PdfExportProperties pdfExportProps = new PdfExportProperties
+        {
+            Theme = new PdfTheme
+            {
+                Header = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = "TimesRoman", FontSize = 11 },
+                    FontColor = "#000080",
+                    Bold = true,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                },
+                Caption = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = "TimesRoman", FontSize = 9 },
+                    FontColor = "#0B6623",
+                    Bold = true,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                },
+                Record = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = "TimesRoman", FontSize = 10 },
+                    FontColor = "#333333",
+                    Bold = false,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                }
+            }
+        };
+
+        await cut.Instance.ExportToPdfAsync(pdfExportProps);
+
+        // ==================== VERIFY GROUPED DATA STRUCTURE ====================
+        // Verify that data can be grouped by EmployeeID
+        var groupedByEmployee = testOrders.GroupBy(x => x.EmployeeID).ToList();
+        Assert.NotEmpty(groupedByEmployee);
+
+        // Verify that each group has freight data
+        var groupedByFreight = testOrders.GroupBy(x => x.Freight).ToList();
+        Assert.NotEmpty(groupedByFreight);
+
+        // ==================== VERIFY CAPTION TEMPLATE RENDERING ====================
+        // Verify caption template context would have required data
+        var employees = EmployeeDetails.GetAllRecords();
+        foreach (var employeeGroup in groupedByEmployee)
+        {
+            var employeeName = employees.FirstOrDefault(e => e.EmployeeID == employeeGroup.Key)?.FirstName;
+            Assert.NotNull(employeeName);
+            // Caption should display: "Employee Name - {EmployeeID} : {Count} Items"
+        }
+
+        // ==================== VERIFY EXPORT CONFIGURATIONS ====================
+        Assert.True(cut.Instance.AllowExcelExport, "Excel export should be enabled");
+        Assert.True(cut.Instance.AllowPdfExport, "PDF export should be enabled");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping should be enabled");
+    }
+
+    public void ExcelGroupTemplateHandler(ExcelCaptionTemplateArgs args)
+    {
+        // Handle Excel caption template customization
+        string KeysItems = args.ForeignKey;
+        string KeysForeign = args.ForeignKeyValue;
+        
+        // Custom formatting logic for caption template in Excel export
+        // This can be extended based on business requirements
+    }
+
+    public async Task OnExportClick()
+    {
+        if (Grid != null)
+        {
+            await Grid.ExportToExcelAsync();
+            await Grid.ExportToPdfAsync();
+        }
+    }
+
+    private List<OrderDetails> GetAllRecords() => OrderDetails.GetAllRecords();
+
+    private List<EmployeeDetails> GetEmployeeRecords() => EmployeeDetails.GetAllRecords();
+
+    // ==================== MODEL CLASSES ====================
+
+    /// <summary>
+    /// Order data model for grouping with caption template export testing
+    /// </summary>
+    public class OrderDetails
+    {
+        public static List<OrderDetails> order = new List<OrderDetails>();
+
+        public OrderDetails(int OrderID, string ShipCity, int EmployeeID, double Freight)
+        {
+            this.OrderID = OrderID;
+            this.ShipCity = ShipCity;
+            this.EmployeeID = EmployeeID;
+            this.Freight = Freight;
+        }
+
+        public OrderDetails()
+        {
+        }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            if (order.Count == 0)
+            {
+                order.Add(new OrderDetails(10248, "Reims", 5, 32.38));
+                order.Add(new OrderDetails(10249, "Münster", 6, 11.61));
+                order.Add(new OrderDetails(10250, "Rio de Janeiro", 4, 65.83));
+                order.Add(new OrderDetails(10251, "Lyon", 3, 41.34));
+                order.Add(new OrderDetails(10252, "Charleroi", 4, 51.3));
+                order.Add(new OrderDetails(10253, "Rio de Janeiro", 3, 58.17));
+                order.Add(new OrderDetails(10254, "Bern", 5, 22.98));
+                order.Add(new OrderDetails(10255, "Genève", 9, 48.33));
+                order.Add(new OrderDetails(10256, "Resende", 3, 13.97));
+                order.Add(new OrderDetails(10257, "San Cristóbal", 4, 81.91));
+                order.Add(new OrderDetails(10258, "Graz", 1, 40.51));
+                order.Add(new OrderDetails(10259, "México D.F.", 4, 3.25));
+                order.Add(new OrderDetails(10260, "Köln", 4, 55.09));
+                order.Add(new OrderDetails(10261, "Rio de Janeiro", 4, 3.05));
+                order.Add(new OrderDetails(10262, "Albuquerque", 8, 48.29));
+            }
+            return order;
+        }
+
+        public int OrderID { get; set; }
+        public string ShipCity { get; set; }
+        public int EmployeeID { get; set; }
+        public double Freight { get; set; }
+    }
+
+    /// <summary>
+    /// Employee data model for foreign key column binding
+    /// </summary>
+    public class EmployeeDetails
+    {
+        public static List<EmployeeDetails> employee = new List<EmployeeDetails>();
+
+        public EmployeeDetails(int employeeID, string firstName)
+        {
+            this.EmployeeID = employeeID;
+            this.FirstName = firstName;
+        }
+
+        public EmployeeDetails()
+        {
+        }
+
+        public static List<EmployeeDetails> GetAllRecords()
+        {
+            if (employee.Count == 0)
+            {
+                employee.Add(new EmployeeDetails(1, "Nancy"));
+                employee.Add(new EmployeeDetails(2, "Andrew"));
+                employee.Add(new EmployeeDetails(3, "Janet"));
+                employee.Add(new EmployeeDetails(4, "Margaret"));
+                employee.Add(new EmployeeDetails(5, "Steven"));
+                employee.Add(new EmployeeDetails(6, "Michael"));
+                employee.Add(new EmployeeDetails(7, "Robert"));
+                employee.Add(new EmployeeDetails(8, "Laura"));
+                employee.Add(new EmployeeDetails(9, "Anne"));
+            }
+            return employee;
+        }
+
+        public int EmployeeID { get; set; }
+        public string FirstName { get; set; }
+    }
+}

@@ -1,0 +1,789 @@
+﻿﻿@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Internal
+@using Syncfusion.Blazor.Popups
+@using System.Globalization;
+@using Microsoft.JSInterop;
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+@if (Parent != null && !Parent.EnableAdaptiveUI)
+{
+    <SfContextMenu @ref="ColumnMenuObj" CssClass="@Parent.ColumnMenuClass" EnableRtl="@Parent.EnableRtl" Items="@MenuItems" EnableScrolling=true>
+        <MenuTemplates TValue="MenuItem">
+            <Template>
+                @{
+                    var Item = context;
+                    var column = GridUtils.GetColumns(Parent)?.Where(col => col.Field == Item.Text || col.HeaderText == Item.Text).FirstOrDefault();
+                    @if (column != null)
+                    {
+                        <SfCheckBox Label=@(column.HeaderText ?? column.Field) CssClass="@(Parent.EnableRtl ? "e-rtl" : "")" ValueChange="async (ChangeEventArgs<bool> args) => await CheckboxChange(args, column)" Checked=column.Visible></SfCheckBox>
+                    }
+                    @if (Item.IconCss != "")
+                    {
+                        <span class="e-menu-icon @Item.IconCss"></span>
+                    }
+                    if (column == null)
+                    {
+                        @Item.Text
+                    }
+                    @if (getLocaleText("Filter") == Item.Text || Item.Items != null)
+                    {
+                        <span class="e-icons e-caret"></span>
+                    }
+                }
+            </Template>
+        </MenuTemplates>
+        <MenuEvents TValue="MenuItem" OnOpen="BeforeOpenHandler" Opened="ColumnMenuOpenedHandler" Closed="ColumnMenuClosedHandler" OnClose="ColumnMenuclose" ItemSelected="ColumnMenuItemClick"></MenuEvents>
+    </SfContextMenu>
+}
+else if (IsColumnMenuIconClicked && Parent != null && Parent.EnableAdaptiveUI && (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Both) || Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) || Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop)))
+{
+    <div id="ResDialog" class="-dlg-grid-element e-hide">
+        <SfDialog @ref="ColumMenuResponsiveDialog" ID="@(($"{Parent.ID}columnmenu"))" CloseOnEscape="true" HtmlAttributes="@MaxHeight" Height="100%" Width="100%" Target="@(($"#{Parent.ID}"))" CssClass="e-bigger e-customcolumnmenu e-customfilterdiv e-responsive-dialog e-dlg-fullscreen" EnableRtl="Parent.EnableRtl">
+            <DialogEvents Closed="OnDialogClosed"  Created="Rendered"></DialogEvents>
+            <DialogTemplates>
+                <Header>
+                    <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn" @onclick="@ColumnMenuCloseHandler" HtmlAttributes="@title"></SfButton>
+                    <div class="e-dlg-header">
+                        <div class="e-res-custom-element">
+                            <div class="e-dlg-custom-header" id="@(($"{Parent.ID}responsive_columnmenu_dialog_wrapper"))">@Parent?.Localizer?.GetText("Grid_ColumnMenu")</div>
+                        </div>
+                    </div>
+                </Header>
+                <Content>
+                    <div class="columndiv columnmenudiv">
+                        @if (MenuItems != null)
+                        {
+                            @if (IsMenuItemVisible("Grid_AutoFitAll"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("AutoFitAll", "e-responsivecoldiv e-responsiveautofitalldiv")" @onclick="@(e => AutoFitAllItemClicked())">
+                                    <span class="e-icons e-resautofitall-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_AutoFitAll")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_AutoFit"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("AutoFit", "e-responsivecoldiv e-responsiveautofitdiv")" @onclick="@(e => AutoFitItemClicked())">
+                                    <span class="e-icons e-resautofit-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_AutoFit")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_Group"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("Group", "e-responsivecoldiv e-responsivegroupdiv")" @onclick="@(e => GroupItemClicked())">
+                                    <span class="e-icons e-resgroup-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_Group")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_Ungroup"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("Ungroup", "e-responsivecoldiv e-responsiveungroupdiv")" @onclick="@(e => UnGroupItemClicked())">
+                                    <span class="e-icons e-resungroup-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_Ungroup")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_SortAscending"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("SortAscending", "e-responsivecoldiv e-responsiveascendingdiv")" @onclick="@(e => SortAscendingClicked())">
+                                    <span class="e-icons e-resascending-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_SortAscending")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_SortDescending"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("SortDescending", "e-responsivecoldiv e-responsivedescendingdiv")" @onclick="@(e => SortDescendingClicked())">
+                                    <span class="e-icons e-resdescending-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_SortDescending")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_Columnchooser"))
+                            {
+                                <div class="e-responsivecoldiv e-responsivecolumndiv" @onclick="@(e => ColumnsItemClicked())">
+                                    <span class="e-icons e-rescolumn-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_Columnchooser")</span>
+                                </div>
+                            }
+                            @if (IsMenuItemVisible("Grid_FilterButton"))
+                            {
+                                <div class="@GetResponsiveMenuItemCss("Filter", "e-responsivecoldiv e-responsivefilterdiv")" @onclick="@(e => FilterItemClicked())">
+                                    <span class="e-icons e-resfilter-icon e-btn-icon"></span>
+                                    <span class="e-rescolumn-menu e-res-header-text">@GetMenuItemText("Grid_FilterButton")</span>
+                                </div>
+                            }
+                        }
+                    </div>
+                </Content>
+            </DialogTemplates>
+        </SfDialog>
+    </div>
+}
+@code {
+    #region Parameters and state
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+    public GridColumn? targetColumn { get; set; }
+    private SfContextMenu<MenuItem>? ColumnMenuObj { get; set; }
+    private string CHOOSER { get; set; } = "_chooser_";
+    private bool IsCheckbox { get; set; } = false;
+    private ISyncfusionStringLocalizer? Localizer;
+    private List<string> HiddentItems = new List<string>();
+    private List<string> DisableItems = new List<string>();
+    private Dictionary<string, MenuItem> defaultItems = new Dictionary<string, MenuItem>();
+    private List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+    public List<string> AllDefaultItems = new List<string>() { "AutoFitAll", "AutoFit","SortAscending", "SortDescending",
+            "Group", "Ungroup", "ColumnChooser", "Filter"};
+
+    private bool IsColumnMenuIconClicked { get; set; }
+    private SfDialog? ColumMenuResponsiveDialog { get; set; }
+    private Dictionary<string, object> title = new Dictionary<string, object>()
+    {
+        { "title", "Close"}
+    };
+
+    private Dictionary<string, object> MaxHeight = new Dictionary<string, object>()
+    {
+        { "data-sf-style", "max-height:100%"}
+    };
+    private class OffsetProps
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+    };
+    #endregion
+
+    #region Lifecycle
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Localizer = Parent?.Localizer;
+        Parent?.EventAggregator.Add("ColumnMenuUpdate", ColumnMenuUpdate);
+        Parent?.EventAggregator.Add("CloseColumnMenuAdaptiveDialog", ColumnMenuCloseHandler);
+        Parent?.EventAggregator.Add("HideColumnMenuPopup", HideColumnMenuPopup);
+    }
+
+    private async void ColumnMenuUpdate(object args)
+    {
+        var previousColumn = Parent?.ColumnMenuColumn;
+        var column = args as GridColumn ?? Parent?.ColumnMenuColumn;
+        Parent!.ColumnMenuColumn = column;
+        this.targetColumn = column;
+
+        if (Parent.EnableAdaptiveUI)
+        {
+            IsColumnMenuIconClicked = true;
+            StateHasChanged();
+            return;
+        }
+
+        if (previousColumn != null && Parent.IsColumnMenuFilter && previousColumn != column)
+        {
+            Parent.ColumnMenuInstance?.Close();
+            Parent.ColumnMenuClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+#pragma warning disable BL0005
+            Parent.ColumnMenuInstance!.CssClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+#pragma warning restore BL0005
+        }
+
+        if (Parent.ColumnMenuInstance != null && Parent.ColumnMenuInstance.CssClass.Contains("e-hide-menu"))
+        {
+            await Parent.ColumnMenuInstance.OpenAsync(1, 1).ConfigureAwait(true);
+        }
+
+        StateHasChanged();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            MenuItems = GetItems();
+            StateHasChanged();
+            Parent!.ColumnMenuInstance = ColumnMenuObj;
+        }
+    }
+    #endregion
+
+    #region Menu item generation
+    private List<MenuItem> GetItems()
+    {
+        var items = new List<MenuItem>();
+        var columnMenuItems = this.Parent?.ColumnMenuItems ?? this.getDefault();
+        foreach (var item in (columnMenuItems as IEnumerable<Object>)!)
+        {
+            if (item?.GetType().Name == "String")
+            {
+                var Sitem = item.ToString();
+                if (Sitem == "ColumnChooser")
+                {
+                    var col = this.getDefaultItem(Sitem);
+#pragma warning disable BL0005
+                    col.Items = this.createChooserItems();
+#pragma warning restore BL0005
+
+                    items.Add(col);
+                }
+                else
+                {
+                    items.Add(this.getDefaultItem(Sitem!));
+                }
+            }
+            else
+            {
+                var custom = item as ColumnMenuItemModel;
+#pragma warning disable BL0005
+                var customItem = new MenuItem() { Text = custom?.Text, IconCss = custom?.IconCss, Id = custom?.Id, Items = custom?.Items?.ConvertAll(x => new MenuItem { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url, Disabled = false, Hidden = false }), Separator = (custom != null && custom.Separator), Url = custom?.Url, Disabled = false, Hidden = false };
+#pragma warning restore BL0005
+                items.Add(customItem);
+            }
+        }
+        return items;
+    }
+
+    private MenuItem getDefaultItem(string item)
+    {
+        var menuItem = new MenuItem();
+#pragma warning disable BL0005
+        switch (item)
+        {
+            case "SortAscending":
+                menuItem = new MenuItem { IconCss = "e-icon-ascending" };
+                break;
+            case "SortDescending":
+                menuItem = new MenuItem { IconCss = "e-icon-descending" };
+                break;
+            case "Group":
+                menuItem = new MenuItem { IconCss = "e-icon-group" };
+                break;
+            case "Ungroup":
+                menuItem = new MenuItem { IconCss = "e-icon-ungroup" };
+                break;
+            case "Filter":
+                menuItem = new MenuItem { IconCss = "e-icon-filter" };
+                break;
+        }
+        defaultItems[item] = new MenuItem { Text = getLocaleText(item), Id = generateID(item), IconCss = menuItem.IconCss != null ? "e-icons " + menuItem.IconCss : "" };
+#pragma warning restore BL0005
+        return defaultItems[item];
+    }
+
+    private string getLocaleText(string item)
+    {
+        if (item == "ColumnChooser")
+        {
+            return @Localizer?.GetText($"Grid_Columnchooser")!;
+        }
+        else if (item == "Filter")
+        {
+            return @Localizer?.GetText($"Grid_FilterMenu")!;
+        }
+        else
+        {
+            return @Localizer?.GetText($"Grid_{item}")!;
+        }
+    }
+
+    private string generateID(string item, string append = "")
+    {
+        return this.Parent!.ID + "_colmenu_" + (append != "" ? append + item : item);
+    }
+
+    private List<Object> getDefault()
+    {
+        var items = new List<object>();
+        items.Add("AutoFitAll");
+        items.Add("AutoFit");
+        if (this.Parent!.AllowGrouping)
+        {
+            items.Add("Group");
+            items.Add("Ungroup");
+        }
+        if (this.Parent.AllowSorting)
+        {
+            items.Add("SortAscending");
+            items.Add("SortDescending");
+        }
+        items.Add("ColumnChooser");
+        if (this.Parent!.AllowFiltering && this.Parent!.FilterSettings!.Type != FilterType.FilterBar)
+        {
+            items.Add("Filter");
+        }
+        return items;
+    }
+
+    private List<MenuItem> createChooserItems()
+    {
+        var items = new List<MenuItem>();
+        @foreach (GridColumn col in Parent!.RearrangeColumns(GridUtils.GetColumns(Parent)))
+        {
+            if (col.ShowInColumnChooser && !string.IsNullOrEmpty(col.Field))
+            {
+#pragma warning disable BL0005
+                items.Add(new MenuItem { Text = col.HeaderText ?? col.Field, Id = this.generateID(col.Field, CHOOSER) });
+#pragma warning restore BL0005
+            }
+        }
+        return items;
+    }
+
+    private bool isChooserItem(MenuItem item)
+    {
+        var isColumnChooser = item.Id != null && item.Id.Contains("_colmenu_") &&
+            !this.getKeyFromId(item.Id, this.CHOOSER).Contains("_colmenu_");
+        var chooserColumn = GetChooserColumns();
+        if (isColumnChooser && chooserColumn?.Count == 1 && (chooserColumn[0].Field == item.Text || chooserColumn[0].HeaderText == item.Text))
+        {
+            isColumnChooser = false;
+        }
+        return isColumnChooser;
+    }
+
+    private List<GridColumn>? GetChooserColumns()
+    {
+        return GridUtils.GetColumns(Parent!)?.Where(col => col.Visible && col.ShowInColumnChooser && col.Type != ColumnType.CheckBox && !(col.Commands != null && col.Commands.Count > 0) && col.Template == null).ToList();
+    }
+    #endregion
+
+    #region Event handlers
+    private async Task CheckboxChange(ChangeEventArgs<bool> args, GridColumn column)
+    {
+        var chooserColumn = GetChooserColumns();
+        bool isWebAssembly = Parent!.JSRuntime is IJSInProcessRuntime;
+        if (isWebAssembly && chooserColumn?.Count == 1 && !args.Checked)
+        {
+            return;
+        }
+
+        Parent.IsColumnHeaderChange = true;
+        Parent.ShowHideEvent = false;
+        Parent.RenderColumnChooser = true;
+
+        if (args.Checked)
+        {
+            await Parent.ShowColumnAsync(column.Field, "field");
+        }
+        else
+        {
+            await Parent.HideColumnAsync(column.Field, "field");
+        }
+
+        if (!Parent.RenderColumnChooser)
+        {
+            Parent.Columns?.Where(col => col.Field == column.Field && col.Visible == column.Visible).FirstOrDefault()?.SetVisibility(true);
+            return;
+        }
+
+        await NotifyColumnVisibilityChangedAsync();
+
+        Parent.RenderColumnChooser = false;
+        Parent.ShowHideEvent = true;
+        List<GridColumn> refCols = Parent.Columns!;
+        await Parent.InvokeViewRefresh(refCols);
+    }
+
+    private void BeforeOpenHandler(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+        if (args.IsOpenHover)
+        {
+            args.ScrollHeight = 307;
+        }
+    }
+
+    private async void ColumnMenuOpenedHandler(OpenCloseMenuEventArgs<MenuItem> args)
+    {
+        bool initialColumnMenuClass = Parent?.ColumnMenuClass == $"e-hide-menu e-{Parent!.ID}-column-menu e-grid-column-menu e-grid-menu";
+        OffsetProps? offsetprops = await GetColumnMenuOffsetAsync(initialColumnMenuClass);
+        var columnMenuOpenEventArgs = CreateColumnMenuOpenEventArgs(args, offsetprops);
+        var gridEvents = Parent!.GridEvents;
+
+        if (gridEvents?.OnColumnMenuOpen.HasDelegate == true && (initialColumnMenuClass || args.ParentItem != null))
+        {
+            await gridEvents.OnColumnMenuOpen.InvokeAsync(columnMenuOpenEventArgs);
+            if (columnMenuOpenEventArgs.Cancel)
+            {
+                return;
+            }
+        }
+
+        if (initialColumnMenuClass)
+        {
+            InitializeColumnMenuState(columnMenuOpenEventArgs);
+            ColumnMenuObj?.OpenAsync(columnMenuOpenEventArgs.Left, columnMenuOpenEventArgs.Top);
+            Parent.ColumnMenuClass = $"e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+            StateHasChanged();
+        }
+        else if (IsColumnChooserParent(args.ParentItem))
+        {
+            Parent.IsColumnMenuFilter = false;
+        }
+    }
+
+    private void ColumnMenuClosedHandler(OpenCloseMenuEventArgs<MenuItem> args)
+    {
+        if (args.ParentItem == null)
+        {
+            Parent!.ColumnMenuClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+            EnableItems(this.DisableItems, true);
+            ShowItems(this.HiddentItems, true);
+            this.DisableItems = new List<string>();
+            this.HiddentItems = new List<string>();
+            if (Parent.FilterModule != null)
+            {
+                Parent.FilterModule.FilterIconIsClicked = false;
+                Parent.FilterModule.IsColumnMenuFilter = false;
+            }
+            this.Parent.ColumnMenuColumn = null;
+        }
+    }
+
+    private void ColumnMenuclose(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+        if (Parent != null && Parent.IsColumnMenuFilter)
+        {
+            args.Cancel = true;
+        }
+        if (IsCheckbox)
+        {
+            args.Cancel = true;
+            if (args.ParentItem?.Text == @Localizer?.GetText($"Grid_Columnchooser"))
+            {
+                IsCheckbox = false;
+            }
+        }
+        ColumnMenuObj!.scrollHeight = args.ScrollHeight;
+    }
+
+    private async void ColumnMenuItemClick(MenuEventArgs<MenuItem> args)
+    {
+        IsCheckbox = this.isChooserItem(args.Item);
+        Parent!.IsColumnMenuFilter = false;
+        var targetedColumn = this.targetColumn;
+        var item = this.getKeyFromId(args.Item.Id?.ToString()!);
+
+        await HandleColumnMenuActionAsync(item);
+        RaiseColumnMenuItemClicked(args, targetedColumn);
+    }
+
+    private void OnDialogClosed(CloseEventArgs args)
+    {
+        IsColumnMenuIconClicked = false;
+    }
+
+    private async Task Rendered()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Parent.ID}columnmenu" });
+    }
+
+    internal void ColumnMenuCloseHandler(object? args = null)
+    {
+        ColumMenuResponsiveDialog?.HideAsync().GetAwaiter();
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal void HideColumnMenuPopup(object? args = null)
+    {
+        if (Parent == null)
+        {
+            return;
+        }
+
+#pragma warning disable BL0005
+        Parent.ColumnMenuInstance!.CssClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+#pragma warning restore BL0005
+        Parent.ColumnMenuClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+        Parent.IsColumnMenuFilter = false;
+        Parent.ColumnMenuInstance?.Close();
+    }
+    #endregion
+
+    #region Adaptive action methods
+    internal async Task SortAscendingClicked()
+    {
+        await this.Parent!.SortColumnAsync(this.targetColumn?.Field!, SortDirection.Ascending);
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal async Task SortDescendingClicked()
+    {
+        await this.Parent!.SortColumnAsync(this.targetColumn?.Field!, SortDirection.Descending);
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal async Task GroupItemClicked()
+    {
+        await this.Parent!.GroupColumnAsync(this.targetColumn?.Field!);
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal async Task UnGroupItemClicked()
+    {
+        await this.Parent!.UngroupColumnAsync(this.targetColumn?.Field!);
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal void FilterItemClicked()
+    {
+        this.Parent!.FilterModule!.IsAdaptiveFilter = true;
+        Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+    }
+
+    internal async Task AutoFitItemClicked()
+    {
+        await this.Parent!.AutoFitColumnsAsync(new string[] { this.targetColumn?.Field! });
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal async Task AutoFitAllItemClicked()
+    {
+        await this.Parent!.AutoFitColumnsAsync(new string[] { });
+        IsColumnMenuIconClicked = false;
+    }
+
+    internal void ColumnsItemClicked()
+    {
+        this.Parent!.RenderColumnChooser = !this.Parent.RenderColumnChooser;
+        this.Parent!.ShowChooser = true;
+        Parent?.EventAggregator.Trigger("ColumnChooserComp", null!);
+    }
+    #endregion
+
+    #region Helper methods
+    private async Task NotifyColumnVisibilityChangedAsync()
+    {
+        var parent = Parent!;
+        var gridEvents = parent.GridEvents;
+        if (gridEvents?.OnActionComplete.HasDelegate == true || gridEvents?.ColumnVisibilityChanged.HasDelegate == true || parent.IsRenderedFromTreeGrid)
+        {
+            var actionArgs = new ActionEventArgs<TContent>() { RequestType = Grids.Action.ColumnState, Parent = parent };
+
+            if (parent.IsRenderedFromTreeGrid)
+                await parent.EventAggregator.NotifyAsync("ActionComplete", actionArgs);
+            else
+                await gridEvents?.OnActionComplete.InvokeAsync(actionArgs)!;
+
+            ColumnVisibilityChangedEventArgs columnStateChangedArgs = new ColumnVisibilityChangedEventArgs() { Parent = parent, HiddenColumns = await parent.GetHiddenColumnsAsync(), VisibleColumns = await parent.GetVisibleColumnsAsync() };
+
+            if (parent.IsRenderedFromTreeGrid)
+                await parent.EventAggregator.NotifyAsync("ColumnsVisibilityChanged", columnStateChangedArgs);
+            else
+                await gridEvents?.ColumnVisibilityChanged.InvokeAsync(columnStateChangedArgs)!;
+        }
+    }
+
+    private async Task<OffsetProps?> GetColumnMenuOffsetAsync(bool initialColumnMenuClass)
+    {
+        if (!initialColumnMenuClass)
+        {
+            return null;
+        }
+
+        var parent = Parent!;
+        bool isFilter = (parent.ColumnMenuItems != null && ((parent.ColumnMenuItems is string[] stringArray && stringArray.Contains("Filter")) ||
+            (parent.ColumnMenuItems is List<object> objectList && objectList.Contains("Filter")))) || parent.ColumnMenuItems == null;
+        var key = isFilter && this.defaultItems.ContainsKey("Filter") ? this.defaultItems["Filter"]?.Id : null!;
+        var offsetProps = await parent.InvokeMethod<OffsetProps>("sfBlazor.Grid.renderColumnMenu", false, new object[] { parent.DataId, targetColumn?.Uid!, isFilter, key! });
+        await Task.Yield();
+        return offsetProps;
+    }
+
+    private ColumnMenuOpenEventArgs CreateColumnMenuOpenEventArgs(OpenCloseMenuEventArgs<MenuItem> args, OffsetProps? offsetProps)
+    {
+        return new ColumnMenuOpenEventArgs()
+        {
+            Cancel = false,
+            Items = args.Items,
+            ParentItem = args.ParentItem,
+            Column = targetColumn!,
+            Left = offsetProps?.Left ?? 0,
+            Top = offsetProps?.Top ?? 0,
+            ColumnMenuIndex = args.NavigationIndex,
+        };
+    }
+
+    private bool ShouldRaiseColumnMenuOpen(bool initialColumnMenuClass, MenuItem? parentItem)
+    {
+        var gridEvents = Parent!.GridEvents;
+        return gridEvents?.OnColumnMenuOpen.HasDelegate == true && (initialColumnMenuClass || parentItem != null);
+    }
+
+    private void InitializeColumnMenuState(ColumnMenuOpenEventArgs columnMenuOpenEventArgs)
+    {
+        MenuItems = columnMenuOpenEventArgs.Items ?? new List<MenuItem>();
+        for (int i = 0; i < MenuItems.Count; i++)
+        {
+            var item = MenuItems[i];
+            var key = this.getKeyFromId(item.Id);
+            if (this.AllDefaultItems.Contains(key) && this.ensureDisabledStatus(key))
+            {
+                this.DisableItems.Add(item.Text);
+            }
+            var columnMenuItems = Parent!.ColumnMenuItems;
+            if (columnMenuItems != null)
+            {
+                var columnMenuItem = (columnMenuItems as IEnumerable<Object>)?.ToList()[i];
+                if (columnMenuItem?.GetType().Name != "String" && (columnMenuItem as ColumnMenuItemModel)?.Hide == true)
+                {
+                    this.HiddentItems.Add(item.Text);
+                }
+            }
+        }
+        EnableItems(this.DisableItems, false);
+        ShowItems(this.HiddentItems, false);
+    }
+
+    private bool IsColumnChooserParent(MenuItem? parentItem)
+    {
+        return parentItem != null && parentItem.Text.Equals(@Localizer?.GetText($"Grid_Columnchooser"), StringComparison.Ordinal);
+    }
+
+    private async Task HandleColumnMenuActionAsync(string item)
+    {
+        var parent = Parent!;
+        switch (item)
+        {
+            case "AutoFit":
+                parent.IsAutoFitEnabled = true;
+                await parent.AutoFitColumnsAsync(new string[] { this.targetColumn?.Field! });
+                break;
+            case "AutoFitAll":
+                parent.IsAutoFitEnabled = true;
+                await parent.AutoFitColumnsAsync(new string[] { });
+                break;
+            case "Ungroup":
+                await parent.UngroupColumnAsync(this.targetColumn?.Field!);
+                break;
+            case "Group":
+                await parent.GroupColumnAsync(this.targetColumn?.Field!);
+                break;
+            case "SortAscending":
+                await parent.SortColumnAsync(this.targetColumn?.Field!, SortDirection.Ascending);
+                break;
+            case "SortDescending":
+                await parent.SortColumnAsync(this.targetColumn?.Field!, SortDirection.Descending);
+                break;
+            case "Filter":
+                parent.IsColumnMenuFilter = true;
+                break;
+        }
+    }
+
+    private async void RaiseColumnMenuItemClicked(MenuEventArgs<MenuItem> args, GridColumn? targetedColumn)
+    {
+        var parent = Parent!;
+        var gridEvents = parent.GridEvents;
+        var clickItem = new MenuItemModel() { Text = args.Item.Text, IconCss = args.Item.IconCss, Id = args.Item.Id, Items = args.Item.Items != null ? args.Item.Items.ConvertAll(x => new MenuItemModel { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url }) : null, Separator = args.Item.Separator, Url = args.Item.Url };
+        if (gridEvents?.ColumnMenuItemClicked.HasDelegate == true || parent.IsRenderedFromTreeGrid)
+        {
+            var actionArgs = new ColumnMenuClickEventArgs() { Element = args.Element, Item = clickItem, Event = args.Event, Column = targetedColumn, Parent = parent };
+            if (parent.IsRenderedFromTreeGrid)
+                await parent.EventAggregator.NotifyAsync("ColumneMenuItemClick", actionArgs);
+            else
+                await gridEvents?.ColumnMenuItemClicked.InvokeAsync(actionArgs)!;
+        }
+    }
+
+    private bool ensureDisabledStatus(string item)
+    {
+        var status = false;
+        switch (item)
+        {
+            case "Group":
+                if (!this.Parent!.AllowGrouping || (this.targetColumn != null
+                && this.Parent.GroupSettings?.Columns != null && this.Parent.GroupSettings.Columns.Contains(this.targetColumn.Field)) ||
+                this.targetColumn != null && !this.targetColumn.AllowGrouping)
+                {
+                    status = true;
+                }
+                break;
+            case "AutoFitAll":
+            case "AutoFit":
+                status = false;
+                break;
+            case "Ungroup":
+                if (this.targetColumn != null
+                && (this.Parent!.GroupSettings?.Columns == null || !this.Parent.GroupSettings.Columns.Contains(this.targetColumn.Field)))
+                {
+                    status = true;
+                }
+                break;
+            case "SortDescending":
+            case "SortAscending":
+                status = this.Parent?.SortModule?.IsSortMenuItemDisabled(this.targetColumn, item) ?? false;
+                break;
+            case "Filter":
+                if (this.Parent != null && this.Parent.AllowFiltering && (this.Parent?.FilterSettings?.Type != FilterType.FilterBar) && this.targetColumn != null && this.targetColumn.AllowFiltering)
+                {
+                    status = false;
+                }
+                else if (this.Parent != null && this.Parent.AllowFiltering
+                && this.targetColumn != null && (!this.targetColumn.AllowFiltering || this.Parent?.FilterSettings?.Type == FilterType.FilterBar))
+                {
+                    status = true;
+                }
+                break;
+        }
+        return status;
+    }
+
+    private bool IsMenuItemVisible(string localizerKey)
+    {
+        var text = Parent?.Localizer?.GetText(localizerKey);
+        return !string.IsNullOrEmpty(text) && MenuItems.Any(item => item.Text == text);
+    }
+
+    private string GetMenuItemText(string localizerKey)
+    {
+        return Parent?.Localizer?.GetText(localizerKey) ?? string.Empty;
+    }
+
+    private string GetResponsiveMenuItemCss(string itemKey, string baseClass)
+    {
+        return $"{baseClass} {(ensureDisabledStatus(itemKey) ? "e-disabled" : "").Trim()}";
+    }
+
+    private string getKeyFromId(string id, string append = "")
+    {
+        if (id?.Contains("_colmenu_") == true)
+        {
+            return id.Replace(this.Parent!.ID + "_colmenu_" + (append != "" ? append : ""), "");
+        }
+        else
+        {
+            return "";
+        }
+    }
+
+    private void EnableItems(List<string> items, bool isEnable)
+    {
+        for (var i = 0; i < items?.Count; i++)
+        {
+            for (var j = 0; j < ColumnMenuObj?.Items?.Count; j++)
+            {
+                if (ColumnMenuObj.Items[j]?.Text == items[i])
+                {
+#pragma warning disable BL0005
+                    ColumnMenuObj.Items[j].Disabled = !isEnable;
+#pragma warning restore BL0005
+                }
+            }
+        }
+    }
+
+    private void ShowItems(List<string> items, bool isShow)
+    {
+        for (var i = 0; i < items?.Count; i++)
+        {
+            for (var j = 0; j < ColumnMenuObj?.Items?.Count; j++)
+            {
+                if (ColumnMenuObj.Items[j]?.Text == items[i])
+                {
+#pragma warning disable BL0005
+                    ColumnMenuObj.Items[j].Hidden = !isShow;
+#pragma warning restore BL0005
+                }
+            }
+        }
+    }
+    #endregion
+}

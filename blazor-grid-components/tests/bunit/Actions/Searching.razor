@@ -1,0 +1,250 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Inputs
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Search" })" AllowPaging="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="OnActionComplete"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool _canAssert = false;
+    async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        _canAssert = true;
+        Assert.True(2 == cut.FindAll(".e-toolbar-item").Count(), "search renders properly");
+        Assert.True(cut.FindAll(".e-toolbar-item")[1].ClassList.Contains("e-template"), "Template renders properly for search");
+        Assert.True(1 == cut.FindAll(".e-searchinput").Count);
+        Assert.True(1 == cut.FindAll(".e-input").Count);
+        Assert.True(12 == cut.Instance.CurrentViewData.Count(), "current view data working properly");
+        Assert.True(3 == cut.FindAll(".e-headercell").Count(), "Header cells generated properly");
+        Assert.True(3 == cut.Find(".e-row").Children.Count(), "Number of cells generated properly");
+        // Searching empty string
+        cut.FindAll(".e-searchinput")[0].Input("");
+        Task.Run(async () =>
+        {
+            var eventFn = cut.FindComponent<SfToolbar>().Instance.Items.First().OnClick;
+            var eventHandler = (EventCallback<ClickEventArgs>)eventFn;
+            var clickEventArgs = new ClickEventArgs();
+            
+            // Set Name property
+            GridReflection.SetPropertyValue(clickEventArgs, "Name", "click");
+            
+            // Set Item property with ItemModel
+            var itemModel = new ItemModel() 
+            { 
+                Id = cut.Instance.ID + "_search", 
+                Text = "Search", 
+                Type = ItemType.Input 
+            };
+            GridReflection.SetPropertyValue(clickEventArgs, "Item", itemModel);
+            await eventHandler.InvokeAsync(clickEventArgs);
+        }).GetAwaiter();
+
+        cut.FindComponent<SfPager>().FindAll(".e-link").ElementAt(1).Click();
+        //goto page testing for search
+        await cut.Instance.GoToPageAsync(2);
+        //Assert.True(1 == cut.Find(".e-toolbar-right").Children.Count(), "CurrentViewData count is proper");
+    }
+    void OnActionComplete()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(8 == cut.Instance.CurrentViewData.Count(), "paging  working properly during search");
+    }
+    }
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Search" })" AllowPaging="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandler"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture1 { get; set; }
+    void GridBasicRendering1(Fixture fixture)
+    {
+        //Searching string value
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        _canAssert = true;
+        cut.FindAll(".e-searchinput")[0].Input("ANTON");
+        Task.Run(async () =>
+        {
+            var eventFn = cut.FindComponent<SfToolbar>().Instance.Items.First().OnClick;
+            var eventHandler = (EventCallback<ClickEventArgs>)eventFn;
+            //var eventArgs = new ClickEventArgs() { Name = "click", Item = new ItemModel() { Id = cut.Instance.ID + "_search", Text = "Search", Type = ItemType.Input } };
+            var clickEventArgs = new ClickEventArgs();
+            
+            // Set Name property
+            GridReflection.SetPropertyValue(clickEventArgs, "Name", "click");
+            
+            // Set Item property with ItemModel
+            var itemModel = new ItemModel()
+            {
+                Id = cut.Instance.ID + "_search",
+                Text = "Search",
+                Type = ItemType.Input
+            };
+            GridReflection.SetPropertyValue(clickEventArgs, "Item", itemModel);
+            await eventHandler.InvokeAsync(clickEventArgs);
+        }).GetAwaiter();
+    }
+    public async Task ActionCompleteHandler()
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        var a = cut.Instance.CurrentViewData.Count();
+        Assert.True(4 == cut.Instance.CurrentViewData.Count(), "Currentview data working properly");
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Search" })" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandle"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+    void GridBasicRendering2(Fixture fixture)
+    {
+        //searching integer value
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        _canAssert = true;
+        cut.FindAll(".e-searchinput")[0].Input("1001");
+        Task.Run(async () =>
+        {
+            var eventFn = cut.FindComponent<SfToolbar>().Instance.Items.First().OnClick;
+            var eventHandler = (EventCallback<ClickEventArgs>)eventFn;
+            //var eventArgs = new ClickEventArgs() { Name = "click", Item = new ItemModel() { Id = cut.Instance.ID + "_search", Text = "Search", Type = ItemType.Input } };
+            //await eventHandler.InvokeAsync(eventArgs);
+            var clickEventArgs = new ClickEventArgs();
+            
+            // Set Name property
+            GridReflection.SetPropertyValue(clickEventArgs, "Name", "click");
+            
+            // Set Item property with ItemModel
+            var itemModel = new ItemModel()
+            {
+                Id = cut.Instance.ID + "_search",
+                Text = "Search",
+                Type = ItemType.Input
+            };
+            GridReflection.SetPropertyValue(clickEventArgs, "Item", itemModel);
+            await eventHandler.InvokeAsync(clickEventArgs);
+        }).GetAwaiter();
+    }
+    void ActionCompleteHandle()
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.Instance.CurrentViewData.Count(), "Current view data working properly");
+    }
+}
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid3" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Edit","Update","Search" })" AllowPaging="true">
+            <GridEditSettings> </GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandlee"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+      {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+    void GridBasicRendering3(Fixture fixture)
+    {
+        //searching integer value
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        _canAssert = true;
+        Task.Run(async () =>
+        {
+            var eventFn = cut.FindComponent<SfToolbar>().Instance.Items.First().OnClick;
+            var eventHandler = (EventCallback<ClickEventArgs>)eventFn;
+            //var eventArgs = new ClickEventArgs() { Name = "click", Item = new ItemModel() { Id = cut.Instance.ID + "_edit", Text = "Edit", Type = ItemType.Button } };
+            //await eventHandler.InvokeAsync(eventArgs);
+            var clickEventArgs = new ClickEventArgs();
+            
+            // Set Name property
+            GridReflection.SetPropertyValue(clickEventArgs, "Name", "click");
+            
+            // Set Item property with ItemModel
+            var itemModel = new ItemModel()
+            {
+                Id = cut.Instance.ID + "_search",
+                Text = "Search",
+                Type = ItemType.Input
+            };
+            GridReflection.SetPropertyValue(clickEventArgs, "Item", itemModel);
+            await eventHandler.InvokeAsync(clickEventArgs);
+        }).GetAwaiter();
+        //var aa = cut.FindAll(".e-toolbar-item")[0];
+        ////var bb = cut.FindAll(".e-toolbar-item")[1];
+        //Assert.True(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-template"), "Template renders properly for search");
+        //Assert.True(cut.FindAll(".e-toolbar-item")[0].LastElementChild.LastElementChild.ClassList.Contains("e-control-container"),"");
+        ////Assert.True(cut.FindAll(".e-toolbar-item")[0].LastElementChild.LastElementChild.ClassList.Contains("e-control-container"), "");
+        //Assert.True(1 == cut.FindAll(".e-toolbar-item").Count(), "search renders properly");
+        //Assert.True(12 == cut.Instance.CurrentViewData.Count(), "current view data working properly");
+        //cut.Instance.Search("BLONP");
+    }
+    void ActionCompleteHandlee()
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        //Assert.True(4== cut.Instance.CurrentViewData.Count(), "Current view data working properly");
+
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Trigger UpdatePageSizes()">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid4" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Search" })" AllowPaging="true">
+            <GridPageSettings PageSizes="true" PageSize="3"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGrid4;
+    void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-searchinput")[0].Input("1001");
+        cut.FindAll(".e-searchinput")[0].KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+    }
+}

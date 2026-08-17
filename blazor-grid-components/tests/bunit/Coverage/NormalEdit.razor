@@ -1,0 +1,239 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Grids.Internal
+
+<!-- TEST 1: CommandButtonType.Delete & Save Cases -->
+<SfFixture @ref="fixture1" Test="CommandClickHandler_DeleteAndSaveCommands" Description="CommandClickHandler Delete and Save commands">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef1" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn HeaderText="Manage Records">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-close", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    public SfGrid<Order> gridRef1    { get; set; }
+
+    public async void CommandClickHandler_DeleteAndSaveCommands(Fixture fixture)
+    {   
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // ACT 1: Test Delete command - should select row
+        var deleteButtons = cut.FindAll(".e-Deletebutton");
+        if (deleteButtons.Count > 0)
+        {
+            deleteButtons[0].Click();
+        }
+
+        // Assert: Row selected for deletion
+        cut.WaitForState(() => cut.Instance.SelectedRecords.Count > 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.Instance.SelectedRecords.Count > 0, "Delete command should select row");
+
+        // ACT 2: Test Save command - enter edit mode first
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+
+        // Modify data to test IsDataModified
+        var formInput = cut.Find(".e-gridform input");
+        if (formInput != null)
+        {
+            formInput.Change("MODIFIED");
+        }
+
+        // Click Save button
+        var saveButtons = cut.FindAll(".e-Savebutton");
+        if (saveButtons.Count > 0)
+        {
+            saveButtons[0].Click();
+        }
+
+        // Assert: Edit form closes (Save command ends edit)
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() == 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.FindAll(".e-gridform").Count() == 0, "Save command should end edit mode");
+    }
+}
+
+<!-- TEST 2: CommandButtonType.Cancel & Cancel Property -->
+<SfFixture @ref="fixture2" Test="CommandClickHandler_CancelCommandAndProperty" Description="CommandClickHandler Cancel command and event args.Cancel property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef2" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEvents CommandClicked="OnCancelTestCommandClicked2" TValue="Order"></GridEvents>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn HeaderText="Manage Records">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-close", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+    public SfGrid<Order> gridRef2 { get; set; }
+    private bool shouldCancelCommand = false;
+
+    public void OnCancelTestCommandClicked2(CommandClickEventArgs<Order> args)
+    {
+        // When Cancel = true, switch statement should not execute (line 40)
+        if (shouldCancelCommand)
+        {
+            args.Cancel = true;
+        }
+    }
+
+    public async void CommandClickHandler_CancelCommandAndProperty(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // ACT 1: Test Cancel button command - enters edit mode first
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+
+        var cancelButtons = cut.FindAll(".e-Cancelbutton");
+        if (cancelButtons.Count > 0)
+        {
+            shouldCancelCommand = false; // Allow normal execution
+            cancelButtons[0].Click();
+        }
+
+        // Assert: Cancel command closes edit without saving
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() == 0, TimeSpan.FromMilliseconds(2000));
+        Assert.True(cut.FindAll(".e-gridform").Count() == 0, "Cancel command should close edit mode");
+
+        // ACT 2: Test Cancel property prevention - event sets Cancel = true
+        shouldCancelCommand = true; // Set flag to cancel in event
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(2000));
+
+        var editButtons = cut.FindAll(".e-Editbutton");
+        if (editButtons.Count > 0)
+        {
+            editButtons[0].Click();
+        }
+
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0, "Cancel property should prevent command execution");
+    }
+}
+
+<!-- TEST 3: CommandButtonType.Cancel & Cancel Property -->
+<SfFixture @ref="fixture3" Test="CommandClickHandler" Description="Record Click event in Command Column">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef3" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEvents CommandClicked="OnCancelTestCommandClicked2" TValue="Order" OnRecordClick="OnRecordClicked"></GridEvents>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn HeaderText="Manage Records">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-close", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+    public SfGrid<Order> gridRef3 { get; set; }
+
+    private async Task OnRecordClicked(RecordClickEventArgs<Order> args)
+    {
+        await Task.CompletedTask;
+    }
+
+    public async void CommandClickHandler(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var editing = new Syncfusion.Blazor.Grids.Internal.NormalEdit<Order>();
+        var commandColumn = new GridCommandColumn() { Type = CommandButtonType.Edit };
+        var cell = new Cell<object>();
+        editing.Parent = cut.Instance;
+        Row<object> rowObj = cut.Instance.Rows[0];
+        await editing.CommandClickHandler(commandColumn, rowObj, cell);
+        var gridForm = cut.Find(".e-gridform");
+        Assert.True(gridForm != null, "Grid form should be present after command click");
+        var commandColumn2 = new GridCommandColumn() { Type = CommandButtonType.Delete };
+        await editing.CommandClickHandler(commandColumn2, rowObj, cell);
+        Assert.True(cut.FindAll(".e-gridform").Count() == 0, "Grid form should be removed after delete command click");
+    }
+}
+
+<!-- TEST 4: CommandButtonType.Cancel & Cancel Property -->
+<SfFixture @ref="fixture4" Test="EditingColSpan" Description="Editing with Col Spanning">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef4" AutoSpan="AutoSpanMode.HorizontalAndVertical" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal">
+                <Validator>
+                    @{
+                        ValidatorTemplateContext txt = context as ValidatorTemplateContext;
+                    }
+                    <ValidationMessage For="@(() => (txt.Data as Order).CustomerID)"></ValidationMessage>
+                </Validator>
+            </GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Country) HeaderText="Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Country) HeaderText="Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+    public SfGrid<Order> gridRef4 { get; set; }
+
+    public async void EditingColSpan(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Arrange
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        var gridForm = cut.Find(".e-gridform");
+        Assert.True(gridForm != null, "Grid form should be present after command click");
+    }
+}

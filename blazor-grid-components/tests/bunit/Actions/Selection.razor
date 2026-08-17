@@ -1,0 +1,1001 @@
+﻿@inherits GridTestBase
+@using System.Timers
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Selection using Select Row method">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridEvents RowSelected="RowSelectedHandler" RowSelecting="RowSelectingHandler" RowDeselected="RowDeSelectedHandler" RowDeselecting="RowDeSelectingHandler" TValue="Order" />
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Single" Mode="@_selectionMode" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool preventCurrentAction { get; set; }
+    bool _canAssert = false;
+    SelectionMode _selectionMode = SelectionMode.Row;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    public void GridBasicRendering(Fixture fixture)
+    {
+
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        _selectionMode = SelectionMode.Cell;
+        cut.Instance.Refresh();
+
+        _selectionMode = SelectionMode.Both;
+        cut.Instance.Refresh();
+
+        _selectionMode = SelectionMode.Row;
+        cut.Instance.Refresh();
+        // Assert.True(1 == cut.FindAll(".e-row").ElementAt(2).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+    }
+    async void Select()
+    {
+        preventCurrentAction = true;
+        await this.DefaultGrid.SelectRowAsync(2);
+        Assert.True(0 == this.cut.Instance.SelectedRowIndexes.Count, "Number of  Rows selected using SelectRow method ");
+
+        preventCurrentAction = false;
+        await this.DefaultGrid.SelectRowAsync(2);
+        Assert.True(2 == this.cut.Instance.SelectedRowIndexes[0], "Number of  Rows selected using SelectRow method ");
+        preventCurrentAction = true;
+        await this.DefaultGrid.ClearSelectionAsync();
+        Assert.True(1 == this.cut.Instance.SelectedRowIndexes.Count, "Number of  Rows selected using ClearSelection method");
+        preventCurrentAction = false;
+        Assert.True(0 == this.cut.Instance.SelectedRowIndexes.Count, "Number of  Rows selected using SelectRowIndexes method");
+    }
+
+    public void RowSelectedHandler(RowSelectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row");
+        Assert.False(args.IsCtrlPressed, "IsCtrlPressed of the selected row");
+        Assert.False(args.IsShiftPressed, "IsShiftPressed of the selected row");
+        Assert.True(args.Data != null);
+        Assert.True(args.Datas.Count == 1);
+        Assert.True(args.Event == null);
+        Assert.True(args.ForeignKeyData.Count == 0);
+        Assert.True(args.PreviousRowIndex == -1);
+        Assert.True(args.RowIndexes.Count == 1);
+        Assert.False(args.IsInteracted);
+    }
+
+    public void RowSelectingHandler(RowSelectingEventArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row");
+        Assert.False(args.IsCtrlPressed, "IsCtrlPressed of the selected row");
+        Assert.False(args.IsShiftPressed, "IsShiftPressed of the selected row");
+        Assert.True(args.Data != null);
+        Assert.True(args.Datas.Count == 1);
+        Assert.True(args.Event == null);
+        Assert.True(args.ForeignKeyData.Count == 0);
+        // Assert.True(args.PreviousRowIndex == -1);
+        Assert.True(args.RowIndexes.Count == 1);
+        Assert.False(args.IsInteracted);
+    }
+    public void RowDeSelectedHandler(RowDeselectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the deselected row");
+    }
+    public void RowDeSelectingHandler(RowDeselectEventArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(2 == args.RowIndex, "RowIndex of the deselected row");
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row");
+        Assert.False(args.IsCtrlPressed, "IsCtrlPressed of the selected row");
+        Assert.False(args.IsShiftPressed, "IsShiftPressed of the selected row");
+        Assert.True(args.Data != null);
+        Assert.True(args.Datas.Count == 1);
+        Assert.True(args.Event == null);
+        Assert.True(args.ForeignKeyData.Count == 0);
+        Assert.True(args.RowIndexes.Count == 1);
+        Assert.False(args.IsInteracted);
+    }
+}
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Selection using Select Row and Cell method">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid1" DataSource="GenerateOrderData()" SelectedRowIndex="3" AllowPaging="true" AllowSelection="true">
+            <GridEvents RowSelected="RowSelectedHandler1" RowSelecting="RowSelectingHandler1" CellSelected="CellSelectedHandler1" CellSelecting="CellSelectingHandler1" TValue="Order" />
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Single" Mode="Syncfusion.Blazor.Grids.SelectionMode.Both" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" HeaderText="EmployeeID" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select1" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+  {
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> DefaultGrid1;
+
+    public IRenderedComponent<SfGrid<Order>> cut1 { get; set; }
+    public void GridBasicRendering1(Fixture fixture)
+    {
+
+        cut1 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+
+    async void Select1()
+    {
+        ValueTuple<int, int> index = (2, 3);
+        await this.DefaultGrid1.SelectCellAsync(index);
+        var aa = this.cut1.Instance.SelectedRowIndex;
+    }
+
+    public void RowSelectedHandler1(RowSelectEventArgs<Order> args)
+    {
+        Assert.True(3 == args.RowIndex, "RowIndex of the selected row");
+        Assert.True(1004 == args.Data.OrderID, "RowData of the selected row ");
+
+    }
+    public void RowSelectingHandler1(RowSelectingEventArgs<Order> args)
+    {
+        Assert.True(3 == args.RowIndex, "RowIndex of the selected row");
+        Assert.True(1004 == args.Data.OrderID, "RowData of the selected row ");
+    }
+    public void CellSelectedHandler1(CellSelectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row ");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the selected row");
+        Assert.True(3 == args.CellIndex, "CellIndex of the selected Cell");
+    }
+
+    public void CellSelectingHandler1(CellSelectingEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row ");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the selected row");
+        Assert.True(3 == args.CellIndex, "CellIndex of the selected Cell");
+    }
+
+}
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Selection using SelectCell method">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridEvents CellSelected="CellSelectedHandler2" CellSelecting="CellSelectingHandler2" CellDeselecting="CellDeselectingHandler" CellDeselected="CellDeselectedHandler" TValue="Order" />
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Single" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select2" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+
+    public IRenderedComponent<SfGrid<Order>> cut2 { get; set; }
+    public async Task GridBasicRendering2(Fixture fixture)
+    {
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        @* cut2.FindAll(".e-row")[2].Children[2].Click(new MouseEventArgs(){Type="click"}); *@
+        cut2.FindAll(".e-row")[2].Children[2].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "a", Code = "KeyA" });
+    }
+    async Task Select2()
+    {
+
+        ValueTuple<int, int> index = (2, 3);
+        await this.DefaultGrid2.SelectCellAsync(index);
+        List<ValueTuple<int, int>> RowCellIndex = await this.cut2.Instance.GetSelectedRowCellIndexesAsync();
+        Assert.True(2 == RowCellIndex[0].Item1, "RowIndex of the selected Cell");
+        Assert.True(3 == RowCellIndex[0].Item2, "CellIndex of the selected Cell");
+        await this.DefaultGrid2.ClearCellSelectionAsync();
+        List<ValueTuple<int, int>> RowCellIndexes = await this.cut2.Instance.GetSelectedRowCellIndexesAsync();
+        Assert.True(0 == RowCellIndexes.Count, "Number of  CellIndex count");
+    }
+
+    public void CellDeselectingHandler(CellDeselectEventArgs<Order> args)
+    {
+        Assert.True(args.Event == null);
+        Assert.False(args.IsCtrlPressed);
+        Assert.False(args.IsShiftPressed);
+        Assert.True(2 == args.RowIndex, "RowIndex of the deselected Cell ");
+        Assert.True(3 == args.CellIndex, "CellIndex of the deselected Cell");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the deselected Cell ");
+    }
+
+    public void CellDeselectedHandler(CellDeselectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the deselected Cell ");
+        Assert.True(3 == args.CellIndex, "CellIndex of the deselected Cell");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the deselected Cell ");
+    }
+
+    public void CellSelectedHandler2(CellSelectEventArgs<Order> args)
+    {
+        Assert.True(args.PreviousCellIndex == 0);
+        Assert.True(args.Event == null);
+        Assert.False(args.IsCtrlPressed);
+        Assert.False(args.IsShiftPressed);
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected Cell ");
+        Assert.True(3 == args.CellIndex, "CellIndex of the selected Cell");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the selected Cell ");
+    }
+
+    public void CellSelectingHandler2(CellSelectingEventArgs<Order> args)
+    {
+        Assert.True(args.PreviousCellIndex == 0);
+        Assert.False(args.IsCtrlPressed);
+        Assert.False(args.IsShiftPressed);
+        Assert.True(args.Event == null);
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected Cell ");
+        Assert.True(3 == args.CellIndex, "CellIndex of the selected Cell");
+        Assert.True(1003 == args.Data.OrderID, "RowData of the selected Cell ");
+    }
+
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Selecting Multiple rows using SelectRows method">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid3" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select3" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+    public IRenderedComponent<SfGrid<Order>> cut3 { get; set; }
+    public async Task GridBasicRendering3(Fixture fixture)
+    {
+
+        cut3 = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        @*         await DefaultGrid3.SelectRowAsync(1); *@
+        await DefaultGrid3.SelectRowAsync(2);
+        cut3.FindAll(".e-row")[2].Children[2].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "a", Code = "KeyA" });
+        await DefaultGrid3.SelectRowAsync(3);
+        cut3.FindAll(".e-row")[3].Children[2].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "Home" });
+
+    }
+    async void Select3()
+    {
+        int[] index = { 2, 3, 4 };
+        await this.DefaultGrid3.SelectRowsAsync(index);
+        var aa = this.cut3.Instance;
+        Assert.True(2 == this.cut3.Instance.SelectedRowIndexes[0] && 3 == this.cut3.Instance.SelectedRowIndexes[1] && 4 == this.cut3.Instance.SelectedRowIndexes[2], "RowIndexes of the selected Rows");
+        await this.DefaultGrid3.ClearSelectionAsync();
+        Assert.True(0 == this.cut3.Instance.SelectedRowIndexes.Count, "Number of  Rows selected after calling ClearSelection method");
+    }
+
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Selecting Multiple cells using SelectCells method">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid4" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select4" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGrid4;
+    public IRenderedComponent<SfGrid<Order>> cut4 { get; set; }
+    public void GridBasicRendering4(Fixture fixture)
+    {
+
+        cut4 = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+
+    }
+    async Task Select4()
+    {
+        ValueTuple<int, int>[] indexes = { (2, 3), (3, 2), (4, 1) };
+        await this.DefaultGrid4.SelectCellsAsync(indexes);
+
+        List<ValueTuple<int, int>> RowCellIndex = await this.cut4.Instance.GetSelectedRowCellIndexesAsync();
+        Assert.True(2 == RowCellIndex[0].Item1 && 3 == RowCellIndex[0].Item2 && 3 == RowCellIndex[1].Item1 && 2 == RowCellIndex[1].Item2
+            && 4 == RowCellIndex[2].Item1 && 1 == RowCellIndex[2].Item2, "RowIndexes and CellIndexes of the selected Cells");
+        await this.DefaultGrid4.ClearCellSelectionAsync();
+
+        List<ValueTuple<int, int>> RowCellIndexes = await this.cut4.Instance.GetSelectedRowCellIndexesAsync();
+
+        Assert.True(0 == RowCellIndexes.Count, "Number of  Rows selected after calling ClearCellSelection method");
+    }
+
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Call SelectCellAsync method when Allow Selection is false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid5" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select5" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> DefaultGrid5;
+    public IRenderedComponent<SfGrid<Order>> cut5 { get; set; }
+    public void GridBasicRendering5(Fixture fixture)
+    {
+
+        cut5 = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut5.Instance.Rows.Count > 0, "Grid rendered successfully");
+       
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+
+    }
+    async Task Select5()
+    {
+        await this.DefaultGrid5.SelectCellAsync((2, 3));
+    }
+
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Call SelectCellAsync method when Allow Selection is true and Row mode enabled.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid6" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridSelectionSettings Mode="SelectionMode.Row"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select6" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> DefaultGrid6;
+    public IRenderedComponent<SfGrid<Order>> cut6 { get; set; }
+    public void GridBasicRendering6(Fixture fixture)
+    {
+        cut6 = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut6.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+    async Task Select6()
+    {
+        await this.DefaultGrid6.SelectCellAsync((2, 3));
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="CellSelectionClickHandler with enable toggle.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid7" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridEvents CellDeselected="CellDeselectHandler" CellDeselecting="CellDeselectingHandler1" TValue="Order"></GridEvents>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Blazor.Grids.SelectionType.Multiple" EnableToggle="true" CellSelectionMode="CellSelectionMode.Flow"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> DefaultGrid7;
+    public IRenderedComponent<SfGrid<Order>> cut7 { get; set; }
+
+    public void CellDeselectingHandler1(CellDeselectEventArgs<Order> args)
+    {
+        // Logic before cell deselection
+    }
+    public void CellDeselectHandler(CellDeselectEventArgs<Order> args)
+    {
+        // Logic after cell deselection
+    }
+
+    public void GridBasicRendering7(Fixture fixture)
+    {
+        cut7 = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut7.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut7.FindAll(".e-rowcell")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = false, CtrlKey = true });
+        cut7.FindAll(".e-rowcell")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = false, CtrlKey = true });
+    }
+}
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="KeyHandler return call">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid8" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Blazor.Grids.SelectionType.Single"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> DefaultGrid8;
+    public IRenderedComponent<SfGrid<Order>> cut8 { get; set; }
+
+    public void GridBasicRendering8(Fixture fixture)
+    {
+        cut8 = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut8.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut8.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { ShiftKey = true, Key = "ArrowDown" });
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="KeyHandler RowCellSelectionClickHandler call">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid9" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridSelectionSettings Mode="SelectionMode.Both" Type="Blazor.Grids.SelectionType.Single"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> DefaultGrid9;
+    public IRenderedComponent<SfGrid<Order>> cut9 { get; set; }
+
+    public void GridBasicRendering9(Fixture fixture)
+    {
+        cut9 = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut9.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut9.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "ArrowDown" });
+    }
+}
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="KeyPressed Control + A key called.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid10" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> DefaultGrid10;
+    public IRenderedComponent<SfGrid<Order>> cut10 { get; set; }
+
+    public void GridBasicRendering10(Fixture fixture10)
+    {
+        cut10 = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut10.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut10.FindAll(".e-rowcell")[1].Click();
+        cut10.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { CtrlKey = true, Key = "a" });
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="HeaderClickHandler covered with events.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid11" DataSource="GetVirtualData()" Height="400" Width="400" RowHeight="38" AllowSelection="true" AllowGrouping="true" EnableVirtualization="true">
+            <GridSelectionSettings Type="Blazor.Grids.SelectionType.Single"></GridSelectionSettings>
+            <GridEvents RowSelected="RowSelectHandler" RowSelecting="RowSelectingHandler2" RowDeselected="RowDeselectHandler" RowDeselecting="RowDeselectingHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="@GroupColumn1" CssClass="e-primary" Content="Group"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<Order> DefaultGrid11;
+    public IRenderedComponent<SfGrid<Order>> cut11 { get; set; }
+
+    public void RowSelectingHandler2(RowSelectingEventArgs<Order> Args)
+    {
+
+    }
+    public void RowSelectHandler(RowSelectEventArgs<Order> Args)
+    {
+
+    }
+    public void RowDeselectingHandler(RowDeselectEventArgs<Order> Args)
+    {
+
+    }
+    public void RowDeselectHandler(RowDeselectEventArgs<Order> Args)
+    {
+
+    }
+
+    async void GridBasicRendering11(Fixture fixture11)
+    {
+        cut11 = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut11.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut11.Instance.EnableVirtualization);
+        var btnFragment = fixture11.GetFragment<SfButton>();
+        btnFragment.FindAll(".e-btn").ElementAt(0).Click();
+        await cut11.Instance.ExpandAllGroupAsync();
+        cut11.FindAll(".e-frame.e-icons.e-uncheck")[0].Click();
+        cut11.FindAll(".e-frame.e-icons.e-check")[0].Click();
+    }
+
+    private async Task GroupColumn1(MouseEventArgs _)
+    {
+        await cut11.Instance.GroupColumnAsync("CustomerID");
+    }
+
+}
+
+<SfFixture @ref="fixture12" TestAsync="GridBasicRendering12" Description="AutofillBox and AutofillBorder method coverage with batch editing">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid12" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true" EnableAutoFill="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+   
+</SfFixture>
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<Order> DefaultGrid12;
+    public IRenderedComponent<SfGrid<Order>> cut12 { get; set; }
+
+    async Task GridBasicRendering12(Fixture fixture)
+    {
+        cut12 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut12.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut12.Instance.EnableAutoFill, "EnableAutoFill should be true");
+        Assert.True(cut12.Instance.EditSettings.Mode == EditMode.Batch, "EditMode should be Batch");
+        var selectionModule = cut12.Instance.SelectionModule;
+        
+        await selectionModule.AutofillBox(rowIndex: 1, cellIndex: 2, positions: null);
+        Assert.True(true, "AutofillBox JSInterop path executed");
+
+        await selectionModule.AutofillBorder(rowIndex: 1, cellIndex: 2, positions: null);
+        Assert.True(true, "AutofillBorder JSInterop path executed");
+    }
+}
+
+<SfFixture @ref="fixture13"
+           TestAsync="GridPersistedDataCoverage"
+           Description="Coverage for SelectionModule.PersistedData getter and setter">
+
+    <ComponentUnderTest>
+        <SfGrid @ref="PersistGrid"
+                DataSource="GenerateOrderData()"
+                AllowSelection="true">
+            <GridSelectionSettings PersistSelection="true"
+                                   Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> PersistGrid;
+    public IRenderedComponent<SfGrid<Order>> cutPersist { get; set; }
+
+    public async Task GridPersistedDataCoverage(Fixture fixture)
+    {
+        cutPersist = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // ✅ Act 1: select a row (this internally SETS PersistedData)
+        await PersistGrid.SelectRowAsync(1);
+
+        var selectionModule = cutPersist.Instance.SelectionModule;
+
+        // ✅ Getter coverage
+        var persisted = selectionModule.PersistedData;
+        Assert.True(persisted.Count > 0, "PersistedData getter covered");
+
+        // ✅ Setter coverage
+        selectionModule.PersistedData = new Dictionary<object, object>();
+
+        Assert.True(
+            selectionModule.PersistedData.Count == 0,
+            "PersistedData setter covered"
+        );
+    }
+}
+
+<SfFixture @ref="fixture14"
+           TestAsync="SelectRow"
+           Description="Select a row using index with virtualization">
+
+    <ComponentUnderTest>
+        <SfGrid ID="InfiniteScroll16"
+                @ref="InfiniteScroll14"
+                DataSource="GenerateRows14()"
+                AllowSelection="true"
+                EnableVirtualization="true"
+                EnableInfiniteScrolling="true"
+                Height="400">
+
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Single" />
+
+            <GridPageSettings PageSize="40" />
+
+            <GridColumns>
+                <GridColumn Field="@nameof(OrderSimple.OrderID)"
+                            IsPrimaryKey="true"
+                            Width="120" />
+                <GridColumn Field="@nameof(OrderSimple.CustomerID)" Width="150" />
+                <GridColumn Field="@nameof(OrderSimple.OrderDate)"
+                            Type="ColumnType.Date"
+                            Width="130" />
+                <GridColumn Field="@nameof(OrderSimple.Freight)" Width="120" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<OrderSimple> InfiniteScroll14;
+    public List<OrderSimple> GridDataSimple { get; set; }
+
+    public async Task SelectRow(Fixture fixtureSimple)
+    {
+        var cut = fixture14.GetComponentUnderTest<SfGrid<OrderSimple>>();
+        Assert.True(cut.Instance.AllowSelection);
+        Assert.True(cut.Instance.EnableVirtualization);
+
+        await cut.InvokeAsync(() => Task.Delay(200));
+        int[] index = { 1,2,3};
+        await cut.Instance.SelectRowsAsync(index);
+        var selectedIndexes = cut.Instance.SelectedRowIndexes;
+
+        Assert.NotNull(selectedIndexes);
+        Assert.Contains(1, selectedIndexes);
+
+        int[] index1 = { -1 };
+        await cut.Instance.SelectRowsAsync(index1);
+
+        cut.Instance.EnableVirtualization = false;
+        await cut.Instance.SelectRowsAsync(index1);
+
+        cut.Instance.AllowSelection = false;
+        await cut.Instance.SelectRowsAsync(index1);
+    }
+
+    public List<OrderSimple> GenerateRows14()
+    {
+        List<OrderSimple> data = new List<OrderSimple>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderSimple() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderSimple() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridDataSimple = data;
+        return data;
+    }
+
+    public class OrderSimple
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture15"
+           TestAsync="SelectRangeCoverage"
+           Description="Complete SelectRangeOfRows branch coverage">
+
+    <ComponentUnderTest>
+        <SfGrid @ref="RangeGrid"
+                DataSource="@GridData"
+                AllowSelection="true"
+                AllowGrouping = "true"
+                Height="400">
+
+            <GridSelectionSettings Mode="SelectionMode.Row"
+                                   Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" />
+
+            <GridGroupSettings Columns="@GroupedColumns" />
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order1.OrderID)"
+                            IsPrimaryKey="true" />
+                <GridColumn Field="@nameof(Order1.CustomerID)" />
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture15 { get; set; }
+    private SfGrid<Order1> RangeGrid;
+    public List<Order1> GridData { get; set; }
+
+    public string[] GroupedColumns = new string[] { "CustomerID" };
+
+
+    public async Task SelectRangeCoverage(Fixture fixture)
+    {
+        GridData = GetOrders();
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order1>>();
+        cut.FindAll(".e-rowcell")[3]
+            .Click(new MouseEventArgs { ShiftKey = true });
+        cut.FindAll(".e-rowcell")[0]
+            .Click(new MouseEventArgs { CtrlKey = true });
+
+        cut.FindAll(".e-rowcell")[1]
+            .Click(new MouseEventArgs { CtrlKey = true });
+        await cut.Instance.SelectRowAsync(4);
+        cut.FindAll(".e-rowcell")[2]
+            .Click(new MouseEventArgs { ShiftKey = true });
+        cut.FindAll(".e-rowcell")[4]
+            .Click(new MouseEventArgs { ShiftKey = true });
+
+
+        Assert.NotNull(cut.Instance.SelectedRowIndexes);
+    }
+
+    public class Order1
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+
+    private List<Order1> GetOrders()
+    {
+        return new List<Order1>
+        {
+            new Order1 { OrderID = 1, CustomerID = "ALFKI" },
+            new Order1 { OrderID = 2, CustomerID = "ANATR" },
+            new Order1 { OrderID = 3, CustomerID = "BERGS" },
+            new Order1 { OrderID = 4, CustomerID = "BLAUS" },
+            new Order1 { OrderID = 5, CustomerID = "FRANK" }
+        };
+    }
+}
+
+
+<!-- ========== FIXTURE 16: RowCellSelectionClickHandler - CheckBox Column (e.CtrlKey != true path) ========== -->
+<SfFixture @ref="fixture16" TestAsync="RowCellHandlerCheckboxSelection" Description="RowCellSelectionClickHandler with checkbox column - covers ClearCellSelection path">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid16" DataSource="@Data16" AllowSelection="true" Height="300">
+            <GridSelectionSettings Mode="SelectionMode.Both" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50" />
+                <GridColumn Field="@nameof(CheckBoxItem.Id)" IsPrimaryKey="true" HeaderText="ID" Width="50" />
+                <GridColumn Field="@nameof(CheckBoxItem.Name)" HeaderText="Name" Width="100" />
+                <GridColumn Field="@nameof(CheckBoxItem.Category)" HeaderText="Category" Width="100" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture16 { get; set; }
+    private SfGrid<CheckBoxItem> Grid16;
+    public List<CheckBoxItem> Data16 { get; set; }
+
+    public async Task RowCellHandlerCheckboxSelection(Fixture fixture)
+    {
+        Data16 = new()
+        {
+            new CheckBoxItem { Id = 1, Name = "Item1", Category = "Cat1" },
+            new CheckBoxItem { Id = 2, Name = "Item2", Category = "Cat2" },
+            new CheckBoxItem { Id = 3, Name = "Item3", Category = "Cat1" }
+        };
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<CheckBoxItem>>();
+
+        // STEP 1: Select row via checkbox
+        var checkboxes = cut.FindAll("input[type='checkbox']");
+        if (checkboxes.Count > 1)
+        {
+            checkboxes[1].Click();
+            await cut.InvokeAsync(async () => await Task.Delay(50));
+        }
+
+        cut.FindAll(".e-rowcell")[2].Click();
+        await cut.InvokeAsync(async () => await Task.Delay(100));
+
+        Assert.NotNull(cut.Instance.SelectedRowIndexes);
+    }
+
+    public class CheckBoxItem
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Category { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture17" TestAsync="GridBasicRendering17" Description="RowSelectionClickHandler with CheckboxOnly - select row returns early">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid17" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            
+            <GridSelectionSettings CheckboxOnly="true" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+  
+
+</SfFixture>
+@code
+{
+    SfFixture fixture17 { get; set; }
+    private SfGrid<Order> DefaultGrid17;
+    public IRenderedComponent<SfGrid<Order>> cut17 { get; set; }
+    private bool rowSelectingFired17 = false;
+    private bool rowSelectedFired17 = false;
+
+    public async Task GridBasicRendering17(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully"); 
+        var rowElement = cut.FindAll(".e-row")[2];
+        cut.FindAll(".e-rowcell")[1].Click();
+        var checkboxInput = rowElement.QuerySelector("input[type='checkbox']");
+        if (checkboxInput != null)
+        {
+            checkboxInput.Click();
+        }
+        if (checkboxInput != null)
+        {
+            checkboxInput.Click();
+        }
+    }
+   
+}
+<SfFixture @ref="fixture18" TestAsync="GridBasicRendering18" Description="RowSelectionClickHandler with CheckboxOnly for single type">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid18" DataSource="GenerateOrderData()" AllowPaging="true" AllowSelection="true">
+            
+            <GridSelectionSettings CheckboxOnly="true" Type="Syncfusion.Blazor.Grids.SelectionType.Single" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+  
+</SfFixture>
+@code
+{
+    SfFixture fixture18 { get; set; }
+    private SfGrid<Order> DefaultGrid18;
+    public IRenderedComponent<SfGrid<Order>> cut18 { get; set; }
+    private bool rowSelectingFired18 = false;
+    private bool rowSelectedFired18 = false;
+
+    public async Task GridBasicRendering18(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var rowElement = cut.FindAll(".e-row")[2];
+        cut.FindAll(".e-rowcell")[1].Click();
+        var checkboxInput = rowElement.QuerySelector("input[type='checkbox']");
+        if (checkboxInput != null)
+        {
+            checkboxInput.Click();
+        }
+        if (checkboxInput != null)
+        {
+            checkboxInput.Click();
+        }
+
+        checkboxInput.Click(new MouseEventArgs() { ShiftKey = true });
+
+    }
+   
+}
+

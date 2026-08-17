@@ -1,0 +1,54 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="CheckBox Header not getting updated while adding and cancelling in batch mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRecords()" AllowSelection="true" AllowPaging="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" PersistSelection=true></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> Orders { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        //cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+        cut.FindAll(".e-checkbox-wrapper")[0].Children[0].Click(new MouseEventArgs());
+        var count = Grid.SelectedRecords.Count;
+        Grid.GoToPageAsync(2).GetAwaiter();
+        Assert.True(Grid.CheckBoxState == CheckState.Check);
+    }
+
+    public List<Order> GenerateRecords()
+    {
+        return Orders = Enumerable.Range(1, 75).Select(x => new Order()
+            {
+                OrderID = 1000 + x,
+                CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+                Freight = 2.1 * x,
+                OrderDate = DateTime.Now.AddDays(-x),
+            }).ToList();
+    }
+
+    public class Order {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

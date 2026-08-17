@@ -1,0 +1,1968 @@
+# ============================================================================
+# OPTIMIZED BUG-FIX CONFIGURATION
+# Version: 2.1 (Skill-Mapped, Token-Efficient)
+# Purpose: Eliminate manual file searching by mapping features to skills + files
+# ============================================================================
+
+schema: bug-fix-optimized
+version: 2.1
+component: blazor-grid
+mode: skill-driven
+
+⚠️  CRITICAL SESSION RULE (MANDATORY ENFORCEMENT):
+  
+  DO NOT RE-READ FILES ALREADY REVIEWED IN THE CURRENT SESSION.
+  
+  - Once a file is read and cached in the session, DO NOT read it again
+  - Maintain a running list of "Files Examined This Session" 
+  - Before reading ANY file, check if it was already read THIS SESSION
+  - If already read, retrieve cached content from memory instead of re-reading
+  - This applies ACROSS ALL STAGES (Stage 1, 2, 3, 4, 5)
+  - Violating this rule wastes 200-400 tokens per duplicate read
+  - ENFORCEMENT: MANDATORY — abort and note violation if duplicate detected
+
+description: |
+  Optimized bug-fix workflow that uses PRE-EXISTING feature documentation
+  and skills instead of manually searching the codebase. Each feature domain
+  has an associated SKILL file with:
+  - Knowledge references (specific file paths)
+  - Code location map (exact methods/properties)
+  - Interaction matrix (cross-feature test scope)
+  - Training insights (Blazor patterns, API contracts)
+  
+  This eliminates excessive token usage by being PRESCRIPTIVE instead of
+  EXPLORATORY.
+
+# ============================================================================
+# FEATURE-SKILL MAPPING
+# Key: Use this map to load domain knowledge WITHOUT reading entire codebase
+# ============================================================================
+
+# Optional: `related_skills` lists companion skills that MUST also be loaded
+# for the same feature domain when present.
+feature_skill_map:
+  
+  cell-rendering:
+    skill: ".github/skills/Cell-Rendering-skill/SKILL.md"
+    spec: "openspec/specs/cell-rendering/spec.md (create if needed)"
+    components: ["Cell<T>", "CellType", "CellDOM", "GridRow", "GridCellParameters"]
+    files:
+      core:
+        - "src/Internal/Models/Cell.cs"
+        - "src/Internal/Models/Row.cs"
+        - "src/Internal/Models/CellComponentService.cs"
+        - "src/Internal/Base/Enums.cs (CellType enum)"
+        - "src/Internal/Base/InternalClass.cs (CellDOM, GridCellParameters, CellStateInfo)"
+      renderer:
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/GridCellRegister.razor"
+        - "src/Internal/Renderer/CellRender.razor"
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+        - "src/Internal/Renderer/GridHeaderBase.cs"
+        - "src/Internal/Renderer/IndentCellRenderer.cs"
+        - "src/Internal/Renderer/ExpandCellRenderer.cs"
+        - "src/Internal/Renderer/RowDragCellRenderer.cs"
+        - "src/Internal/Renderer/GroupCaptionRenderer.cs"
+        - "src/Internal/Renderer/CaptionSummaryRenderer.cs"
+        - "src/Internal/Renderer/SummaryCellRenderer.cs"
+        - "src/Internal/Renderer/DetailCellRenderer.cs"
+        - "src/Internal/Renderer/CommandColumnRenderer.cs"
+        - "src/Internal/Renderer/CheckBoxRenderer.razor"
+      generators:
+        - "src/Internal/Generators/RowModelGenerator.cs"
+        - "src/Internal/Generators/SummaryModelGenerator.cs"
+        - "src/Internal/Generators/GroupModelGenerator.cs"
+      actions:
+        - "src/Internal/Actions/DetailRow.cs"
+      editors:
+        - "src/Internal/Editors/EditorCellBase.cs"
+        - "src/Internal/Editors/TextBoxEditCell.razor"
+        - "src/Internal/Editors/NumericEditCell.razor"
+        - "src/Internal/Editors/DropDownEditCell.razor"
+        - "src/Internal/Editors/BooleanEditCell.razor"
+        - "src/Internal/Editors/DatePickerEditCell.razor"
+        - "src/Internal/Editors/TimePickerEditCell.razor"
+        - "src/Internal/Editors/ForeignKeyEditCell.razor"
+      events:
+        - "src/GridEvents.cs (QueryCellInfo, HeaderCellInfo, OnCellEdit, OnCellSave, CellSelected, CellSelecting, CellDeselecting, CellDeselected, BeforeCellPaste)"
+        - "src/EventModels/Grids.cs (CellDOM, QueryCellInfoEventArgs<T>, HeaderCellInfoEventArgs, CellEditArgs<T>, CellSaveArgs<T>, CellSelectEventArgs<T>, etc)"
+        - "src/Internal/Models/EventAggregator.cs"
+        - "src/Internal/Models/GridMouseDown.cs"
+      filters:
+        - "src/Internal/Renderer/Filter/FilterBarRenderer.razor"
+        - "src/Internal/Renderer/Filter/FilterInput.razor"
+      js:
+        - "scripts/selection.ts"
+        - "scripts/edit.ts"
+        - "scripts/util.ts"
+        - "scripts/sf-grid.ts"
+        - "scripts/interfaces.ts"
+        - "scripts/freeze.ts"
+        - "scripts/virtual-scroll.ts"
+        - "scripts/infinite-scroll.ts"
+        - "scripts/resize.ts"
+        - "scripts/reorder.ts"
+        - "scripts/tooltip.ts"
+      api:
+        - "src/SfGrid.razor.cs (CellService, CellDOM)"
+        - "src/SfGrid.Properties.cs (cell-related properties)"
+        - "src/GridColumn.cs"
+        - "src/GridTemplates.cs"
+        - "src/Internal/Base/GridColumnBase.cs"
+        - "src/Internal/Base/Utils.cs"
+    interactions: ["sorting", "filtering", "grouping", "paging", "editing", "selection", "frozen-columns", "virtual-scroll", "infinite-scroll", "row-drag-and-drop", "aggregates", "column-virtualization", "keyboard-navigation", "columns", "templates"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Expert knowledge for the Cell Rendering system in the Blazor Grid. Covers all 12+ CellType variants, 
+      full DOM structure with CSS classes and aria attributes, rendering pipelines across all features,
+      complete event ecosystem (QueryCellInfo, HeaderCellInfo, OnCellEdit, OnCellSave, CellSelected, etc),
+      and cross-feature cell interactions. Use for any task affecting cell DOM generation, rendering flows, 
+      styling, event binding, or cell interactions. Zero-tolerance regression guarantee via comprehensive 
+      interaction matrix.
+
+  grouping-dom:
+    skill: ".github/skills/grouping-dom-skill/SKILL.md"
+    spec: "openspec/specs/grouping/spec.md"
+    components: ["GridRow", "GroupDropArea", "GroupedHeader", "ExpandCellRenderer", "IndentCellRenderer", "GroupCaptionRenderer", "CaptionSummaryRenderer"]
+    files:
+      core:
+        - "src/GridGroupSettings.razor.cs"
+      renderers:
+        - "src/Internal/Renderer/GroupDropArea.razor"
+        - "src/Internal/Renderer/GroupedHeader.razor"
+        - "src/Internal/Renderer/GroupCaptionRenderer.cs"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridVirtualContent.razor"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/ExpandCellRenderer.cs"
+        - "src/Internal/Renderer/IndentCellRenderer.cs"
+        - "src/Internal/Renderer/CaptionSummaryRenderer.cs"
+      generators:
+        - "src/Internal/Generators/GroupModelGenerator.cs"
+      actions:
+        - "src/Internal/Actions/Group.cs"
+    interactions: ["grouping", "virtualization", "lazy-loading", "frozen-columns", "aggregates", "paging", "infinite-scroll", "detail-rows", "row-drag-drop"]
+    lines_per_file: 150
+    risk_level: "critical"
+    
+  pager-grid-dom-structure:
+    skill: ".github/skills/pager-grid-dom-structure-skill/SKILL.md"
+    spec: "openspec/specs/paging/spec.md"
+    components: ["GridPageSettings", "SfPager", "SfGrid"]
+    files:
+      renderer:
+        - "src/Internal/SfGrid.razor (SfPager instantiation block, lines 131-147)"
+      core:
+        - "src/GridPageSettings.razor.cs"
+        - "src/GridPageSettings.razor"
+      actions:
+        - "src/Internal/Actions/Paging.cs"
+      models:
+        - "src/EventModels/Grids.cs (GridPageChangingEventArgs, GridPageChangedEventArgs)"
+      events:
+        - "src/GridEvents.cs (PageChanging, PageChanged)"
+      api:
+        - "src/SfGrid.Properties.cs (AllowPaging, PageSettings, PagerRef, TotalItemCount)"
+        - "src/SfGrid.Methods.cs (GoToPageAsync, PageValueChanged, DropDownChanged, EnsurePagerDropdown)"
+      js:
+        - "scripts/sf-grid.ts (pager keyboard navigation, pager focus handling, lines 750-805)"
+        - "scripts/sf-grid-fn.ts (pager event routing, focus detection, lines 1285, 1332, 1566, 1840)"
+        - "scripts/interfaces.ts (GridOptions interface)"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+    interactions: ["paging", "filtering", "sorting", "grouping", "virtualization", "infinite-scroll", "selection", "editing", "export", "persistence", "rtl", "keyboard-navigation"]
+    lines_per_file: 120
+    risk_level: "high"
+    description: |
+      DOM structure and Blazor component rendering flow for Pager Grid component.
+      Use for: page navigation bugs, pager DOM layout issues, CSS class selector errors,
+      keyboard navigation in pager, custom pager template rendering, RTL mode pager,
+      feature-combination pager behavior, state-driven DOM mutations, external message
+      display, page size dropdown rendering, pager visibility (mutual exclusion with
+      virtualization/infinite-scroll), pager event routing and JS interop, rendering
+      entry points, pager container hierarchy, numeric buttons, navigation arrows,
+      focus tracking, active state management.
+
+  frozen-rows-columns-dom-structure:
+    skill: ".github/skills/frozen-rows-columns-dom-structure-skill/SKILL.md"
+    spec: "openspec/specs/architecture/spec.md"
+    components: ["SfGrid", "GridHeader", "GridContent", "GridRow"]
+    files:
+      root:
+        - "src/Internal/SfGrid.razor (standard renderer selection)"
+        - "src/SfGrid.razor.cs (RearrangeColumns, stacked frozen projection)"
+      renderer:
+        - "src/Internal/Renderer/GridHeader.razor"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/GridRow.razor.cs"
+      generators:
+        - "src/Internal/Generators/RowModelGenerator.cs"
+    interactions: ["columns", "virtualization", "infinite-scroll", "grouping", "editing", "sorting", "filtering", "frozen-columns", "frozen-rows", "stacked-headers"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      DOM structure and Blazor rendering flow for Frozen Rows, Frozen Columns, and stacked-header
+      combinations in the standard grid path. Use for: header/content split issues, pinned-row rendering,
+      column rearrangement bugs, stacked frozen-zone projection, and row cell ordering / concat analysis.
+    
+  sorting:
+    skill: ".github/skills/sorting-skill/SKILL.md"
+    spec: "openspec/specs/sorting/spec.md"
+    components: ["GridSortSettings", "GridSortColumns", "GridSortColumn"]
+    files:
+      core:
+        - "src/GridSortSettings.razor.cs"
+        - "src/GridSortColumns.razor.cs"
+        - "src/GridSortColumn.cs"
+      actions:
+        - "src/Internal/Actions/Sort.cs"
+      api:
+        - "src/SfGrid.Properties.cs (AllowSorting, AllowMultiSorting, SortSettings)"
+        - "src/SfGrid.Methods.cs (SortColumnAsync, SortColumnsAsync, ClearSortingAsync)"
+      ui:
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+    interactions: ["filtering", "grouping", "virtualization", "infinite-scroll", "export", "editing", "selection", "paging", "frozen-columns"]
+    lines_per_file: 120
+    risk_level: "high"
+  
+  filtering:
+    skill: ".github/skills/filtering-skill/SKILL.md"
+    spec: "openspec/specs/filtering/spec.md"
+    components: ["GridFilterSettings", "GridFilterColumns", "GridFilterColumn"]
+    files:
+      core:
+        - "src/GridFilterSettings.razor.cs"
+        - "src/GridFilterColumns.razor.cs"
+        - "src/GridFilterColumn.cs"
+      actions:
+        - "src/Internal/Actions/Filter.cs"
+      api:
+        - "src/SfGrid.Properties.cs (AllowFiltering, FilterSettings)"
+        - "src/SfGrid.Methods.cs (FilterAsync, ClearFilteringAsync)"
+    interactions: ["sorting", "grouping", "search", "infinite-scroll", "export", "paging"]
+    lines_per_file: 120
+    risk_level: "high"
+  
+  grouping:
+    skill: ".github/skills/grouping-skill/SKILL.md"
+    spec: "openspec/specs/grouping/spec.md"
+    components: ["GridGroupSettings"]
+    files:
+      core:
+        - "src/GridGroupSettings.razor.cs"
+      actions:
+        - "src/Internal/Actions/Group.cs"
+      api:
+        - "src/SfGrid.Properties.cs (AllowGrouping, GroupSettings)"
+        - "src/SfGrid.Methods.cs (GroupAsync, UngroupAsync)"
+    interactions: ["sorting", "filtering", "aggregates", "virtualization", "editing", "command-column", "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+  
+  paging:
+    skill: ".github/skills/paging-skill/SKILL.md"
+    spec: "openspec/specs/paging/spec.md"
+    components: ["GridPageSettings"]
+    files:
+      core:
+        - "src/GridPageSettings.razor.cs"
+      actions:
+        - "src/Internal/Actions/Paging.cs"
+      api:
+        - "src/SfGrid.Properties.cs (PageSettings)"
+        - "src/SfGrid.Methods.cs (GoToPageAsync)"
+    interactions: ["sorting", "filtering", "grouping", "export" , "cell-merging"]
+    lines_per_file: 100
+    risk_level: "medium"
+
+  detail-template:
+    skill: ".github/skills/detail-template-grid-dom/SKILL.md"
+    spec: "openspec/specs/detail-template/spec.md (if exists)"
+    components: ["GridTemplates", "DetailRow", "GridDetailRow"]
+    files:
+      core:
+        - "src/GridTemplates.cs (DetailTemplate RenderFragment)"
+      actions:
+        - "src/Internal/Actions/DetailRow.cs (expand/collapse logic, row model generation)"
+      renderer:
+        - "src/Internal/Renderer/GridDetailRow.razor (detail row DOM output)"
+        - "src/Internal/Renderer/DetailCellRenderer.cs (parent row toggle cell)"
+        - "src/Internal/Renderer/IndentCellRenderer.cs (indent and detail-indent cells)"
+      lifecycle:
+        - "src/SfGrid.Lifecycle.cs (DetailRowModule initialization)"
+        - "src/SfGrid.razor.cs (DetailRowModule property, hasDetailTemplate flag)"
+      api:
+        - "src/GridEvents.cs (DetailsExpanding, DetailsExpanded, DetailsCollapsing, DetailsCollapsed, DetailDataBound)"
+        - "src/EventModels/Grids.cs (DetailDataBoundEventArgs, DetailsExpandingEventArgs, DetailsExpandedEventArgs, DetailsCollapsingEventArgs, DetailsCollapsedEventArgs)"
+      content-router:
+        - "src/Internal/Renderer/GridContent.razor (decides GridRow vs GridDetailRow rendering)"
+    interactions: ["grouping", "selection", "virtualization", "column-virtualization", "row-drag-and-drop", "frozen-columns", "keyboard-navigation", "editing", "paging", "rtl", "infinite-scroll"]
+    lines_per_file: 120
+    risk_level: "high"
+    description: |
+      DOM structure and Blazor rendering flow for Detail Template in the Grid.
+      Use for: detail row expansion/collapse bugs, DOM structure issues, detail content rendering,
+      grouping + detail interactions, virtualization + detail interactions, keyboard navigation in detail,
+      nested grids inside detail templates, and feature-combination edge cases.
+  
+
+  foreignkey-column:
+    skill: ".github/skills/foreignkey-column-skill/SKILL.md"
+    spec: "openspec/specs/foreignkey-column/spec.md (if exists)"
+    components: ["GridForeignColumn", "GridColumn", "ForeignKeySubComponents", "ForeignKeyEditCell"]
+    files:
+      core:
+        - "src/GridColumn.cs (ForeignKeyField, ForeignKeyValue, ForeignKeySorting)"
+        - "src/Internal/GridForeignColumn.razor"
+      actions:
+        - "src/Internal/Actions/ForeignKey.cs"
+      editors:
+        - "src/Internal/Editors/ForeignKeyEditCell.razor"
+        - "src/Internal/Editors/DropDownEditCell.razor"
+      renderer:
+        - "src/Internal/Renderer/ForeignKeySubComponents.razor"
+      api:
+        - "src/SfGrid.Lifecycle.cs (ForeignKeyModule initialization)"
+        - "src/SfGrid.razor.cs (foreignKeyHandle, isForeignKeyAction, GetForeignKeyData pipeline, persistence restore)"
+        - "src/SfGrid.Methods.cs (GetForeignKeyColumnsAsync)"
+    interactions: ["filtering", "sorting", "grouping", "editing", "selection", "paging", "virtualization", "column-virtualization", "export"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  search:
+      skill: ".github/skills/searching-skill/SKILL.md"
+      spec: "openspec/specs/search/spec.md"
+      components: ["GridSearchSettings"]
+      files:
+        core:
+          - "src/GridSearchSettings.cs"
+          - "src/GridColumn.cs (AllowSearching)"
+        api:
+          - "src/SfGrid.Properties.cs (SearchSettings)"
+          - "src/SfGrid.Methods.cs (SearchAsync)"
+          - "src/SfGrid.razor.cs (SearchClearIcon, persistence restore, virtualization guard, filtered-record interaction)"
+        actions:
+          - "src/Internal/Actions/Data.cs (DataGenerator.SearchQuery, GenerateQuery composition)"
+          - "src/Internal/Actions/Filter.cs (UpdatePageSizes)"
+          - "src/Internal/Actions/Group.cs (group + search query composition)"
+        renderer:
+          - "src/Internal/Renderer/GridToolbar.razor (toolbar search DOM, adaptive search rendering, input handlers, icon handlers)"
+        events:
+          - "src/GridEvents.cs (Searching, Searched)"
+        models:
+          - "src/EventModels/Grids.cs (SearchingEventArgs, SearchedEventArgs, ActionEventArgs.SearchString)"
+        interfaces:
+          - "src/Interfaces/IGrid.cs (SearchSettings)"
+        enumerations:
+          - "src/Enumeration/GridsEnumerations.cs (Action.Searching, Action.FilterSearchBegin)"
+        base:
+          - "src/Internal/Base/InternalClass.cs (Search, SearchColumns locale keys)"
+        js:
+          - "scripts/sf-grid.ts (searchClear)"
+          - "scripts/sf-grid-fn.ts (isSearchInput, toolbar search keyboard/focus coordination)"
+        tests:
+          - "tests/Actions/Searching.razor"
+          - "tests/Actions/Toolbar.razor"
+      interactions: ["filtering", "grouping", "paging", "virtualization", "infinite-scroll", "selection", "editing", "foreignkey-column", "keyboard-navigation"]
+      lines_per_file: 120
+      risk_level: "high"
+  
+  resize:
+    skill: ".github/skills/resizing-dom-structure-skill/SKILL.md"
+    spec: "openspec/specs/resize/spec.md (if exists)"
+    components: ["SfGrid", "GridColumn", "GridHeaderCell", "GridHeader", "GridContent", "GridVirtualHeader", "GridVirtualContent"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (AllowResizing, AutoFit)"
+        - "src/GridColumn.cs (AllowResizing, AutoFit, Width, MinWidth, MaxWidth, IsPersistAutoFit, table widths)"
+        - "src/SfGrid.Lifecycle.cs (AllowResizing / AutoFit property tracking, persistence restore)"
+        - "src/SfGrid.Methods.cs (AutoFitColumnsAsync, AutoFitColumnAsync)"
+        - "src/SfGrid.razor.cs (isColumnResized, isColumnWidthChanged, IsAutoFitEnabled, GetClientOption)"
+      renderer:
+        - "src/Internal/SfGrid.razor (standard vs virtual render-path selection)"
+        - "src/Internal/Renderer/GridHeader.razor (header table, WidthController, filter row)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (e-rhandler, e-rsuppress, stacked header DOM, frozen resize cursor)"
+        - "src/Internal/Renderer/GridContent.razor (content table, inline edit width consumers)"
+        - "src/Internal/Renderer/GridVirtualHeader.razor (virtual header wrapper, e-virtualtable, e-virtualtrack)"
+        - "src/Internal/Renderer/GridVirtualContent.razor (virtual content wrapper, translateX/Y, virtual track)"
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs (e-frozen-resize-cursor in content cells)"
+      models:
+        - "src/Internal/Models/Cell.cs (EnableFrozenResizeCursor)"
+        - "src/Internal/Base/InternalClass.cs (isColumnResized, isColumnWidthChanged, autoFit)"
+        - "src/EventModels/Grids.cs (ResizeArgs)"
+      events:
+        - "src/GridEvents.cs (OnResizeStart, ResizeStopped)"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (ResizeStarted, ColumnWidthChanged, persistence sync)"
+      js:
+        - "scripts/resize.ts (Resize class — drag, helper line, AutoFit, stacked/frozen resize flow)"
+        - "scripts/width-controller.ts (ColumnWidthService — colgroup/table width propagation)"
+        - "scripts/sf-grid-fn.ts (resizeModule init, contentReady autofit, frozen ordering helpers)"
+        - "scripts/sf-grid.ts (preventResizeAction, autoFitColumns, autoFit, updateResizeCursor)"
+        - "scripts/freeze.ts (updateResizeHandler, setFrozenHeight, stacked/frozen sync)"
+        - "scripts/virtual-scroll.ts (virtualized autofit integration)"
+        - "scripts/interfaces.ts (GridOptions.allowResizing, isColumnResized, isResizedGrid, autoFit; Column.allowResizing/autoFit/width)"
+    interactions: ["frozen-columns", "column-virtualization", "virtualization-dom-structure", "complex-column", "fixed-column", "grouping", "filtering", "sorting", "selection", "editing", "paging", "infinite-scroll", "row-drag-and-drop", "foreignkey-column", "search"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  fixed-column:
+    skill: ".github/skills/fixed-column-skill/SKILL.md"
+    spec: "openspec/specs/fixed-columns/spec.md (if exists)"
+    components: ["SfGrid", "GridColumn"]
+    files:
+      core:
+        - "src/GridColumn.cs (FixedColumn, PropertyChanges[FixedColumn])"
+        - "src/SfGrid.razor.cs (IsFixedColumnPresent, RearrangeLockedColumns, RearrangeColumns, stacked fixed partitioning)"
+        - "src/Internal/Base/InternalClass.cs (isFixedColumnPresent)"
+      renderer:
+        - "src/Internal/SfGrid.razor (root header/content render path)"
+        - "src/Internal/Renderer/GridHeader.razor (header render order, fixed/frozen render guards)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (e-mousepointer omission for fixed headers)"
+        - "src/Internal/Renderer/GridHeaderBase.cs (Ctrl+Space grouping block)"
+        - "src/Internal/Renderer/GridContent.razor (single-table body render path)"
+        - "src/Internal/Renderer/Filter/FilterBarRenderer.razor (filter cell order)"
+        - "src/Internal/Renderer/ColumnChooser.razor (chooser ordering path)"
+        - "src/Internal/Renderer/ColumnMenu.razor (menu ordering path)"
+      actions:
+        - "src/Internal/Actions/Group.cs (fixed column grouping guard)"
+      generators:
+        - "src/Internal/Generators/RowModelGenerator.cs (row cell ordering)"
+        - "src/Internal/Generators/GroupModelGenerator.cs (group row ordering)"
+        - "src/Internal/Generators/SummaryModelGenerator.cs (summary row ordering)"
+      exports:
+        - "src/Internal/Export/GridExcelExport.cs (fixed-first export order)"
+        - "src/Internal/Export/GridPdfExport.cs (fixed-first export order)"
+      js:
+        - "scripts/interfaces.ts (GridOptions.isFixedColumnPresent, Column.fixedColumn)"
+        - "scripts/sf-grid-fn.ts (updateFixedcolumns, checkFixedColumns)"
+        - "scripts/reorder.ts (drag/drop/order guards, stacked fixed processing)"
+        - "scripts/header-drag-drop.ts (drag helper cancellation for fixed columns)"
+      events:
+        - "src/GridEvents.cs (existing Grouping, Grouped, ColumnReordered events affected indirectly by fixed guards)"
+        - "src/EventModels/Grids.cs (GroupingEventArgs, GroupedEventArgs, ColumnReorderedEventArgs; no dedicated fixed-column event)"
+      tests:
+        - "tests/Actions/Columns.razor (fixture10, fixture11 fixed column render baselines)"
+    interactions: ["frozen-columns", "grouping", "sorting", "filtering", "column-virtualization", "virtualization-dom-structure", "selection", "editing", "paging", "export", "columns", "keyboard-navigation"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  complex-column:
+    skill: ".github/skills/complex-column-skill/SKILL.md"
+    spec: "openspec/specs/complex-column/spec.md (if exists)"
+    components: ["GridColumn", "GridColumns", "SfGrid", "GridHeader", "GridHeaderCell", "GridVirtualHeader"]
+    files:
+      core:
+        - "src/GridColumn.cs (Columns for nested header trees)"
+        - "src/SfGrid.razor.cs (IsStackedHeader, ApplyFrozenColumnsClass, ApplyFrozenColumnsStyles, stacked freeze helpers)"
+      renderer:
+        - "src/Internal/SfGrid.razor (GridHeader vs GridVirtualHeader selection)"
+        - "src/Internal/Renderer/GridHeader.razor (GetRows, GetStackedColumns, GenerateCells, MeasureColumnDepth, GetColspanCount)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (stacked header DOM classes, visibility, rowspan, colspan)"
+        - "src/Internal/Renderer/GridVirtualHeader.razor (virtual stacked header wrapper and track)"
+      base:
+        - "src/Internal/Base/Utils.cs (GetColumns, GetColumnByField, GetColumnByFColUidOrField for nested trees)"
+      js:
+        - "scripts/interfaces.ts (Column.columns metadata)"
+        - "scripts/sf-grid-fn.ts (getColumns, getStackedColumns, getStackedHeaderColumnByHeaderText)"
+        - "scripts/header-drag-drop.ts (stacked header drag target resolution)"
+        - "scripts/reorder.ts (same-level reorder validation, stacked parent processing)"
+        - "scripts/freeze.ts (stacked header height sync across panes)"
+      tests:
+        - "tests/CR Issues/BLAZ-903424.razor (stacked parent hide/show based on child visibility)"
+        - "tests/CR Issues/BLAZ-832308.razor (frozen + stacked movable header rendering)"
+        - "tests/Actions/Columns.razor (fixed column + stacked header order coverage)"
+    interactions: ["frozen-columns", "fixed-column", "column-virtualization", "virtualization-dom-structure", "sorting", "filtering", "grouping", "search", "editing", "export", "keyboard-navigation", "foreignkey-column", "columns"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+
+  aggregates:
+    skill: ".github/skills/aggregates-skill/SKILL.md (if exists)"
+    spec: "openspec/specs/aggregates/spec.md"
+    components: ["GridAggregates", "GridAggregate", "GridAggregateColumns", "GridAggregateColumn"]
+    files:
+      core:
+        - "src/GridAggregate.razor.cs"
+        - "src/GridAggregateColumn.razor.cs"
+      actions:
+        - "src/Internal/Actions/Aggregate.cs"
+    interactions: ["grouping", "filtering", "virtualization"]
+    lines_per_file: 100
+    risk_level: "medium"
+  
+  export:
+    skill: ".github/skills/export-skill/SKILL.md"
+    spec: "openspec/specs/export/spec.md"
+    components: ["SfGrid", "GridExcelExport", "GridPdfExport", "ExportProperties"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (AllowExcelExport, AllowPdfExport)"
+        - "src/SfGrid.Methods.cs (ExportToExcelAsync, ExportToCsvAsync, ExportToPdfAsync)"
+      export:
+        - "src/Internal/Export/GridExcelExport.cs (Excel rendering, cell/row output, data row loop)"
+        - "src/Internal/Export/GridPdfExport.cs (PDF rendering, cell/row output, PDF table structure)"
+        - "src/Internal/Export/ExportHelper.cs (Data fetching, column visibility, foreign-key resolution)"
+      events:
+        - "src/GridEvents.cs (OnExcelExport, OnPdfExport, ExcelQueryCellInfoEvent, PdfQueryCellInfoEvent, ExcelHeaderQueryCellInfoEvent, PdfHeaderQueryCellInfoEvent)"
+      models:
+        - "src/EventModels/Grids.cs (ExcelExportProperties, PdfExportProperties, ExcelQueryCellInfoEventArgs, PdfQueryCellInfoEventArgs)"
+    interactions: ["grouping", "aggregates", "virtualization", "filtering", "sorting", "paging", "infinite-scroll", "stacked-headers", "detail-rows", "foreign-key-columns", "cell-merging"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Export to Excel/CSV/PDF with support for grouping, aggregates, virtualization bypass, foreign-key resolution,
+      detail templates, stacked headers, and cell merging (ColSpan/RowSpan preservation).
+
+  cell-merging:
+    skill: ".github/skills/cell-merging-skill/SKILL.md"
+    spec: "openspec/specs/cell-merging/spec.md (if exists)"
+    components: ["SfGrid", "GridColumn", "MergeCellInfo", "UnmergeCellInfo", "AutoSpanMode"]
+    files:
+      core:
+        - "src/Internal/Actions/MergeHandler.cs (Process, GroupingProcess, ProcessManualMerges, ProcessAutomaticColumnSpanning, ProcessAutomaticRowSpanning)"
+        - "src/Internal/Models/Cell.cs (ColSpan, RowSpan, IsSpanned, IsRowSpanned)"
+        - "src/Internal/Models/Row.cs (IsDataRow, Cells, Index, ParentUid, RowType, Visible)"
+      api:
+        - "src/SfGrid.Properties.cs (AutoSpan, SuppressAutoSpanning)"
+        - "src/SfGrid.Methods.cs (MergeCellsAsync, UnmergeCellsAsync, UnmergeAllAsync)"
+        - "src/SfGrid.Lifecycle.cs (MergeModule initialization)"
+      config:
+        - "src/GridColumn.cs (AutoSpan property, GetEffectiveAutoSpanning method)"
+      renderer:
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs (RenderCell, AddSpanAttributesInternal, ApplyLastRowBorder, ApplyFrozenColumnStyles)"
+        - "src/Internal/Renderer/GridRow.razor.cs"
+      generators:
+        - "src/Internal/Generators/RowModelGenerator.cs (Process call)"
+        - "src/Internal/Generators/GroupModelGenerator.cs (GroupingProcess call)"
+      models:
+        - "src/EventModels/Grids.cs (MergeCellInfo, UnmergeCellInfo, QueryCellInfoEventArgs)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (AutoSpanMode: None, Row, Column, HorizontalAndVertical)"
+      events:
+        - "src/GridEvents.cs (QueryCellInfo event hook)"
+    interactions: ["frozen-columns", "frozen-rows", "grouping", "virtualization", "infinite-scroll", "paging", "sorting", "filtering", "selection", "editing", "export", "aggregates", "column-reorder", "keyboard-navigation"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Cell Merging (Row & Column Spanning) feature covering manual merge APIs (MergeCells/UnmergeCells),
+      automatic spanning (AutoSpan modes), frozen column/row partitioning, grouping boundary respect,
+      and rendering flow with colspan/rowspan HTML attributes and aria-* accessibility attributes.
+      Use for: merge/span bugs, DOM rendering issues, frozen partition problems, grouping interactions,
+      virtualization with spanning cells, export with merged cells, QueryCellInfo event customization.
+
+  dynamic-data:
+    skill: ".github/skills/dynamic-data/SKILL.md"
+    spec: "openspec/specs/dynamic-data/spec.md"
+    components: ["GridAnnotation", "DynamicInfo", "MetaData", "RowModelGenerator", "PropertyInfoHelper"]
+    files:
+      annotation:
+        - "src/Internal/Annotation/GridAnnotation.cs (156-180, isDynamicObjectType, isExpandoObjectType, auto-column generation)"
+        - "src/Internal/Annotation/Annotation.cs"
+        - "src/Internal/Annotation/MetaData.cs"
+      base:
+        - "src/Internal/Base/DynamicInfo.cs (PropertyInfo wrapper for dynamic types)"
+        - "src/Internal/Base/InternalClass.cs (CloneUtils, DataUtil dynamic helpers)"
+      generator:
+        - "src/Internal/Generators/RowModelGenerator.cs (115-153, dynamic row creation, nested Expando handling)"
+        - "src/Internal/Generators/PropertyInfoHelper.cs"
+      rendering:
+        - "src/Internal/Renderer/Preloader.razor (type detection, isDynamic flag)"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridRow.razor.cs"
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs"
+        - "src/Internal/Renderer/CellRender.razor (GetExpandoValue, GetDynamicValue)"
+        - "src/Internal/Renderer/GridHeader.razor"
+      editing:
+        - "src/Internal/Actions/Edit.cs (1304-2426, CloneExpandoObject, CloneDynamicObject, complex field handling)"
+        - "src/Internal/Editors/EditorCellBase.cs (165-189, DynamicExpressions)"
+        - "src/Internal/Editors/ColumnsValidator.razor (166-180, dynamic validation path)"
+      filtering:
+        - "src/Internal/Renderer/Filter/ExcelBase.razor (931-977, dynamic filter injection)"
+      aggregates:
+        - "src/Internal/Actions/ReactiveAggregate.cs (113-114, skip for DynamicObject)"
+      export:
+        - "src/Internal/Export/ExportHelper.cs (103-112, dynamic data extraction)"
+      interop:
+        - "src/SfGrid.razor.cs (869-920, isTreeGridExpando, isTreeGridDynamic, auto-column generation)"
+    interactions: ["virtualization", "grouping", "aggregates", "filtering", "editing", "export", "sorting", "selection", "infinite-scroll", "frozen-columns", "column-virtualization"]
+    lines_per_file: 150
+    risk_level: "critical"
+  
+  virtualization:
+    skill: ".github/skills/virtualization-skill/SKILL.md"
+    spec: "openspec/specs/virtualization/spec.md"
+    components: ["SfGrid", "GridInfiniteScrollSettings"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (AllowVirtualization, VirtualizationMode)"
+        - "src/SfGrid.Lifecycle.cs (OnInitializedAsync, OnParametersSetAsync)"
+      actions:
+        - "src/Internal/Actions/VirtualScroll.cs"
+      renderer:
+        - "src/Internal/Renderer/GridBodyRows.razor"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+    interactions: ["grouping", "selection", "editing", "command-column", "aggregates", "sorting", "filtering", "cell-merging"]
+    lines_per_file: 150
+    risk_level: "critical"
+
+  context-menu:
+    skill: ".github/skills/context-menu-skill/SKILL.md"
+    spec: "openspec/specs/context-menu/spec.md (if exists)"
+    components: ["SfGrid", "GridEvents", "ContextMenuItemModel"]
+    files:
+      renderer:
+        - "src/Internal/Renderer/ContextMenu.razor"
+        - "src/Internal/SfGrid.razor (ContextMenu host render location)"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (MouseDownHandler target/row/cell/column resolution)"
+      js:
+        - "scripts/sf-grid-fn.ts (mousedown/contextmenu wiring, right-click target detection, macOS ctrl-click, touch long press)"
+        - "scripts/sf-grid.ts (.e-sfcontextmenu popup coexistence checks)"
+      api:
+        - "src/SfGrid.Properties.cs (ContextMenuItems)"
+      events:
+        - "src/GridEvents.cs (ContextMenuOpen, ContextMenuItemClicked)"
+      models:
+        - "src/EventModels/Grids.cs (ContextMenuClickEventArgs, ContextMenuOpenEventArgs, ContextMenuItemModel, RowInfo)"
+        - "src/Internal/Models/GridMouseDown.cs"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (ContextMenuTarget)"
+      related_actions:
+        - "src/Internal/Actions/Selection.cs"
+        - "src/Internal/Actions/Edit.cs"
+        - "src/Internal/Actions/Sort.cs"
+        - "src/Internal/Actions/Group.cs"
+        - "src/SfGrid.Methods.cs (AutoFitColumnsAsync, GroupColumnAsync, UngroupColumnAsync, EditCellAsync, EndEditAsync, CloseEditAsync, DeleteRecordAsync, CopyAsync, ExportToPdfAsync, ExportToExcelAsync, ExportToCsvAsync, SortColumnAsync, GoToPageAsync)"
+    interactions: ["selection", "editing", "sorting", "grouping", "paging", "export", "virtualization", "frozen-columns", "filtering", "infinite-scroll"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  tooltip:
+    skill: ".github/skills/tooltip-skill/SKILL.md"
+    spec: "openspec/specs/tooltip/spec.md"
+    components: ["SfGrid", "GridColumn", "GridTemplates"]
+    files:
+      js:
+        - "scripts/tooltip.ts (CustomToolTip class — EllipsisWithTooltip DOM creation, hover/scroll/key lifecycle)"
+        - "scripts/edit.ts (createTooltip — validation tooltip geometry calculation)"
+        - "scripts/sf-grid-fn.ts (toolTipModule init, close on dataReady/dblclick, updateEvents on clipMode change, getContentCell)"
+        - "scripts/interfaces.ts (clipMode, toolTip, description column interface definitions)"
+      renderer:
+        - "src/Internal/Renderer/GridTooltip.razor (SfTooltip wrapper for ShowTooltip feature)"
+        - "src/Internal/Renderer/ValidationTooltip.razor (edit validation error tooltip markup)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (adds e-ellipsistooltip class to header cells)"
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs (ApplyClipMode — adds e-ellipsistooltip to content cells)"
+        - "src/Internal/Renderer/NormalEdit.razor (hosts ValidationTooltip component)"
+        - "src/Internal/Renderer/BatchEdit.razor (hosts ValidationTooltip component)"
+        - "src/Internal/Renderer/DialogEdit.razor (hosts ValidationTooltip component, two placements)"
+      core:
+        - "src/SfGrid.Properties.cs (ShowTooltip, ClipMode property declarations)"
+        - "src/GridTemplates.cs (TooltipTemplate RenderFragment parameter)"
+        - "src/EventModels/Grids.cs (TooltipTemplateContext — RowIndex, ColumnIndex, Data, Column, Value)"
+      base:
+        - "src/Internal/Base/GridColumnBase.cs (Description property — header tooltip content source)"
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (ShowValidationPopup, RemoveValidationPopup JSInvokable)"
+        - "src/Internal/Annotation/GridAnnotation.cs (sets ClipMode=EllipsisWithTooltip from [Description] annotation)"
+      actions:
+        - "src/Internal/Actions/FocusHandler.cs (closes ShowTooltip instance on keyboard navigation)"
+        - "src/Internal/Actions/Edit.cs (ArrowPosition, position dict, ErrorResult state for validation tooltip)"
+      root:
+        - "src/Internal/SfGrid.razor (mounts GridTooltip only when ShowTooltip=true)"
+    interactions:
+      - "frozen-columns"     # e-unfreeze class, frozen DOM cell lookup, hover row sync
+      - "editing"            # validation tooltip geometry, dialog/inline/batch branches
+      - "virtualization"     # row-by-index resolution in ShowTooltip, virtualized add-row validation path
+      - "grouping"           # data-row filtering in ShowTooltip content resolution
+      - "text-wrap"          # wrapMode suppresses EllipsisWithTooltip in header/content/both zones
+      - "keyboard-navigation" # Tab/Shift+Tab close tooltip; FocusHandler closes ShowTooltip instance
+      - "frozen-rows"        # validation tooltip resolves active editor from header region
+      - "infinite-scroll"    # validation tooltip special path for enableInfiniteScrolling + showAddNewRow
+    lines_per_file: 120
+    risk_level: "high"
+    description: |
+      Three independent tooltip systems: (1) EllipsisWithTooltip — JS manual DOM creation for
+      clipped header/content cells; (2) ShowTooltip — Blazor SfTooltip component for general hover
+      with optional TooltipTemplate; (3) Validation tooltip — Razor-rendered error popup driven by
+      JS geometry via ShowValidationPopup JSInvokable. Each system owns separate DOM, lifecycle, and
+      failure modes. Use this skill to identify which system is failing before investigating code.
+
+
+  virtualization-dom-structure:
+    skill: ".github/skills/virtualization-dom-structure-skill/SKILL.md"
+    spec: "openspec/specs/virtualization/spec.md"
+    components: ["GridVirtualContent", "GridVirtualHeader", "GridContent", "GridHeader", "GridRow"]
+    files:
+      renderer:
+        - "src/Internal/Renderer/GridVirtualContent.razor"
+        - "src/Internal/Renderer/GridVirtualHeader.razor"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridHeader.razor"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/GridRow.razor.cs"
+      root:
+        - "src/Internal/SfGrid.razor (component selection logic)"
+      actions:
+        - "src/Internal/Actions/VirtualScroll.cs (index calculation, TranslateX/Y)"
+      models:
+        - "src/Internal/Models/Row.cs"
+        - "src/Internal/Models/Cell.cs"
+    interactions: ["virtualization", "frozen-columns", "frozen-rows", "grouping", "mask-rows", "overscan", "column-reorder", "editing", "cell-merging"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      DOM structure and Blazor component rendering flow for Row & Column Virtualization.
+      Use for: rendering bugs, DOM layout issues, transform errors, mask row problems,
+      component selection logic, cell rendering flow, overscan behavior, frozen row/column rendering.
+
+  column-reordering:
+    skill: ".github/skills/column-reordering-skill/SKILL.md"
+    spec: "openspec/specs/column-reordering/spec.md"
+    components: ["SfGrid", "GridColumn"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (AllowReordering)"
+        - "src/GridColumn.cs (IsFrozen, FixedColumn)"
+      actions:
+        - "src/Internal/Actions/Reorder.cs (Reorder<T>, PerformReorder, Swap, ReorderColumns, ReorderColumn, RestoreColumnOrder)"
+      api:
+        - "src/SfGrid.Methods.cs (ReorderColumnAsync, ReorderColumnsAsync, ReorderColumnByIndex)"
+      interop:
+        - "src/SfGrid.razor.cs (ColumnReordered JS interop handler)"
+      events:
+        - "src/GridEvents.cs (ColumnReordering, ColumnReordered)"
+      models:
+        - "src/EventModels/Grids.cs (ColumnReorderedEventArgs, ColumnReorderingEventArgs)"
+      renderer:
+        - "src/Internal/Renderer/GridHeader.razor (GetRows, GenerateCells)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (e-headercell, e-mappinguid rendering)"
+        - "src/Internal/Renderer/GridHeaderBase.cs (MeasureColumnDepth, GenerateCells, GetRows)"
+      js:
+        - "scripts/reorder.ts (Reorder class, moveColumns, headerDrop, drag, dragStop)"
+        - "scripts/header-drag-drop.ts (HeaderDragDrop, initializeHeaderDrag, helper, ondrag, ondragend)"
+        - "scripts/sf-grid-fn.ts (reorderModule registration)"
+        - "scripts/interfaces.ts (IGridOptions — allowReordering, frozenColumns, enableColumnVirtualization)"
+        - "scripts/util.ts (getElementIndex, getPosition, inArray, parentsUntil)"
+        - "scripts/freeze.ts (frozen scroll container layout)"
+        - "scripts/group.ts (group drag-drop coordination)"
+    interactions: ["sorting", "filtering", "grouping", "selection", "paging", "virtualization", "column-virtualization", "frozen-columns", "stacked-headers", "persistence"]
+    lines_per_file: 120
+    risk_level: "high"
+
+  column-chooser:
+    skill: ".github/skills/column-chooser-skill/SKILL.md"
+    spec: "openspec/specs/column-chooser/spec.md"
+    components: ["SfGrid", "GridColumnChooserSettings", "GridColumnChooserItem", "GridColumnChooserItemGroup"]
+    files:
+      core:
+        - "src/GridColumnChooserSettings.cs"
+        - "src/GridColumnChooserItem.razor"
+        - "src/GridColumnChooserItemGroup.razor"
+        - "src/GridColumn.cs (ShowInColumnChooser)"
+        - "src/SfGrid.Properties.cs (ShowColumnChooser, ColumnChooserSettings)"
+        - "src/SfGrid.Methods.cs (OpenColumnChooserAsync)"
+        - "src/SfGrid.razor.cs (RenderColumnChooser)"
+      renderer:
+        - "src/Internal/SfGrid.razor (chooser mount path)"
+        - "src/Internal/Renderer/ColumnChooser.razor"
+        - "src/Internal/Renderer/ColumnMenu.razor (column menu chooser path)"
+        - "src/Internal/Renderer/AdaptiveDialogRenderer.razor (adaptive chooser launch path)"
+      events:
+        - "src/GridEvents.cs (BeforeOpenColumnChooser, ColumnVisibilityChanging, ColumnVisibilityChanged)"
+        - "src/EventModels/Grids.cs (ColumnChooserTemplateContext, ColumnChooserFooterTemplateContext, ColumnChooserEventArgs)"
+      interop:
+        - "src/Internal/Base/InternalClass.cs (IColumnChooser)"
+        - "scripts/column-chooser.ts"
+    interactions: ["column-menu", "adaptive-ui", "editing", "selection", "paging", "sorting", "filtering", "grouping", "frozen-columns", "column-virtualization", "templates", "javascript-interop"]
+    lines_per_file: 120
+    risk_level: "high"
+
+  column-headers:
+    skill: ".github/skills/column-headers-skill/SKILL.md"
+    spec: "openspec/specs/column-headers/spec.md"
+    components: ["GridHeader", "GridHeaderCell", "GridHeaderBase", "GridVirtualHeader", "WidthController"]
+    files:
+      core:
+        - "src/Internal/Renderer/GridHeader.razor"
+        - "src/Internal/Renderer/GridHeaderBase.cs"
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+        - "src/Internal/Renderer/GridVirtualHeader.razor"
+        - "src/Internal/Renderer/WidthController.razor"
+        - "src/Internal/Renderer/GroupedHeader.razor"
+      overlays:
+        - "src/Internal/Renderer/Filter/FilterBarRenderer.razor"
+        - "src/Internal/Renderer/Filter/FilterInput.razor"
+        - "src/Internal/Renderer/Filter/FilterMenuRenderer.razor"
+        - "src/Internal/Renderer/ColumnMenu.razor"
+        - "src/Internal/Renderer/ColumnChooser.razor"
+        - "src/Internal/Renderer/GroupDropArea.razor"
+      actions:
+        - "src/Internal/Actions/Sort.cs"
+        - "src/Internal/Actions/Reorder.cs"
+        - "src/Internal/Actions/Filter.cs"
+        - "src/Internal/Actions/Group.cs"
+        - "src/Internal/Actions/FocusHandler.cs"
+      models:
+        - "src/Internal/Base/InternalClass.cs"
+        - "src/Internal/Models/Cell.cs"
+        - "src/Internal/Models/Row.cs"
+        - "src/GridColumn.cs"
+      properties:
+        - "src/SfGrid.Properties.cs (AllowSorting, AllowFiltering, AllowGrouping, AllowReordering, AllowResizing, ShowColumnMenu, FrozenColumns, EnableColumnVirtualization)"
+      lifecycle:
+        - "src/SfGrid.Lifecycle.cs (OnParametersSetAsync — RefreshColumnHeader flag)"
+      root:
+        - "src/Internal/SfGrid.razor (HeaderParameters cascading)"
+      js:
+        - "scripts/header-drag-drop.ts (HeaderDragDrop class)"
+        - "scripts/resize.ts (Resize class)"
+        - "scripts/reorder.ts (Reorder class)"
+        - "scripts/freeze.ts (Freeze class)"
+        - "scripts/scroll.ts (Scroll class)"
+        - "scripts/sf-grid.ts (renderColumnMenu)"
+    interactions: ["sorting", "filtering", "grouping", "reordering", "resizing", "frozen-columns", "column-virtualization", "selection", "editing", "keyboard-navigation", "text-wrap", "column-menu", "column-chooser", "virtualization-dom-structure", "aggregates", "paging", "infinite-scroll", "export", "persistence"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Column Headers DOM rendering, component architecture, event flow, and feature integration.
+      Includes: header row generation (stacked, frozen, default modes), cell generation with windowing,
+      keyboard handlers, feature overlays (FilterBar, ColumnMenu, GroupDropArea), TypeScript interop
+      for drag/resize/reorder/freeze operations, and event pipeline for user interactions.
+      Use for: header rendering bugs, DOM structure issues, event flow problems, frozen/virtual
+      header rendering, accessibility issues, drag-drop failures, resize/reorder/scroll sync bugs.
+  column-menu:
+    skill: ".github/skills/column-menu-skill/SKILL.md"
+    spec: "openspec/specs/column-menu/spec.md (if exists)"
+    components: ["SfGrid", "GridColumn", "ColumnMenu"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (ShowColumnMenu, ColumnMenuItems)"
+        - "src/SfGrid.razor.cs (ColumnMenuColumn, ColumnMenuInstance, ColumnMenuClass, IsColumnMenuFilter)"
+        - "src/SfGrid.Lifecycle.cs (ColumnMenuClass initialization)"
+        - "src/GridColumn.cs (ShowColumnMenu, ShowInColumnChooser)"
+      renderer:
+        - "src/Internal/SfGrid.razor (column menu mount path)"
+        - "src/Internal/Renderer/ColumnMenu.razor"
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+        - "src/Internal/Renderer/AdaptiveDialogRenderer.razor"
+      events:
+        - "src/GridEvents.cs (OnColumnMenuOpen, ColumnMenuItemClicked, OnActionComplete, ColumnVisibilityChanged)"
+        - "src/EventModels/Grids.cs (ColumnMenuOpenEventArgs, ColumnMenuClickEventArgs, ColumnMenuItemModel)"
+      actions:
+        - "src/Internal/Actions/Filter.cs"
+        - "src/Internal/Actions/FocusHandler.cs"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+        - "scripts/column-menu.ts"
+        - "scripts/filter.ts"
+        - "scripts/sf-grid.ts"
+        - "scripts/sf-grid-fn.ts"
+      related_renderer:
+        - "src/Internal/Renderer/Filter/FilterMenuRenderer.razor"
+        - "src/Internal/Renderer/Filter/FilterCheckBoxRenderer.razor.cs"
+        - "src/Internal/Renderer/Filter/ExcelBase.razor"
+        - "src/Internal/Renderer/ColumnChooser.razor"
+      tests:
+        - "tests/Actions/ColumnMenu.razor"
+        - "tests/Actions/AdaptiveDialog.razor"
+        - "tests/Actions/Columns.razor"
+    interactions: ["filtering", "column-chooser", "adaptive-ui", "sorting", "grouping", "keyboard-navigation", "selection", "editing", "frozen-columns", "column-virtualization", "javascript-interop"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  column-menu:
+    skill: ".github/skills/column-menu-skill/SKILL.md"
+    spec: "openspec/specs/column-menu/spec.md (if exists)"
+    components: ["SfGrid", "GridColumn", "ColumnMenu"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (ShowColumnMenu, ColumnMenuItems)"
+        - "src/SfGrid.razor.cs (ColumnMenuColumn, ColumnMenuInstance, ColumnMenuClass, IsColumnMenuFilter)"
+        - "src/SfGrid.Lifecycle.cs (ColumnMenuClass initialization)"
+        - "src/GridColumn.cs (ShowColumnMenu, ShowInColumnChooser)"
+      renderer:
+        - "src/Internal/SfGrid.razor (column menu mount path)"
+        - "src/Internal/Renderer/ColumnMenu.razor"
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+        - "src/Internal/Renderer/AdaptiveDialogRenderer.razor"
+      events:
+        - "src/GridEvents.cs (OnColumnMenuOpen, ColumnMenuItemClicked, OnActionComplete, ColumnVisibilityChanged)"
+        - "src/EventModels/Grids.cs (ColumnMenuOpenEventArgs, ColumnMenuClickEventArgs, ColumnMenuItemModel)"
+      actions:
+        - "src/Internal/Actions/Filter.cs"
+        - "src/Internal/Actions/FocusHandler.cs"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+        - "scripts/column-menu.ts"
+        - "scripts/filter.ts"
+        - "scripts/sf-grid.ts"
+        - "scripts/sf-grid-fn.ts"
+      related_renderer:
+        - "src/Internal/Renderer/Filter/FilterMenuRenderer.razor"
+        - "src/Internal/Renderer/Filter/FilterCheckBoxRenderer.razor.cs"
+        - "src/Internal/Renderer/Filter/ExcelBase.razor"
+        - "src/Internal/Renderer/ColumnChooser.razor"
+      tests:
+        - "tests/Actions/ColumnMenu.razor"
+        - "tests/Actions/AdaptiveDialog.razor"
+        - "tests/Actions/Columns.razor"
+    interactions: ["filtering", "column-chooser", "adaptive-ui", "sorting", "grouping", "keyboard-navigation", "selection", "editing", "frozen-columns", "column-virtualization", "javascript-interop"]
+    lines_per_file: 120
+    risk_level: "critical"
+    
+  adaptive-layout:
+    skill: ".github/skills/adaptive-layout-skill/SKILL.md"
+    spec: "openspec/specs/adaptive-layout/spec.md (if exists)"
+    components: ["SfGrid", "AdaptiveDialogRenderer", "GridRow", "GridColumn"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (EnableAdaptiveUI, AdaptiveUIMode, RowRenderingMode)"
+        - "src/SfGrid.razor.cs (GetClass method - CSS class injection)"
+      renderer:
+        - "src/Internal/Renderer/AdaptiveDialogRenderer.razor"
+        - "src/Internal/Renderer/GridRow.razor.cs (e-verticalwrap class)"
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs (data-cell attribute injection - CRITICAL)"
+        - "src/Internal/Renderer/CommandColumnRenderer.cs"
+        - "src/Internal/Renderer/GridHeader.razor"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridToolbar.razor"
+        - "src/Internal/Renderer/Filter/FilterBarRenderer.razor"
+      actions:
+        - "src/Internal/Actions/Filter.cs (IsAdaptiveFilter, IsAdaptiveSort, IsAdaptiveToolbarMenu flags)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (AdaptiveMode enum, RowDirection enum)"
+    interactions: ["sorting", "filtering", "grouping", "editing", "selection", "paging", "virtualization", "infinite-scroll", "frozen-columns", "text-wrap", "export", "column-chooser", "keyboard-navigation"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Adaptive Layout — vertical row rendering for mobile/responsive UI.
+      Use for: responsive dialog bugs, vertical layout rendering issues, device mode detection,
+      adaptive UI state management, feature combinations with adaptive mode, data-cell attribute injection.
+      
+      Critical Paths:
+      - data-cell="HeaderText" attribute injection in GridRow.CellRenderer.cs (for vertical cards)
+      - e-row-responsive + e-bigger CSS class injection in SfGrid.GetClass()
+      - IsAdaptiveFilter/Sort/ToolbarMenu state flags managing dialog transitions
+      - AdaptiveDialogRenderer.razor containing all responsive UI dialogs
+      - 20+ feature combinations documented in Interaction Matrix (see skill file)
+    
+  print:
+    skill: ".github/skills/print-skill/SKILL.md"
+    spec: "openspec/specs/print/spec.md"
+    components: ["SfGrid", "PrintLayout"]
+    files:
+      core:
+        - "src/Internal/Renderer/PrintLayout.razor"
+        - "src/SfGrid.Properties.cs (PrintMode, HierarchyPrintMode, IsPrinting)"
+        - "src/SfGrid.Lifecycle.cs (line ~450 — caches _printMode, _hierarchyPrintMode)"
+      methods:
+        - "src/SfGrid.Methods.cs (PrintAsync — line ~2378)"
+      actions:
+        - "src/Internal/Actions/FocusHandler.cs (line ~765 — CtrlP/MetaP handler)"
+      renderer:
+        - "src/Internal/SfGrid.razor (line ~181 — @if (IsPrinting) injects PrintLayout)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (PrintMode, HierarchyGridPrintMode enums)"
+      js:
+        - "scripts/sf-grid-fn.ts (line ~2019 — print(), removeColGroup())"
+        - "scripts/sf-grid.ts (line ~856 — printGrid(dataId) JS interop bridge)"
+    interactions: ["grouping", "sorting", "filtering", "paging", "aggregates", "templates", "virtualization", "selection", "editing", "keyboard-navigation"]
+    lines_per_file: 120
+    risk_level: "high"
+
+  infinite-scroll:
+    skill: ".github/skills/infinite-scroll-skill/SKILL.md"
+    related_skills:
+      - ".github/skills/infinite-scroll-dom-structure-skill/SKILL.md"
+    spec: "openspec/specs/infinite-scroll/spec.md"
+    components: ["SfGrid", "GridInfiniteScrollSettings"]
+    files:
+      core:
+        - "src/GridInfiniteScrollSettings.razor.cs"
+        - "src/GridInfiniteScrollSettings.razor"
+        - "src/SfGrid.Properties.cs (EnableInfiniteScrolling)"
+        - "src/SfGrid.Lifecycle.cs"
+      actions:
+        - "src/Internal/Actions/InfiniteScroll.cs"
+        - "src/Internal/Actions/Data.cs"
+        - "src/Internal/Actions/Edit.cs"
+        - "src/Internal/Actions/Group.cs"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+    interactions: ["grouping", "editing", "sorting", "filtering", "search", "paging", "selection"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      Primary infinite-scroll behaviour skill plus companion DOM-structure skill.
+      Always load BOTH for infinite-scroll bugs or features so data-flow logic and
+      rendered DOM/update-flow are analyzed together.
+  
+  editing:
+    skill: ".github/skills/editing-skill/SKILL.md (if exists)"
+    spec: "openspec/specs/editing/spec.md"
+    components: ["GridEditSettings"]
+    files:
+      core:
+        - "src/GridEditSettings.cs"
+      actions:
+        - "src/Internal/Actions/Edit.cs"
+      editors:
+        - "src/Internal/Editors/"
+      api:
+        - "src/SfGrid.Properties.cs (EditSettings, EditMode)"
+        - "src/SfGrid.Methods.cs (StartEditAsync, EndEditAsync)"
+    interactions: ["selection", "validation", "virtualization", "columns", "command-column" , "tooltip", "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+  
+  selection:
+    skill: ".github/skills/selection-skill/SKILL.md"
+    spec: "openspec/specs/selection/spec.md"
+    components: ["GridSelectionSettings"]
+    files:
+      core:
+        - "src/GridSelectionSettings.cs"
+      actions:
+        - "src/Internal/Actions/Selection.cs"
+      api:
+        - "src/SfGrid.Properties.cs (AllowSelection, SelectedRowIndex, SelectionSettings, CheckBoxState)"
+        - "src/SfGrid.Methods.cs (SelectRowAsync, SelectRowsAsync, SelectRowsByRangeAsync, SelectCellAsync, SelectCellsAsync, SelectCellsByRangeAsync, ClearSelectionAsync, GetSelectedRecordsAsync, GetSelectedRowIndexesAsync, GetSelectedRowCellIndexesAsync)"
+      models:
+        - "src/EventModels/Grids.cs (RowSelectingEventArgs, RowSelectEventArgs, RowDeselectEventArgs, CellSelectingEventArgs, CellSelectEventArgs, CellDeselectEventArgs)"
+      events:
+        - "src/GridEvents.cs (RowSelecting, RowSelected, RowDeselecting, RowDeselected, CellSelecting, CellSelected, CellDeselecting, CellDeselected)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (SelectionMode, SelectionType, CheckboxSelectionType, CellSelectionMode, CheckState)"
+      related_actions:
+        - "src/Internal/Actions/VirtualScroll.cs (SelectRowsMethodIndexes, ShiftSelectionRowIndexes, ShiftSelectionCellIndexes)"
+        - "src/Internal/Actions/FocusHandler.cs (SelectedRowIndex, SelectedCellIndex)"
+    interactions: ["paging", "filtering", "sorting", "virtualization", "grouping", "editing", "command-column", "infinite-scroll", "export", "detail-row", "row-drag-drop", "aggregates", "frozen-columns" , "tooltip", "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  row-drag-and-drop:
+    skill: ".github/skills/row-drag-and-drop-skill/SKILL.md"
+    spec: "openspec/specs/row-drag-and-drop/spec.md"
+    components: ["GridRowDropSettings", "SfGrid"]
+    files:
+      core:
+        - "src/GridRowDropSettings.cs"
+        - "src/SfGrid.Properties.cs (AllowRowDragAndDrop, RowDropSettings)"
+      actions:
+        - "src/Internal/Actions/RowReorder.cs"
+      api:
+        - "src/SfGrid.Methods.cs (ReorderRowsByIndexAsync)"
+      events:
+        - "src/GridEvents.cs (RowDragStarting, RowDropping, RowDropped)"
+      models:
+        - "src/EventModels/Grids.cs (RowDragStartingEventArgs, RowDroppingEventArgs, RowDroppedEventArgs)"
+      js:
+        - "scripts/row-reorder.ts (RowDD class)"
+        - "scripts/sf-grid-fn.ts (rowDragAndDropModule)"
+    interactions: ["sorting", "filtering", "grouping", "paging", "selection", "virtualization", "infinite-scroll", "editing", "frozen-columns", "detail-rows" , "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  frozen-columns:
+    skill: ".github/skills/frozen-column-skill/SKILL.md"
+    spec: "openspec/specs/frozen-columns/spec.md"
+    components: ["SfGrid", "GridColumn"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (FrozenColumns, FrozenRows)"
+        - "src/GridColumn.cs (IsFrozen, Freeze, FreezeDirection)"
+      actions:
+        - "src/Internal/Actions/ (freeze-related modules)"
+      api:
+        - "src/SfGrid.Methods.cs"
+      events:
+        - "src/GridEvents.cs"
+      models:
+        - "src/EventModels/Grids.cs (FrozenColumnsUidCollection, IsFrozen)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (FreezeDirection: Left, Right, Fixed)"
+      js:
+        - "scripts/freeze.ts (Freeze class — row-height sync, setFrozenHeight, stacked header)"
+        - "scripts/frozen-drag-drop.ts (FrozenDD class — freeze line drag-to-move)"
+        - "scripts/sf-grid.ts (freezeModule orchestration)"
+        - "scripts/interfaces.ts (GridOptions.frozenColumns, frozenName, allowFreezeLineMoving)"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (freeze-line move callback bridge)"
+    interactions: ["column-virtualization", "scroll-management", "sorting", "filtering", "grouping", "editing", "command-column", "text-wrap", "stacked-headers", "row-drag-and-drop", "resize", "selection", "paging", "infinite-scroll", "detail-rows", "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  column-virtualization:
+    skill: ".github/skills/column-virtualization-skill/SKILL.md"
+    spec: "openspec/specs/column-virtualization/spec.md"
+    components: ["SfGrid"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (EnableColumnVirtualization)"
+        - "src/SfGrid.razor.cs (VirtualScrollModule, StartColumnIndex, EndColumnIndex, TranslateX, VirtualizedColumns, GetVirtualizedColumns)"
+      models:
+        - "src/EventModels/Grids.cs (StartColumnIndex, EndColumnIndex, TranslateX)"
+      js:
+        - "scripts/virtual-scroll.ts (VirtualContentRenderer, VirtualHeaderRenderer, VirtualElementHandler, VirtualHelper)"
+        - "scripts/sf-grid-fn.ts (virtualHeaderModule, enableColumnVirtualization guards)"
+        - "scripts/width-controller.ts (setWidthToTable freeze+virt guard)"
+        - "scripts/interfaces.ts (GridOptions.enableColumnVirtualization)"
+    interactions: ["frozen-columns", "row-virtualization", "scroll-management", "sorting", "filtering", "grouping", "editing", "paging", "selection", "column-reorder", "column-resize", "rtl", "export", "infinite-scroll", "stacked-headers", "autofit", "cell-merging"]
+    lines_per_file: 120
+    risk_level: "critical"
+  
+  columns:
+    skill: ".github/skills/columns-skill/SKILL.md (if exists)"
+    spec: "openspec/specs/columns/spec.md"
+    components: ["GridColumns", "GridColumn", "GridForeignColumn", "GridCommandColumn", "GridCommandColumns"]
+    files:
+      core:
+        - "src/GridColumn.cs"
+        - "src/GridColumns.razor.cs"
+        - "src/GridCommandColumn.cs"
+      internal:
+        - "src/Internal/GridColumn.razor"
+      renderer:
+        - "src/Internal/Renderer/"
+    interactions: ["sorting", "filtering", "editing", "selection", "export"]
+    lines_per_file: 100
+    risk_level: "high"
+  
+  persistence:
+    skill: ".github/skills/persistence-skill/SKILL.md"
+    spec: "openspec/specs/persistence/spec.md"
+    components: ["SfGrid", "GridPageSettings", "GridSortSettings", "GridFilterSettings", "GridGroupSettings", "GridSearchSettings", "GridSelectionSettings", "GridColumn"]
+    files:
+      core:
+        - "src/SfGrid.Properties.cs (EnablePersistence, _enablePersistence)"
+        - "src/SfGrid.Lifecycle.cs (OnAfterRenderAsync, OnParametersSetAsync)"
+        - "src/SfGrid.razor.cs (SerializeModel, SetLocalStorage, SetPersistDataAsync, ResetPersistDataAsync, PersistProperties)"
+        - "src/SfGrid.Methods.cs (GetPersistDataAsync)"
+      settings:
+        - "src/GridPageSettings.razor.cs (CurrentPage, PageSize, PageCount, EnableQueryString, EnableExternalMessage)"
+        - "src/GridSortSettings.razor.cs (All properties persisted)"
+        - "src/GridFilterSettings.razor.cs (All properties persisted)"
+        - "src/GridGroupSettings.razor.cs (Persisted settings, separate from PersistGroupState)"
+        - "src/GridSearchSettings.cs (All properties persisted)"
+        - "src/GridSelectionSettings.cs (PersistSelection flag)"
+        - "src/GridColumn.cs (Index, OriginalIndex, Visible, Width, Freeze, DisplayAsCheckBox, AllowReordering)"
+      actions:
+        - "src/Internal/Actions/Selection.cs (SetPersistData method)"
+        - "src/Internal/Actions/Sort.cs"
+        - "src/Internal/Actions/Filter.cs"
+        - "src/Internal/Actions/Group.cs"
+        - "src/Internal/Actions/VirtualScroll.cs"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+      js:
+        - "scripts/virtual-scroll.ts (scrollPosition capture & restore, lines 268-274, 1811-1833)"
+        - "scripts/column-chooser.ts (Media column visibility persistence, lines 35-54)"
+        - "scripts/sf-grid-fn.ts (Frozen column width sync guard, line 834)"
+        - "scripts/sf-grid.ts (localStorage operations)"
+        - "scripts/interfaces.ts (enablePersistence: boolean)"
+    interactions: ["paging", "sorting", "filtering", "grouping", "search", "selection", "virtualization", "frozen-columns", "column-virtualization", "infinite-scroll", "column-reorder", "scroll-management"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: |
+      State Persistence for SfGrid. Covers:
+      - EnablePersistence API and localStorage serialization
+      - Feature-specific state restore sequences (paging, sorting, filtering, grouping, search, columns, selection)
+      - Rendering flow after persistence restore
+      - DOM structure synchronization with persisted state
+      - Scroll position capture/restore (virtualization + frozen columns)
+      - Cross-feature interaction guarantees
+      - Custom storage backend via GetPersistDataAsync/SetPersistDataAsync
+
+  autofit:
+    skill: ".codestudio/skills/autofit-skill/SKILL.md"
+    spec: "openspec/specs/autofit/spec.md"
+    components: ["GridColumn", "SfGrid"]
+    files:
+      core:
+        - "src/SfGrid.Methods.cs"
+        - "src/SfGrid.Properties.cs"
+        - "src/GridColumn.cs"
+        - "src/SfGrid.Lifecycle.cs"
+        - "src/SfGrid.razor.cs"
+      actions:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+      ui:
+        - "src/Internal/Renderer/ColumnMenu.razor"
+        - "src/Internal/Renderer/ContextMenu.razor"
+      js:
+        - "scripts/resize.ts"
+        - "scripts/sf-grid.ts"
+        - "scripts/sf-grid-fn.ts"
+        - "scripts/width-controller.ts"
+    interactions: ["frozen-columns", "virtualization", "grouping", "stacked-headers", "editing", "infinite-scroll", "paging", "text-wrap"]
+    lines_per_file: 150
+    risk_level: "high"
+    description: "Column AutoFit feature — measures and applies optimal column widths to fit content without text wrapping"
+
+  aggregates:
+    skill: ".github/skills/aggregate-skill/SKILL.md"
+    spec: "openspec/specs/aggregates/spec.md"
+    components: ["GridAggregates", "GridAggregate", "GridAggregateColumns", "GridAggregateColumn"]
+    files:
+      core:
+        - "src/GridAggregate.razor.cs"
+        - "src/GridAggregates.razor.cs"
+        - "src/GridAggregateColumn.razor.cs"
+        - "src/GridAggregateColumns.razor.cs"
+      models:
+        - "src/EventModels/Grids.cs (AggregateTemplateContext, CaptionTemplateContext)"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs (AggregateType, AggregateTemplateType)"
+        - "src/Internal/Base/Enums.cs (CellType)"
+      generators:
+        - "src/Internal/Generators/SummaryModelGenerator.cs"
+        - "src/Internal/Generators/GroupModelGenerator.cs"
+      renderer:
+        - "src/Internal/Renderer/FooterContent.razor"
+        - "src/Internal/Renderer/RefreshAggregate.razor"
+        - "src/Internal/Renderer/CaptionSummaryRenderer.cs"
+        - "src/Internal/Renderer/GroupCaptionRenderer.cs"
+        - "src/Internal/Renderer/SummaryCellRenderer.cs"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/GridContent.razor"
+      actions:
+        - "src/Internal/Actions/ReactiveAggregate.cs"
+      api:
+        - "src/SfGrid.Lifecycle.cs (ReactiveAggregateModule instantiation)"
+        - "src/SfGrid.Properties.cs (Aggregate, Aggregates, HasAggregateChanges)"
+        - "src/SfGrid.Methods.cs"
+      js:
+        - "scripts/scroll.ts (footer scroll sync)"
+        - "scripts/freeze.ts (frozen footer table split)"
+    interactions: ["grouping", "frozen-columns", "filtering", "batch-editing", "virtualization", "paging", "infinite-scroll", "column-visibility", "row-drag-and-drop", "detail-row", "foreign-key", "sorting", "selection", "editing"]
+    lines_per_file: 120
+    risk_level: "high"
+  
+  custom-comparer-sorting:
+    skill: ".github/skills/custom-comparer-sorting/SKILL.md"
+    spec: "openspec/specs/sorting/spec.md"
+    components: ["GridColumn", "GridSortSettings", "GridSortColumn"]
+    files:
+      core:
+        - "src/GridColumn.cs (lines 608-618, 954)"
+        - "src/GridSortSettings.razor.cs"
+        - "src/GridSortColumn.cs"
+      actions:
+        - "src/Internal/Actions/Sort.cs"
+        - "src/Internal/Actions/Data.cs (lines 270-315)"
+        - "src/Internal/Actions/ForeignKey.cs"
+        - "src/Internal/Actions/Group.cs"
+        - "src/Internal/Actions/VirtualScroll.cs"
+        - "src/Internal/Actions/Filter.cs"
+        - "src/Internal/Actions/InfiniteScroll.cs"
+      rendering:
+        - "src/Internal/Renderer/GridHeaderBase.cs (lines 25, 46)"
+        - "src/Internal/Renderer/GridHeaderCell.razor"
+        - "src/Internal/Renderer/GridHeader.razor"
+        - "src/Internal/Renderer/GridContent.razor"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/GridVirtualContent.razor"
+      api:
+        - "src/SfGrid.razor.cs (lines 1414-1420, 3400-3405)"
+        - "src/GridEvents.cs (lines 79-100)"
+      events:
+        - "src/EventModels/Grids.cs (line 5205)"
+    interactions: ["sorting", "grouping", "filtering", "virtualization", "infinite-scroll", "foreign-key", "editing", "selection", "paging", "frozen-columns", "column-reorder", "export", "multi-sort"]
+    lines_per_file: 150
+    risk_level: "critical"
+
+  clipboard:
+    skill: ".github/skills/clipboard-skills/SKILL.md"
+    spec: "openspec/specs/clipboard/spec.md (if exists)"
+    components: ["Clipboard"]
+    files:
+      core:
+        - "scripts/clipboard.ts"
+      integration:
+        - "scripts/sf-grid-fn.ts (clipboardModule instantiation, keyboard handlers)"
+        - "scripts/sf-grid.ts (JS interop bridge - copyToClipBoard, preventCopyToClipBoard, preventPasteAction)"
+      csharp:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (InvokeCopyPasteAction, InvokePasteAction)"
+        - "src/EventModels/Grids.cs (BeforeCopyPasteEventArgs, BeforeCellPasteEventArgs<T>)"
+        - "src/GridEvents.cs (BeforeCopyPaste, BeforeCellPaste event callbacks)"
+        - "src/SfGrid.Methods.cs (CopyAsync public API)"
+      models:
+        - "src/Internal/Base/InternalClass.cs (isClipboardEventBinded flag)"
+        - "src/SfGrid.razor.cs (clipboard option binding)"
+      js_interfaces:
+        - "scripts/interfaces.ts (IGridOptions - selectionMode, cellSelectionMode, editMode, frozenColumns, allowEditing, isClipboardEventBinded)"
+    interactions: ["selection", "editing", "frozen-columns", "virtualization", "filtering", "grouping", "column-virtualization", "infinite-scroll"]
+    lines_per_file: 120
+    risk_level: "high"
+    description: "Copy/paste operations with DOM textarea integration, JavaScript-C# interop, event cascade handling, and cross-feature interaction guarantees."
+
+  command-column:
+    skill: ".github/skills/command-column-skills/SKILL.md"
+    spec: "openspec/specs/command-column/spec.md"
+    components: ["GridCommandColumn", "GridCommandColumns", "GridCommandColumns.razor", "GridEditSettings", "NormalEdit", "DialogEdit"]
+    files:
+      core:
+        - "src/GridCommandColumn.cs"
+        - "src/GridCommandColumns.razor"
+        - "src/GridCommandColumns.razor.cs"
+        - "src/GridEditSettings.cs"
+      events:
+        - "src/GridEvents.cs"
+      models:
+        - "src/EventModels/Grids.cs"
+      enumerations:
+        - "src/Enumeration/GridsEnumerations.cs"
+      renderer:
+        - "src/Internal/Renderer/CommandColumnRenderer.cs"
+        - "src/Internal/Renderer/GridRow.CellRenderer.cs"
+        - "src/Internal/Renderer/GridRow.razor"
+        - "src/Internal/Renderer/NormalEdit.razor"
+        - "src/Internal/Renderer/DialogEdit.razor"
+        - "src/Internal/Renderer/BatchEdit.razor"
+        - "src/Internal/Renderer/AdaptiveDialogRenderer.razor"
+        - "src/Internal/Renderer/ValidationTooltip.razor"
+        - "src/Internal/Renderer/GridAddNewRow.razor"
+      actions:
+        - "src/Internal/Actions/Edit.cs"
+      api:
+        - "src/SfGrid.razor.cs (SetButtonOptions, IsDataModified)"
+        - "src/SfGrid.Methods.cs (StartEditAsync, EndEditAsync, DeleteRecordAsync, CloseEditAsync)"
+      js:
+        - "scripts/edit.ts (Edit.createTooltip, validation tooltip positioning)"
+    interactions: ["editing", "validation", "selection", "virtualization", "frozen-columns", "grouping", "infinite-scroll", "show-add-new-row", "adaptive-ui", "rtl", "keyboard-navigation", "paging"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  validation:
+    skill: ".codestudio/skills/validation-skill/SKILL.md"
+    spec: "openspec/specs/validation/spec.md (if exists)"
+    components: ["GridColumn", "GridEditSettings", "SfGrid"]
+    files:
+      core:
+        - "src/GridColumn.cs"
+        - "src/GridEditSettings.cs"
+        - "src/EventModels/Grids.cs (ValidationRules, ValidatorTemplateContext, ValidationResult)"
+      actions:
+        - "src/Internal/Actions/Edit.cs"
+        - "src/Internal/Actions/VirtualScroll.cs"
+      editors:
+        - "src/Internal/Editors/ColumnsValidator.razor"
+        - "src/Internal/Editors/EditorCellBase.cs"
+      renderer:
+        - "src/Internal/Renderer/ValidationTooltip.razor"
+        - "src/Internal/Renderer/ValidationDialog.razor"
+        - "src/Internal/Renderer/NormalEdit.razor"
+        - "src/Internal/Renderer/DialogEdit.razor"
+        - "src/Internal/Renderer/BatchEdit.razor"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+      js:
+        - "scripts/edit.ts (Edit.createTooltip)"
+    interactions: ["editing", "virtualization", "frozen-columns", "grouping", "paging", "infinite-scroll", "keyboard-navigation"]
+    lines_per_file: 150
+    risk_level: "critical"
+    description: "Validation feature — DataAnnotations, column-level ValidationRules, custom Validator templates, tooltip positioning, error message rendering across Normal/Dialog/Batch modes"
+
+  templates:
+    skill: ".github/skills/templates/SKILL.md"
+    spec: "openspec/specs/templates/spec.md"
+    components: ["GridTemplates", "GridColumn", "GridEditSettings", "GridGroupSettings", "GridAggregateColumn", "GridPageSettings", "GridColumnChooserSettings"]
+    files:
+      core:
+        - "src/GridTemplates.cs (RowTemplate, DetailTemplate, EmptyRecordTemplate, TooltipTemplate, ToolbarTemplate)"
+        - "src/GridColumn.cs (Template, HeaderTemplate, EditTemplate, FilterTemplate, FilterItemTemplate)"
+        - "src/GridEditSettings.cs (Template, HeaderTemplate, FooterTemplate, Validator)"
+        - "src/GridGroupSettings.razor.cs (CaptionTemplate)"
+        - "src/GridAggregateColumn.razor.cs (FooterTemplate, GroupCaptionTemplate, GroupFooterTemplate)"
+        - "src/GridPageSettings.razor.cs (Template)"
+        - "src/GridColumnChooserSettings.cs (Template, FooterTemplate)"
+      models:
+        - "src/EventModels/Grids.cs (EmptyRecordTemplateContext, TooltipTemplateContext, AggregateTemplateContext, CaptionTemplateContext, ValidatorTemplateContext, FilterItemTemplateContext, ColumnChooserTemplateContext, ColumnChooserFooterTemplateContext)"
+      events:
+        - "src/GridEvents.cs (DetailRowExpanding, DetailRowExpanded, DetailRowCollapsing, DetailRowCollapsed, PdfAggregateTemplateInfo, PdfGroupCaptionTemplateInfo, PdfDetailTemplateExporting, ExcelAggregateTemplateInfo, ExcelGroupCaptionTemplateInfo, ExcelDetailTemplateExporting)"
+      renderer:
+        - "src/Internal/Renderer/GridRow.razor (RowTemplate invocation, IsTemplate flag)"
+        - "src/Internal/Renderer/GridContent.razor (EmptyRecordTemplate, DetailTemplate presence check)"
+        - "src/Internal/Renderer/GridVirtualContent.razor (EmptyRecordTemplate, DetailTemplate presence check)"
+        - "src/Internal/Renderer/GridDetailRow.razor (DetailTemplate in TD colspan)"
+        - "src/Internal/Renderer/GridHeaderCell.razor (HeaderTemplate)"
+        - "src/Internal/Renderer/FooterContent.razor (aggregate FooterTemplate)"
+        - "src/Internal/Renderer/GroupCaptionRenderer.cs (CaptionTemplateContext, CaptionTemplate)"
+        - "src/Internal/Renderer/GridTooltip.razor (TooltipTemplate)"
+        - "src/Internal/Renderer/NormalEdit.razor (EditSettings.Template, Column.EditTemplate, Validator)"
+        - "src/Internal/Renderer/DialogEdit.razor (EditSettings.HeaderTemplate, Template, FooterTemplate)"
+        - "src/Internal/Renderer/GridToolbar.razor (ToolbarTemplate)"
+        - "src/Internal/Renderer/ColumnChooser.razor (ColumnChooserSettings.Template, FooterTemplate)"
+        - "src/Internal/Renderer/Filter/FilterMenuRenderer.razor (Column.FilterTemplate)"
+        - "src/Internal/Renderer/Filter/FilterCheckBoxRenderer.razor (Column.FilterItemTemplate)"
+      interfaces:
+        - "src/Interfaces/IGrid.cs (template interface contracts)"
+    interactions: ["sorting", "filtering", "grouping", "virtualization", "infinite-scroll", "export", "editing", "selection", "paging", "frozen-columns", "validation", "tooltip", "column-chooser", "filter-template", "toolbar"]
+    lines_per_file: 150
+    risk_level: "critical"
+  
+  events:
+    skill: ".github/skills/events-skill/SKILL.md (if exists)"
+    spec: "openspec/specs/events/spec.md"
+    components: ["GridEvents"]
+    files:
+      core:
+        - "src/GridEvents.cs"
+      models:
+        - "src/EventModels/Grids.cs"
+    interactions: ["all — events cross-cut entire component"]
+    lines_per_file: 120
+    risk_level: "high"
+  
+  lifecycle:
+    skill: ".github/skills/lifecycle-skill/SKILL.md (if exists)"
+    spec: "openspec/specs/lifecycle/spec.md"
+    components: ["SfGrid"]
+    files:
+      core:
+        - "src/SfGrid.Lifecycle.cs"
+        - "src/SfGrid.Properties.cs"
+        - "src/SfGrid.Methods.cs"
+        - "src/SfGrid.razor.cs"
+    interactions: ["all domains"]
+    lines_per_file: 150
+    risk_level: "critical"
+  
+  keyboard-navigation:
+    skill: ".github/skills/keyboard-navigation-skill/SKILL.md"
+    spec: "openspec/specs/keyboard-navigation/spec.md"
+    components: ["GridKeySettings", "SfGrid"]
+    files:
+      core:
+        - "src/GridKeySettings.cs"
+        - "src/Internal/Actions/FocusHandler.cs"
+      api:
+        - "src/SfGrid.Properties.cs (KeySettings)"
+        - "src/SfGrid.Methods.cs (FocusAsync)"
+      interop:
+        - "src/Internal/Base/GridJSInteropAdaptor.cs (GridFocus, GridKeyDown, EndEdit)"
+      js:
+        - "scripts/sf-grid-fn.ts (gridKeyDownHandler, keyDownHandler, keyActionHandler, documentKeyHandler, gridKeyConfigs)"
+        - "scripts/infinite-scroll.ts (addKeydownListener, keydownHandler)"
+    interactions: ["editing", "filtering", "selection", "grouping", "paging", "virtualization", "frozen-columns", "command-column", "infinite-scroll", "templates", "detail-row", "tooltip"]
+    lines_per_file: 120
+    risk_level: "critical"
+
+  javascript-interop:
+    skill: ".github/skills/javascript-interop/SKILL.md"
+    spec: "openspec/specs/interop/spec.md"
+    components: ["SfGrid"]
+    files:
+      js:
+        - "scripts/sf-grid.js (primary)"
+        - "scripts/sf-grid-fn.ts"
+        - "scripts/modules/*.ts"
+      cs:
+        - "src/SfGrid.Methods.cs (JS interop calls)"
+        - "src/Internal/Base/GridJSInteropAdaptor.cs"
+    interactions: ["virtualization", "editing", "selection", "scroll"]
+    lines_per_file: 120
+    risk_level: "high"
+  
+  performance:
+    skill: ".github/skills/performance-optimization/SKILL.md"
+    spec: "openspec/specs/performance/spec.md (if exists)"
+    components: ["SfGrid (all)"]
+    files:
+      actions:
+        - "src/Internal/Actions/"
+      renderer:
+        - "src/Internal/Renderer/"
+      interop:
+        - "src/Internal/Base/"
+    interactions: ["virtualization", "grouping", "editing", "selection"]
+    lines_per_file: 100
+    risk_level: "medium"
+  
+  testing:
+    skill: ".github/skills/testing/SKILL.md"
+    spec: "docs/dev-process/BUG-FIX-RESOLVER-DELIVERY.md"
+    components: ["bUnit test framework"]
+    files:
+      tests:
+        - "tests/Bunit/"
+    interactions: ["all — testing is cross-cutting"]
+    lines_per_file: 80
+    risk_level: "medium"
+
+# ============================================================================
+# BUG-FIX WORKFLOW (Optimized - No Codebase-Wide Searches)
+# ============================================================================
+
+bug_fix_workflow:
+  description: "5-Stage Optimized Workflow using Skills + Specific Files"
+  stages: 5
+  
+  stage_1:
+    name: "BUG VALIDATION"
+    instructions: |
+      ⚠️  SESSION CACHE RULE: Check .session-read-cache.log BEFORE reading any file.
+      If file already read THIS SESSION, use cached version instead of re-reading.
+      
+      1. Parse bug description for domain keyword (e.g., "sorting", "filtering", "virtualization")
+      2. Load feature_skill_map.[domain] from THIS FILE
+      3. Load primary SKILL.md file and all related_skills (if present)
+      4. Load ONLY the specific files listed in feature_skill_map.[domain].files (max 120 lines each)
+         ✓ For each file: Check session cache FIRST before reading
+         ✓ If in cache, use cached content; if not, read and cache
+      5. Do NOT search entire codebase — read ONLY the mapped files
+      6. Identify root cause (file:method:line)
+      7. Create failing BUnit test
+      8. Output: exploration.md
+    token_budget: 2400
+    approval_gate: true
+    session_cache_requirement: "MANDATORY — enforce cache checks"
+    
+  stage_2:
+    name: "TDD DESIGN"
+    instructions: |
+      ⚠️  SESSION CACHE RULE: DO NOT re-read files from Stage 1. Use cached versions.
+      Check .session-read-cache.log for all files already examined.
+      
+      1. After approval, create test suite (all FAIL initially)
+      2. Load domain spec from feature_skill_map.[domain].spec
+         ✓ Check cache FIRST if already read in Stage 1
+      3. Load interaction tests scope from feature_skill_map.[domain].interactions
+      4. Create proposal.md, design.md, tasks.md
+      5. Reference lessons-learned.md for similar bugs (new file, check cache if exists)
+      6. Output: proposal.md, design.md, tasks.md, specs/
+    token_budget: 2600
+    approval_gate: true
+    session_cache_requirement: "MANDATORY — use cached Stage 1 reads"
+  
+  stage_3:
+    name: "FIX VERIFICATION"
+    instructions: |
+      ⚠️  SESSION CACHE RULE: Reuse all cached files from Stages 1-2.
+      DO NOT re-read any file already examined. Reference cache only.
+      
+      1. Implement fix from tasks.md
+      2. Run tests: all PASS
+      3. Run regression tests (cross-feature from interactions)
+         ✓ Files for regression testing: check cache FIRST
+      4. Auto-proceed if 100% tests pass
+      5. Output: Modified source files + updated tasks.md
+    token_budget: 2500
+    approval_gate: false  # Auto-proceed
+    session_cache_requirement: "MANDATORY — reuse cached files, no re-reads"
+  
+  stage_4:
+    name: "SECURITY & PERFORMANCE"
+    instructions: |
+      1. Run security checklist (from bug-fix-security-performance-standards.md)
+      2. Measure performance (baseline vs post-fix)
+      3. Verify token budget not exceeded
+      4. Output: Gate checklist (inline only)
+    token_budget: 1600
+    approval_gate: true
+  
+  stage_5:
+    name: "ARCHIVE"
+    instructions: |
+      1. Move to archive folder
+      2. Delete ephemeral files (.read-cache.csv, *.log)
+      3. Keep ONLY 6 core artifacts
+      4. Update lessons-learned.md
+      5. Auto-proceed
+    token_budget: 500
+    approval_gate: false  # Auto-proceed
+
+# ============================================================================
+# PROMPT REFERENCES (Skill-Aware)
+# ============================================================================
+
+prompts:
+  bug_fix_entry: ".github/prompts/opsx-bug-fix-integrated.prompt.md"
+  generate_dispatcher: ".github/prompts/opsx-generate.prompt.md"
+  skill_loader: ".github/skills/bug-fix-resolver/SKILL.md"
+
+# ============================================================================
+# OPTIMIZATION RULES (Token Efficiency)
+# ============================================================================
+
+optimization_rules:
+  
+  rule_1_skill_first:
+    name: "Load Skill Before Codebase"
+    description: "Always load the domain SKILL.md FIRST — it has code location map pre-built"
+    benefit: "Eliminates 40% of manual file searches"
+    enforcement: "MANDATORY"
+  
+  rule_2_file_whitelist:
+    name: "Read Only Mapped Files"
+    description: "ONLY read files listed in feature_skill_map.[domain].files"
+    benefit: "Prevents scanning entire codebase (saves 1000+ tokens per bug)"
+    enforcement: "STRICT — abort if attempting to read unlisted file"
+  
+  rule_3_lines_limit:
+    name: "Max 120 Lines Per File"
+    description: "Read only the number of lines specified in feature_skill_map.[domain].lines_per_file"
+    benefit: "Focuses on relevant code sections (saves 30% per file read)"
+    enforcement: "STRICT"
+  
+  rule_4_cache_reads:
+    name: "Cache All File Reads WITHIN SESSION (CRITICAL)"
+    description: |
+      MANDATORY: Log every file read in session memory; SKIP DUPLICATES
+      - Maintain "Session Read Cache" (in-memory or logged)
+      - Check cache BEFORE every file read
+      - If file already read THIS SESSION → retrieve cached version
+      - Do NOT re-read same file, even if requested
+      - This applies across ALL 5 stages
+      - Clear cache ONLY at session end or on explicit reset command
+    benefit: "Prevents re-reading same file in later stages (saves 30-50% tokens per session)"
+    enforcement: "MANDATORY — abort and error if violation detected"
+    session_scope: "entire bug-fix workflow (Stage 1 through Stage 5)"
+  
+  rule_5_spec_first:
+    name: "Read Spec Before Code"
+    description: "Read domain spec from feature_skill_map.[domain].spec BEFORE reading code files"
+    benefit: "Provides context for what to look for (saves 15% tokens in code analysis)"
+    enforcement: "RECOMMENDED"
+  
+  rule_6_interactions_only:
+    name: "Regression Test Only Interactions"
+    description: "From feature_skill_map.[domain].interactions, run tests ONLY for listed domains"
+    benefit: "Eliminates unnecessary regression tests (saves 40% test execution time)"
+    enforcement: "STRICT"
+  
+  rule_7_no_broad_searches:
+    name: "No Codebase-Wide Searches"
+    description: "Never grep entire src/; grep ONLY files in feature_skill_map.[domain].files"
+    benefit: "Eliminates token waste from searching unrelated code"
+    enforcement: "MANDATORY"
+  
+  rule_8_session_read_cache:
+    name: "SESSION-LEVEL READ CACHING (⚠️  CRITICAL)"
+    description: |
+      DO NOT RE-READ FILES ALREADY EXAMINED IN THIS SESSION.
+      
+      Implementation:
+      - Maintain "Session Files Cache": { filename → cached_content }
+      - At session start: Initialize empty cache
+      - Before each file read: Query cache for filename
+        • IF found in cache → use cached content immediately
+        • IF NOT found → read file, add to cache, use content
+      - NEVER read a file twice in same session
+      - Cache persists across ALL 5 stages
+      - Log all cache hits to .session-read-cache.log
+      
+      Failure Mode:
+      - Duplicate read detected → IMMEDIATE ERROR
+      - Message: "ERROR: File [filename] already read this session. Use cached version."
+      - Stop processing; require explicit "clear-cache" command to proceed
+      
+      Token Savings:
+      - Per duplicate read prevented: 200-400 tokens
+      - Per session (typical bug): 800-1600 tokens
+      - Per month (20 bugs): 16,000-32,000 tokens
+    
+    enforcement: "MANDATORY — enforce with error on violation"
+    scope: "Session-wide (all stages, all features, all domains)"
+    tracking: "Log file: .session-read-cache.log (auto-generated)"
+
+# ============================================================================
+# SESSION-LEVEL FILE READ TRACKING (⚠️  CRITICAL FOR TOKEN EFFICIENCY)
+# ============================================================================
+
+session_read_cache:
+  name: "Session Read Cache — Prevent Re-Reads"
+  description: |
+    Track all file reads WITHIN A SINGLE BUG-FIX SESSION.
+    Purpose: Eliminate duplicate file reads across all 5 stages.
+    
+  init: "At session start, create empty cache"
+  structure: |
+    Session Cache:
+    {
+      "files_examined": [
+        {
+          "filename": "src/GridSortSettings.razor.cs",
+          "read_at_stage": "Stage 1",
+          "line_range": "1-120",
+          "cached": true,
+          "timestamp": "2026-03-30T10:15:22Z"
+        },
+        {
+          "filename": "src/GridFilterSettings.razor.cs",
+          "read_at_stage": "Stage 1",
+          "line_range": "1-120",
+          "cached": true,
+          "timestamp": "2026-03-30T10:15:45Z"
+        }
+        // ... more files ...
+      ]
+    }
+  
+  checks:
+    pre_read: "Before reading any file, check if filename exists in session cache"
+    on_found: "Use cached content; do NOT read file again; log as cache hit"
+    on_not_found: "Read file, add to cache with timestamp, then use content"
+  
+  output: ".session-read-cache.log (auto-maintained, visible at session end)"
+  
+  enforcement: "MANDATORY — Error on duplicate read attempt"
+  
+  benefits:
+    per_duplicate_prevented: "200-400 tokens saved"
+    typical_bug_30files: "800-1600 tokens saved"
+    monthly_20bugs: "16,000-32,000 tokens saved"
+
+# ============================================================================
+# TOKEN BUDGET ENFORCEMENT
+# ============================================================================
+
+token_budgets:
+  global_hard_limit: 3000
+  
+  by_stage:
+    stage_1: 2400
+    stage_2: 2600
+    stage_3: 2500
+    stage_4: 1600
+    stage_5: 500
+  
+  session_read_cache_savings:
+    description: "Tokens saved by preventing duplicate reads within session"
+    typical_savings_per_session: "800-1600 tokens"
+    tracking_file: ".session-read-cache.log"
+
+# ============================================================================
+# FEATURE-BASED REGRESSION MATRIX
+# (Use feature_skill_map.[domain].interactions — pre-built, no manual search needed)
+# ============================================================================
+
+regression_matrix:
+  description: "Pre-built interaction matrix — no manual discovery needed"
+  strategy: "From feature_skill_map.[domain].interactions, run tests for:"
+  
+  example_sort_bug:
+    primary_tests: "Sorting tests (from sorting-skill)"
+    interacting_domains:
+      - filtering   # from feature_skill_map.sorting.interactions[0]
+      - grouping    # from feature_skill_map.sorting.interactions[1]
+      - virtualization
+      - infinite-scroll
+      - export
+      - editing
+      - selection
+      - paging
+      - frozen-columns
+    total_tests: "85+ (no manual counting needed)"
+
+# ============================================================================
+# KEY IMPROVEMENTS OVER config.yaml v2.0
+# ============================================================================
+
+improvements:
+  
+  improvement_1:
+    issue: "Manual file searching — LLM scanned entire codebase"
+    solution: "feature_skill_map provides explicit file lists per domain"
+    tokens_saved: "1000+ per bug"
+    
+  improvement_2:
+    issue: "Incomplete specifications — LLM had to infer feature interactions"
+    solution: "feature_skill_map.[domain].interactions pre-lists all interacting features"
+    tokens_saved: "800+ per bug"
+    
+  improvement_3:
+    issue: "Token waste from re-reading same files"
+    solution: "Rule 4 (Cache Reads) + .read-cache.csv enforcement"
+    tokens_saved: "600+ per bug"
+  
+  improvement_4:
+    issue: "Skill files existed but were not referenced in config"
+    solution: "feature_skill_map now REQUIRES loading SKILL.md first"
+    tokens_saved: "400+ per bug"
+  
+  improvement_5:
+    issue: "Broad regression testing across unrelated features"
+    solution: "feature_skill_map.[domain].interactions limits scope"
+    tokens_saved: "500+ per bug"
+  
+  improvement_6:
+    issue: "No guidance on lines-per-file reading"
+    solution: "feature_skill_map.[domain].lines_per_file specifies max lines"
+    tokens_saved: "300+ per bug"
+  
+  total_tokens_saved: "3600+ per bug (~60% reduction vs config.yaml v2.0)"
+
+# ============================================================================
+# MIGRATION PATH FROM config.yaml v2.0
+# ============================================================================
+
+migration:
+  action: "Use config-bug-fix-optimized.yaml as NEW reference"
+  domain_map_replacement: "feature_skill_map (enhanced with skills + line counts)"
+  old_config_deprecation: "config.yaml v2.0 still works; but v2.1 recommended for all new bugs"
+  
+  step_1: "Update .github/prompts/opsx-bug-fix-integrated.prompt.md to reference feature_skill_map"
+  step_2: "Update config.yaml to include feature_skill_map and optimization_rules"
+  step_3: "Test with 2-3 bug fixes; measure token usage reduction"
+  step_4: "Archive config.yaml v2.0 as backup"
+
+# ============================================================================
+# ⚠️  VERSION 2.1.1 CRITICAL UPDATE (Session-Level Read Caching)
+# ============================================================================
+
+version_2_1_1_update:
+  name: "Session-Level File Read Caching (MANDATORY)"
+  release_date: "2026-03-30"
+  
+  critical_changes:
+    
+    change_1:
+      title: "DO NOT RE-READ FILES ALREADY REVIEWED IN SESSION"
+      description: |
+        All bug-fix workflows must now enforce session-level read caching.
+        Once a file is read and cached, it MUST NOT be read again during
+        the same session (Stages 1-5), even if requested.
+      enforcement: "MANDATORY — stop and error on duplicate read attempt"
+      tokens_saved: "30-50% per session"
+    
+    change_2:
+      title: "Session Read Cache Tracking"
+      description: |
+        Maintain .session-read-cache.log throughout entire bug-fix workflow.
+        Log all file reads with:
+        - filename, stage, line_range, timestamp, cache_status
+      files_created: ".session-read-cache.log (auto-generated)"
+    
+    change_3:
+      title: "Enhanced Rule 4 & New Rule 8"
+      description: |
+        Rule 4 (Cache Reads): Strengthened to mandate session-level caching
+        Rule 8 (Session Read Cache): NEW — specific enforcement for session scope
+      location: "optimization_rules section"
+    
+    change_4:
+      title: "Stage-by-Stage Cache Reminders"
+      description: |
+        All 5 workflow stages now include explicit cache-check instructions.
+        Stage 1: Initialize cache, read files, populate cache
+        Stage 2: Check cache FIRST before any file read
+        Stage 3: Reuse cached files only
+        Stage 4-5: Reference cache, no new file reads
+      location: "bug_fix_workflow.stages[1-5].instructions"
+  
+  impact:
+    tokens_per_session: "800-1600 saved"
+    tokens_per_month_20bugs: "16,000-32,000 saved"
+    efficiency_gain: "30-50% token reduction"
+    compliance: "100% mandatory enforcement"
+  
+  implementation:
+    step_1: "Load this config (v2.1.1) for all new bug fixes"
+    step_2: "Initialize .session-read-cache.log at session start"
+    step_3: "Before EVERY file read, query cache"
+    step_4: "If duplicate detected, ERROR and require reset"
+    step_5: "At session end, archive .session-read-cache.log for audit"
+  
+  audit_tracking: "All sessions logged to .session-read-cache.log for review"
+
+# ============================================================================
+# ITERATIVE CORRECTION WORKFLOW (NEW - v2.1.2)
+# ============================================================================
+# Purpose: Enable efficient review → correct → apply cycle with minimal tokens
+# Strategy: Surgical edits instead of re-reading entire files
+# Token Savings: 80% vs re-reading (50 tokens per correction vs 500+)
+# ============================================================================
+
+iterative_correction_workflow:
+  name: "Iterative Review & Correction Framework"
+  version: "2.1.2"
+  
+  purpose: |
+    Enable efficient feedback loop for proposal.md, design.md, tasks.md files.
+    Users review artifacts, report specific corrections, system applies surgical
+    edits. Minimizes token consumption by targeted edits only.
+  
+  key_rules:
+    
+    rule_1:
+      title: "Report Issues Specifically"
+      description: |
+        When you identify an issue, report in structured format:
+        - FILE: Which file (proposal.md / design.md / tasks.md)
+        - SECTION: Section name or line number
+        - CURRENT: What it says now
+        - CORRECT: What it should say
+        - WHY: Reason for change (brief)
+      enforcement: "MANDATORY for efficient corrections"
+    
+    rule_2:
+      title: "Batch Corrections When Possible"
+      description: |
+        Report ALL issues at once instead of one at a time.
+        System applies all corrections in sequence in single pass.
+        Prevents re-reading same file multiple times.
+      enforcement: "RECOMMENDED for efficiency"
+    
+    rule_3:
+      title: "Use Targeted Edits Only"
+      description: |
+        System uses replace_string_in_file with 3-5 line context.
+        Never re-reads entire file or duplicates content.
+        Each correction is surgical, not broad rewrites.
+      enforcement: "MANDATORY - system will enforce"
+    
+    rule_4:
+      title: "No Re-Reading Entire Artifacts"
+      description: |
+        When correcting proposal.md, do NOT re-read design.md or tasks.md.
+        When correcting design.md, do NOT re-read proposal.md.
+        Reference only affected sections.
+      enforcement: "MANDATORY - prevents token waste"
+    
+    rule_5:
+      title: "Verify Before/After"
+      description: |
+        After each correction, system shows before/after snippets.
+        User verifies correction is right before proceeding.
+      enforcement: "MANDATORY for quality assurance"
+    
+    rule_6:
+      title: "No Unnecessary File Recreation"
+      description: |
+        Do NOT create new files during corrections.
+        Only modify: proposal.md, design.md, tasks.md (as needed).
+      enforcement: "STRICT - abort if unnecessary files detected"
+    
+    rule_7:
+      title: "Reference Specs When Reporting"
+      description: |
+        Include spec references in corrections when applicable.
+        Provides context for why correction is needed.
+      enforcement: "RECOMMENDED for clarity"
+    
+    rule_8:
+      title: "Repeat Until Perfect"
+      description: |
+        Iteration cycle: Review → Report → Correct → Verify → Repeat.
+        Each cycle costs minimal tokens (50-200).
+        Continue until all corrections complete and satisfied.
+      enforcement: "PROCESS - repeat as needed"
+  
+  workflow_steps:
+    - "Step 1: User receives proposal.md, design.md, tasks.md"
+    - "Step 2: User reviews and reports issues in structured format"
+    - "Step 3: System applies targeted corrections (read only affected sections)"
+    - "Step 4: User verifies before/after of each correction"
+    - "Step 5: Repeat steps 2-4 if more corrections needed"
+  
+  token_savings:
+    - "Single correction: 50-200 tokens (vs 500 if re-reading all)"
+    - "Five corrections: 250-1000 tokens (vs 2500 if re-reading all)"
+    - "Typical review cycle: 300-500 tokens (vs 1500-2500)"
+    - "80% token reduction vs re-read approach"
+

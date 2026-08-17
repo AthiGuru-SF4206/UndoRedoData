@@ -1,0 +1,74 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="RowDeselect events are not triggering properly in Grid">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowSelection="true" AllowFiltering="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Dialog"></GridEditSettings>
+            <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" PersistSelection="false"></GridSelectionSettings>
+            <GridEvents TValue="Order" RowDeselected="RowDeselected"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // checking wheather the Deselect event triggers when a column is filtered.
+        cut.WaitForState(() => cut.Instance.TotalItemCount > 0);
+        cut.Instance.SelectRowAsync(0).GetAwaiter();
+        cut.WaitForState(() => cut.Instance.SelectedRecords.Count > 0);
+        cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ANTON").GetAwaiter();
+        cut.Instance.ClearFilteringAsync().GetAwaiter();
+        // checking wheather the Deselect event occurs when new record is added.
+        cut.Instance.SelectRowAsync(0, false).GetAwaiter();
+        cut.WaitForState(() => cut.Instance.SelectedRecords.Count > 0);
+        Order addRecord = new Order()
+        {
+            OrderID = 1100,
+            CustomerID = "New Record",
+            Freight = 25.7,
+            OrderDate = new DateTime(2010, 5, 1)
+        };
+        cut.Instance.AddRecordAsync(addRecord).GetAwaiter();
+        cut.Instance.EndEditAsync().GetAwaiter();
+    }
+
+    public void RowDeselected(Syncfusion.Blazor.Grids.RowDeselectEventArgs<Order> args)
+    {
+        Assert.True(args != null);
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+}

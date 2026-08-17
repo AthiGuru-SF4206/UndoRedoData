@@ -1,0 +1,163 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+@implements IDisposable
+
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Microsoft.AspNetCore.Components.Web
+
+@if (!string.IsNullOrEmpty(Parent?.EditModule!.AlertMessage))
+{
+    <SfDialog CssClass="e-dlg-modal" ShowCloseIcon="false" IsModal="true" CloseOnEscape="true" Target="@(($"#{Parent.ID}"))" Width="320">
+        <DialogAnimationSettings Effect="DialogEffect.None"></DialogAnimationSettings>
+        <DialogEvents OnClose="@(async (BeforeCloseEventArgs args) =>
+                           {
+                               args.Cancel = true;
+                               await CloseDialog();
+                           })">
+        </DialogEvents>
+        <DialogTemplates>
+            <Content>
+                <div>
+                    @AlertMessageText
+                </div>
+            </Content>
+            <FooterTemplate>
+                @if (AlertMsg == "DeleteConfirmAlert" || AlertMsg == "BatchSaveConfirm" || AlertMsg == "CancelEdit" || AlertMsg == "BatchSaveLostChanges")
+                {
+                    <SfButton Type="button" CssClass="e-control e-btn e-lib e-flat e-primary" Content="@Localizer?.GetText(GridLocaleKeys.OKButton)"
+                              @onclick="@HandlePrimaryActionAsync"></SfButton>
+                    <SfButton CssClass="e-control e-btn e-lib e-flat" Type="button" Content="@Localizer!.GetText(GridLocaleKeys.CancelButton)" @onclick="@(async () => await CloseDialog())"></SfButton>
+                }
+                else
+                {
+                    <SfButton CssClass="e-control e-btn e-lib e-flat e-primary" Type="button" Content="@Localizer!.GetText(GridLocaleKeys.OKButton)" @onclick="@(async () => await CloseDialog())"></SfButton>
+                }
+            </FooterTemplate>
+        </DialogTemplates>
+    </SfDialog>
+}
+
+@code{
+
+    #region Parameters
+    [CascadingParameter]
+
+    public SfGrid<T>? Parent { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    private T? _data { get; set; }
+
+    internal string AlertMsg => Parent?.EditModule!.AlertMessage!;
+    #endregion
+
+    #region LifeCycle
+    
+    protected override void OnInitialized()
+    {
+        Parent?.EventAggregator.Add("ShowValidationDialog", InvokeStateChange);
+        Localizer = Parent?.Localizer!;
+    }
+
+    
+    void IDisposable.Dispose()
+        => Parent?.EventAggregator.Remove("ShowValidationDialog", InvokeStateChange);
+    #endregion
+
+    #region Dialog Actions
+
+    internal async Task CloseDialog()
+    {
+        if (AlertMsg.Equals("BatchSaveLostChanges"))
+        {
+            Parent!.EditModule!.AlertMessage = "";
+            Parent.EditModule!.IsBatchReorderPending = false;
+            await Parent.CancelBegin(Parent!.EditModule!.BatchActionArgs!);
+        }
+        else
+        {
+            Parent!.EditModule!.AlertMessage = "";
+        }
+    }
+
+    private async Task HandlePrimaryActionAsync()
+    {
+        var editModule = Parent?.EditModule;
+        if (editModule == null) return;
+
+        switch (AlertMsg)
+        {
+            case "DeleteConfirmAlert":
+                editModule.AlertMessage = string.Empty;
+                await editModule.DeleteRecord(data: _data!);
+                break;
+
+            case "BatchSaveConfirm":
+                editModule.AlertMessage = string.Empty;
+                await editModule.BatchSave();
+                break;
+
+            case "CancelEdit":
+                editModule.AlertMessage = string.Empty;
+                await editModule.BatchClose();
+                break;
+
+            case "BatchSaveLostChanges":
+                editModule.AlertMessage = string.Empty;
+                await HandleBatchSaveLostChangesAsync();
+                break;
+        }
+    }
+    
+    private async Task HandleBatchSaveLostChangesAsync()
+    {
+        var editModule = Parent!.EditModule!;
+
+        if (editModule.IsBatchReorderPending && !Parent!._shouldRender)
+        {
+            Parent.PreventRender(false);
+        }
+
+        editModule.IsBatchReorderPending = false;
+
+        var batchArgs = editModule.BatchAdditionalArgs;
+        var batchAdditionalArgs =
+            batchArgs?.RequestType != null &&
+            batchArgs.RequestType.ToString().Equals("reorder")
+                ? batchArgs
+                : null;
+
+        await editModule.PerformBatchActions(additionalArguments: batchAdditionalArgs);
+    }
+
+    #endregion
+
+    #region State Management
+
+    public virtual void InvokeStateChange(object args)
+    {
+        if (args != null)
+        {
+            _data = ((T)args);
+        }
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    #endregion
+
+    #region Message Mapping
+
+    private string? AlertMessageText => AlertMsg switch
+    {
+        "EditAlert" => Localizer?.GetText(GridLocaleKeys.EditOperationAlert),
+        "DeleteAlert" => Localizer?.GetText(GridLocaleKeys.DeleteOperationAlert),
+        "DeleteConfirmAlert" => Localizer?.GetText(GridLocaleKeys.ConfirmDelete),
+        "BatchSaveConfirm" => Localizer?.GetText(GridLocaleKeys.BatchSaveConfirm),
+        "CancelEdit" => Localizer?.GetText(GridLocaleKeys.CancelEdit),
+        "BatchSaveLostChanges" => Localizer?.GetText(GridLocaleKeys.BatchSaveLostChanges),
+        _ => string.Empty
+    };
+
+    #endregion
+}

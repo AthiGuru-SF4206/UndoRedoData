@@ -1,0 +1,220 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture82"
+           Test="FrozenRight_WithGroup_ShowGroupedColumnFalse_ShouldApplyFreezeRightBorder"
+           Description="RightFreeze_Group_ShowGroupedColumnFalse_FreezeRightBorder">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings Columns="@(new string[] { "CustomerID" })" ShowGroupedColumn="false"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture82 { get; set; }
+
+    public async void FrozenRight_WithGroup_ShowGroupedColumnFalse_ShouldApplyFreezeRightBorder(Fixture fixture)
+    {
+        var cut = fixture82.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.GroupSettings.Columns.Length == 1, "One column should be grouped");
+        Assert.False(grid.GroupSettings.ShowGroupedColumn, "ShowGroupedColumn should be false");
+
+        var frozenRightCols = grid.Columns
+            .Where(c => c.IsFrozen && c.Freeze == FreezeDirection.Right && c.Visible)
+            .ToList();
+        Assert.True(frozenRightCols.Count == 1, "One right-frozen column should exist");
+        Assert.Equal("OrderID", frozenRightCols[0].Field);
+
+        var frozenRightHeaders = cut.FindAll("th.e-rightfreeze");
+        Assert.True(frozenRightHeaders.Count > 0, "At least one header cell should have e-rightfreeze class");
+
+        var firstRightFreezeHeader = frozenRightHeaders[0];
+        Assert.True(
+            firstRightFreezeHeader.ClassList.Contains("e-freezerightborder"),
+            "First right-frozen header must have e-freezerightborder when grouped column (CustomerID) != frozen column (OrderID) and ShowGroupedColumn=false");
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture83"
+           Test="FrozenRight_WithGroup_GroupedColMatchesFrozenCol_ShouldApplyFreezeRightBorder"
+           Description="RightFreeze_Group_GroupedColEqualsFrozenCol_FreezeRightBorder">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings Columns="@(new string[] { "OrderID" })" ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture83 { get; set; }
+
+    public async void FrozenRight_WithGroup_GroupedColMatchesFrozenCol_ShouldApplyFreezeRightBorder(Fixture fixture)
+    {
+        var cut = fixture83.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        Assert.True(grid.GroupSettings.Columns.Length == 1, "One column should be grouped");
+        Assert.True(grid.GroupSettings.ShowGroupedColumn, "ShowGroupedColumn should be true");
+        var frozenRightCols = grid.Columns
+            .Where(c => c.IsFrozen && c.Freeze == FreezeDirection.Right && c.Visible)
+            .ToList();
+        Assert.True(frozenRightCols.Count == 1, "One right-frozen column should exist");
+        Assert.Equal("OrderID", frozenRightCols[0].Field);
+        var frozenRightHeaders = cut.FindAll("th.e-rightfreeze");
+        Assert.True(frozenRightHeaders.Count > 0, "At least one header cell should have e-rightfreeze class");
+        var firstRightFreezeHeader = frozenRightHeaders[0];
+        Assert.True(
+            firstRightFreezeHeader.ClassList.Contains("e-freezerightborder"),
+            "First right-frozen header must have e-freezerightborder when grouped column field matches first right-frozen column field (Branch B)");
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture84"
+           Test="FrozenRight_WithoutGrouping_ShouldApplyCorrectClasses"
+           Description="RightFreeze_NoGrouping_CorrectClasses">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture84 { get; set; }
+
+    public async void FrozenRight_WithoutGrouping_ShouldApplyCorrectClasses(Fixture fixture)
+    {
+        var cut = fixture84.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.GroupSettings.Columns == null || grid.GroupSettings.Columns.Length == 0,
+            "No grouping should be active");
+
+        var frozenRightCols = grid.Columns
+            .Where(c => c.IsFrozen && c.Freeze == FreezeDirection.Right && c.Visible)
+            .ToList();
+        Assert.True(frozenRightCols.Count == 2, "Two right-frozen columns should exist");
+
+        var frozenRightHeaders = cut.FindAll("th.e-rightfreeze");
+        Assert.True(frozenRightHeaders.Count >= 2, "Both right-frozen header cells should have e-rightfreeze");
+
+        Assert.True(
+            frozenRightHeaders[0].ClassList.Contains("e-freezerightborder"),
+            "First right-frozen header must have e-freezerightborder (no-grouping path)");
+        Assert.False(
+            frozenRightHeaders[1].ClassList.Contains("e-freezerightborder"),
+            "Non-first right-frozen header must NOT have e-freezerightborder when there is no grouping");
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture85"
+           Test="FrozenRight_WithGroup_ShowGroupedColumnTrue_GroupedColDifferent_NoExtraBorder"
+           Description="RightFreeze_Group_ShowGroupedColumnTrue_NoBorderAdded">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings Columns="@(new string[] { "CustomerID" })" ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="C2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture85 { get; set; }
+
+    public async void FrozenRight_WithGroup_ShowGroupedColumnTrue_GroupedColDifferent_NoExtraBorder(Fixture fixture)
+    {
+        var cut = fixture85.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.GroupSettings.Columns.Length == 1, "One column should be grouped");
+        Assert.True(grid.GroupSettings.ShowGroupedColumn, "ShowGroupedColumn should be true");
+
+        var frozenRightCols = grid.Columns
+            .Where(c => c.IsFrozen && c.Freeze == FreezeDirection.Right && c.Visible)
+            .ToList();
+        Assert.True(frozenRightCols.Count == 1, "One right-frozen column should exist");
+
+        var frozenRightHeaders = cut.FindAll("th.e-rightfreeze");
+        Assert.True(frozenRightHeaders.Count > 0, "At least one header cell should have e-rightfreeze class");
+
+        Assert.False(
+            frozenRightHeaders[0].ClassList.Contains("e-freezerightborder"),
+            "Right-frozen header must NOT have e-freezerightborder when ShowGroupedColumn=true and grouped col != frozen col");
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture88"
+           Test="SetStackedFixed_AllMovable_LastChildSavedCorrectly"
+           Description="SetStackedFixed_AllMovable_Branch3_LastChild_Coverage">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" FrozenColumns="1">
+            <GridColumns>
+                <GridColumn HeaderText="Info">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                        <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="C2"></GridColumn>
+                        <GridColumn Field="@nameof(Order.ShipCity)" Width="150"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture88 { get; set; }
+
+    public async void SetStackedFixed_AllMovable_LastChildSavedCorrectly(Fixture fixture)
+    {
+        var cut = fixture88.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.True(grid.IsStackedHeader, "IsStackedHeader should be true");
+
+        var fixedFreezeHeaders = cut.FindAll("th.e-fixedfreeze");
+        Assert.True(fixedFreezeHeaders.Count == 0,
+            "No Fixed-frozen columns → no e-fixedfreeze class should appear (pure Movable branch path)");
+
+        var headerRows = cut.FindAll("thead tr");
+        Assert.True(headerRows.Count >= 2, "Stacked header must produce at least 2 header rows");
+
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be present");
+
+        await Task.CompletedTask;
+    }
+}

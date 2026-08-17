@@ -1,0 +1,484 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Buttons
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" DataBound="DataBound"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    bool _canAssert = false;
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(12 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        Assert.True(3 == cut.Find(".e-row").Children.Count(), "Number of cells generated properly");
+        Assert.True(12 == cut.Instance.CurrentViewData.Count(), "CurrentViewData count is proper");
+        _canAssert = true;
+        cut.FindComponent<SfPager>().FindAll(".e-link").ElementAt(1).Click();
+    }
+
+    void DataBound()
+    {
+        if (_canAssert)
+        {
+            _canAssert = false;
+            var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(8 == cut.FindAll(".e-row").Count, "On paging rows refreshed properly");
+            Assert.True(8 == cut.Instance.CurrentViewData.Count(), "On paging current view data changed properly");
+        }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Paging functionalities">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering=true AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" IsPrimaryKey=true Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridPageSettings PageCount="4" PageSize="2" CurrentPage="2" EnableQueryString="true"></GridPageSettings>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    async Task GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(2 == cut.FindAll(".e-row").Count, "page size testing");
+        Assert.True(2 == cut.Instance.PageSettings.CurrentPage, "current page testing");
+        Assert.True(1 == cut.FindAll(".e-pager").Count, "class testing");
+        Assert.True(4 == cut.FindAll(".e-numericcontainer")[0].ChildNodes.Length, "page count testing");
+        // Assert.True(true == cut.FindAll(("e-numericcontainer")[0].ChildNodes[0].ChildNodes[0]).Attr("aria-owns"), "page count testing"); //
+        Assert.True(20 == cut.Instance.TotalItemCount, "totalRecordsCount testing");
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "anton");
+        Assert.True("CustomerID: anton" == cut.FindAll(".e-pagerexternalmsg")[0].TextContent);
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Disabled paging">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging=false>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridPageSettings PageCount="4" PageSize="0" CurrentPage="2" EnableQueryString="true"></GridPageSettings>
+            <GridEvents TValue="Order" DataBound="DataBound0" OnActionComplete="ActionComplete1"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+    bool _canAssert3 = false;
+    async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(0 == cut.FindAll(".e-pager").Count, "class testing");
+        cut.Instance.AllowPaging = true;
+        await cut.Instance.CallStateHasChangedAsync();
+        cut.WaitForState(() => cut.Instance.AllowPaging);
+        Assert.True(1 == cut.FindAll(".e-pager").Count, "allowpaging true setmodel testing");
+        cut.Instance.AllowPaging = false;
+        cut.Instance.PageSettings.PageSize = 2;
+        await cut.Instance.CallStateHasChangedAsync();
+        Assert.True(0 == cut.FindAll(".e-pager").Count, "allowpaging false setmodel testing");
+        await cut.Instance.CallStateHasChangedAsync();
+    }
+
+    void DataBound0()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.AllowPaging = true;
+        Assert.True(1 == cut.FindAll(".e-pager").Count, "allowpaging true setmodel testing");
+    }
+    void ActionComplete1()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.PageSettings.CurrentPage = 1;
+      
+    }
+}
+
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="paging without pageSettings">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="true" Height="300">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridPageSettings PageCount="4" PageSize="2" CurrentPage="2" EnableQueryString="true"></GridPageSettings>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+    bool _canAssert4 = false;
+    void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(1 == cut.FindAll(".e-pager").Count, "class testing");
+        // 221
+    }
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="dropDownEvent test">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="true" Height="300">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridPageSettings PageCount="4" PageSizes=@pageSize CurrentPage="2" EnableQueryString="true"></GridPageSettings>
+            <GridEvents TValue="Order" DataBound="DataBound1"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="RowCheck" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture5 { get; set; }
+    bool _canAssert5 = false;
+    int[] pageSize = new int[] { 10, 20, 30, 40 };
+    IRenderedComponent<SfGrid<Order>> cut;
+    public async void GridBasicRendering5(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        Assert.True(12 == cut.Instance.PageSettings.PageSize, "dropDownChanged event testing");
+        Assert.True(2 == cut.Instance.PageSettings.CurrentPage, "dropDownChanged event testing");
+    }
+    public void RowCheck()
+    {
+        Assert.True(8 == cut.FindAll(".e-row").Count, "On paging rows refreshed properly");
+        Assert.True(8 == cut.Instance.CurrentViewData.Count(), "On paging current view data changed properly");
+    }
+
+    public void DataBound1()
+    {
+
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="pagerTemplate test">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="true" Height="300">
+            <GridPageSettings>
+                <Template>
+                    <span class="e-pagenomsg">${currentPage} of ${totalPages} pages</span>
+                </Template>
+            </GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture6 { get; set; }
+    bool _canAssert6 = false;
+    int[] pageSize1 = new int[] { 10, 20, 30, 40 };
+    void GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True("" != cut.Instance.PageSettings.Template.ToString(), "dropDownChanged event testing");
+        // 299
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering7" Description="Paging & Scrolling - PageDown case">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" Height="300">
+            <GridPageSettings PageSize="12">
+            </GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture7 { get; set; }
+    bool _canAssert7 = false;
+    
+    void GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.FocusAsync();
+        //cut.Instance
+        //325
+    }
+}
+
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering8" Description="pageUp case">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" Height="300">
+            <GridPageSettings PageSize="12">
+            </GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture8 { get; set; }
+    bool _canAssert8 = false;
+    void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        //357
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering9" Description="dropDown  option check">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true" Height="300">
+            <GridPageSettings PageCount="3" PageSizes=@pageSize2 PageSize="2"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="DataBound2"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture9 { get; set; }
+    bool _canAssert9 = false;
+    int[] pageSize2 = new int[] { 10, 20, 30, 40 };
+    void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.PageSettings.PageSize = 8;
+        //427
+    }
+    void DataBound2()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(8 == cut.Instance.PageSettings.PageSize, "check current pageSize value");
+        Assert.True(1 == cut.Instance.PageSettings.CurrentPage, "check current pageSize value");
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering0" Description="dropDown All option">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridPageSettings PageSizes="true"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="DataBound3"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture0 { get; set; }
+    void GridBasicRendering0(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        //457
+    }
+    void DataBound3()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(15 == cut.Instance.CurrentViewData.Count(), "check current pageSize value");
+    }
+}
+
+<SfFixture @ref="fixture6" TestAsync="GridBasicRendering11" Description="Pager Template refresh issue">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridPageSettings>
+                <Template>
+                    <span class="e-pagenomsg">${currentPage} of ${totalPages} pages</span>
+                </Template>
+            </GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="DataBound4"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    public int count;
+    SfFixture fixture11 { get; set; }
+    async Task GridBasicRendering11(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.Refresh();
+        Assert.True(1 == this.count, "check count of grid refresh");
+    }
+    void DataBound4()
+    {
+        ++this.count;
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering13" Description="Not able to cancel paging action in the Grid">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionBegin="DataBound6"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture13 { get; set; }
+    void GridBasicRendering13(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        //cut.FindAll(("e-numericcontainer")[0].ChildNodes[1].ChildNodes[0] as AngleSharp.Html.Dom.HtmlElement).click();
+        Assert.True("1" == cut.FindAll(".e-active")[0].TextContent, "check the active paging element");
+        //541
+    }
+    void DataBound6(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.ToString() == "paging")
+        {
+            args.Cancel = true;
+        }
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering14" Description="Immutable mode paging">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridPageSettings PageSize="2"></GridPageSettings>
+            <GridEvents TValue="Order" OnActionBegin="DataBound7"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture14 { get; set; }
+    void GridBasicRendering14(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        //cut.FindAll(("e-numericcontainer")[0].ChildNodes[1].ChildNodes[0] as AngleSharp.Html.Dom.HtmlElement).click();
+        //571
+    }
+    void DataBound7(ActionEventArgs<Order> args)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+<SfFixture @ref="pagerFixture"
+           Test="UpdateExternalMessageAsync_PagerMessageUpdated"
+           Description="Covers UpdateExternalMessageAsync by validating pager external message UI">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="@GenerateOrderData()"
+                AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowDeleting="true"
+                              AllowEditing="true">
+            </GridEditSettings>
+            <GridEvents TValue="Order">
+            </GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID)
+                            HeaderText="Order ID"
+                            TextAlign="TextAlign.Right"
+                            IsPrimaryKey="true"
+                            Width="120">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID)
+                            HeaderText="Customer Name"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate)
+                            HeaderText="Order Date"
+                            Type="ColumnType.Date"
+                            TextAlign="TextAlign.Right"
+                            Width="160">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.Freight)
+                            HeaderText="Freight"
+                            TextAlign="TextAlign.Right"
+                            Width="200">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture pagerFixture { get; set; }
+
+    async void UpdateExternalMessageAsync_PagerMessageUpdated(Fixture fixture)
+    {
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        cut.WaitForState(() => cut.FindAll(".e-gridpager").Count > 0);
+
+        var message = "External message from test";
+
+        await cut.Instance.UpdateExternalMessageAsync(message);
+
+        cut.WaitForState(() =>
+        {
+            var externalMsgElem = cut.FindAll(".e-gridpager .e-pagerexternalmsg").FirstOrDefault();
+            return externalMsgElem != null &&
+                   externalMsgElem.TextContent != null &&
+                   externalMsgElem.TextContent.Contains(message, StringComparison.Ordinal);
+        });
+
+        var externalMessageElement = cut.Find(".e-gridpager .e-pagerexternalmsg");
+        Assert.NotNull(externalMessageElement);
+        Assert.Contains(message, externalMessageElement.TextContent);
+    }
+    }

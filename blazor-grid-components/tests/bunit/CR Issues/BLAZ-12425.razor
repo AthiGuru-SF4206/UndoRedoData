@@ -1,0 +1,29 @@
+﻿@inherits GridTestBase
+@using System.Dynamic
+<SfFixture Test="GridBasicRendering" Description="Exception thrown when open ExcelFilter dialog in a Grid bind with ExpandoObject using WebApiAdaptor ">
+    <ComponentUnderTest>
+        
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    /// <summary>
+    /// Below function would generate the exception reported in this bug report.
+    /// Using OfType<> is the solution here.
+    /// </summary>
+    /// <param name="fixture"></param>
+    public void GridBasicRendering(Fixture fixture)
+    {
+      List<ExpandoObject> exps = new List<ExpandoObject>();
+      dynamic a = new ExpandoObject();
+      a.OrderID = 2;
+      exps.Add(a);
+      dynamic b = new ExpandoObject();
+      b.OrderID = 1;
+      exps.Add(b);
+      IEnumerable<object> objs = exps.Cast<object>().ToList();
+      var dm = new SfDataManager() { Json = objs.OfType<ExpandoObject>(), Adaptor = Adaptors.BlazorAdaptor };
+      var result = (DataResult)dm.ExecuteQuery<ExpandoObject>(new Query().Sort("OrderID", null).RequiresCount()).GetAwaiter().GetResult();
+      Assert.True(2 == result.Result.Cast<object>().ToList().Count, "Result count is proper");
+   }
+}

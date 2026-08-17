@@ -1,0 +1,58 @@
+schema: openspec-change
+version: "1.0"
+id: bug-redundant-scrollbar-static-height
+type: bug-fix
+status: stage-1-intake
+created: "2026-03-21"
+
+metadata:
+  title: "Vertical scrollbar rendered unnecessarily when content height < static Grid height"
+  domain: scroll
+  severity: MEDIUM
+  reproducible: true
+  platform: Blazor
+  language: C#
+
+stages:
+  stage-1-intake:
+    status: approved
+    created: "2026-03-21"
+  stage-2-exploration:
+    status: approved
+    exploration-file: Exploration.md
+    failing-tests:
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_SmallData_ShouldNotHaveYScrollClass
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_AfterResize_ShouldNotHaveYScrollClass
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_LargeData_MustRetainYScrollClass
+  stage-3-proposal:
+    status: approved
+    artifacts:
+      - proposal.md
+      - design.md
+      - specs/scrollbar-visibility.md
+      - tasks.md
+  stage-4-implementation:
+    status: approved
+    files-to-modify:
+      - file: src/SfGrid.razor.cs
+        method: GetContentStyle()
+        lines: 596-608
+        change: "Append ;overflow-y:hidden to initial inline style when Height is static (not auto, not %)"
+      - file: scripts/scroll.ts
+        method: setPadding()
+        lines: 124-126
+        change: "Add this.content.style.overflowY = 'hidden' in content-fits branch (after removeUnwantedScroll returns true)"
+      - file: scripts/scroll.ts
+        method: setPadding()
+        lines: 132
+        change: "Add this.content.style.overflowY = '' in scrollbar-needed path (after early-return block)"
+    tests-to-pass:
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_SmallData_ShouldNotHaveYScrollClass
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_AfterResize_ShouldNotHaveYScrollClass
+      - tests/Actions/ScrollbarVisibility.razor::StaticHeight_LargeData_MustRetainYScrollClass
+  stage-5-regression:
+    status: approved
+  stage-6-audit:
+    status: approved
+  stage-7-archive:
+    status: in-progress

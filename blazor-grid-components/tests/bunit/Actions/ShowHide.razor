@@ -1,0 +1,570 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Show Hide column Using Button Click">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    public string[] HideItems = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems = new string[] { "Order Date", "Customer ID" };
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    void GridBasicRendering(Fixture fixture)
+    {
+
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(4 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+
+    async void show_hide()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid.HideColumnsAsync(HideHeaderItems);
+        Assert.True(2 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(2 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method ");
+
+
+        //Show columns by its Header text
+        await this.DefaultGrid.ShowColumnsAsync(ShowHeaderItems);
+        Assert.True(4 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+        // Hide columns by its Field
+        await this.DefaultGrid.HideColumnsAsync(HideItems, "field");
+        Assert.True(2 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        ///Assert.True(2 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method ");
+
+
+        //Show columns by its Field
+        await this.DefaultGrid.ShowColumnsAsync(ShowItem, "field");
+        Assert.True(3 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method");
+
+        //Show Column by SetVisible function
+        this.DefaultGrid.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method");
+
+    }
+}
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Show Hide column Using Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid1" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide1" CssClass="e-primary" Content="ShowHide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> DefaultGrid1;
+    public string[] HideItems1 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems1 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem1 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems1 = new string[] { "Order Date", "Customer ID", "Order ID" };
+
+    public IRenderedComponent<SfGrid<Order>> cut1 { get; set; }
+    void GridBasicRendering1(Fixture fixture)
+    {
+        cut1 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+
+    async void show_hide1()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid1.HideColumnsAsync(HideHeaderItems1);
+        Assert.True(1 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(3 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method ");
+
+        //Show columns by its Header text
+        await this.DefaultGrid1.ShowColumnsAsync(ShowHeaderItems1);
+        Assert.True(4 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+        // Hide columns by its Field
+        await this.DefaultGrid1.HideColumnsAsync(HideItems1, "field");
+        Assert.True(2 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method");
+
+        //Show columns by its Field
+        await this.DefaultGrid1.ShowColumnsAsync(ShowItem1, "field");
+        Assert.True(3 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid1.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+        //Show Column by SetVisible function
+        this.DefaultGrid1.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid1.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut1.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut1.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+    }
+}
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Show Hide column for frozon Rows and Columns  Using Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" FrozenColumns="2" FrozenRows="2" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide2" CssClass="e-primary" Content="ShowHide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+    public string[] HideItems2 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems2 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem2 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems2 = new string[] { "Order Date", "Customer ID", "Order ID" };
+
+    public IRenderedComponent<SfGrid<Order>> cut2 { get; set; }
+    void GridBasicRendering2(Fixture fixture)
+    {
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+
+    async void show_hide2()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid2.HideColumnsAsync(HideHeaderItems2);
+        Assert.True(1 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(3 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Header text
+        await this.DefaultGrid2.ShowColumnsAsync(ShowHeaderItems2);
+        Assert.True(4 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Show method");
+
+        // Hide columns by its Field
+        await this.DefaultGrid2.HideColumnsAsync(HideItems2, "field");
+        Assert.True(2 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Field
+        await this.DefaultGrid2.ShowColumnsAsync(ShowItem2, "field");
+        Assert.True(3 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Show method");
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid2.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+        //Show Column by SetVisible function
+        this.DefaultGrid2.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid2.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+    }
+}
+}
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Show Hide column with Grouping, Filtering and Sorting Using Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid3" DataSource="GenerateOrderData()" AllowGrouping="true" AllowFiltering="true" AllowSorting="true" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide3" CssClass="e-primary" Content="ShowHide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+    public string[] HideItems3 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems3 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem3 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems3 = new string[] { "Order Date", "Customer ID", "Order ID" };
+
+    public IRenderedComponent<SfGrid<Order>> cut3 { get; set; }
+    void GridBasicRendering3(Fixture fixture)
+    {
+        cut3 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+    }
+
+    async void show_hide3()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid3.HideColumnsAsync(HideHeaderItems3);
+        Assert.True(1 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(3 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Header text
+        await this.DefaultGrid3.ShowColumnsAsync(ShowHeaderItems3);
+        Assert.True(4 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method ");
+
+        // Hide columns by its Field
+        await this.DefaultGrid3.HideColumnsAsync(HideItems3, "field");
+        Assert.True(2 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Field
+        await this.DefaultGrid3.ShowColumnsAsync(ShowItem3, "field");
+        Assert.True(3 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method ");
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid3.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+        //Show Column by SetVisible function
+        this.DefaultGrid3.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid3.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut3.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut3.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+    }
+}
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Show Hide column with EnableVirtualization Using Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid4" DataSource="GenerateOrderData()" EnableVirtualization="true" Height="600">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGrid4;
+    public string[] HideItems4 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems4 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem4 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems4 = new string[] { "Order Date", "Customer ID", "Order ID" };
+
+    public IRenderedComponent<SfGrid<Order>> cut4 { get; set; }
+    async void GridBasicRendering4(Fixture fixture)
+    {
+        cut4 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+
+        // Hide columns by its Header text
+        await this.DefaultGrid4.HideColumnsAsync(HideHeaderItems4);
+        Assert.True(1 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method ");
+        //Assert.True(3 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method");
+
+
+        //Show columns by its Header text
+        await this.DefaultGrid4.ShowColumnsAsync(ShowHeaderItems4);
+        Assert.True(4 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling ShoW method ");
+        //Assert.True(0 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+
+        // Hide columns by its Field
+        await this.DefaultGrid4.HideColumnsAsync(HideItems4, "field");
+        Assert.True(2 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method");
+
+
+        //Show columns by its Field
+        await this.DefaultGrid4.ShowColumnsAsync(ShowItem4, "field");
+        Assert.True(3 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method");
+        //Assert.True(1 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid4.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+
+        //Show Column by SetVisible function
+        this.DefaultGrid4.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid4.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut4.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut4.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+    }
+}
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Show Hide column with Detail Template  Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid5" DataSource="GenerateOrderData()">
+            <GridTemplates>
+                <DetailTemplate>
+                    @{
+                        <SfGrid @ref="GridTemplate" DataSource="Taskdetails()" RowHeight="38">
+                            <GridColumns>
+                                <GridColumn Field=@nameof(TasksTaskUpdates.UpdateId) IsPrimaryKey="true" HeaderText="Update Id" Width="100"></GridColumn>
+                                <GridColumn DefaultValue="@DateTime.Today" Field=@nameof(TasksTaskUpdates.UpdateDate)
+                                            HeaderText="Update Date" Width="100"></GridColumn>
+                                <GridColumn Field=@nameof(TasksTaskUpdates.Update) HeaderText="Update" Width="500"></GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    }
+                </DetailTemplate>
+            </GridTemplates>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+  {
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> DefaultGrid5;
+    SfGrid<TasksTaskUpdates> GridTemplate { get; set; }
+
+    public string[] HideItems5 = new string[] { "OrderDate", "Freight" };
+    public string[] HideDetailItems5 = new string[] { "UpdateId" };
+    public string[] HideHeaderItems5 = new string[] { "Order Date", "Customer ID" };
+    public string[] HideDetailHeaderItems5 = new string[] { "Update Date" };
+    public string[] ShowItem5 = new string[] { "OrderDate" };
+    public string[] ShowDetailItem5 = new string[] { "UpdateId" };
+    public string[] ShowHeaderItems5 = new string[] { "Order Date", "Customer ID", "Order ID" };
+    public string[] ShowDetailHeaderItems5 = new string[] { "Update Date" };
+
+    public List<TasksTaskUpdates> Taskdetails() => Enumerable.Range(1, 75).Select(x => new TasksTaskUpdates()
+    {
+        UpdateId = 1000 + x,
+        Update = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+        UpdateDate = DateTime.Now.AddDays(-x),
+    }).ToList();
+
+    public class TasksTaskUpdates
+    {
+        public int? UpdateId { get; set; }
+        public string Update { get; set; }
+        public DateTime UpdateDate { get; set; }
+    }
+
+    public IRenderedComponent<SfGrid<Order>> cut5 { get; set; }
+    public IRenderedComponent<SfGrid<TasksTaskUpdates>> Detailcut5 { get; set; }
+    async void GridBasicRendering5(Fixture fixture)
+    {
+
+        cut5 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+
+        // Hide columns by its Header text
+        await this.DefaultGrid5.HideColumnsAsync(HideHeaderItems4);
+        Assert.True(1 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(3 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method");
+
+
+        //Show columns by its Header text
+        await this.DefaultGrid5.ShowColumnsAsync(ShowHeaderItems4);
+        Assert.True(4 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method");
+
+
+        // Hide columns by its Field
+        await this.DefaultGrid5.HideColumnsAsync(HideItems4, "field");
+        Assert.True(2 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Hide method");
+
+
+        //Show columns by its Field
+        await this.DefaultGrid5.ShowColumnsAsync(ShowItem4, "field");
+        Assert.True(3 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid5.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(2 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method ");
+
+
+        //Show Column by SetVisible function
+        this.DefaultGrid5.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid5.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut5.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(0 == cut5.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling Show method ");
+
+    }
+}
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Show Hide column using Button Click and Testing the DOM">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid6" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridEvents OnActionComplete="ActionCompletedHandler" OnActionBegin="ActionBeginHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide6" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> DefaultGrid6;
+    public string[] HideItems6 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems6 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem6 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems6 = new string[] { "Order Date", "Customer ID" };
+    public IRenderedComponent<SfGrid<Order>> cut6 { get; set; }
+    void GridBasicRendering6(Fixture fixture)
+    {
+
+        cut6 = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(4 == cut6.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+    public void ActionCompletedHandler(ActionEventArgs<Order> args)
+    {
+        Assert.True(2 == cut6.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        Assert.True(2 == cut6.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+    }
+
+    public void ActionBeginHandler(ActionEventArgs<Order> args)
+    {
+        // Here you can customize your code
+    }
+    async void show_hide6()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid6.HideColumnsAsync(HideHeaderItems);
+        Assert.True(2 == cut6.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="Show Hide column using Button Click and Testing the DOM">
+<ComponentUnderTest>
+    <SfGrid @ref="DefaultGrid7" DataSource="GenerateOrderData()" AllowPaging="true">
+        <GridEvents OnActionComplete="ActionCompletedHandler1"  TValue="Order"></GridEvents>
+        <GridColumns>
+            <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+            <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Visible="false" Width="150"></GridColumn>
+            <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+            <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Visible="false" Type="ColumnType.Date" Width="130"></GridColumn>
+        </GridColumns>
+    </SfGrid>
+</ComponentUnderTest>
+<Fragment>
+    <SfButton OnClick="show_hide7" CssClass="e-primary" Content="Hide"></SfButton>
+</Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> DefaultGrid7;
+    public string[] HideItems7 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems7 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem7 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems7 = new string[] { "Order Date", "Customer ID" };
+    public IRenderedComponent<SfGrid<Order>> cut7 { get; set; }
+    void GridBasicRendering7(Fixture fixture)
+    {
+
+        cut7 = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(2 == cut7.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+    public void ActionCompletedHandler1(ActionEventArgs<Order> args)
+    {
+        Assert.True(4 == cut7.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        Assert.True(0 == cut7.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+    }
+
+    async void show_hide7()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid7.ShowColumnsAsync(ShowHeaderItems7);
+        Assert.True(4 == cut7.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method");
+    }
+}

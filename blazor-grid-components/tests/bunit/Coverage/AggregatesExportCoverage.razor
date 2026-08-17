@@ -1,0 +1,153 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+@using System.Linq
+
+<SfFixture @ref="fixture" TestAsync="AggregatesExportTest" Description="Grid Aggregates Export - Excel and PDF with multiple aggregate types">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef" DataSource="GenerateAggregateTestData()" AllowPaging="true" AllowExcelExport="true" AllowPdfExport="true">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <!-- Aggregate Group 1: Sum, Max, Min for Freight -->
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(AggregateOrderData.Freight) Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(AggregateOrderData.Freight) Type="AggregateType.Max">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Max: @aggregate.Max</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(AggregateOrderData.Freight) Type="AggregateType.Min">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Min: @aggregate.Min</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+
+                <!-- Aggregate Group 2: Average, Count for Freight -->
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(AggregateOrderData.Freight) Type="AggregateType.Average">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Average: @aggregate.Average</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(AggregateOrderData.Freight) Type="AggregateType.Count">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Count: @aggregate.Count</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(AggregateOrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(AggregateOrderData.CustomerID) HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(AggregateOrderData.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(AggregateOrderData.ShipName) HeaderText="Ship Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(AggregateOrderData.OrderDate) HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<AggregateOrderData> GridRef;
+    public List<AggregateOrderData> OrderList = new List<AggregateOrderData>();
+
+    public async Task AggregatesExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<AggregateOrderData>>();
+
+        await cut.Instance.ExportToExcelAsync();
+
+        await cut.Instance.ExportToPdfAsync();
+
+    }
+
+   
+    public List<AggregateOrderData> GenerateAggregateTestData()
+    {
+        return new List<AggregateOrderData>
+        {
+            new AggregateOrderData(10248, "VINET", 32.38, "Vins et alcools Cheval", new DateTime(2010, 5, 1)),
+            new AggregateOrderData(10249, "TOMSP", 51.30, "Toms Spezialitäten", new DateTime(2010, 5, 2)),
+            new AggregateOrderData(10250, "HANAR", 65.83, "Hanari Carnes", new DateTime(2010, 5, 3)),
+            new AggregateOrderData(10251, "VICTE", 58.17, "Victuailles en stock", new DateTime(2010, 5, 4)),
+            new AggregateOrderData(10252, "SUPRD", 13.97, "Suprêmes délices", new DateTime(2010, 5, 5)),
+            new AggregateOrderData(10253, "HANAR", 3.05, "Hanari Carnes", new DateTime(2010, 5, 6)),
+            new AggregateOrderData(10254, "CHOPS", 32.38, "Chop-suey Chinese", new DateTime(2010, 5, 7)),
+            new AggregateOrderData(10255, "RICSU", 41.34, "Richter Supermarkt", new DateTime(2010, 5, 8)),
+            new AggregateOrderData(10256, "WELLI", 11.61, "Ernst Handel", new DateTime(2010, 5, 9))
+        };
+    }
+
+    public class AggregateOrderData
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double? Freight { get; set; }
+        public string ShipName { get; set; }
+        public DateTime OrderDate { get; set; }
+
+        public AggregateOrderData()
+        {
+        }
+
+        public AggregateOrderData(int? OrderID, string CustomerID, double Freight, string ShipName, DateTime OrderDate)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerID;
+            this.Freight = Freight;
+            this.ShipName = ShipName;
+            this.OrderDate = OrderDate;
+        }
+    }
+}

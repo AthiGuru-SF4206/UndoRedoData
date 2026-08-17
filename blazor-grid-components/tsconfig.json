@@ -1,0 +1,53 @@
+{
+  /**
+   * TypeScript compiler configuration for compiling all scripts/*.ts files
+   * into a single scripts/modules/sf-componentname.js file.
+   *
+   * Entry point  : scripts/sf-componentname.ts  (re-exports everything via index.ts)
+   * Output target: scripts/modules/sf-componentname.js
+   *
+   * The bundling is handled by Rollup (see gulp task 'compile' in
+   * build/compile.js). This tsconfig is used only for type-checking and
+   * emitting individual .js files to scripts/.tmp/ which Rollup then picks up.
+   */
+  "compilerOptions": {
+    /* ── Language / Environment ─────────────────────────────────────────── */
+    "target": "ES5",            // Target ES5 so the output is compatible with all Blazor-supported browsers
+    "module": "ES2015",         // Keep ES modules so Rollup can do tree-shaking
+    // ES6 + DOM + ES2015.Promise covers all APIs used in the scripts.
+    // "DOM" includes standard navigator, window, etc.
+    // Note: non-standard APIs like navigator.msSaveBlob are not in the standard
+    // DOM lib – they are suppressed via noEmitOnError:false below.
+    "lib": ["ES6", "DOM", "ES2015.Promise", "ES2015.Iterable"],
+
+    /* ── Module resolution ──────────────────────────────────────────────── */
+    "moduleResolution": "node", // Resolve @syncfusion/* packages from node_modules
+    "esModuleInterop": true,    // Allow default imports from CommonJS packages
+    "allowSyntheticDefaultImports": true,
+
+    /* ── Emit ───────────────────────────────────────────────────────────── */
+    "declaration": false,       // No .d.ts files needed for script output
+    "sourceMap": false,         // Set to true during development for easier debugging
+    "outDir": "./scripts/.tmp", // Intermediate JS files; Rollup reads from here
+    // Allow tsc to emit JS output even when type errors exist (e.g. msSaveBlob
+    // on Navigator, or missing @syncfusion type declarations). The runtime
+    // behaviour is correct – these are type-only gaps, not logic errors.
+    "noEmitOnError": false,
+
+    /* ── Type-checking strictness ───────────────────────────────────────── */
+    "strict": false,            // Matches legacy codebase – enable incrementally
+    "noImplicitAny": false,
+    "skipLibCheck": true        // Skip checking node_modules type declarations
+  },
+
+  /* Only compile the scripts folder – excludes modules/ and .tmp/ */
+  "include": [
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "scripts/modules",
+    "scripts/.tmp",
+    "scripts/bundles",
+    "node_modules"
+  ]
+}

@@ -1,0 +1,774 @@
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Internal
+@using System.Globalization;
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+@if (RenderContextMenu && Parent != null && Parent.ContextMenuItems != null)
+{
+    <SfContextMenu @ref="contextMenu" Target="@(($"#{Parent.ID}"))" CssClass="e-grid-menu" EnableRtl="@Parent.EnableRtl" Items="@MenuItems" EnableScrolling=true>
+        <MenuEvents TValue="MenuItem" OnOpen="@ContextMenuBeforeOpenEvent" OnClose="@ContextMenuCloseEvent" ItemSelected="ContextMenuItemClick"></MenuEvents>
+    </SfContextMenu>
+}
+@code {
+    #region Fields
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+    internal SfContextMenu<MenuItem>? contextMenu; 
+    private bool RenderContextMenu { get; set; } = false;
+    private object? _contextMenuItems { get; set; }
+    private Dictionary<string, MenuItem> defaultItems = new Dictionary<string, MenuItem>();
+    private List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+    public List<string> AllDefaultItems = new List<string>() { "AutoFitAll", "AutoFit",
+            "Group", "Ungroup", "Edit", "Delete", "Save", "Update", "Cancel", "Copy", "export",
+            "PdfExport", "ExcelExport", "CsvExport", "SortAscending", "SortDescending",
+            "FirstPage", "PrevPage", "LastPage", "NextPage"};
+    private bool IsHeader { get; set; } = false;
+    private bool IsContent { get; set; } = false;
+    private bool IsPager { get; set; } = false;
+    private bool IsEdit { get; set; } = false;
+    private bool IsOpen { get; set; } = false;
+    private Row<Object> RowObject { get; set; } = new Row<object>();
+    public List<string> HeaderItems = new List<string>() { };
+    public List<string> ContenItems = new List<string>() { };
+    public List<string> PagerItems = new List<string>() { };
+    public List<string> EditItems = new List<string>() { };
+    private List<string> HiddentItems = new List<string>();
+    private List<string> DisableItems = new List<string>();
+    private List<string> HideSepItems = new List<string>();
+    private List<string> ShowSepItems = new List<string>();
+    private GridColumn targetColumn = new GridColumn();
+    private RowInfo<TContent>? targetRowdata = new RowInfo<TContent>();
+    public bool IsSave { get; set; } = false;
+    private ISyncfusionStringLocalizer? Localizer;
+    private ContextMenuTarget Target { get; set; }
+
+    #endregion
+
+    #region Menu Building
+
+    /// <summary>
+    /// Builds the collection of <see cref="MenuItem"/> instances to render
+    /// based on <see cref="Parent"/>.ContextMenuItems and default items.
+    /// </summary>
+    private Object GetMenuItems()
+    {
+        MenuItems = new List<MenuItem>();
+        var exportItems = new List<MenuItem>();
+        foreach (var item in (Parent!.ContextMenuItems as IEnumerable<Object>)!)
+        {
+            if (item as String != null && AllDefaultItems.Contains(item))
+            {
+                if (item.ToString()!.ToLower(CultureInfo.InvariantCulture).Contains("export"))  // TODO: to locale lower case
+                {
+                    exportItems.Add(BuildDefaultItems(item.ToString()!));
+                }
+                else
+                {
+                    var DefaultItem = item.ToString();
+                    if ((DefaultItem == "Save" || DefaultItem == "Update") && !IsSave)
+                    {
+                        MenuItems.Add(BuildDefaultItems(item.ToString()!));
+                        IsSave = true;
+                    }
+                    else if (DefaultItem != "Save" && DefaultItem != "Update")
+                    {
+                        MenuItems.Add(BuildDefaultItems(item.ToString()!));
+                    }
+                }
+            }
+            else if (item as String == null)
+            {
+                var mitem = (item as ContextMenuItemModel);
+#pragma warning disable BL0005
+                var menuItem = new MenuItem() { Text = mitem!.Text, Id = mitem.Id, IconCss = mitem.IconCss, Items = mitem.Items as List<MenuItem>, Separator = mitem.Separator, Url = mitem.Url, Disabled = false, Hidden = false };
+#pragma warning restore BL0005
+                MenuItems.Add(menuItem);
+            }
+        }
+        if (exportItems.Count > 0)
+        {
+            var exportGroup = BuildDefaultItems("export");
+#pragma warning disable BL0005
+            exportGroup.Items = exportItems;
+#pragma warning restore BL0005
+
+            MenuItems.Add(exportGroup);
+        }
+        return MenuItems;
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    /// <summary>
+    /// Handles grid mouse-down events forwarded from JS and updates
+    /// internal target state used by the context menu open pipeline.
+    /// </summary>
+    private void MouseDownHandler(object args)
+    {
+        GridMouseDown arguments = (args as GridMouseDown)!;
+
+        if (arguments.Target == null)
+        {
+            IsHeader = false; IsContent = false; IsPager = false; IsEdit = false;
+            Target = ContextMenuTarget.None;
+        }
+        else if (arguments.Target == "Header")
+        {
+            IsHeader = true; IsContent = false; IsPager = false; IsEdit = false;
+            Target = ContextMenuTarget.Header;
+        }
+        else if (arguments.Target == "Content")
+        {
+            IsContent = true; IsHeader = false; IsPager = false; IsEdit = false;
+            this.targetRowdata = null!;
+            Target = ContextMenuTarget.Content;
+        }
+        else if (arguments.Target == "Pager")
+        {
+            IsContent = false; IsHeader = false; IsPager = true; IsEdit = false;
+            this.targetColumn = null!;
+            Target = ContextMenuTarget.Pager;
+        }
+        else if (arguments.Target == "Edit")
+        {
+            IsEdit = true; IsHeader = false; IsContent = false; IsPager = false;
+            Target = ContextMenuTarget.EditForm;
+        }
+        this.targetColumn = arguments?.Column != null ? arguments.Column : ((arguments?.Column == null && (arguments?.Target == "Content")) ? null : this.targetColumn)!;
+        if (arguments?.Row?.Data != null)
+        {
+            this.RowObject = arguments.Row;
+            this.targetRowdata = new RowInfo<TContent>();
+            this.targetRowdata.RowData = (TContent)arguments?.Row.Data!;
+            this.targetRowdata.RowIndex = (int)arguments?.Row?.Index!;
+            this.targetRowdata.CellIndex = (int)arguments?.Cell?.Index!;
+        }
+    }
+
+    /// <summary>
+    /// Resets temporary item visibility/disabled tracking lists.
+    /// </summary>
+    private void UpdateItemStatus()
+    {
+        ShowItems(this.HiddentItems, true);
+        EnableItems(this.DisableItems, true);
+        this.DisableItems = new List<string>();
+        this.HiddentItems = new List<string>();
+        this.ShowSepItems = new List<string>();
+        this.HideSepItems = new List<string>();
+    }
+
+    /// <summary>
+    /// Handler invoked when the context menu closes.
+    /// </summary>
+    private void ContextMenuCloseEvent(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+        Parent?.EventAggregator.Trigger("ContextMenuClose", new ValueTuple<BeforeOpenCloseMenuEventArgs<MenuItem>,SfContextMenu<MenuItem>>( args,contextMenu!));
+        if (args.Items.Count() > 0 && args.ParentItem == null)
+        {
+            UpdateItemStatus();
+#pragma warning disable BL0005
+            contextMenu!.Items = contextMenu.Items.Select(x => { x.Hidden = true; return x; }).ToList();
+#pragma warning restore BL0005
+        }
+    }
+
+    /// <summary>
+    /// Handler invoked before the context menu opens. Applies selection
+    /// and per-item enable/visibility rules and raises the public event.
+    /// </summary>
+    private async Task ContextMenuBeforeOpenEvent(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+#pragma warning disable BL0005
+        contextMenu!.Items = contextMenu.Items.Select(x => { x.Hidden = false; return x; }).ToList();
+#pragma warning restore BL0005
+        if (!IsHeader && !IsContent && !IsPager && !IsEdit && args.ParentItem == null)
+        {
+            args.Cancel = true;
+        }
+        else
+        {
+            if (IsContent && args.ParentItem == null && this.targetRowdata != null)
+            {
+                if (Parent?.SelectionModule != null)
+                {
+                    await Parent.SelectionModule.HandleContextMenuSelection(this.RowObject, this.targetRowdata.CellIndex, targetColumn);
+                }
+            }
+        }
+        var actionArgs = BuildContextMenuOpenArgs(args);
+
+        if (!args.Cancel)
+        {
+            await RaiseContextMenuOpenAndNotifyAsync(actionArgs);
+            ComputeMenuItemVisibilityAndDisable();
+
+            if (ShowSepItems.Count > 0)
+            {
+                ShowItems(ShowSepItems, true);
+            }
+            EnableItems(this.DisableItems, false);
+            ShowItems(this.HiddentItems, false);
+            if (HideSepItems.Count > 0)
+            {
+                ShowItems(HideSepItems, false);
+            }
+        }
+
+        if (actionArgs.Cancel == true || (HiddentItems.Count == MenuItems.Count() && args.ParentItem == null))
+        {
+            UpdateItemStatus();
+            args.Cancel = true;
+        }
+        if (this.RowObject?.Data == null || !this.RowObject.IsSelected)
+        {
+            IsContent = false;
+        }
+        if(args.Items != null && args.Items.Where(x => !x.Hidden).Count() > 10)
+        {
+            args.ScrollHeight = 307;
+        }
+        IsHeader = false; IsPager = false; IsEdit = false;
+    }
+
+    /// <summary>
+    /// Convert incoming args into a ContextMenuOpenEventArgs used by events.
+    /// </summary>
+    private ContextMenuOpenEventArgs<TContent> BuildContextMenuOpenArgs(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+        var Items = args.Items.ToList().ConvertAll(x => new MenuItemModel { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url, Items = x.Items != null ? x.Items.ConvertAll(x => new MenuItemModel { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url }) : null });
+        var ParentItem = args.ParentItem != null ? new MenuItemModel() { Text = args.ParentItem.Text, IconCss = args.ParentItem.IconCss, Id = args.ParentItem.Id, Items = args.ParentItem.Items != null ? args.ParentItem.Items.ConvertAll(x => new MenuItemModel { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url }) : null, Separator = args.ParentItem.Separator, Url = args.ParentItem.Url } : null;
+        var actionArgs = new ContextMenuOpenEventArgs<TContent>() { Parent = Parent, Cancel = args.Cancel, ContextMenu = contextMenu, Items = Items, Element = args.Element, Left = Convert.ToDouble(args.Left), ParentItem = ParentItem!, Top = Convert.ToDouble(args.Top), Column = this.targetColumn!, RowInfo = this.targetRowdata!, Target = Target };
+        return actionArgs;
+    }
+
+    /// <summary>
+    /// Invoke grid/context events for context menu open.
+    /// </summary>
+    private async Task RaiseContextMenuOpenAndNotifyAsync(ContextMenuOpenEventArgs<TContent> actionArgs)
+    {
+        await SfBaseUtils.InvokeEvent<ContextMenuOpenEventArgs<TContent>>(Parent!.GridEvents?.ContextMenuOpen, actionArgs);
+        await Parent.EventAggregator.NotifyAsync("ContextMenuOpen", actionArgs);
+    }
+
+    /// <summary>
+    /// Compute which menu items should be hidden/disabled/separators toggled.
+    /// </summary>
+    private void ComputeMenuItemVisibilityAndDisable()
+    {
+        for (int i = 0; i < MenuItems.Count(); i++)
+        {
+            var item = MenuItems.ToList()[i];
+            var key = this.getKeyFromId(item.Id);
+            if (this.AllDefaultItems.Contains(key))
+            {
+                if (this.ensureDisabledStatus(key))
+                {
+                    this.DisableItems.Add(item.Text);
+                }
+                if (IsHeader && !HeaderItems.Contains(item.Text))
+                {
+                    this.HiddentItems.Add(item.Text);
+                }
+                else if (IsContent)
+                {
+                    if ((this.targetColumn == null || this.targetColumn.Field == string.Empty) && (ContenItems.Contains(item.Text)) && !PagerItems.Contains(item.Text) && !EditItems.Contains(item.Text) && !HeaderItems.Contains(item.Text))
+                    {
+                        if ((item.Text != "Export") && (item.Text != "Excel Export") && (item.Text != "PDF Export") && (item.Text != "CSV Export"))
+                        {
+                            this.DisableItems.Add(item.Text);
+                        }
+                    }
+                    else if (!ContenItems.Contains(item.Text))
+                    {
+                        this.HiddentItems.Add(item.Text);
+                    }
+                }
+                else if (IsPager && !PagerItems.Contains(item.Text))
+                {
+                    this.HiddentItems.Add(item.Text);
+                }
+                else if (IsEdit && !EditItems.Contains(item.Text))
+                {
+                    this.HiddentItems.Add(item.Text);
+                }
+            }
+            else
+            {
+                var contextMenuItemList = Parent?.ContextMenuItems == null ? new List<object>() : (Parent?.ContextMenuItems! as IEnumerable<Object>)?.Where(customitem => customitem as String == null).ToList();
+                var contextMenuItem = (contextMenuItemList?.Find(items => (items as ContextMenuItemModel)?.Id == item?.Id) as ContextMenuItemModel);
+                if (contextMenuItem != null && contextMenuItem.Hide)
+                {
+                   this.HiddentItems.Add(item.Text);
+                }
+                else if (IsHeader)
+                {
+                    if (contextMenuItem != null && contextMenuItem.Target != null && contextMenuItem.Target != ".e-header")
+                    {
+                        if (item.Separator)
+                        {
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.HiddentItems.Add(item.Text);
+                        }
+                    }
+                    else if (contextMenuItem != null && contextMenuItem.Target == ".e-header" && item.Separator)
+                    {
+                        if (item.Hidden)
+                        {
+                            this.ShowSepItems.Remove(item.Id);
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.ShowSepItems.Add(item.Id);
+                        }
+                    }
+                }
+                else if (IsContent)
+                {
+                    if (contextMenuItem != null && contextMenuItem.Target != null && contextMenuItem.Target != ".e-content")
+                    {
+                        if (item.Separator)
+                        {
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.HiddentItems.Add(item.Text);
+                        }
+                    }
+                    else if (contextMenuItem != null && contextMenuItem.Target == ".e-content" && item.Separator)
+                    {
+                        if (item.Hidden)
+                        {
+                            this.ShowSepItems.Remove(item.Id);
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.ShowSepItems.Add(item.Id);
+                        }
+                    }
+                }
+                else if (IsPager)
+                {
+                    if (contextMenuItem != null && contextMenuItem.Target != null && contextMenuItem.Target != ".e-pager")
+                    {
+                        if (item.Separator)
+                        {
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.HiddentItems.Add(item.Text);
+                        }
+                    }
+                    else if (contextMenuItem != null && contextMenuItem.Target == ".e-pager" && item.Separator)
+                    {
+                        if (item.Hidden)
+                        {
+                            this.ShowSepItems.Remove(item.Id);
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.ShowSepItems.Add(item.Id);
+                        }
+                    }
+                }
+                else if (IsEdit)
+                {
+                    if (contextMenuItem != null && contextMenuItem.Target != null && contextMenuItem.Target != ".e-edit")
+                    {
+                        if (item.Separator)
+                        {
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.HiddentItems.Add(item.Text);
+                        }
+                    }
+                    else if (contextMenuItem != null && contextMenuItem.Target == ".e-edit" && item.Separator)
+                    {
+                        if (item.Hidden)
+                        {
+                            this.ShowSepItems.Remove(item.Id);
+                            this.HideSepItems.Add(item.Id);
+                        }
+                        else
+                        {
+                            this.ShowSepItems.Add(item.Id); 
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private string getKeyFromId(string id)
+    {
+        return id.Replace(Parent!.ID + "_cmenu_", "");
+    }
+
+    private int GetLastPage()
+    {
+        DataReadyArgs<TContent> eventArgs = new DataReadyArgs<TContent>() { Count = Parent!.TotalItemCount };
+        Parent.EventAggregator.Trigger("GetPageCount", eventArgs);
+        Parent.TotalItemCount = eventArgs.Count;
+        var totalpage = Math.Floor((double)this.Parent.TotalItemCount / this.Parent.PageSettings!.PageSize);
+        if (this.Parent.TotalItemCount % this.Parent.PageSettings.PageSize != 0)
+        {
+            totalpage += 1;
+        }
+        return (int)totalpage;
+    }
+
+    private MenuItem BuildDefaultItems(string item)
+    {
+        BuildDefaultItemInternal(item);
+        return defaultItems[item];
+    }
+
+    #region Default Item Builders
+
+    /// <summary>
+    /// Internal implementation that maps a default item key to a <see cref="MenuItem"/>
+    /// instance and stores it into the <see cref="defaultItems"/> cache.
+    /// </summary>
+    /// <param name="item">Default item key.</param>
+    private void BuildDefaultItemInternal(string item)
+    {
+        switch (item)
+        {
+#pragma warning disable BL0005
+            case "AutoFitAll":
+            case "AutoFit":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText($"Grid_{item}"), Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Group":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Group), IconCss = "e-icons e-icon-group", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Ungroup":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Ungroup), IconCss = "e-icons e-icon-ungroup", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Edit":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.EditRecord), IconCss = "e-icons e-edit", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Delete":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.DeleteRecord), IconCss = "e-icons e-delete", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Save":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Save), IconCss = "e-icons e-save", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Update":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Update), IconCss = "e-icons e-update", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Cancel":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.CancelButton), IconCss = "e-icons e-cancel", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "Copy":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Copy), IconCss = "e-icons e-copy", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "export":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Export), Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "PdfExport":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Pdfexport), IconCss = "e-icons e-pdfexport", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "ExcelExport":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Excelexport), IconCss = "e-icons e-excelexport", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "CsvExport":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.Csvexport), IconCss = "e-icons e-csvexport", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "SortAscending":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.SortAscending), IconCss = "e-icons e-icon-ascending", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "SortDescending":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.SortDescending), IconCss = "e-icons e-icon-descending", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "FirstPage":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.FirstPage), IconCss = "e-icons e-icon-first", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "PrevPage":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.PreviousPage), IconCss = "e-icons e-icon-prev", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "LastPage":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.LastPage), IconCss = "e-icons e-icon-last", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+            case "NextPage":
+                defaultItems[item] = new MenuItem { Text = @Localizer?.GetText(GridLocaleKeys.NextPage), IconCss = "e-icons e-icon-next", Id = Parent!.ID + "_cmenu_" + item };
+                break;
+        }
+#pragma warning restore BL0005
+
+    }
+
+    #endregion
+
+    private bool ensureDisabledStatus(string item)
+    {
+        bool status = false;
+        switch (item)
+        {
+            case "AutoFitAll":
+            case "AutoFit":
+                status = !(!this.Parent!.IsEdit)
+                || (this.targetColumn != null && this.targetColumn.Field == null && item == "AutoFit")
+                || (!this.Parent.IsEdit && this.Parent.EditSettings!.ShowAddNewRow);
+                break;
+            case "Group":
+                if (!Parent!.AllowGrouping || (this.targetColumn != null
+                    && this.Parent.GroupSettings != null && this.Parent.GroupSettings.Columns != null && this.Parent.GroupSettings.Columns.Contains(this.targetColumn.Field) ||
+                    (this.targetColumn != null && this.targetColumn.Field == null)))
+                {
+                    status = true;
+                }
+                break;
+            case "Ungroup":
+                if (!this.Parent!.AllowGrouping || (this.targetColumn != null
+                         && (this.Parent.GroupSettings!.Columns == null || !this.Parent.GroupSettings.Columns.Contains(this.targetColumn.Field))))
+                {
+                    status = true;
+                }
+                break;
+            case "Edit":
+            case "Delete":
+            case "Save":
+            case "Update":
+            case "Cancel":
+                if (this.Parent!.Rows.FindAll(x => x.IsDataRow).Count == 0)
+                {
+                    status = true;
+                }
+                break;
+            case "Copy":
+                if (this.Parent!.CurrentViewData!.Count() == 0 || this.Parent.SelectedRecords.Count == 0)
+                {
+                    status = true;
+                }
+                break;
+            case "export":
+                if ((!this.Parent!.AllowExcelExport))
+                {
+                    status = true;
+                }
+                break;
+            case "PdfExport":
+                if (!(this.Parent!.AllowPdfExport))
+                {
+                    status = true;
+                }
+                break;
+            case "ExcelExport":
+            case "CsvExport":
+                if (!(this.Parent!.AllowExcelExport))
+                {
+                    status = true;
+                }
+                break;
+            case "SortAscending":
+            case "SortDescending":
+                status = this.Parent?.SortModule?.IsSortMenuItemDisabled(this.targetColumn, item) ?? false;
+                break;
+            case "FirstPage":
+            case "PrevPage":
+                if (!this.Parent!.AllowPaging ||
+                    this.Parent.CurrentViewData!.Count() == 0 ||
+                    (this.Parent.PageSettings!.CurrentPage == 1))
+                {
+                    status = true;
+                }
+                break;
+            case "LastPage":
+            case "NextPage":
+                if (!this.Parent!.AllowPaging ||
+                    this.Parent.CurrentViewData!.Count() == 0 ||
+                    (this.Parent.PageSettings!.CurrentPage == this.GetLastPage()))
+                {
+                    status = true;
+                }
+                break;
+        }
+        return status;
+    }
+
+
+    public async Task ContextMenuItemClick(MenuEventArgs<MenuItem> args)
+    {
+        var item = this.getKeyFromId(args.Item.Id.ToString());
+        switch (item)
+        {
+            case "AutoFitAll":
+                Parent!.IsAutoFitEnabled = true;
+                await this.Parent.AutoFitColumnsAsync(new string[] { });
+                break;
+            case "AutoFit":
+                Parent!.IsAutoFitEnabled = true;
+                await this.Parent.AutoFitColumnsAsync(new string[] { this.targetColumn.Field });
+                break;
+            case "Group":
+                await this.Parent!.GroupColumnAsync(this.targetColumn.Field);
+                break;
+            case "Ungroup":
+                await this.Parent!.UngroupColumnAsync(this.targetColumn.Field);
+                break;
+            case "Edit":
+                if (this.Parent != null && this.Parent.EditSettings!.AllowEditing)
+                {
+                    await this.Parent.EditModule!.HandleContextMenuEdit(this.targetRowdata!, this.RowObject, this.targetColumn);
+                }
+                break;
+            case "Delete":
+                if (this.Parent != null && this.Parent.EditSettings != null && this.Parent.EditSettings.AllowDeleting)
+                {
+                    await this.Parent.EditModule!.HandleContextMenuDelete(this.targetColumn, (TContent)this.targetRowdata!.RowData!);
+                }
+                break;
+            case "Save":
+            case "Update":
+                if (this.Parent != null && this.Parent.EditSettings != null && this.Parent.EditSettings.AllowEditing)
+                {
+                    await this.Parent.EndEditAsync();
+                }
+                break;
+            case "Cancel":
+                if (this.Parent != null && this.Parent.EditSettings != null && this.Parent.EditSettings.AllowEditing)
+                {
+                    await this.Parent.CloseEditAsync();
+                }
+                break;
+            case "Copy":
+                if (this.Parent != null && this.Parent.SelectedRecords.Count > 0)
+                {
+                    await this.Parent.CopyAsync();
+                }
+                break;
+            case "PdfExport":
+                await this.Parent!.ExportToPdfAsync();
+                break;
+            case "ExcelExport":
+                await this.Parent!.ExportToExcelAsync();
+                break;
+            case "CsvExport":
+                await this.Parent!.ExportToCsvAsync();
+                break;
+            case "SortAscending":
+                //this.isOpen = false; check the use case
+                await this.Parent!.SortColumnAsync(this.targetColumn.Field, SortDirection.Ascending);
+                break;
+            case "SortDescending":
+                await this.Parent!.SortColumnAsync(this.targetColumn.Field, SortDirection.Descending);
+                break;
+            case "FirstPage":
+                await this.Parent!.GoToPageAsync(1);
+                break;
+            case "PrevPage":
+                await this.Parent!.GoToPageAsync(this.Parent.PageSettings!.CurrentPage - 1);
+                break;
+            case "LastPage":
+                await this.Parent!.GoToPageAsync(this.GetLastPage());
+                break;
+            case "NextPage":
+                await this.Parent!.GoToPageAsync(this.Parent.PageSettings!.CurrentPage + 1);
+                break;
+        }
+
+        if ((Parent != null && Parent.GridEvents?.ContextMenuItemClicked.HasDelegate == true) || Parent!.IsRenderedFromTreeGrid || Parent.IsRenderedFromPivotTable)
+        {
+            var ClickItem = new MenuItemModel() { Text = args.Item.Text, IconCss = args.Item.IconCss, Id = args.Item.Id, Items = args.Item.Items != null ? args.Item.Items.ConvertAll(x => new MenuItemModel { IconCss = x.IconCss, Id = x.Id, Separator = x.Separator, Text = x.Text, Url = x.Url }) : null, Separator = args.Item.Separator, Url = args.Item.Url };
+            var actionArgs = new ContextMenuClickEventArgs<TContent>() { Parent = Parent, Element = args.Element, Event = args.Event, Item = ClickItem, Column = this.targetColumn!, RowInfo = this.targetRowdata! };
+            
+            if (Parent.IsRenderedFromTreeGrid || Parent.IsRenderedFromPivotTable)
+                await Parent.EventAggregator.NotifyAsync("ContextMenuItemClicked", actionArgs);
+            else if (Parent.GridEvents != null)
+                await Parent.GridEvents.ContextMenuItemClicked.InvokeAsync(actionArgs);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (Parent?.CurrentViewData != null)
+        {
+            RenderContextMenu = true;
+        }
+        if (Parent != null && Parent.ContextMenuItems != null && !Parent.ContextMenuItems.Equals(_contextMenuItems)) {
+            _contextMenuItems = Parent.ContextMenuItems;
+            GetMenuItems();
+        }
+    }
+
+    private void EnableItems(List<string> items, bool isEnable)
+    {
+        for (var i = 0; i < items.Count; i++)
+        {
+            for (var j = 0; j < contextMenu?.Items.Count; j++)
+            {
+                if (contextMenu.Items[j]?.Text == items[i])
+                {
+                    #pragma warning disable BL0005
+                    contextMenu.Items[j].Disabled = !isEnable;
+                    #pragma warning restore BL0005
+                }
+            }
+        }
+    }
+
+    private void ShowItems(List<string> items, bool isShow)
+    {
+        for (var i = 0; i < items.Count; i++)
+        {
+            for (var j = 0; j < contextMenu?.Items.Count; j++)
+            {
+                if ((contextMenu.Items[j]?.Text == items[i] || contextMenu.Items[j].Separator && contextMenu.Items[j]?.Id == items[i]))
+                {
+                    #pragma warning disable BL0005
+                    contextMenu.Items[j].Hidden = !isShow;
+                    #pragma warning restore BL0005
+                }
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Localizer = Parent!.Localizer!;
+        _contextMenuItems = Parent.ContextMenuItems;
+        GetMenuItems();
+        Parent.EventAggregator.Add("MouseDown", MouseDownHandler);
+        if(Localizer != null)
+        {
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.AutoFitAll));
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.AutoFit));
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.Group));
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.Ungroup));
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.SortAscending));
+            HeaderItems.Add(Localizer.GetText(GridLocaleKeys.SortDescending));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.EditRecord));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.DeleteRecord));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.Copy));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.Export));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.Pdfexport));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.Excelexport));
+            ContenItems.Add(Localizer.GetText(GridLocaleKeys.Csvexport));
+            PagerItems.Add(Localizer.GetText(GridLocaleKeys.PreviousPage));
+            PagerItems.Add(Localizer.GetText(GridLocaleKeys.NextPage));
+            PagerItems.Add(Localizer.GetText(GridLocaleKeys.FirstPage));
+            PagerItems.Add(Localizer.GetText(GridLocaleKeys.LastPage));
+            EditItems.Add(Localizer.GetText(GridLocaleKeys.Save));
+            EditItems.Add(Localizer.GetText(GridLocaleKeys.Update));
+            EditItems.Add(Localizer.GetText(GridLocaleKeys.CancelButton));
+        }
+        
+    }
+    #endregion
+}

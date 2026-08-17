@@ -1,0 +1,55 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Grid Batch Edit - set focus to third column on add new record">
+	<ComponentUnderTest>
+		<SfGrid @ref="Grid" DataSource="GenerateRows()" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+			<GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+			<GridColumns>
+				<GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" AllowAdding=false IsIdentity=true TextAlign="TextAlign.Right" ValidationRules="@(new ValidationRules { Required = true })" Type="ColumnType.Integer" Width="120"></GridColumn>
+				<GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" AllowAdding=false ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+				<GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+				<GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+				<GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+			</GridColumns>
+		</SfGrid>
+	</ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+	SfFixture fixture { get; set; }
+	private SfGrid<Order> Grid;
+	public List<Order> GridData { get; set; }
+
+	public async Task GridBasicRendering(Fixture fixture)
+	{
+		var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+		await Grid.AddRecordAsync();
+		var focusElement = cut.Find(".e-editedbatchcell");
+		cut.WaitForState(() => focusElement.GetAttribute("aria-colindex").Contains("3"));
+		Assert.True(focusElement.GetAttribute("aria-colindex").Contains("3"), "focus is on Order Date Column");
+	}
+
+	protected List<Order> GenerateRows()
+	{
+		return GridData = Enumerable.Range(1, 75).Select(x => new Order()
+			{
+				OrderID = 1000 + x,
+				CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+				Freight = 2.1 * x,
+				OrderDate = DateTime.Now.AddDays(-x),
+				ShipCountry = (new string[] { "USA", "UK", "CHINA", "RUSSIA", "INDIA" })[new Random().Next(5)]
+			}).ToList();
+	}
+
+	public class Order
+	{
+		public int? OrderID { get; set; }
+		public string CustomerID { get; set; }
+		public DateTime? OrderDate { get; set; }
+		public double? Freight { get; set; }
+		public string ShipCountry { get; set; }
+	}
+}

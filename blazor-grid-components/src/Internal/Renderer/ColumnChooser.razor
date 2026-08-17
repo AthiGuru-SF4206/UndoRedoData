@@ -1,0 +1,756 @@
+@namespace Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Data
+@using Syncfusion.Blazor.Internal
+@using Syncfusion.Blazor.Buttons
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+@implements IColumnChooser
+
+@typeparam TContent
+@* TODO: Need to Ensure with Mobile nd RTL *@
+
+
+<div @onmousedown:stopPropagation="true" @onmouseup:stopPropagation="true" @onmousemove:stopPropagation="true" @onmouseover:stopPropagation="true" @onclick:stopPropagation="true">
+    @if (!Parent!.EnableAdaptiveUI || (Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && Parent.SyncfusionService.IsDeviceMode) || (Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && !Parent.SyncfusionService.IsDeviceMode))
+    {
+        <div id="@(($"{Parent.ID}_columnChooserDialog"))">
+            <SfDialog @ref="CCDialog" ID="@(($"{Parent.ID}_ccdlg"))" AllowPrerender="true" Width="250" HtmlAttributes="@GetDialogHtmlAttributes()" Target="@(($"#{Parent.ID}_columnChooserDialog"))" Visible="@IsVisible" CloseOnEscape="false" ShowCloseIcon="false" CssClass="e-ccdlg" EnableRtl="Parent.EnableRtl">
+                <DialogPositionData X=@XPosition Y="@YPosition"></DialogPositionData>
+                <DialogEvents Closed="ColumnChooserClosed"></DialogEvents>
+                <DialogAnimationSettings Effect="@Effects"></DialogAnimationSettings>
+                <DialogTemplates>
+                    <Header>@(Localizer?.GetText(GridLocaleKeys.ChooseColumns))</Header>
+                    <Content>
+                        <div class="e-main-div e-cc">
+                            @if (Parent?.ColumnChooserSettings?.Template == null)
+                            {
+                                <div class="e-cc-searchdiv e-cc e-input-group @InputFocus">
+                                    <input id="@($"{Parent?.ID}_CCSearchBox")" class="e-ccsearch e-cc e-input" @oninput="@((e) => InputArgs(e))" @onblur="@OnBlur" @onfocus="@OnFocus" aria-labelledby=@Localizer!.GetText(GridLocaleKeys.Search) placeholder=@Localizer.GetText(GridLocaleKeys.Search)>
+                                    @if (@CancelIcon == "e-cc-cancel")
+                                    {
+                                        <span class="e-ccsearch-icon e-icons e-cc e-input-group-icon @CancelIcon" @onclick="@((e)=> CancelIconClick(e))" title=@Localizer.GetText(GridLocaleKeys.Cancel) id=@Localizer.GetText(GridLocaleKeys.Search)></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="e-ccsearch-icon e-icons e-cc e-input-group-icon" title=@Localizer.GetText(GridLocaleKeys.Search) id=@Localizer.GetText(GridLocaleKeys.Search)></span>
+                                    }
+                                </div>
+                            }
+                            <div class="e-cc-contentdiv">
+                                @if (Columns?.Count == 0)
+                                {
+                                    <div class="e-innerdiv e-cc e-ccnmdiv">
+                                        <span class="e-cc e-nmatch">@Localizer?.GetText(GridLocaleKeys.Matchs)</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="e-innerdiv e-cc">
+                                        @if (Parent?.ColumnChooserSettings?.Template == null)
+                                        {
+                                            var aria = new Dictionary<string, string>() { { "aria-labelledby", "SelectAll" } };
+                                            <ul class="e-ccul-ele e-cc" >
+                                                <li class="e-cclist e-cc e-cc-selectall e-cclist-hidden">
+                                                    <div class="e-ccheck" uid="grid-selectAll" @onclick="@((MouseEventArgs args) => SelectAllClickHandler())">
+                                                        <CheckBoxRenderer AriaLabel="aria" CheckBoxClass=@GetLabelClassName() Intermediate=@Intermediate Checked=@SelectAllCheckbox CCSelectAll="true" CCClass="e-chk-hidden e-cc e-cc-chbox e-selectall" IsRtl="@Parent!.EnableRtl" Lable="@Localizer?.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                                    </div>
+                                                </li>
+                                                @foreach (GridColumn column in Columns!)
+                                                {
+                                                    aria = new Dictionary<string, string>() { { "aria-labelledby","grid-column"+column.Index+"label" } };
+                                                    <li class="e-cclist e-cc e-cclist-hidden" id="@(($"e-ccli_{column.Uid}"))">
+                                                        <div class="e-ccheck" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, column))" @onclick:stopPropagation="true" uid="@column.Uid">
+                                                            <CheckBoxRenderer AriaLabel="aria" Column="column" CheckBoxClass=@GetLabelClassName() @key="@column.HeaderText" Checked=@column.ColumnVisible CCClass="e-chk-hidden e-cc e-cc-chbox" IsRtl="@Parent.EnableRtl" Lable="@column.HeaderText"></CheckBoxRenderer>
+                                                        </div>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                        else
+                                        {
+                                            <CascadingValue Value="@this" IsFixed="true">
+                                                @Parent.ColumnChooserSettings.Template(new ColumnChooserTemplateContext() { Columns = Columns!})
+                                            </CascadingValue>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </Content>
+                </DialogTemplates>
+
+                @if (Parent?.ColumnChooserSettings?.FooterTemplate == null)
+                {
+                    <DialogButtons>
+                        <DialogButton OnClick="@OnBtnClick" Content=@(Localizer?.GetText(GridLocaleKeys.OKButton)) IsPrimary="true" Disabled="@IsOkButtonDisabled" CssClass="e-cc e-cc_okbtn">
+                        </DialogButton>
+                        <DialogButton OnClick="@CancelBtnClick" Content=@(Localizer?.GetText(GridLocaleKeys.CancelButton)) CssClass="e-flat e-cc e-cc-cnbtn">
+                        </DialogButton>
+                    </DialogButtons>
+                }
+            </SfDialog>
+        </div>
+    }
+    else if (IsColumnChooserIconClicked && Parent.EnableAdaptiveUI && (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Both) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && Parent.SyncfusionService.IsDeviceMode) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && !Parent.SyncfusionService.IsDeviceMode)))
+    {
+        <div id="@(($"{Parent.ID}_adaptive_columnChooserDialog"))">
+            <SfDialog @ref="CCDialog" ID="@(($"{Parent.ID}_ccdlg"))" MinHeight="350px" Width="100%" Height="100%" HtmlAttributes="@MaxHeight" Target="@(($"#{Parent.ID}"))" Visible="@IsVisible" AllowPrerender="true" CloseOnEscape="true" ShowCloseIcon="false" CssClass="e-bigger e-responsive-dialog e-dlg-fullscreen e-ccdlg" EnableRtl="Parent.EnableRtl">
+                <DialogEvents Closed="ColumnChooserClosed" Created="Rendered"></DialogEvents>
+                <DialogAnimationSettings Effect="@Effects"></DialogAnimationSettings>
+                <DialogTemplates>
+                    <Header>
+                        <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn" @onclick="@CloseHandler" HtmlAttributes="@title"></SfButton>
+                        <div class="e-dlg-header">
+                            <div class="e-res-custom-element">
+                                <div class="e-dlg-custom-header" id="@(($"{Parent.ID}_columnchooser_dialog_wrapper"))">@Localizer?.GetText(GridLocaleKeys.ChooseColumns)</div>
+                                <SfButton CssClass="e-primary e-flat e-res-apply-btn" Content=@(Localizer?.GetText(GridLocaleKeys.OKButton)) Disabled="@IsOkButtonDisabled" @onclick="@OnBtnClick"></SfButton>
+                            </div>
+                        </div>
+                    </Header>
+                    <Content>
+                        <div class="e-maincolumnchooserdiv e-mainfilterdiv e-default-filter" id="columchooser-main-filter">
+                            <div class="e-main-div e-cc">
+                                @if (Parent?.ColumnChooserSettings?.Template == null)
+                                {
+                                    <div class="e-cc-searchBox">
+                                        <div class="e-cc-searchdiv e-cc e-input-group @InputFocus">
+                                            <input id="@($"{Parent?.ID}_CCSearchBox")" class="e-ccsearch e-cc e-input" @oninput="@((e) => InputArgs(e))" @onblur="@OnBlur" @onfocus="@OnFocus" aria-label=@Localizer!.GetText(GridLocaleKeys.Search) placeholder=@Localizer.GetText(GridLocaleKeys.Search)>
+                                            @if (@CancelIcon == "e-cc-cancel")
+                                            {
+                                                <span class="e-ccsearch-icon e-icons e-cc e-input-group-icon @CancelIcon" @onclick="@((e)=> CancelIconClick(e))" title=@Localizer.GetText(GridLocaleKeys.Cancel)></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="e-ccsearch-icon e-icons e-cc e-input-group-icon" title=@Localizer.GetText(GridLocaleKeys.Search)></span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                                <div class="e-cc-contentdiv">
+                                    @if (Columns?.Count == 0)
+                                    {
+                                        <div class="e-innerdiv e-cc e-ccnmdiv">
+                                            <span class="e-cc e-nmatch">@Localizer?.GetText(GridLocaleKeys.Matchs)</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="e-innerdiv e-cc">
+                                            @if (Parent?.ColumnChooserSettings?.Template == null)
+                                            {
+                                                var aria = new Dictionary<string, string>() { { "aria-labelledby", "grid-selectAll" } };
+                                                <ul class="e-ccul-ele e-cc">
+                                                    <li class="e-cclist e-cc e-cc-selectall e-cclist-hidden">
+                                                        <div class="e-ccheck" uid="grid-selectAll" @onclick="@((MouseEventArgs args) => SelectAllClickHandler())">
+                                                            <CheckBoxRenderer AriaLabel="aria" CheckBoxClass=@GetLabelClassName() Intermediate=@Intermediate Checked=@SelectAllCheckbox CCSelectAll="true" CCClass="e-chk-hidden e-cc e-cc-chbox e-selectall" IsRtl="@Parent!.EnableRtl" Lable="@Localizer!.GetText(GridLocaleKeys.SelectAll)"></CheckBoxRenderer>
+                                                        </div>
+                                                    </li>
+                                                    @foreach (GridColumn column in Columns!)
+                                                    {
+                                                        aria = new Dictionary<string, string>() { { "aria-labelledby", "grid-column" + column.Index + "label" } };
+                                                        <li class="e-cclist e-cc e-cclist-hidden" id="@(($"e-ccli_{column.Uid}"))">
+                                                            <div class="e-ccheck" @onclick="@((MouseEventArgs args) => CheckBoxClickHandler(args, column))" @onclick:stopPropagation="true" uid="@column.Uid">
+                                                                <CheckBoxRenderer AriaLabel="aria" Column="column" CheckBoxClass=@GetLabelClassName() @key="@column.HeaderText" Checked=@column.ColumnVisible CCClass="e-chk-hidden e-cc e-cc-chbox" IsRtl="@Parent.EnableRtl" Lable="@column.HeaderText"></CheckBoxRenderer>
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <CascadingValue Value="@this" IsFixed="true">
+                                                    @Parent.ColumnChooserSettings.Template(new ColumnChooserTemplateContext() { Columns = Columns! })
+                                                </CascadingValue>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </Content>
+                </DialogTemplates>
+            </SfDialog>
+        </div>
+    }
+</div>
+
+@code {
+
+#region Properties
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+
+    public DialogEffect Effects = DialogEffect.None;
+
+    public bool Intermediate { get; set; } = false;
+
+    public bool SelectAllCheckbox { get; set; }
+
+    private bool IsOkButtonDisabled { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+
+    private bool IsClearIconClicked { get; set; }
+
+    private bool IsColumnChooserIconClicked { get; set; }
+
+    private string? SearchValue { get; set; }
+
+    private string CancelIcon { get; set; } = "";
+
+    private string InputFocus { get; set; } = "";
+
+    private string? XPosition { get; set; }
+
+    private string YPosition { get; set; } = "bottom";
+
+    private bool _hasCustomPosition { get; set; } = false;
+
+    private string searchOpt { get; set; } = "Startswith";
+
+    private string? InputValue { get; set; } = null;
+
+    private SfDialog? CCDialog { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer { get; set; }
+
+    private List<WhereFilter> WhereFilters = new List<WhereFilter>();
+
+    private List<GridColumn> Columns { get; set; } = new List<GridColumn>();
+
+    private List<GridColumn> GridColumns { get; set; } = new List<GridColumn>();
+
+    private List<string> hideColumns { get; set; } = new List<string>();
+
+    private List<string> showColumns { get; set; } = new List<string>();
+
+    private List<GridColumn>? VisibleColumns { get; set; }
+
+    private List<GridColumn>? HiddenColumns { get; set; }
+
+    private Dictionary<string, object> MaxHeight = new Dictionary<string, object>()
+    {
+        { "data-sf-style", "max-height:100%"}
+    };
+
+    private Dictionary<string, object> GetDialogHtmlAttributes()
+    {
+        return new Dictionary<string, object>
+        {
+            { "data-sf-style", "max-height:430px" },
+            { "relateTo", $"{Parent?.ID}" }
+        };
+    }
+
+    private Dictionary<string, object> title = new Dictionary<string, object>()
+    {
+        { "title", "Close"}
+    };
+
+    private class Position
+    {
+        public string? Left { get; set; }
+        public string? Right { get; set; }
+    }
+    private Position positions = new Position();
+
+#endregion
+
+#region RenderFragment
+    private RenderFragment FooterFragment { 
+        get {
+        return @<div @onclick="FooterTemplateClick">
+                    @Parent?.ColumnChooserSettings!.FooterTemplate!(new ColumnChooserFooterTemplateContext() { 
+                    Columns = UpdateColumnVisible(Columns), CancelAsync = CancelBtnClick })
+            </div>
+        ;
+        }
+    }
+#endregion
+
+#region Lifecycle methods
+    protected override void OnInitialized()
+    {
+        Localizer = Parent!.Localizer;
+        Parent.EventAggregator.Add("HideColumnChooser", OutSideClickHandler);
+        Parent.EventAggregator.Add("ColumnChooserComp", ColumnChooserComp);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!_hasCustomPosition && Parent !=null)
+        {
+            XPosition = Parent.EnableRtl ? "left" : "right";
+        }
+        GridColumns = Parent?.FreezeModule!.GetFrozenCount() > 0 ? Parent.RearrangeColumns(GridUtils.GetColumns(Parent)) : GridUtils.GetColumns(Parent!);
+        Columns = GridColumns?.Where(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox)?.ToList()!;
+            if (!IsClearIconClicked)
+            {
+                foreach (var col in Columns)
+                {
+                    col.ColumnVisible = col.Visible;
+                }
+            }
+
+        var hColumn = GridColumns?.Where(col => col.Visible == false && col.ShowInColumnChooser == true && col.Type != ColumnType.CheckBox)?.ToList()?.Count ?? 0;
+        VisibleColumns = IsClearIconClicked ? Columns?.Where(column => column.ColumnVisible == true)?.ToList() : Columns?.Where(column => column.Visible == true)?.ToList();
+        HiddenColumns = IsClearIconClicked ? Columns?.Where(column => column.ColumnVisible == false)?.ToList() : Columns?.Where(column => column.Visible == false)?.ToList();
+        Intermediate = false;
+        if (VisibleColumns?.Count == Columns?.Count)
+        {
+            SelectAllCheckbox = true;
+        }
+        else if (hColumn == Columns?.Count)
+        {
+            SelectAllCheckbox = false;
+        }
+        else if (VisibleColumns?.Any() == true)
+        {
+            Intermediate = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Parent != null && Parent.RenderColumnChooser && Parent.ShowChooser)
+        {
+            if (Parent.EnableStickyHeader && !Parent.EnableAdaptiveUI)
+            {
+                positions = await Parent.InvokeMethod<Position>("sfBlazor.Grid.renderColumnChooser", false, new object[] { Parent.DataId });
+            }
+            Parent.ShowChooser = false;
+            await OpenColumnChooser(XPosition!, YPosition);
+        }
+        else if (!Parent!.RenderColumnChooser && Parent.ShowChooser)
+        {
+            Parent.ShowChooser = false;
+            InputValue = null!;
+            await CCDialog?.HideAsync()!;
+        }
+    }
+#endregion
+
+#region Public Methods
+    public async Task OpenColumnChooser(string XPosition, string YPosition)
+    {
+        searchOpt = this.Parent!.ColumnChooserSettings!.Operator.ToString()!;
+
+        if (Parent.GridEvents?.BeforeOpenColumnChooser.HasDelegate == true)
+        {
+            var actionArgs = new ColumnChooserEventArgs() { Cancel = false, SearchOperator = searchOpt, Columns = GridColumns?.ToList()!, Parent = Parent };
+            await Parent.GridEvents?.BeforeOpenColumnChooser.InvokeAsync(actionArgs)!;
+            if (actionArgs.Cancel)
+            {
+                Parent.RenderColumnChooser = false;
+                await this.CCDialog?.HideAsync()!;
+                return;
+            }
+            searchOpt = actionArgs.SearchOperator;
+        }
+
+        if (GridColumns?.Where(column => column.Visible == false && column.ShowInColumnChooser == true && column.Type != ColumnType.CheckBox)?.ToList()?.Count == GridColumns?.Where(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox)?.ToList()?.Count)
+        {
+            IsOkButtonDisabled = true;
+            SelectAllCheckbox = false;
+        }
+
+        StateHasChanged();
+        Parent.ChooserDialogInstance = this.CCDialog;
+        await this.CCDialog?.ShowAsync()!;
+        var gridColumns = GridColumns?.Where(column => column.ShowInColumnChooser || column.Type != ColumnType.CheckBox)?.ToList();
+        var visibleColumns = gridColumns?.Where(column => column.Visible == true)?.Select(column => column.Uid)?.ToList();
+        var hiddenColumns = gridColumns?.Where(column => column.Visible == false)?.Select(column => column.Uid)?.ToList();
+        showColumns = visibleColumns!;
+        hideColumns = hiddenColumns!;
+    }
+
+    public void CheckBoxClickHandler(MouseEventArgs args, GridColumn column)
+    {
+        Parent!.IsColumnHeaderChange = true;
+#pragma warning disable BL0005
+        column.ColumnVisible = !column.ColumnVisible;
+#pragma warning restore BL0005
+
+        if (!(showColumns?.Contains(column?.Uid!) == true) && column!.ColumnVisible)
+        {
+            showColumns?.Add(column?.Uid!);
+            if (hideColumns?.Contains(column?.Uid!) == true)
+            {
+                hideColumns?.Remove(column?.Uid!);
+            }
+        }
+        else
+        {
+            if (!(hideColumns?.Contains(column?.Uid!) == true))
+            {
+                hideColumns?.Add(column?.Uid!);
+                if ( showColumns != null && showColumns.Contains(column?.Uid!))
+                {
+                    showColumns?.Remove(column?.Uid!);
+                }
+            }
+        }
+        SelectAllHandler();
+    }
+
+    public void SelectAllClickHandler()
+    {
+        var SelectAllColumns = GridColumns?.Where(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox)?.ToList();
+        if (Intermediate || !SelectAllCheckbox)
+        {
+            IsOkButtonDisabled = false;
+            SelectAllCheckbox = true;
+            Intermediate = false;
+            SelectAllColumns = InputValue == null ? SelectAllColumns : Columns;
+            foreach (GridColumn column in SelectAllColumns!)
+            {
+#pragma warning disable BL0005
+                column.ColumnVisible = true;
+#pragma warning restore BL0005
+
+                if (!(showColumns?.Contains(column?.Uid!) == true))
+                {
+                    showColumns?.Add(column?.Uid!);
+                    if (hideColumns!.Contains(column?.Uid!))
+                    {
+                        hideColumns?.Remove(column?.Uid!);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (!GridColumns!.Where(column => column.Visible && column.ShowInColumnChooser == false).Any())
+            {
+                IsOkButtonDisabled = true;
+            }
+            SelectAllCheckbox = false;
+            SelectAllColumns = InputValue == null ? SelectAllColumns : Columns;
+            foreach (GridColumn column in SelectAllColumns!)
+            {
+#pragma warning disable BL0005
+                column.ColumnVisible = false;
+#pragma warning restore BL0005
+                if (!(hideColumns?.Contains(column?.Uid!) == true))
+                {
+                    hideColumns?.Add(column?.Uid!);
+                    if (showColumns != null && showColumns.Contains(column?.Uid!))
+                    {
+                        showColumns?.Remove(column?.Uid!);
+                    }
+                }
+            }
+        }
+    }
+#endregion
+
+#region Internal Methods
+    internal async Task CloseHandler(object args)
+    {
+        await CCDialog?.HideAsync()!;
+        IsColumnChooserIconClicked = false;
+        this.Parent!.RenderColumnChooser = false;
+        Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+    }
+#endregion
+
+#region Private Event Handlers
+    private void CancelIconClick(MouseEventArgs e)
+    {
+        IsClearIconClicked = true;
+        CancelIcon = "";
+        InputValue = null!;
+        Columns = GridColumns?.Where(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox)?.ToList()!;
+        ColumnChooserComp(null!);
+        IsOkButtonDisabled = (Intermediate || SelectAllCheckbox) ? false : true;
+        Parent!.SoftRefresh = false;
+        IsClearIconClicked = false;
+        Parent.InvokeMethod("sfBlazor.Grid.searchClear", new object[] { Parent.DataId, $"{Parent.ID}_CCSearchBox" });
+    }
+
+    private void OnFocus()
+    {
+        InputFocus = "e-input-focus";
+    }
+
+    private void OnBlur()
+    {
+        InputFocus = "";
+    }
+
+    private void InputArgs(Microsoft.AspNetCore.Components.ChangeEventArgs args)
+    {
+        InputValue = args?.Value?.ToString();
+        var CCColumns = GridColumns?.Where(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox)?.ToList();
+        SearchValue = args?.Value?.ToString();
+        if (string.IsNullOrEmpty(SearchValue))
+        {
+            CancelIcon = "";
+            Columns = CCColumns!;
+            SelectAllHandler();
+        }
+        else
+        {
+            CancelIcon = "e-cc-cancel";
+            WhereFilters?.Add(new WhereFilter() { Field = "HeaderText", IgnoreCase = true, value = SearchValue?.ToLower(), Operator = searchOpt?.ToLower() });
+            if(CCColumns != null && WhereFilters != null && searchOpt != null)
+            Columns = DataOperations.PerformFiltering(CCColumns, WhereFilters, searchOpt.ToLower())?.ToList()!;
+            WhereFilters = new List<WhereFilter>();
+            SelectAllHandler();
+        }
+    }
+
+    private async Task FooterTemplateClick()
+    {
+        await CCDialog?.HideAsync()!;
+        Parent!.RenderColumnChooser = false;
+        InputValue = null!;
+    }
+#endregion
+
+#region Private Async Methods
+    private async Task CancelBtnClick()
+    {
+        await HideDialog();
+    }
+
+    private async Task HideDialog()
+    {
+#pragma warning disable BL0005
+        if (Parent!.IsAutoGeneratedColumns)
+        {
+            foreach (GridColumn column in VisibleColumns!)
+            {
+                if (column.Visible == false)
+                {
+                    column.Visible = true;
+                }
+            }
+            if (HiddenColumns?.Count != 0)
+            {
+                foreach (GridColumn column in HiddenColumns!)
+                {
+                    column.Visible = false;
+                }
+            }
+        }
+        await CCDialog?.HideAsync()!;
+        clearValues();
+    }
+
+    private async Task OnBtnClick()
+    {
+        if (Parent != null && Parent.IsEdit && !Parent.RenderColumnChooser)
+        {
+            return;
+        }
+        var sColumns = new List<string>();
+        var sColumn = new List<GridColumn>();
+        var hColumn = new List<GridColumn>();
+        var hColumns = new List<string>();
+        Parent!.SoftRefresh = false;
+        var CCcolumns = GridColumns?.Where(column => column.ShowInColumnChooser || column.Type != ColumnType.CheckBox)?.ToList();
+        foreach (string sUid in showColumns)
+        {
+            var col = CCcolumns?.FirstOrDefault(col => col.Uid == sUid);
+            if (col != null)
+            {
+                sColumn.Add(col);
+                sColumns.Add(col.HeaderText!);
+            }
+        }
+        foreach (string hUid in hideColumns)
+        {
+            var col = CCcolumns?.FirstOrDefault(col => col.Uid == hUid);
+            if (col != null)
+            {
+                hColumn.Add(col);
+                hColumns.Add(col.HeaderText!);
+            }
+        }
+
+        if (Parent.GridEvents?.OnActionBegin.HasDelegate == true || Parent.GridEvents?.ColumnVisibilityChanging.HasDelegate == true || Parent.IsRenderedFromTreeGrid)
+        {
+            var args = new ActionEventArgs<TContent>() { RequestType = Grids.Action.ColumnState, VisibleColumns = sColumn, HiddenColumns = hColumn, Parent = Parent };
+
+            if(Parent.IsRenderedFromTreeGrid)
+                await Parent.EventAggregator.NotifyAsync("ActionBegin", args);
+            else
+                await Parent.GridEvents?.OnActionBegin.InvokeAsync(args)!;
+            
+            ColumnVisibilityChangingEventArgs beforeColumnState = new ColumnVisibilityChangingEventArgs() { VisibleColumns = sColumn, HiddenColumns = hColumn, Parent = Parent };
+            
+            if(Parent.IsRenderedFromTreeGrid)
+                await Parent.EventAggregator.NotifyAsync("ColumnsVisibilityChanging", beforeColumnState);
+            else
+                await Parent.GridEvents?.ColumnVisibilityChanging.InvokeAsync(beforeColumnState)!;
+            
+            if (args.Cancel || beforeColumnState.Cancel)
+            {
+                InputValue = string.Empty;                
+                await CCDialog?.HideAsync()!;
+                this.Parent.RenderColumnChooser = false;
+                return;
+            }
+        }
+        this.Parent.ShowHideEvent = false;
+        await this.Parent.ShowColumnsOperation(sColumns?.ToArray()!, "HeaderText", true);
+        await this.Parent.HideColumnsOperation(hColumns?.ToArray()!, "HeaderText", true);
+        List<GridColumn> refCols = Parent.Columns!;
+        await Parent.InvokeViewRefresh(refCols);
+        InputValue = null!;
+
+        if (Parent.GridEvents?.OnActionComplete.HasDelegate == true || Parent.GridEvents?.ColumnVisibilityChanged.HasDelegate == true || Parent.IsRenderedFromTreeGrid)
+        {
+            var actionArgs = new ActionEventArgs<TContent>() { RequestType = Grids.Action.ColumnState, Parent = Parent, VisibleColumns = sColumn, HiddenColumns = hColumn }; // column type as GridColumn need to check
+            
+            if(Parent.IsRenderedFromTreeGrid)
+                await Parent.EventAggregator.NotifyAsync("ActionComplete", actionArgs);
+            else
+                await Parent.GridEvents?.OnActionComplete.InvokeAsync(actionArgs)!;
+            
+            ColumnVisibilityChangedEventArgs afterColumnState = new ColumnVisibilityChangedEventArgs() { VisibleColumns = sColumn, HiddenColumns = hColumn, Parent = Parent };
+            
+            if(Parent.IsRenderedFromTreeGrid)
+                await Parent.EventAggregator.NotifyAsync("ColumnsVisibilityChanged", afterColumnState);
+            else
+                await Parent.GridEvents?.ColumnVisibilityChanged.InvokeAsync(afterColumnState)!;
+
+        }
+        IsVisible = false;
+        await CCDialog?.HideAsync()!;
+        this.Parent.RenderColumnChooser = false;
+        Parent.EventAggregator.Trigger("CloseColumnMenuAdaptiveDialog", null!);
+        this.Parent.ShowHideEvent = true;
+        showColumns = new List<string>();
+        hideColumns = new List<string>();
+        if (Parent.FreezeModule!.GetFrozenCount() > 0 || Parent.FrozenRows > 0) {
+            await Parent.InvokeMethod("sfBlazor.Grid.frozenHeight", new object[] { Parent.DataId, Parent.GetClientOption(), null! });
+        }
+    }
+
+    private async Task Rendered()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Parent.ID}_ccdlg" });
+    }
+#endregion
+
+#region Private Helper Methods
+    private List<GridColumn> UpdateColumnVisible(List<GridColumn> GridColumns)
+    {
+        var tempColumns = GridColumns;
+        var i = 0;
+        foreach (var col in tempColumns)
+        {
+            #pragma warning disable BL0005
+            col.Visible = Columns[i].ColumnVisible;
+            #pragma warning restore BL0005
+            i++;
+        }
+        return tempColumns;
+    }
+
+    private void ColumnChooserClosed()
+    {
+        if (Parent != null && !Parent.EnableAdaptiveUI)
+        {
+            CancelIcon = string.Empty;
+        }
+        else
+        {
+            IsColumnChooserIconClicked = false;
+            Parent?.EventAggregator.Trigger("FilterComponentUpdate", null!);
+        }
+
+        if (Parent != null && Parent.RenderColumnChooser)
+        {
+            clearValues();
+        }
+    }
+
+    private void OutSideClickHandler(object args)
+    {
+        IsVisible = false;
+        CancelIcon = string.Empty;
+        clearValues();
+    }
+
+    private void ColumnChooserComp(object args)
+    {
+        IsVisible = true;
+        var chooserpositions = args as Dictionary<string, string>;
+        if (chooserpositions != null && chooserpositions.ContainsKey("x") && chooserpositions.ContainsKey("y"))
+        {   
+            _hasCustomPosition = true;
+            XPosition = chooserpositions["x"]?.ToString()!;
+            YPosition = chooserpositions["y"]?.ToString()!;
+        }
+        else{
+            _hasCustomPosition = false;
+        }
+        // Apply the footer template only for the non-adaptive ColumnChooser dialog or when Adaptive UI is enabled but rendered in a normal ColumnChooser Layout(non-adaptive).
+        if (Parent?.ColumnChooserSettings?.FooterTemplate != null && (!Parent.EnableAdaptiveUI || (Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && Parent.SyncfusionService.IsDeviceMode) || (Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && !Parent.SyncfusionService.IsDeviceMode)))
+        {
+            CCDialog!.FooterTemplates = FooterFragment;
+        }
+        else
+        {
+            IsColumnChooserIconClicked = true;
+        }
+        OnParametersSet();
+        StateHasChanged();
+    }
+
+    private string GetLabelClassName()
+    {
+        return Parent!.ColumnChooserSettings!.AllowTextWrap ? "e-choosercheck e-checkboxwrap" : "e-choosercheck";
+    }
+
+    private void clearValues()
+    {
+#pragma warning restore BL0005
+        InputValue = null!;
+        showColumns = new List<string>();
+        hideColumns = new List<string>();
+        this.IsOkButtonDisabled = false;
+        this.Parent!.RenderColumnChooser = false;
+        _hasCustomPosition = false;
+        StateHasChanged();
+        Parent.InvokeMethod("sfBlazor.Grid.searchClear", new object[] { Parent.DataId, $"{Parent.ID}_CCSearchBox" });
+    }
+
+    private void SelectAllHandler()
+    {
+        Intermediate = false;
+        IsOkButtonDisabled = false;
+        var hclumn = Columns?.Where(col => col.ColumnVisible == false && col.ShowInColumnChooser == true && col.Type != ColumnType.CheckBox)?.ToList()?.Count ?? 0;
+        var cccolumn = Columns?.Count();
+        if (cccolumn == hclumn)
+        { 
+            var hiddenColumns = GridColumns.Where(column => !column.ColumnVisible && column.ShowInColumnChooser && column.Type != ColumnType.CheckBox);
+            var visibleColumns = GridColumns.Where(column => column.Visible && !column.ShowInColumnChooser);
+            if (hiddenColumns.Count() == GridColumns.Count(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox))            if ((hiddenColumns?.Count() ?? 0) == (GridColumns?.Count(column => column.ShowInColumnChooser && column.Type != ColumnType.CheckBox) ?? 0))
+            {
+                if (!visibleColumns.Any())
+                {
+                    IsOkButtonDisabled = true;
+                }
+            }
+            SelectAllCheckbox = false;
+        }
+        else if (hclumn == 0)
+        {
+            SelectAllCheckbox = true;
+        }
+        else
+        {
+            Intermediate = true;
+        }
+        if (Parent != null && Parent.ColumnChooserSettings?.FooterTemplate != null && !Parent.EnableAdaptiveUI)
+        {
+            StateHasChanged();
+        }
+    }
+#endregion
+}

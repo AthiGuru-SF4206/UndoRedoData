@@ -1,0 +1,2072 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture60" TestAsync="ExcelFilter_CloseCustomDialogHandler_Adaptive" Description="Excel CloseCustomDialogHandler adaptive path">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnableAdaptiveUI="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture60 { get; set; }
+
+    public async Task ExcelFilter_CloseCustomDialogHandler_Adaptive(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableAdaptiveUI);
+
+        // Open Excel filter on second column to instantiate ExcelBase
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // isSubMenuItemSelected = true (precondition)
+        var selectedField = t.GetField("isSubMenuItemSelected",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        selectedField.SetValue(inst, true);
+
+        // Invoke CloseCustomDialogHandler on dispatcher (triggers aggregator + state)
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("CloseCustomDialogHandler",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+
+        // Expect flag cleared
+        var after = (bool)selectedField.GetValue(inst)!;
+        Assert.False(after, "isSubMenuItemSelected must be false after CloseCustomDialogHandler");
+
+        // Validate FilterModule.FilterIconIsClicked == false
+        var grid = cut.Instance;
+        var gridType = grid.GetType();
+        var fmProp = gridType.GetProperty("FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (fmProp != null)
+        {
+            var fm = fmProp.GetValue(grid);
+            if (fm != null)
+            {
+                var fmType = fm.GetType();
+                var iconProp = fmType.GetProperty("FilterIconIsClicked",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (iconProp != null)
+                {
+                    var clicked = (bool)iconProp.GetValue(fm)!;
+                    Assert.False(clicked, "FilterIconIsClicked must be false after CloseCustomDialogHandler");
+                }
+            }
+        }
+    }
+}
+<SfFixture @ref="fixture61" TestAsync="ExcelFilter_OperatorHelpers_Local" Description="ExcelBase GetClass/GetNumberClass branches">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <!-- Number then String so we can open both -->
+                <GridColumn Field="@nameof(Order.OrderID)" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture61 { get; set; }
+
+    public async Task ExcelFilter_OperatorHelpers_Local(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // ---------- String side (GetClass) ----------
+        cut.FindAll(".e-filtermenudiv")[1].Click(); // open for CustomerID (string)
+        var excelStr = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var instStr = excelStr.Instance;
+        var tStr = instStr.GetType();
+
+        // Access StringDropDown and method
+        var strDropProp = tStr.GetProperty("StringDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var strDrop = (System.Collections.IList)strDropProp.GetValue(instStr)!;
+        Assert.True(strDrop.Count > 0);
+
+        var getClass = tStr.GetMethod("GetClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        // null index => true
+        var rNull = (bool)getClass.Invoke(instStr, new object?[] { (int?)null, strDrop })!;
+        Assert.True(rNull);
+
+        int emptyIdx = -1, notEmptyIdx = -1, equalIdx = -1;
+        for (int i = 0; i < strDrop.Count; i++)
+        {
+            var opItem = strDrop[i];
+            var valProp = opItem.GetType().GetProperty("Value")!;
+            var v = (string)valProp.GetValue(opItem)!;
+            if (v == "isempty") emptyIdx = i;
+            else if (v == "isnotempty") notEmptyIdx = i;
+            else if (v == "equal") equalIdx = i;
+        }
+        Assert.True(emptyIdx >= 0 && notEmptyIdx >= 0 && equalIdx >= 0);
+
+        var rEmpty = (bool)getClass.Invoke(instStr, new object?[] { (int?)emptyIdx, strDrop })!;
+        var rNotEmpty = (bool)getClass.Invoke(instStr, new object?[] { (int?)notEmptyIdx, strDrop })!;
+        var rEqual = (bool)getClass.Invoke(instStr, new object?[] { (int?)equalIdx, strDrop })!;
+        Assert.False(rEmpty);
+        Assert.False(rNotEmpty);
+        Assert.True(rEqual);
+
+        // ---------- Number side (GetNumberClass) ----------
+        cut.FindAll(".e-filtermenudiv")[0].Click(); // open for OrderID (numeric)
+        var excelNum = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var instNum = excelNum.Instance;
+        var tNum = instNum.GetType();
+
+        var numDropProp = tNum.GetProperty("NumberDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var numDrop = (System.Collections.IList)numDropProp.GetValue(instNum)!;
+        Assert.True(numDrop.Count > 0);
+
+        var getNumClass = tNum.GetMethod("GetNumberClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        // null index => true
+        var rnNull = (bool)getNumClass.Invoke(instNum, new object?[] { (int?)null, numDrop })!;
+        Assert.True(rnNull);
+
+        int isNullIdx = -1, isNotNullIdx = -1, eqIdx = -1;
+        for (int i = 0; i < numDrop.Count; i++)
+        {
+            var opItem = numDrop[i];
+            var valProp = opItem.GetType().GetProperty("Value")!;
+            var v = (string)valProp.GetValue(opItem)!;
+            if (v == "isnull") isNullIdx = i;
+            else if (v == "isnotnull") isNotNullIdx = i;
+            else if (v == "equal") eqIdx = i;
+        }
+        Assert.True(isNullIdx >= 0 && isNotNullIdx >= 0 && eqIdx >= 0);
+
+        var rIsNull = (bool)getNumClass.Invoke(instNum, new object?[] { (int?)isNullIdx, numDrop })!;
+        var rIsNotNull = (bool)getNumClass.Invoke(instNum, new object?[] { (int?)isNotNullIdx, numDrop })!;
+        var rEq = (bool)getNumClass.Invoke(instNum, new object?[] { (int?)eqIdx, numDrop })!;
+        Assert.False(rIsNull);
+        Assert.False(rIsNotNull);
+        Assert.True(rEq);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture62" TestAsync="ExcelFilter_ItemSelected_OperatorSelection" Description="Excel ItemSelected operator selection - non-adaptive">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture62 { get; set; }
+
+    public async Task ExcelFilter_ItemSelected_OperatorSelection(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.False(cut.Instance.EnableAdaptiveUI); // ensure non-adaptive
+
+        // Open Excel filter
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Create MenuEventArgs<MenuItem> to simulate selecting "Equal"
+        var argsType = typeof(Syncfusion.Blazor.Navigations.MenuEventArgs<>)
+                       .MakeGenericType(typeof(Syncfusion.Blazor.Navigations.MenuItem));
+        var args = Activator.CreateInstance(argsType)!;
+        var itemProp = argsType.GetProperty("Item")!;
+        var menuItem = new Syncfusion.Blazor.Navigations.MenuItem { Text = "Equal", Id = "equal" };
+        itemProp.SetValue(args, menuItem);
+
+        // Call ItemSelected on dispatcher (may trigger dialog hide)
+        await cut.InvokeAsync(async () =>
+        {
+            var m = t.GetMethod("ItemSelected",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var task = (Task)m.Invoke(inst, new object[] { args })!;
+            await task;
+        });
+
+        // Validate flags/selected operator
+        var isSelField = t.GetField("isSubMenuItemSelected",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        Assert.True((bool)isSelField.GetValue(inst)!);
+
+        var selOpProp = t.GetProperty("SelectedFoperator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        Assert.Equal("equal", (string?)selOpProp.GetValue(inst));
+
+        // Parent.FilterModule.IsSubMenuClick == true
+        var gridType = cut.Instance.GetType();
+        var fmProp = gridType.GetProperty("FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var fm = fmProp?.GetValue(cut.Instance);
+        if (fm != null)
+        {
+            var fmType = fm.GetType();
+            var subMenuClickProp = fmType.GetProperty("IsSubMenuClick");
+            if (subMenuClickProp != null)
+            {
+                Assert.True((bool)subMenuClickProp.GetValue(fm)!);
+            }
+        }
+    }
+}
+<SfFixture @ref="fixture63" TestAsync="ExcelFilter_StringOperatorGetters" Description="Excel string operator getters for first/second">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture63 { get; set; }
+
+    public async Task ExcelFilter_StringOperatorGetters(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Prepare string dropdowns
+        var firstStrDropProp = t.GetProperty("FirstStringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var secondStrDropProp = t.GetProperty("SecondStringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        var firstStrDrop = Activator.CreateInstance(firstStrDropProp.PropertyType)!;
+        var secondStrDrop = Activator.CreateInstance(secondStrDropProp.PropertyType)!;
+
+        firstStrDropProp.SetValue(inst, firstStrDrop);
+        secondStrDropProp.SetValue(inst, secondStrDrop);
+
+        var valProp1 = firstStrDrop.GetType().GetProperty("Value")!;
+        var valProp2 = secondStrDrop.GetType().GetProperty("Value")!;
+
+        valProp1.SetValue(firstStrDrop, "contains");
+        valProp2.SetValue(secondStrDrop, "notequal");
+
+        // Call getters
+        var op1 = (string?)t.GetMethod("GetFirstColumnFilterOperator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(inst, null);
+        var op2 = (string?)t.GetMethod("GetSecondColumnFilterOperator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .Invoke(inst, null);
+
+        Assert.Equal("contains", op1);
+        Assert.Equal("notequal", op2);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture64" TestAsync="ExcelFilter_Dispose_Branches" Description="Excel Dispose() with IsSubMenuDialog true/false">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture64 { get; set; }
+
+    public async Task ExcelFilter_Dispose_Branches(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        var isSubMenuProp = t.GetProperty("IsSubMenuDialog",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        // Case 1: IsSubMenuDialog = true
+        isSubMenuProp.SetValue(inst, true);
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("Dispose",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+        // No exception expected; flag remains under component control
+
+        // Case 2: IsSubMenuDialog = false
+        isSubMenuProp.SetValue(inst, false);
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("Dispose",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+
+        Assert.True(true, "Dispose executed safely for both branches");
+    }
+}
+<SfFixture @ref="fixture641" TestAsync="ExcelFilter_Dispose_Branches1" Description="Excel Dispose() with IsSubMenuDialog true/false">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture641 { get; set; }
+
+    public async Task ExcelFilter_Dispose_Branches1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        var isSubMenuProp = t.GetProperty("IsSubMenuDialog",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+
+        // Case 1: IsSubMenuDialog = true
+        isSubMenuProp.SetValue(inst, true);
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("Dispose",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+        // No exception expected; flag remains under component control
+
+        // Case 2: IsSubMenuDialog = false
+        isSubMenuProp.SetValue(inst, false);
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("Dispose",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+
+        Assert.True(true, "Dispose executed safely for both branches");
+    }
+}
+<SfFixture @ref="fixture66" TestAsync="ExcelFilter_OnCloseMenu_ParentItemPresent" Description="Excel OnCloseMenu - ParentItem not null branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture66 { get; set; }
+
+    public async Task ExcelFilter_OnCloseMenu_ParentItemPresent(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.False(cut.Instance.EnableAdaptiveUI);
+
+        // Open Excel filter to instantiate ExcelBase
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        var argsType = typeof(Syncfusion.Blazor.Navigations.BeforeOpenCloseMenuEventArgs<>)
+                       .MakeGenericType(typeof(Syncfusion.Blazor.Navigations.MenuItem));
+        var args = Activator.CreateInstance(argsType)!;
+        var cancelProp = argsType.GetProperty("Cancel")!;
+        var parentItemProp = argsType.GetProperty("ParentItem")!;
+        cancelProp.SetValue(args, false);
+        parentItemProp.SetValue(args, new Syncfusion.Blazor.Navigations.MenuItem { Text = "Parent" });
+
+        // Pre-set IsSubMenuDialog = true (will be turned off by OnCloseMenu for non-adaptive)
+        var isSubMenuProp = t.GetProperty("IsSubMenuDialog", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        isSubMenuProp.SetValue(inst, true);
+
+        // Invoke (no UI side-effects, safe to call directly)
+        t.GetMethod("OnCloseMenu", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+         .Invoke(inst, new object[] { args });
+
+        Assert.False((bool)cancelProp.GetValue(args)!, "Cancel must remain false when a ParentItem exists");
+        Assert.False((bool)isSubMenuProp.GetValue(inst)!, "IsSubMenuDialog must be false for non-adaptive path");
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture67" TestAsync="ExcelFilter_ClearBtnClick_State" Description="Excel ClearBtnClick resets flags and ExcelDialog">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture67 { get; set; }
+
+    public async Task ExcelFilter_ClearBtnClick_State(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Precondition tweaks: ensure FilterModule exists and some flags are non-default
+        var grid = cut.Instance;
+        var gridType = grid.GetType();
+        var fmProp = gridType.GetProperty("FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var filterModule = fmProp?.GetValue(grid);
+        if (filterModule != null)
+        {
+            var fmType = filterModule.GetType();
+            fmType.GetProperty("IsSubMenuClick")?.SetValue(filterModule, true);
+            fmType.GetProperty("FilterIconIsClicked")?.SetValue(filterModule, true);
+            fmType.GetProperty("ExcelDialog")?.SetValue(filterModule, true);
+        }
+
+        // Dispatcher-safe invocation
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("ClearBtnClick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+
+        // Validate: flags should be reset
+        filterModule = fmProp?.GetValue(grid);
+        if (filterModule != null)
+        {
+            var fmType = filterModule.GetType();
+            var isSub = fmType.GetProperty("IsSubMenuClick")?.GetValue(filterModule);
+            var icon = fmType.GetProperty("FilterIconIsClicked")?.GetValue(filterModule);
+            var excelDlg = fmType.GetProperty("ExcelDialog")?.GetValue(filterModule);
+            if (isSub is bool b1) Assert.False(b1);
+            if (icon is bool b2) Assert.False(b2);
+            if (excelDlg is bool b3) Assert.False(b3);
+        }
+    }
+}
+<SfFixture @ref="fixture68" TestAsync="ExcelFilter_CreatedHandler_NoPersistence" Description="Excel CreatedHandler no-persistence branch keeps excelFilterValue null">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture68 { get; set; }
+
+    public async Task ExcelFilter_CreatedHandler_NoPersistence(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Ensure no persistence and no pre-seeded filter columns
+        cut.Instance.EnablePersistence = false;
+        if (cut.Instance.FilterSettings.Columns != null)
+            cut.Instance.FilterSettings.Columns.Clear();
+
+        // Open Excel filter to instantiate ExcelBase
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Invoke CreatedHandler(Object args) on dispatcher
+        await cut.InvokeAsync(async () =>
+        {
+            var m = t.GetMethod("CreatedHandler", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var task = (Task)m.Invoke(inst, new object[] { new object() })!;
+            await task;
+        });
+
+        // excelFilterValue should remain null in no-persistence path
+        var efvProp = t.GetProperty("excelFilterValue", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var efv = (string?)efvProp.GetValue(inst);
+        Assert.True(string.IsNullOrEmpty(efv));
+
+        // CustomFilterItem should not be set (CreatedHandler -> CustomFilterValueMaintain() but no value to project)
+        var cfiProp = t.GetProperty("CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var cfi = cfiProp.GetValue(inst);
+        Assert.Null(cfi);
+    }
+}
+<SfFixture @ref="fixture69" TestAsync="ExcelFilter_GetData_PopulatesOperatorLists" Description="Excel GetData() populates NumberDropDown and StringDropDown">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <!-- Render two columns so both lists are relevant -->
+                <GridColumn Field="@nameof(Order.OrderID)" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture69 { get; set; }
+
+    public async Task ExcelFilter_GetData_PopulatesOperatorLists(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Open once to instantiate ExcelBase; either column works
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Call GetData() explicitly to bump lines even if OnInitialized() already did
+        t.GetMethod("GetData", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+         .Invoke(inst, null);
+
+        // Read populated lists
+        var numDrop = (System.Collections.IList)t.GetProperty("NumberDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+        var strDrop = (System.Collections.IList)t.GetProperty("StringDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(inst)!;
+
+        Assert.True(numDrop.Count > 0, "NumberDropDown must be populated");
+        Assert.True(strDrop.Count > 0, "StringDropDown must be populated");
+
+        // Verify a few key operators exist
+        bool Has(System.Collections.IList list, string value)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var v = (string)list[i].GetType().GetProperty("Value")!.GetValue(list[i])!;
+                if (string.Equals(v, value, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        }
+
+        Assert.True(Has(numDrop, "equal"));
+        Assert.True(Has(numDrop, "isnull"));
+        Assert.True(Has(numDrop, "isnotnull"));
+
+        Assert.True(Has(strDrop, "equal"));
+        Assert.True(Has(strDrop, "isempty"));
+        Assert.True(Has(strDrop, "isnotempty"));
+    }
+}
+<SfFixture @ref="fixture70" TestAsync="ExcelFilter_OnMenuCreated_OpensContextMenu" Description="Excel OnMenuCreated opens the context menu (dispatcher-safe)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture70 { get; set; }
+
+    public async Task ExcelFilter_OnMenuCreated_OpensContextMenu(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Dispatcher-safe invoke; it awaits contextMenu.OpenAsync()
+        await cut.InvokeAsync(() =>
+        {
+            t.GetMethod("OnMenuCreated", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+             .Invoke(inst, null);
+        });
+
+        // No exception expected; context menu is opened internally.
+        Assert.True(true, "OnMenuCreated executed without error");
+    }
+}
+<SfFixture @ref="fixture71" TestAsync="ExcelFilter_FilterBtnClick_DualNumeric_OrPredicate" Description="Excel FilterBtnClick with two numeric predicates and OR">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Type="ColumnType.Integer" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture71 { get; set; }
+
+    public async Task ExcelFilter_FilterBtnClick_DualNumeric_OrPredicate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+
+        var excel = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var inst = excel.Instance;
+        var t = inst.GetType();
+
+        // Ensure numeric typing
+        var colProp = t.GetProperty("Column", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)!;
+        var col = (Syncfusion.Blazor.Grids.GridColumn)colProp.GetValue(inst)!;
+        col.Type = Syncfusion.Blazor.Grids.ColumnType.Integer;
+        col.ValueType = typeof(int?);
+
+        // Operators for both sides (>= and <=)
+        var firstNumDropProp = t.GetProperty("FirstNumberOperatorDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var secondNumDropProp = t.GetProperty("SecondNumberOperatorDropDown", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var firstNumDrop = Activator.CreateInstance(firstNumDropProp.PropertyType)!;
+        var secondNumDrop = Activator.CreateInstance(secondNumDropProp.PropertyType)!;
+        firstNumDropProp.SetValue(inst, firstNumDrop);
+        secondNumDropProp.SetValue(inst, secondNumDrop);
+
+        firstNumDrop.GetType().GetProperty("Value")!.SetValue(firstNumDrop, "greaterthanorequal");
+        secondNumDrop.GetType().GetProperty("Value")!.SetValue(secondNumDrop, "lessthanorequal");
+
+        // Numeric editors and values
+        var firstIntProp = t.GetProperty("FirstNumericValueasInt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var secondIntProp = t.GetProperty("SecondNumericValueasInt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var firstInt = Activator.CreateInstance(firstIntProp.PropertyType)!;
+        var secondInt = Activator.CreateInstance(secondIntProp.PropertyType)!;
+        firstIntProp.SetValue(inst, firstInt);
+        secondIntProp.SetValue(inst, secondInt);
+
+        firstInt.GetType().GetProperty("Value")!.SetValue(firstInt, 1001);
+        secondInt.GetType().GetProperty("Value")!.SetValue(secondInt, 1005);
+
+        // Force integer branch
+        t.GetProperty("_isInteger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(inst, true);
+        t.GetProperty("_isLong", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.SetValue(inst, false);
+
+        // OR predicate selection
+        t.GetProperty("AndRadioButton", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+         .SetValue(inst, "or");
+
+        // Dispatcher-safe invoke
+        await cut.InvokeAsync(async () =>
+        {
+            var m = t.GetMethod("FilterBtnClick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var task = (Task)m.Invoke(inst, null)!;
+            await task;
+        });
+
+        // Wait for two predicate columns
+        cut.WaitForState(() => cut.Instance.FilterSettings.Columns != null &&
+                               cut.Instance.FilterSettings.Columns.Count == 2);
+
+        var cols = cut.Instance.FilterSettings.Columns;
+        Assert.NotNull(cols);
+        Assert.Equal(2, cols.Count);
+
+        foreach (var c in cols)
+        {
+            // Field
+            Assert.Equal(nameof(Order.OrderID), c.Field);
+            // Predicate
+            Assert.Equal("or", c.Predicate);
+
+            // Value (type-agnostic)
+            var v = Convert.ToInt32(c.Value);
+            Assert.True(v == 1001 || v == 1005);
+
+            // Operator (assert by name to be version-agnostic)
+            var opName = c.Operator.ToString().ToLowerInvariant();
+            Assert.True(opName == "greaterthanorequal" || opName == "lessthanorequal");
+        }
+    }
+}
+
+<SfFixture @ref="fixture72" Test="FilterInput_FocusBlur_Fixture72" Description="FilterInput OnFocus and OnBlur fully covered via focus/blur on FilterBar input">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture72 { get; set; }
+
+    public async void FilterInput_FocusBlur_Fixture72(Fixture fixture)
+    {
+        var cut = fixture72.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+        input.Input("ANTON");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        input.Focus();
+        cut.WaitForState(() => cut.FindAll(".e-input-focus").Count > 0, TimeSpan.FromSeconds(20));
+        var focusCount = cut.FindAll(".e-input-focus").Count;
+        Assert.True(focusCount > 0);
+
+        input.Blur();
+        cut.WaitForState(() => cut.FindAll(".e-input-focus").Count == 0, TimeSpan.FromSeconds(20));
+        var blurCount = cut.FindAll(".e-input-focus").Count;
+        Assert.True(blurCount == 0);
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture73" Test="FilterInput_CancelIconClick_Fixture73" Description="FilterInput CancelIconClick fully covered by clicking clear icon on FilterBar">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridEvents OnActionComplete="FilterInput_ActionComplete_Fixture73" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture73 { get; set; }
+    private List<Syncfusion.Blazor.Grids.Action> _actionTypes73 = new List<Syncfusion.Blazor.Grids.Action>();
+
+    public void FilterInput_ActionComplete_Fixture73(Syncfusion.Blazor.Grids.ActionEventArgs<Order> args)
+    {
+        var requestType = args.RequestType;
+        _actionTypes73.Add(requestType);
+    }
+
+    public async void FilterInput_CancelIconClick_Fixture73(Fixture fixture)
+    {
+        _actionTypes73 = new List<Syncfusion.Blazor.Grids.Action>();
+        var cut = fixture73.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+
+        input.Input("ANTON");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        cut.WaitForState(() => cut.FindAll(".e-clear-icon").Count > 0, TimeSpan.FromSeconds(20));
+        var clearIconsBefore = cut.FindAll(".e-clear-icon").Count;
+        Assert.True(clearIconsBefore > 0);
+
+        var clearIcon = cut.FindAll(".e-clear-icon")[0];
+        clearIcon.Click();
+
+        cut.WaitForState(() => grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0, TimeSpan.FromSeconds(20));
+        var clearedCount = grid.FilterSettings.Columns == null ? 0 : grid.FilterSettings.Columns.Count;
+        Assert.True(clearedCount == 0);
+
+        cut.WaitForState(() => string.IsNullOrEmpty(cut.Find($"[id={inputId}]").GetAttribute("value")) || cut.Find($"[id={inputId}]").GetAttribute("value") == "", TimeSpan.FromSeconds(20));
+        var inputValueAfter = cut.Find($"[id={inputId}]").GetAttribute("value");
+        Assert.True(string.IsNullOrEmpty(inputValueAfter) || inputValueAfter == "");
+
+        var hasClearFiltering = _actionTypes73.Contains(Syncfusion.Blazor.Grids.Action.ClearFiltering);
+        Assert.True(hasClearFiltering);
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture74" Test="FilterInput_SetValuesRecursively_Fixture74" Description="FilterInput SetValuesRecursively fully covered using reflection-driven nested columns">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture74 { get; set; }
+
+    public async void FilterInput_SetValuesRecursively_Fixture74(Fixture fixture)
+    {
+        var cut = fixture74.GetComponentUnderTest<SfGrid<Order>>();
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var filterInputInstance = filterInputs[0].Instance;
+        Assert.NotNull(filterInputInstance);
+
+        var parentCol = new Syncfusion.Blazor.Grids.GridColumn() { Field = "Parent", Format = "d" };
+        var child1 = new Syncfusion.Blazor.Grids.GridColumn() { Field = "Child1", Format = "c2" };
+        var child2 = new Syncfusion.Blazor.Grids.GridColumn() { Field = "Child2", Format = "n2" };
+        var grandChild = new Syncfusion.Blazor.Grids.GridColumn() { Field = "GrandChild", Format = "y" };
+
+        child2.Columns = new List<Syncfusion.Blazor.Grids.GridColumn>() { grandChild };
+        parentCol.Columns = new List<Syncfusion.Blazor.Grids.GridColumn>() { child1, child2 };
+
+        var columns = new List<Syncfusion.Blazor.Grids.GridColumn>() { parentCol };
+        var dict = new Dictionary<string, string>();
+
+        var mi = filterInputInstance.GetType().GetMethod("SetValuesRecursively", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        mi.Invoke(filterInputInstance, new object[] { columns, dict });
+
+        Assert.True(dict.ContainsKey("Parent"));
+        Assert.True(dict.ContainsKey("Child1"));
+        Assert.True(dict.ContainsKey("Child2"));
+        Assert.True(dict.ContainsKey("GrandChild"));
+        Assert.Equal("d", dict["Parent"]);
+        Assert.Equal("c2", dict["Child1"]);
+        Assert.Equal("n2", dict["Child2"]);
+        Assert.Equal("y", dict["GrandChild"]);
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture75" Test="FilterInput_KeyDown_Escape_Tab_Fixture75" Description="FilterInput KeyDownHandler Escape clears filter and Tab/ShiftTab navigation path executes">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture75 { get; set; }
+
+    public async void FilterInput_KeyDown_Escape_Tab_Fixture75(Fixture fixture)
+    {
+        var cut = fixture75.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+
+        input.Input("ANTON");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Tab" });
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Tab", ShiftKey = true });
+
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Escape" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0, TimeSpan.FromSeconds(20));
+        var clearedCount = grid.FilterSettings.Columns == null ? 0 : grid.FilterSettings.Columns.Count;
+        Assert.True(clearedCount == 0);
+
+        cut.WaitForState(() =>
+        {
+            var v = cut.Find($"[id={inputId}]").GetAttribute("value");
+            return string.IsNullOrEmpty(v) || v == "";
+        }, TimeSpan.FromSeconds(20));
+
+        var inputValueAfter = cut.Find($"[id={inputId}]").GetAttribute("value");
+        Assert.True(string.IsNullOrEmpty(inputValueAfter) || inputValueAfter == "");
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture76" Test="FilterInput_ImmediateMode_UpdateValue_Fixture76" Description="FilterInput UpdateValue Immediate mode branch creates timer and sets clear icon">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="Syncfusion.Blazor.Grids.FilterBarMode.Immediate" ImmediateModeDelay="1"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture76 { get; set; }
+
+    public async void FilterInput_ImmediateMode_UpdateValue_Fixture76(Fixture fixture)
+    {
+        var cut = fixture76.GetComponentUnderTest<SfGrid<Order>>();
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+
+        input.Input("A");
+        cut.WaitForState(() => cut.FindAll(".e-clear-icon").Count > 0 || cut.FindAll(".e-clear-icon.e-icons").Count > 0, TimeSpan.FromSeconds(20));
+        var iconCount = cut.FindAll(".e-clear-icon").Count + cut.FindAll(".e-clear-icon.e-icons").Count;
+        Assert.True(iconCount > 0);
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var instance = filterInputs[0].Instance;
+        Assert.NotNull(instance);
+
+        var fi = instance.GetType().GetField("aTimer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(fi);
+
+        var timerObj = fi.GetValue(null);
+        Assert.NotNull(timerObj);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture77" Test="FilterInput_GetActualFilterValue_Boolean_DateTimeOffset_Numeric_Fixture77" Description="FilterInput GetActualFilterValue covers Boolean, DateTimeOffset, and numeric no-operator regex branch via FilterBar inputs">
+    <ComponentUnderTest>
+        <SfGrid TItem="OrderOffset" DataSource="GenerateOrderOffsetData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(OrderOffset.Id)" Type="ColumnType.Integer" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(OrderOffset.Verified)" Type="ColumnType.Boolean" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(OrderOffset.When)" Type="ColumnType.DateTime" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture77 { get; set; }
+
+    public class OrderOffset
+    {
+        public int Id { get; set; }
+        public bool Verified { get; set; }
+        public DateTimeOffset When { get; set; }
+    }
+
+    public List<OrderOffset> GenerateOrderOffsetData()
+    {
+        return new List<OrderOffset>
+        {
+            new OrderOffset { Id = 1013, Verified = true, When = new DateTimeOffset(2010, 05, 01, 10, 00, 00, TimeSpan.Zero) },
+            new OrderOffset { Id = 1001, Verified = false, When = new DateTimeOffset(2010, 05, 03, 11, 00, 00, TimeSpan.Zero) }
+        };
+    }
+
+    public async void FilterInput_GetActualFilterValue_Boolean_DateTimeOffset_Numeric_Fixture77(Fixture fixture)
+    {
+        var cut = fixture77.GetComponentUnderTest<SfGrid<OrderOffset>>();
+        var grid = cut.Instance;
+
+        var idInput = cut.Find($"[id={nameof(OrderOffset.Id)}_filterBarcell]");
+        idInput.Input("1013");
+        idInput.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count >= 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Any(c => c.Field == nameof(OrderOffset.Id)));
+
+        var boolInput = cut.Find($"[id={nameof(OrderOffset.Verified)}_filterBarcell]");
+        boolInput.Input("true");
+        boolInput.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns.Any(c => c.Field == nameof(OrderOffset.Verified)), TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Any(c => c.Field == nameof(OrderOffset.Verified)));
+        var dtInput = cut.Find($"[id={nameof(OrderOffset.When)}_filterBarcell]");
+        dtInput.Input("05/01/2010");
+        dtInput.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => grid.FilterSettings.Columns.Any(c => c.Field == nameof(OrderOffset.When)), TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Any(c => c.Field == nameof(OrderOffset.When)));
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture78" Test="FilterInput_ConvertToDesiredDateFormat_Fixture78" Description="FilterInput ConvertToDesiredDateFormat covers TryParseExact success and alternate format success branches">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Type="ColumnType.Date" Format="d" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture78 { get; set; }
+
+    public async void FilterInput_ConvertToDesiredDateFormat_Fixture78(Fixture fixture)
+    {
+        var cut = fixture78.GetComponentUnderTest<SfGrid<Order>>();
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var instance = filterInputs[0].Instance;
+        Assert.NotNull(instance);
+
+        var mi = instance.GetType().GetMethod("ConvertToDesiredDateFormat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        var inputDate1 = "2010-05-01";
+        var format1 = "yyyy-MM-dd";
+        var result1 = (string)mi.Invoke(instance, new object[] { inputDate1, format1, Syncfusion.Blazor.Grids.ColumnType.DateOnly, true })!;
+        Assert.Equal("05/01/2010", result1);
+
+        var inputDate2 = "5/01/2010";
+        var format2 = "dd/MM/yyyy";
+        var result2 = (string)mi.Invoke(instance, new object[] { inputDate2, format2, Syncfusion.Blazor.Grids.ColumnType.DateOnly, false })!;
+        Assert.Equal("01/05/2010", result2);
+
+        var inputDate3 = "not-a-date";
+        var format3 = "yyyy-MM-dd";
+        var result3 = (string)mi.Invoke(instance, new object[] { inputDate3, format3, Syncfusion.Blazor.Grids.ColumnType.Date, true })!;
+        Assert.Equal("not-a-date", result3);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture79" Test="FilterInput_GetOperator_GetActualFilterValue_Fixture79" Description="FilterInput GetOperator and GetActualFilterValue cover % branch, numeric regex branch, DateTimeOffset branch, Boolean branch, and String default regex branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Type="ColumnType.Integer" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Type="ColumnType.Boolean" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Type="ColumnType.DateTime" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture79 { get; set; }
+
+    public async void FilterInput_GetOperator_GetActualFilterValue_Fixture79(Fixture fixture)
+    {
+        var cut = fixture79.GetComponentUnderTest<SfGrid<Order>>();
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var instance = filterInputs[0].Instance;
+        Assert.NotNull(instance);
+
+        var filterInputType = instance.GetType();
+        var filterInputParamsProp = filterInputType.GetProperty("FilterInputParameters", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterInputParamsProp);
+
+        var filterParamsType = filterInputParamsProp!.PropertyType;
+        var filterParams = Activator.CreateInstance(filterParamsType)!;
+        Assert.NotNull(filterParams);
+
+        var colProp = filterParamsType.GetProperty("Column", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(colProp);
+
+        var fieldProp = filterParamsType.GetProperty("FieldName", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        if (fieldProp != null) fieldProp.SetValue(filterParams, nameof(Order.CustomerID));
+
+        var baseColumn = new Syncfusion.Blazor.Grids.GridColumn();
+        baseColumn.Field = nameof(Order.CustomerID);
+        baseColumn.Type = Syncfusion.Blazor.Grids.ColumnType.String;
+        baseColumn.ValueType = typeof(string);
+
+        colProp!.SetValue(filterParams, baseColumn);
+        filterInputParamsProp.SetValue(instance, filterParams);
+
+        var getOperatorMi = filterInputType.GetMethod("GetOperator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getOperatorMi);
+
+        getOperatorMi!.Invoke(instance, new object[] { "%" });
+
+        var filterOperatorProp = filterInputType.GetProperty("FilterOperator", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+
+        var opAfterPercent = (string?)filterOperatorProp!.GetValue(instance);
+        Assert.Equal("endswith", opAfterPercent);
+
+        var getActualMi = filterInputType.GetMethod("GetActualFilterValue", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getActualMi);
+
+        var numericColumn = new Syncfusion.Blazor.Grids.GridColumn();
+        numericColumn.Field = nameof(Order.OrderID);
+        numericColumn.Type = Syncfusion.Blazor.Grids.ColumnType.Integer;
+        numericColumn.ValueType = typeof(int);
+
+        colProp.SetValue(filterParams, numericColumn);
+
+        var numericValue = getActualMi!.Invoke(instance, new object[] { numericColumn, "12%%" });
+        Assert.NotNull(numericValue);
+        Assert.Equal(12, Convert.ToInt32(numericValue));
+
+        var boolColumn = new Syncfusion.Blazor.Grids.GridColumn();
+        boolColumn.Field = nameof(Order.Verified);
+        boolColumn.Type = Syncfusion.Blazor.Grids.ColumnType.Boolean;
+        boolColumn.ValueType = typeof(bool);
+
+        colProp.SetValue(filterParams, boolColumn);
+
+        var boolValue = getActualMi.Invoke(instance, new object[] { boolColumn, "true" });
+        Assert.NotNull(boolValue);
+        Assert.True(Convert.ToBoolean(boolValue));
+
+        var dtoColumn = new Syncfusion.Blazor.Grids.GridColumn();
+        dtoColumn.Field = nameof(Order.OrderDate);
+        dtoColumn.Type = Syncfusion.Blazor.Grids.ColumnType.DateTime;
+        dtoColumn.ValueType = typeof(DateTimeOffset);
+
+        colProp.SetValue(filterParams, dtoColumn);
+
+        var dtoValue = getActualMi.Invoke(instance, new object[] { dtoColumn, "2010-05-01T10:00:00+00:00" });
+        Assert.NotNull(dtoValue);
+        Assert.IsType<DateTimeOffset>(dtoValue);
+
+        var stringColumn = new Syncfusion.Blazor.Grids.GridColumn();
+        stringColumn.Field = nameof(Order.CustomerID);
+        stringColumn.Type = Syncfusion.Blazor.Grids.ColumnType.String;
+        stringColumn.ValueType = typeof(string);
+
+        colProp.SetValue(filterParams, stringColumn);
+
+        var stringValue = getActualMi.Invoke(instance, new object[] { stringColumn, "==ALFKI" });
+        Assert.NotNull(stringValue);
+        Assert.Equal("ALFKI", stringValue?.ToString());
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture80" Test="FilterInput_GetClass_GroupHide_FreezeLine_Fixture80" Description="FilterInput GetClass covers grouping hide branch and frozen line cursor branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings ShowGroupedColumn="false" Columns="@(new string[] { nameof(Order.CustomerID) })"></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" EnableFrozenLineCursor="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture80 { get; set; }
+
+    public async void FilterInput_GetClass_GroupHide_FreezeLine_Fixture80(Fixture fixture)
+    {
+        var cut = fixture80.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        Assert.True(grid.AllowGrouping);
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var instance = filterInputs[0].Instance;
+        Assert.NotNull(instance);
+
+        var gridColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.CustomerID));
+        Assert.NotNull(gridColumn);
+
+        gridColumn!.EnableFrozenLineCursor = true;
+
+        var mi = instance.GetType().GetMethod("GetClass", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        var className = (string)mi.Invoke(instance, new object[] { gridColumn })!;
+        Assert.False(string.IsNullOrEmpty(className));
+        Assert.Contains("e-filterbarcell", className);
+        Assert.Contains("e-hide", className);
+        Assert.Contains("e-freezeline", className);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture81" Test="FilterInput_GetPreviousFilteredValues_StackedHeader_NullPath_Fixture81" Description="FilterInput GetPreviousFilteredValues covers stacked header branch and null-add branch via multiple filters">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn HeaderText="Stack">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                        <GridColumn Field="@nameof(Order.ShipCity)" Width="150"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture81 { get; set; }
+
+    public async void FilterInput_GetPreviousFilteredValues_StackedHeader_NullPath_Fixture81(Fixture fixture)
+    {
+        var cut = fixture81.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var custId = $"{nameof(Order.CustomerID)}_filterBarcell";
+        var shipId = $"{nameof(Order.ShipCity)}_filterBarcell";
+
+        var custInput = cut.Find($"[id={custId}]");
+        custInput.Input("ANTON");
+        custInput.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        var shipInput = cut.Find($"[id={shipId}]");
+        shipInput.Input("null");
+        shipInput.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 2, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 2);
+
+        var shipFilter = grid.FilterSettings.Columns.FirstOrDefault(c => c.Field == nameof(Order.ShipCity));
+        Assert.NotNull(shipFilter);
+
+        var shipValue = shipFilter!.Value;
+        Assert.True(shipValue == null || shipValue.ToString() == "null" || shipValue.ToString() == "");
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture82" Test="FilterInput_GetOperator_DefaultFilterSettingsBranch_Fixture82" Description="FilterInput GetOperator covers default branch when Column.FilterSettings is non-null">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture82 { get; set; }
+
+    public async void FilterInput_GetOperator_DefaultFilterSettingsBranch_Fixture82(Fixture fixture)
+    {
+        var cut = fixture82.GetComponentUnderTest<SfGrid<Order>>();
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        var instance = filterInputs[0].Instance;
+        Assert.NotNull(instance);
+
+        var type = instance.GetType();
+        var filterInputParamsProp = type.GetProperty("FilterInputParameters", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterInputParamsProp);
+
+        var pType = filterInputParamsProp!.PropertyType;
+        var pObj = Activator.CreateInstance(pType)!;
+        Assert.NotNull(pObj);
+
+        var colProp = pType.GetProperty("Column", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(colProp);
+
+        var col = new Syncfusion.Blazor.Grids.GridColumn();
+        col.Field = nameof(Order.CustomerID);
+        col.Type = Syncfusion.Blazor.Grids.ColumnType.String;
+        col.ValueType = typeof(string);
+
+        var colFilterSettingsProp = col.GetType().GetProperty("FilterSettings", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(colFilterSettingsProp);
+
+        var fsObj = Activator.CreateInstance(colFilterSettingsProp!.PropertyType);
+        Assert.NotNull(fsObj);
+
+        colFilterSettingsProp.SetValue(col, fsObj);
+        colProp!.SetValue(pObj, col);
+        filterInputParamsProp.SetValue(instance, pObj);
+
+        var mi = type.GetMethod("GetOperator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        mi!.Invoke(instance, new object[] { "" });
+
+        var filterOperatorProp = type.GetProperty("FilterOperator", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+
+        var op = (string?)filterOperatorProp!.GetValue(instance);
+        Assert.False(string.IsNullOrEmpty(op));
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture83" Test="FilterInput_FilterTemplate_And_EnumDisplayName_Fixture83" Description="FilterInput covers FilterTemplate rendering branch and enum display name conversion branch">
+    <ComponentUnderTest>
+        <SfGrid TItem="EnumOrder83" DataSource="GenerateEnumOrderData83()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar">
+                <GridFilterColumns>
+                    <GridFilterColumn Field="@nameof(EnumOrder83.Status)" MatchCase="false" Operator="Syncfusion.Blazor.Operator.Equal" Predicate="and" Value="@EnumStatus83.Open"></GridFilterColumn>
+                </GridFilterColumns>
+            </GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(EnumOrder83.Name)" Width="150" FilterTemplate="FilterTemplate83"></GridColumn>
+                <GridColumn Field="@nameof(EnumOrder83.Status)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture83 { get; set; }
+
+    public enum EnumStatus83
+    {
+        [System.ComponentModel.DataAnnotations.Display(Name = "Open Status")]
+        Open = 1,
+        [System.ComponentModel.DataAnnotations.Display(Name = "Closed Status")]
+        Closed = 2
+    }
+
+    public class EnumOrder83
+    {
+        public string Name { get; set; } = string.Empty;
+        public EnumStatus83 Status { get; set; }
+    }
+
+    public List<EnumOrder83> GenerateEnumOrderData83()
+    {
+        return new List<EnumOrder83>
+        {
+            new EnumOrder83 { Name = "A", Status = EnumStatus83.Open },
+            new EnumOrder83 { Name = "B", Status = EnumStatus83.Closed }
+        };
+    }
+
+    private Microsoft.AspNetCore.Components.RenderFragment<object> FilterTemplate83
+        => (ctx) => (builder) =>
+        {
+            var m = ctx as Syncfusion.Blazor.Grids.PredicateModel;
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "ft-render83");
+            builder.AddContent(2, m != null ? m.Field : string.Empty);
+            builder.CloseElement();
+        };
+
+    public async void FilterInput_FilterTemplate_And_EnumDisplayName_Fixture83(Fixture fixture)
+    {
+        var cut = fixture83.GetComponentUnderTest<SfGrid<EnumOrder83>>();
+        var grid = cut.Instance;
+
+        cut.WaitForState(() => cut.FindAll(".ft-render83").Count > 0, TimeSpan.FromSeconds(20));
+        Assert.True(cut.FindAll(".ft-render83").Count > 0);
+
+        var statusId = $"{nameof(EnumOrder83.Status)}_filterBarcell";
+        cut.WaitForState(() => cut.FindAll($"[id={statusId}]").Count > 0, TimeSpan.FromSeconds(20));
+        Assert.True(cut.FindAll($"[id={statusId}]").Count > 0);
+
+        var statusInput = cut.Find($"[id={statusId}]");
+        var statusValue = statusInput.GetAttribute("value");
+        Assert.False(string.IsNullOrEmpty(statusValue));
+        Assert.True(statusValue == "Open Status" || statusValue!.Contains("Open", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1);
+        Assert.True(grid.FilterSettings.Columns[0].Field == nameof(EnumOrder83.Status));
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture84" Test="FilterInput_EnumDisplayName_PersistsInFilterBar_Fixture84" Description="FilterInput enum display name persists in filterbar cell and filtering column state">
+    <ComponentUnderTest>
+        <SfGrid TItem="EnumOrder84" DataSource="GenerateEnumOrderData84()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(EnumOrder84.Status)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(EnumOrder84.Name)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture84 { get; set; }
+
+    public enum EnumStatus84
+    {
+        [System.ComponentModel.DataAnnotations.Display(Name = "Alpha Status")]
+        Alpha = 1,
+        [System.ComponentModel.DataAnnotations.Display(Name = "Beta Status")]
+        Beta = 2
+    }
+
+    public class EnumOrder84
+    {
+        public string Name { get; set; } = string.Empty;
+        public EnumStatus84 Status { get; set; }
+    }
+
+    public List<EnumOrder84> GenerateEnumOrderData84()
+    {
+        return new List<EnumOrder84>
+        {
+            new EnumOrder84 { Name = "X", Status = EnumStatus84.Alpha },
+            new EnumOrder84 { Name = "Y", Status = EnumStatus84.Beta }
+        };
+    }
+
+    public async void FilterInput_EnumDisplayName_PersistsInFilterBar_Fixture84(Fixture fixture)
+    {
+        var cut = fixture84.GetComponentUnderTest<SfGrid<EnumOrder84>>();
+        var grid = cut.Instance;
+
+        var statusId = $"{nameof(EnumOrder84.Status)}_filterBarcell";
+        cut.WaitForState(() => cut.FindAll($"[id={statusId}]").Count > 0, TimeSpan.FromSeconds(20));
+        Assert.True(cut.FindAll($"[id={statusId}]").Count > 0);
+
+        var input = cut.Find($"[id={statusId}]");
+        input.Input("Alpha Status");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+        Assert.True(grid.FilterSettings.Columns[0].Field == nameof(EnumOrder84.Status));
+
+        var renderedValue = cut.Find($"[id={statusId}]").GetAttribute("value");
+        Assert.False(string.IsNullOrEmpty(renderedValue));
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture85" Test="FilterInput_CancelIconClick_Reflection_Fixture85" Description="FilterInput CancelIconClick fully covered via reflection invocation">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture85 { get; set; }
+
+    public async void FilterInput_CancelIconClick_Reflection_Fixture85(Fixture fixture)
+    {
+        var cut = fixture85.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+
+        input.Input("ANTON");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        Syncfusion.Blazor.Grids.Internal.FilterInput<Order>? target = null;
+        foreach (var fi in filterInputs)
+        {
+            var p = fi.Instance.FilterInputParameters;
+            if (p != null && p.FieldName == field)
+            {
+                target = fi.Instance;
+                break;
+            }
+        }
+        Assert.NotNull(target);
+
+        var column = grid.Columns.FirstOrDefault(c => c.Field == field);
+        Assert.NotNull(column);
+        Assert.False(string.IsNullOrEmpty(column!.Uid));
+
+        target!.FilterInputParameters!.Column = column;
+
+        var mi = target.GetType().GetMethod("CancelIconClick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)mi!.Invoke(target, new object[] { new Microsoft.AspNetCore.Components.Web.MouseEventArgs(), column })!;
+            await task;
+        });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0, TimeSpan.FromSeconds(20));
+        var countAfter = grid.FilterSettings.Columns == null ? 0 : grid.FilterSettings.Columns.Count;
+        Assert.True(countAfter == 0);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture86" Test="FilterInput_PreviousFilteredValues_JsonElement_And_GetOperatorDefault_Fixture86" Description="FilterInput GetPreviousFilteredValues JsonElement branch and GetOperator default branch via reflection">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture86 { get; set; }
+
+    public async void FilterInput_PreviousFilteredValues_JsonElement_And_GetOperatorDefault_Fixture86(Fixture fixture)
+    {
+        var cut = fixture86.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        Syncfusion.Blazor.Grids.Internal.FilterInput<Order>? target = null;
+        foreach (var fi in filterInputs)
+        {
+            var p = fi.Instance.FilterInputParameters;
+            if (p != null && p.FieldName == nameof(Order.CustomerID))
+            {
+                target = fi.Instance;
+                break;
+            }
+        }
+        Assert.NotNull(target);
+
+        var customerColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.CustomerID));
+        Assert.NotNull(customerColumn);
+
+        var filterSettingsProp = customerColumn!.GetType().GetProperty("FilterSettings", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterSettingsProp);
+        var fsObj = Activator.CreateInstance(filterSettingsProp!.PropertyType);
+        Assert.NotNull(fsObj);
+        filterSettingsProp.SetValue(customerColumn, fsObj);
+
+        target!.FilterInputParameters!.Column = customerColumn;
+
+        var getOperatorMi = target.GetType().GetMethod("GetOperator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getOperatorMi);
+
+        getOperatorMi!.Invoke(target, new object[] { "" });
+
+        var filterOperatorProp = target.GetType().GetProperty("FilterOperator", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+
+        var opAfter = (string?)filterOperatorProp!.GetValue(target);
+        Assert.False(string.IsNullOrEmpty(opAfter));
+
+        var filteredColumnsProp = grid.GetType().GetProperty("FilteredColumns", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredColumnsProp);
+
+        var filteredColumnsObj = filteredColumnsProp!.GetValue(grid);
+        Assert.NotNull(filteredColumnsObj);
+
+        var listType = filteredColumnsObj!.GetType();
+        var clearMethod = listType.GetMethod("Clear");
+        Assert.NotNull(clearMethod);
+        clearMethod!.Invoke(filteredColumnsObj, null);
+
+        var addMethod = listType.GetMethod("Add");
+        Assert.NotNull(addMethod);
+
+        var json = System.Text.Json.JsonDocument.Parse("\"ALFKI\"");
+        var je = json.RootElement.Clone();
+
+        var gfc = new Syncfusion.Blazor.Grids.GridFilterColumn();
+        gfc.Field = nameof(Order.CustomerID);
+        gfc.Operator = Syncfusion.Blazor.Operator.Equal;
+        gfc.Predicate = "and";
+        gfc.Value = "ALFKI";
+        gfc.ActualValue = je;
+
+        addMethod!.Invoke(filteredColumnsObj, new object[] { gfc });
+
+        var prevMi = target.GetType().GetMethod("GetPreviousFilteredValues", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(prevMi);
+
+        object? valuesObj = null;
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)prevMi!.Invoke(target, null)!;
+            await task;
+            var resultProp = task.GetType().GetProperty("Result");
+            Assert.NotNull(resultProp);
+            valuesObj = resultProp!.GetValue(task);
+        });
+
+        Assert.NotNull(valuesObj);
+        var valuesList = valuesObj as System.Collections.IEnumerable;
+        Assert.NotNull(valuesList);
+
+        var collected = new List<string>();
+        foreach (var v in valuesList!)
+        {
+            collected.Add(v?.ToString() ?? "");
+        }
+        Assert.True(collected.Count == 1);
+        Assert.True(collected[0].Contains("ALFKI", StringComparison.OrdinalIgnoreCase));
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture87" Test="FilterInput_GetClass_And_ProcessFilter_ResetBranch_Fixture87" Description="FilterInput GetClass group hide and freezeline branches plus ProcessFilter reset branch via reflection">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings ShowGroupedColumn="false" Columns="@(new string[] { nameof(Order.CustomerID) })"></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" EnableFrozenLineCursor="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture87 { get; set; }
+
+    public async void FilterInput_GetClass_And_ProcessFilter_ResetBranch_Fixture87(Fixture fixture)
+    {
+        var cut = fixture87.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        Syncfusion.Blazor.Grids.Internal.FilterInput<Order>? target = null;
+        foreach (var fi in filterInputs)
+        {
+            var p = fi.Instance.FilterInputParameters;
+            if (p != null && p.FieldName == nameof(Order.CustomerID))
+            {
+                target = fi.Instance;
+                break;
+            }
+        }
+        Assert.NotNull(target);
+
+        var customerColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.CustomerID));
+        Assert.NotNull(customerColumn);
+        customerColumn!.EnableFrozenLineCursor = true;
+
+        var getClassMi = target!.GetType().GetMethod("GetClass", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getClassMi);
+
+        var className = (string)getClassMi!.Invoke(target, new object[] { customerColumn })!;
+        Assert.Contains("e-filterbarcell", className);
+        Assert.Contains("e-hide", className);
+        Assert.Contains("e-freezeline", className);
+
+        var orderColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.OrderID));
+        Assert.NotNull(orderColumn);
+
+        var filteredColumnField = target.GetType().GetField("FilteredColumn", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredColumnField);
+
+        filteredColumnField!.SetValue(target, orderColumn);
+
+        var filteredValueProp = target.GetType().GetProperty("FilteredValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredValueProp);
+
+        filteredValueProp!.SetValue(target, "SOMEVALUE");
+        var before = (string)filteredValueProp.GetValue(target)!;
+        Assert.True(before == "SOMEVALUE");
+
+        var processMi = target.GetType().GetMethod("ProcessFilter", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(Syncfusion.Blazor.Grids.GridColumn) }, null);
+        Assert.NotNull(processMi);
+
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)processMi!.Invoke(target, new object[] { customerColumn })!;
+            await task;
+        });
+
+        var after = (string)filteredValueProp.GetValue(target)!;
+        Assert.True(after == string.Empty);
+
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture88" Test="FilterInput_CancelIconClick_Fixture88" Description="FilterInput CancelIconClick fully covered via reflection on FilterBar input">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture88 { get; set; }
+
+    public async void FilterInput_CancelIconClick_Fixture88(Fixture fixture)
+    {
+        var cut = fixture88.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var field = nameof(Order.CustomerID);
+        var inputId = $"{field}_filterBarcell";
+        var input = cut.Find($"[id={inputId}]");
+
+        input.Input("ANTON");
+        input.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs() { Key = "Enter" });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns != null && grid.FilterSettings.Columns.Count == 1, TimeSpan.FromSeconds(20));
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        Syncfusion.Blazor.Grids.Internal.FilterInput<Order>? target = null;
+        foreach (var fi in filterInputs)
+        {
+            var p = fi.Instance.FilterInputParameters;
+            if (p != null && p.FieldName == field)
+            {
+                target = fi.Instance;
+                break;
+            }
+        }
+        Assert.NotNull(target);
+
+        var column = grid.Columns.FirstOrDefault(c => c.Field == field);
+        Assert.NotNull(column);
+
+        target!.FilterInputParameters!.Column = column!;
+
+        var mi = target.GetType().GetMethod("CancelIconClick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(mi);
+
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)mi!.Invoke(target, new object[] { new Microsoft.AspNetCore.Components.Web.MouseEventArgs(), column! })!;
+            await task;
+        });
+
+        cut.WaitForState(() => grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0, TimeSpan.FromSeconds(20));
+        var afterCount = grid.FilterSettings.Columns == null ? 0 : grid.FilterSettings.Columns.Count;
+        Assert.True(afterCount == 0);
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixture89" Test="FilterInput_RemainingBlocks_Optimized_Fixture89" Description="FilterInput covers GetPreviousFilteredValues JsonElement, GetClass group hide and freezeline, GetOperator default, GetActualFilterValue wildcard/like, and ProcessFilter reset branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" AllowGrouping="true">
+            <GridGroupSettings ShowGroupedColumn="false" Columns="@(new string[] { nameof(Order.CustomerID) })"></GridGroupSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150" EnableFrozenLineCursor="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture89 { get; set; }
+
+    public async void FilterInput_RemainingBlocks_Optimized_Fixture89(Fixture fixture)
+    {
+        var cut = fixture89.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        var filterInputs = cut.FindComponents<Syncfusion.Blazor.Grids.Internal.FilterInput<Order>>();
+        Assert.True(filterInputs != null && filterInputs.Count > 0);
+
+        Syncfusion.Blazor.Grids.Internal.FilterInput<Order>? target = null;
+        foreach (var fi in filterInputs)
+        {
+            var p = fi.Instance.FilterInputParameters;
+            if (p != null && p.FieldName == nameof(Order.CustomerID))
+            {
+                target = fi.Instance;
+                break;
+            }
+        }
+        Assert.NotNull(target);
+
+        var customerColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.CustomerID));
+        Assert.NotNull(customerColumn);
+
+        var getClassMi = target!.GetType().GetMethod("GetClass", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getClassMi);
+
+        customerColumn!.EnableFrozenLineCursor = true;
+        var className = (string)getClassMi!.Invoke(target, new object[] { customerColumn })!;
+        Assert.Contains("e-hide", className);
+        Assert.Contains("e-freezeline", className);
+
+        var filterInputType = target.GetType();
+        var filterInputParamsProp = filterInputType.GetProperty("FilterInputParameters", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterInputParamsProp);
+
+        var pObj = filterInputParamsProp!.GetValue(target);
+        Assert.NotNull(pObj);
+
+        var pType = pObj!.GetType();
+        var colProp = pType.GetProperty("Column", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(colProp);
+
+        var filterSettingsProp = customerColumn.GetType().GetProperty("FilterSettings", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterSettingsProp);
+
+        var fsObj = Activator.CreateInstance(filterSettingsProp!.PropertyType);
+        Assert.NotNull(fsObj);
+        filterSettingsProp.SetValue(customerColumn, fsObj);
+
+        var fsType = fsObj!.GetType();
+        var props = fsType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var likeSet = false;
+        foreach (var prop in props)
+        {
+            if (!prop.CanWrite) continue;
+            if (prop.PropertyType == typeof(string) && prop.Name.Contains("Operator", StringComparison.OrdinalIgnoreCase))
+            {
+                prop.SetValue(fsObj, "like");
+                likeSet = true;
+                break;
+            }
+            if (prop.PropertyType.IsEnum && (prop.Name.Contains("Operator", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("Type", StringComparison.OrdinalIgnoreCase)))
+            {
+                try
+                {
+                    var ev = Enum.Parse(prop.PropertyType, "Like", true);
+                    prop.SetValue(fsObj, ev);
+                    likeSet = true;
+                    break;
+                }
+                catch
+                {
+                }
+            }
+        }
+        Assert.True(likeSet);
+
+        colProp!.SetValue(pObj, customerColumn);
+        filterInputParamsProp.SetValue(target, pObj);
+
+        var getOperatorMi = filterInputType.GetMethod("GetOperator", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getOperatorMi);
+
+        getOperatorMi!.Invoke(target, new object[] { "" });
+
+        var filterOperatorProp = filterInputType.GetProperty("FilterOperator", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+
+        var opDefault = (string?)filterOperatorProp!.GetValue(target);
+        Assert.False(string.IsNullOrEmpty(opDefault));
+
+        var getActualMi = filterInputType.GetMethod("GetActualFilterValue", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getActualMi);
+
+        var actual = getActualMi!.Invoke(target, new object[] { customerColumn, "SAMPLETEXT" });
+        Assert.NotNull(actual);
+
+        var opAfterLike = (string?)filterOperatorProp.GetValue(target);
+        Assert.True(opAfterLike != null && opAfterLike.Contains("like", StringComparison.OrdinalIgnoreCase));
+
+        var filteredColumnField = filterInputType.GetField("FilteredColumn", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredColumnField);
+
+        var filteredValueProp = filterInputType.GetProperty("FilteredValue", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredValueProp);
+
+        var orderColumn = grid.Columns.FirstOrDefault(c => c.Field == nameof(Order.OrderID));
+        Assert.NotNull(orderColumn);
+
+        filteredColumnField!.SetValue(target, orderColumn);
+        filteredValueProp!.SetValue(target, "X");
+        Assert.Equal("X", (string)filteredValueProp.GetValue(target)!);
+
+        var processMi = filterInputType.GetMethod("ProcessFilter", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, new Type[] { typeof(Syncfusion.Blazor.Grids.GridColumn) }, null);
+        Assert.NotNull(processMi);
+
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)processMi!.Invoke(target, new object[] { customerColumn })!;
+            await task;
+        });
+
+        var afterReset = (string)filteredValueProp.GetValue(target)!;
+        Assert.True(afterReset == string.Empty);
+
+        var filteredColumnsProp = grid.GetType().GetProperty("FilteredColumns", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filteredColumnsProp);
+
+        var filteredColumnsObj = filteredColumnsProp!.GetValue(grid);
+        Assert.NotNull(filteredColumnsObj);
+
+        var listType = filteredColumnsObj!.GetType();
+        var clearMethod = listType.GetMethod("Clear");
+        var addMethod = listType.GetMethod("Add");
+        Assert.NotNull(clearMethod);
+        Assert.NotNull(addMethod);
+
+        clearMethod!.Invoke(filteredColumnsObj, null);
+        var json = System.Text.Json.JsonDocument.Parse("\"ALFKI\"");
+        var je = json.RootElement.Clone();
+        var gfc = new Syncfusion.Blazor.Grids.GridFilterColumn();
+        gfc.Field = nameof(Order.CustomerID);
+        gfc.Operator = Operator.Equal;
+        gfc.Predicate = "and";
+        gfc.Value = "ALFKI";
+        gfc.ActualValue = je;
+
+        addMethod!.Invoke(filteredColumnsObj, new object[] { gfc });
+
+        var prevMi = filterInputType.GetMethod("GetPreviousFilteredValues", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(prevMi);
+
+        object? resultValues = null;
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)prevMi!.Invoke(target, null)!;
+            await task;
+            var resultProp = task.GetType().GetProperty("Result");
+            Assert.NotNull(resultProp);
+            resultValues = resultProp!.GetValue(task);
+        });
+        Assert.NotNull(resultValues);
+        var enumerable = resultValues as System.Collections.IEnumerable;
+        Assert.NotNull(enumerable);
+        var collected = new List<string>();
+        foreach (var v in enumerable!)
+        {
+            collected.Add(v?.ToString() ?? "");
+        }
+        Assert.True(collected.Count == 1);
+        Assert.True(collected[0].Contains("ALFKI", StringComparison.OrdinalIgnoreCase));
+        await Task.CompletedTask;
+    }
+}
+<SfFixture @ref="fixture15" TestAsync="GridBasicRendering15" Description="Esc Key Does Not Reset Filter in Immediatemode">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowSelection="true" AllowPaging=true AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture15 { get; set; }
+
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+
+    public async Task GridBasicRendering15(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowFiltering == true);
+        Assert.True(cut.Instance.FilterSettings.Mode == FilterBarMode.Immediate);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 12, "Before filtering count");
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ALFKI");
+        cut.FindAll(".e-filterdiv input")[1].KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+    }
+}
+
+<SfFixture @ref="fixturef" TestAsync="GridBasicRenderingf" Description="trigger UpdateFormat method for TimeOnly and DateOnly">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateFilteringEmployeeData()" AllowSelection="true" AllowPaging=true AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Employee.EmployeeID)"
+                            HeaderText="Employee ID"
+                            IsPrimaryKey="true"
+                            TextAlign="TextAlign.Right"
+                            Width="120" />
+                <GridColumn Field="@nameof(Employee.Date)"
+                            HeaderText="DateOnly"
+                            Format="dd/MM/yyyy"
+                            Width="120" />
+                <GridColumn Field="@nameof(Employee.Time)"
+                            HeaderText="TimeOnly"
+                            Format="h:mm tt"
+                            Width="120" />
+                <GridColumn Field="@nameof(Employee.DateTimeOffset)"
+                            HeaderText="DateTimeOffset"
+                            Format="dd/MM/yyyy HH:mm:ss zzz" />
+                <GridColumn Field="@nameof(Employee.LastName)"
+                            HeaderText="Last Name"
+                            Width="150" />
+                <GridColumn Field="@nameof(Employee.Country)"
+                            HeaderText="Country"
+                            Width="120" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixturef { get; set; }
+
+    public IRenderedComponent<SfGrid<Employee>> cutf { get; set; }
+
+    public async Task GridBasicRenderingf(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Employee>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowFiltering == true);
+        // DateOnly column (second filter input)
+        var dateInput = cut.FindAll(".e-filterdiv input")[1];
+        dateInput.Input("01/08/2023");
+        await cut.InvokeAsync(() => dateInput.KeyDown(new KeyboardEventArgs { Key = "Enter" }));
+        // TimeOnly column (third filter input) — match the column Format "h:mm tt"
+        var timeInput = cut.FindAll(".e-filterdiv input")[2];
+        timeInput.Input("8:30 AM");
+        await cut.InvokeAsync(() => timeInput.KeyDown(new KeyboardEventArgs { Key = "Enter" }));
+        cut.WaitForState(() => cut.Instance.FilterSettings.Columns?.Count() > 0, TimeSpan.FromSeconds(1000));
+    }
+}

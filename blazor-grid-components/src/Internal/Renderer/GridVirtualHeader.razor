@@ -1,0 +1,300 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam THeader
+
+@implements IDisposable
+
+<div class="e-virtualtable" data-sf-style="@GetVirtualHeaderStyles()">
+    @{
+        var virtualParameters = new GridHeaderParameters()
+        {
+            Data = Data,
+            RowCollection = Row,
+            Id = "virtualheader",
+            IsFromClient = IsFromClient,
+            Columns = (Parent!.EnableColumnVirtualization ? Parent.VirtualScrollModule!.VirtualizedColumns : Columns),
+        };
+    }
+    <GridHeader TContent="THeader" HeaderParameters=virtualParameters></GridHeader>
+</div>
+
+@if (Parent.EnableColumnVirtualization)
+{
+    <div class="e-virtualtrack" data-sf-style="@GetVirtualTrackStyles()"></div>
+}
+
+
+@code {
+    #region Parameters
+
+    [Parameter]
+    public GridVirtualHeaderParameters? VirtualHeaderParameters { get; set; }
+
+    #endregion
+
+    #region Cascading Parameters
+
+    [CascadingParameter]
+    public SfGrid<THeader>? Parent { get; set; }
+
+    #endregion
+
+    #region Public Properties
+
+    public List<GridColumn>? Columns { get; set; }
+
+    private List<GridColumn>? _columns { get; set; }
+
+    public IEnumerable<object>? Data { get; set; }
+    private IEnumerable<object>? _data { get; set; }
+
+    public List<Row<object>> RowCollection { get; set; } = new List<Row<object>>();
+
+    public List<GridColumn> FrozenColumn { get; set; } = new List<GridColumn>();
+
+    public List<GridColumn> MovableColumn { get; set; } = new List<GridColumn>();
+
+    public List<GridColumn> FrozenRightColumn { get; set; } = new List<GridColumn>();
+
+    #endregion
+
+    #region Private Fields
+
+    private int PreEndColumnIndex { get; set; }
+
+    private int PreStartColumnIndex { get; set; }
+
+    private List<Row<object>> Row { get; set; } = new List<Row<object>>();
+
+    #endregion
+
+    #region Internal Fields
+
+    internal bool IsFromClient { get; set; }
+
+    #endregion
+
+    #region Internal Methods
+
+    internal void VirtualHeaderComponentUpdate(object args)
+    {
+        IsFromClient = true;
+        VirtualHeaderParameters!.StartColumnIndex = Parent!.VirtualScrollModule!.StartColumnIndex;
+        VirtualHeaderParameters.EndColumnIndex = Parent.VirtualScrollModule.EndColumnIndex;
+        OnParametersSet();
+        StateHasChanged();
+        IsFromClient = false;
+    }
+
+    #endregion
+
+    #region Protected Overrides
+
+    protected override void OnInitialized()
+    {
+        Parent?.EventAggregator.Add("VirtualHeaderComponentUpdate", VirtualHeaderComponentUpdate);
+    }
+
+    protected override void OnParametersSet()
+    {
+        Data = VirtualHeaderParameters?.Data!;
+        Columns = Parent?.RearrangeColumns(VirtualHeaderParameters?.Columns!);
+        if (Parent != null && Parent.IsFreezeLineMoved)
+        {
+            SetFrozenAndMovableColumns();
+        }
+        if ((Data != null && Data != _data) || Parent!.ForceUpdate || Parent.HasColumnChanges || Parent.IsCollectionChanged)
+        {
+            if (Data != null && (Data != _data || Parent!.IsCollectionChanged || Parent.ForceUpdate))
+            {
+                _data = VirtualHeaderParameters?.Data!;
+                IEnumerable<object>? viewData = Data?.Take(Convert.ToInt32(Parent!.FrozenRows)).ToList();
+                if (Parent != null && Parent.EnableInfiniteScrolling)
+                {
+                    Parent.Rows = new RowModelGenerator<THeader>(Parent).GenerateInfiniteRows(Data!, 0);
+                }
+                else
+                {
+                    Parent!.Rows = new RowModelGenerator<THeader>(Parent).GeneratorRows(Data!, 0);
+                }
+
+                Row = Parent.Rows?.Take(Convert.ToInt32(Parent.FrozenRows)).ToList()!;
+                if (Parent.FrozenRows != 0)
+                {
+
+                    if (Parent.VirtualScrollModule != null && Parent.VirtualScrollModule.FrozenCachedData == null && Data != null)
+                    {
+                        Parent.VirtualScrollModule.FrozenCachedData = Data?.Take(Convert.ToInt32(Parent.FrozenRows))!;
+
+                    }
+                    if (Parent.EnableVirtualization && Parent.VirtualScrollModule != null && Parent.VirtualScrollModule.FrozenCachedData != null && (Parent.VirtualScrollModule.FrozenCachedRowObject == null || Parent.VirtualScrollModule.FrozenCachedRowObject.Count == 0))
+                    {
+
+                        Row = new RowModelGenerator<THeader>(Parent).GeneratorRows(Parent.VirtualScrollModule.FrozenCachedData);
+                        Parent.VirtualScrollModule.FrozenCachedRowObject = Row;
+                    }
+                    if (Parent.VirtualScrollModule != null && Parent.VirtualScrollModule.FrozenCachedRowObject != null)
+                    {
+
+                        Row = Parent.VirtualScrollModule.FrozenCachedRowObject;
+                    }
+                }
+            }
+            if (!Parent!.IsFreezeLineMoved && (Parent.ForceUpdate || Parent.HasColumnChanges || Parent.RefreshFrozenHeader || Parent.IsColumnPropertyChanged))
+            {
+                SetFrozenAndMovableColumns();
+                Parent.RefreshFrozenHeader = false;
+            }
+        }
+
+        if (Columns != null && Columns.Count > 0 && (Columns != _columns) || Parent.ForceUpdate ||
+        VirtualHeaderParameters?.StartColumnIndex != PreStartColumnIndex || VirtualHeaderParameters.EndColumnIndex != PreEndColumnIndex || Parent.IsColumnPropertyChanged || Parent.RefreshColumnHeader)
+        {
+            _columns = Columns!;
+            SetVirtualColumns();
+        }
+        if (Parent.FrozenRows > 0)
+        {
+            var addedRecord = Parent.Rows?.FindAll(_ => _.IsAddedTop)?.Count;
+            if (addedRecord > 0)
+            {
+                Row = Parent.Rows?.Take(Convert.ToInt32(Parent.FrozenRows) + addedRecord ?? 0).ToList()!;
+            }
+
+        }
+
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private void SetVirtualColumns()
+    {
+        if (Parent!.VirtualScrollModule != null)
+        {
+            Columns = Parent.EnableColumnVirtualization ? Parent.FrozenColumns > 0 ? Columns!.Skip(Parent.FrozenColumns).ToList() : Columns!.Where(x => (!x.IsFrozen || (x.IsFrozen && x.Freeze == FreezeDirection.Fixed)) && x.Visible).ToList() : Columns;
+            var frozenLeftColumns = Parent.FrozenColumns > 0 ? Parent.Columns!.Take(Parent.FrozenColumns).ToList() : Parent.Columns!.Where(x => x.Freeze == FreezeDirection.Left && x.IsFrozen).ToList();
+            var frozenRightColumns = Parent.Columns!.Where(x => x.Freeze == FreezeDirection.Right && x.IsFrozen).ToList();
+            var virtualColumn = VirtualHeaderParameters!.EndColumnIndex != 0 ? Columns!.Skip(VirtualHeaderParameters.StartColumnIndex).Take((VirtualHeaderParameters.EndColumnIndex - VirtualHeaderParameters.StartColumnIndex + 1)).ToList() : Columns;
+            Parent.VirtualScrollModule.VirtualizedColumns = VirtualHeaderParameters.EndColumnIndex != 0 ? frozenLeftColumns.Concat(virtualColumn!).Concat(frozenRightColumns).ToList() : new List<GridColumn>();
+            // VTablwWidth calculated for show/hide
+            VirtualHeaderParameters.VirtualTableWidth = VirtualScroll<THeader>.GetColumnsWidth(Parent.VirtualScrollModule.VirtualizedColumns);
+            Parent.VirtualScrollModule.SetVTableWidth(VirtualHeaderParameters.VirtualTableWidth);
+            PreEndColumnIndex = VirtualHeaderParameters.EndColumnIndex;
+            PreStartColumnIndex = VirtualHeaderParameters.StartColumnIndex;
+            Parent.VirtualScrollModule.IsColumnIdxChanged = true;
+        }
+    }
+
+    private string GetVirtualTrackStyles()
+    {
+        string width = VirtualScroll<THeader>.GetColumnsWidth(GridUtils.GetColumns(Parent!)) + "px";
+        return $"position: absolute; height: 1px; width: {width}";
+    }
+
+    private string GetVirtualHeaderStyles()
+    {
+        if (Parent != null && Parent.EnableColumnVirtualization && Parent.FreezeModule!.GetFrozenCount() == 0)
+        {
+            return $"transform: translate({Parent.VirtualScrollModule!.TranslateX}px, 0px);width:{VirtualHeaderParameters!.VirtualTableWidth}px";
+        }
+        else
+        {
+            return $"transform: translate({Parent!.VirtualScrollModule!.TranslateX}px, 0px);";
+        }
+    }
+
+    #endregion
+
+    #region Internal Methods
+
+    internal void SetFrozenAndMovableColumns()
+    {
+        Parent!.FreezeModule!.SetFrozenCount();
+        List<GridColumn> columns = Parent.Columns!;
+        columns = Parent.EnableColumnVirtualization ? columns.Where(x => x.Visible).ToList() : columns;
+        FrozenColumn = new List<GridColumn>();
+        MovableColumn = new List<GridColumn>();
+        FrozenRightColumn = new List<GridColumn>();
+        if (Parent.FrozenName.Equals(FreezeTable.Right) || Parent.FrozenName.Equals(FreezeTable.LeftRight))
+        {
+            foreach (var column in columns)
+            {
+                column.EnableLeftFrozenLineCursor = column.EnableRightFrozenLineCursor = column.EnableFrozenLineCursor = false;
+                if (column.IsFrozen)
+                {
+                    if (column.Freeze.Equals(FreezeDirection.Left))
+                    {
+                        FrozenColumn.Add(column);
+                        Parent.IsColumnFrozen = true;
+                    }
+                    else if (column.Freeze.Equals(FreezeDirection.Right))
+                    {
+                        FrozenRightColumn.Add(column);
+                    }
+                }
+                else
+                {
+                    MovableColumn.Add(column);
+                }
+            }
+            Parent.FreezeModule!.SetFrozenColumns(FrozenColumn.Concat(FrozenRightColumn).ToList());
+            Parent.FreezeModule!.SetMovableColumns(MovableColumn);
+            Parent.IsColumnFrozen = FrozenColumn.Any() ? true : false;
+        }
+        else
+        {
+            for (int i = 0; i < columns.Count; i++)
+            {
+                GridColumn column = columns[i];
+                column.EnableLeftFrozenLineCursor = column.EnableRightFrozenLineCursor = column.EnableFrozenLineCursor = false;
+                if ((column.IsFrozen && column.Freeze.Equals(FreezeDirection.Left)) || (Parent.FrozenColumns > i && (column.Index < Parent.FrozenColumns)))
+                {
+                    FrozenColumn.Add(column);
+                }
+                else
+                {
+                    MovableColumn.Add(column);
+                }
+            }
+            Parent.FreezeModule!.SetFrozenColumns(FrozenColumn);
+            Parent.FreezeModule!.SetMovableColumns(MovableColumn);
+            if (FrozenColumn.Any())
+            {
+                Parent.IsColumnFreeze = true;
+            }
+            else
+            {
+                Parent.IsColumnFreeze = false;
+                Parent.FrozenName = FreezeTable.None;
+            }
+        }
+        if (Parent.AllowFreezeLineMoving)
+        {
+            Freeze<THeader>.EnableFrozenLineCursorVirtualHeader(FrozenColumn, MovableColumn, FrozenRightColumn);
+        }
+    }
+
+    #endregion
+
+    #region Overrides After Render
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (Parent!.EnableColumnVirtualization)
+        {
+            await Parent.VirtualScrollModule!.HandleColumnVirtualKeyBoard();
+        }
+    }
+    
+    #endregion
+
+    #region IDisposable
+
+    void IDisposable.Dispose()
+        => Parent?.EventAggregator.Remove("VirtualHeaderComponentUpdate", VirtualHeaderComponentUpdate);
+
+    #endregion
+
+}

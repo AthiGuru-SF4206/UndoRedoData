@@ -1,0 +1,253 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Buttons
+
+
+<!-- FIXTURE 1: ToolbarItem type - Executes dictionary creation, key generation, and ClickHandler path -->
+<SfFixture @ref="fixtureToolbar1"
+           Test="GridToolbar_ToolbarItemType"
+           Description="GridToolbar_ToolbarItem for mobile">
+    <ComponentUnderTest>
+        <SfGrid @ref="toolbarGrid1" DataSource="GenerateOrderData()" 
+                Toolbar="@toolbarItemsWithDelegate"
+                EnableAdaptiveUI="true" AdaptiveUIMode="AdaptiveMode.Both" RowRenderingMode="RowDirection.Vertical" AllowSorting="true" AllowFiltering="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureToolbar1 { get; set; }
+    private SfGrid<Order> toolbarGrid1;
+    
+    private List<object> toolbarItemsWithDelegate => new List<object>
+    {
+        new ToolbarItem 
+        { 
+            Id = "custom_toolbar_delegate",
+            Text = "Custom Action",
+            PrefixIcon = "e-icons e-edit",
+            TooltipText = "Custom Tooltip",
+            CssClass = "custom-class",
+            Disabled = false,
+            SuffixIcon = "e-icons e-arrow",
+            Type = ItemType.Button,
+            Visible = true,
+            Width = "100px",
+            Overflow = OverflowOption.Show,
+            ShowAlwaysInPopup = false,
+            TabIndex = 0
+        }
+    };
+
+    public void GridToolbar_ToolbarItemType(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.NotNull(grid);
+        Assert.NotNull(grid.Toolbar);
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be rendered");
+        
+        // Verify grid structure - indicates else block code execution
+        Assert.True(grid.EnableAdaptiveUI, "EnableAdaptiveUI must be true (indicates else if block entered)");
+        Assert.Equal(AdaptiveMode.Both, grid.AdaptiveUIMode);
+    }
+}
+
+<!-- FIXTURE 2: ItemModel type - Executes dictionary creation, key generation, and Click handler path -->
+<SfFixture @ref="fixtureToolbar2"
+           Test="GridToolbar_ItemModelType"
+           Description="GridToolbar_ItemModel">
+    <ComponentUnderTest>
+        <SfGrid @ref="toolbarGrid2" DataSource="GenerateOrderData()" 
+                Toolbar="@itemModelWithDelegate"
+                EnableAdaptiveUI="true" AdaptiveUIMode="AdaptiveMode.Both" RowRenderingMode="RowDirection.Vertical" AllowFiltering="true" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureToolbar2 { get; set; }
+    private SfGrid<Order> toolbarGrid2;
+    
+    private List<object> itemModelWithDelegate => new List<object>
+    {
+        new ItemModel 
+        { 
+            Id = "custom_item_delegate",
+            Text = "ItemModel Action",
+            PrefixIcon = "e-icons e-save",
+            TooltipText = "ItemModel Tooltip",
+            CssClass = "item-class",
+            Disabled = false,
+            SuffixIcon = "e-icons e-arrow-down",
+            Type = ItemType.Button,
+            Visible = true,
+            Width = "120px",
+            Overflow = OverflowOption.Show,
+            ShowAlwaysInPopup = false,
+            TabIndex = 0
+        }
+    };
+
+    public void GridToolbar_ItemModelType(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.NotNull(grid);
+        Assert.NotNull(grid.Toolbar);
+        Assert.True(cut.FindAll(".e-row").Count > 0);
+        
+        // Verify grid structure - indicates else if block entered
+        Assert.True(grid.EnableAdaptiveUI, "EnableAdaptiveUI must be true");
+        Assert.Equal(AdaptiveMode.Both, grid.AdaptiveUIMode);
+    }
+}
+
+<!-- FIXTURE 3: ToolbarItem type - Executes dictionary creation, key generation, and ClickHandler path -->
+<SfFixture @ref="fixtureToolbar3"
+           Test="GridToolbar_ToolbarItemType3"
+           Description="GridToolbar_ToolbarItem">
+    <ComponentUnderTest>
+        <SfGrid @ref="toolbarGrid3" DataSource="GenerateOrderData()"
+                Toolbar="@toolbarItemsWithDelegate3" AllowSorting="true" AllowFiltering="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureToolbar3 { get; set; }
+    private SfGrid<Order> toolbarGrid3;
+    
+    private List<object> toolbarItemsWithDelegate3 => new List<object>
+    {
+        new ToolbarItem
+        {
+            Id = "custom_toolbar_delegate",
+            Text = "Custom Action",
+            PrefixIcon = "e-icons e-edit",
+            TooltipText = "Custom Tooltip",
+            CssClass = "custom-class",
+            Disabled = false,
+            SuffixIcon = "e-icons e-arrow",
+            Type = ItemType.Button,
+            Visible = true,
+            Width = "100px",
+            Overflow = OverflowOption.Show,
+            ShowAlwaysInPopup = false,
+            TabIndex = 0
+        }
+    };
+
+    public void GridToolbar_ToolbarItemType3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.NotNull(grid);
+        Assert.NotNull(grid.Toolbar);
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be rendered");
+        Assert.Equal(AdaptiveMode.Both, grid.AdaptiveUIMode);
+    }
+}
+
+<!-- FIXTURE 4: ToolbarItem type - Executes dictionary creation, key generation, and ClickHandler path -->
+<SfFixture @ref="fixtureToolbar4"
+           Test="GridToolbar_KeyDownHandler"
+           Description="GridToolbar_KeyDownHandler">
+    <ComponentUnderTest>
+        <SfGrid @ref="toolbarGrid4" DataSource="GenerateOrderData()"
+                Toolbar="@(new List<string>() { "Search" })" EnableAdaptiveUI="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureToolbar4 { get; set; }
+    private SfGrid<Order> toolbarGrid4;
+
+    public void GridToolbar_KeyDownHandler(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.NotNull(grid);
+        Assert.NotNull(grid.Toolbar);
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be rendered");
+        var searchInput = cut.FindAll(".e-searchinput")[0];
+        searchInput.Input("");
+        searchInput.KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+        searchInput.Input("1001");
+        searchInput.KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+        var clearIcon = cut.FindAll(".e-clear-icon")[0];
+        clearIcon.KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+        searchInput.Input("1001");
+        cut.FindAll(".e-searchclear")[0].Click();
+        searchInput.Focus();
+        searchInput.Blur();
+    }
+}
+
+<SfFixture @ref="fixtureToolbar5"
+           Test="GridToolbarTemplate"
+           Description="GridToolbar_Template">
+    <ComponentUnderTest>
+        <SfGrid @ref="toolbarGrid5" DataSource="GenerateOrderData()"
+                EnableAdaptiveUI="true" AdaptiveUIMode="AdaptiveMode.Both" RowRenderingMode="RowDirection.Vertical" AllowSorting="true" AllowFiltering="true">
+            <SfToolbar ID="customToolbar">
+                <ToolbarItems>
+                    <ToolbarItem Type="ItemType.Input">
+                        <Template>
+                            <button id="addButton">Print</button>
+                        </Template>
+                    </ToolbarItem>
+                </ToolbarItems>
+            </SfToolbar>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureToolbar5 { get; set; }
+    private SfGrid<Order> toolbarGrid5;
+
+    public void GridToolbarTemplate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        Assert.NotNull(grid);
+        Assert.Null(grid.Toolbar);
+        Assert.True(cut.FindAll(".e-row").Count > 0, "Data rows must be rendered");
+        
+        // Verify grid structure - indicates else block code execution
+        Assert.True(grid.EnableAdaptiveUI, "EnableAdaptiveUI must be true");
+        Assert.Equal(AdaptiveMode.Both, grid.AdaptiveUIMode);
+    }
+}

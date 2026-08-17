@@ -1,0 +1,250 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+@using System.Globalization;
+
+<table class="e-table" id="@(($"{Parent!.ID}_footer_table"))" data-sf-style="@Parent.GetTableStyles()" role="presentation">
+        @if (Parent.Aggregates?.Count > 0)
+        {
+            <WidthController TContent="TContent" IsFrozen="@IsFrozen" IsFrozenRight="@IsFrozenRight" Columns="GridUtils.GetColumns(Parent)"></WidthController>
+            <tbody>
+            </tbody>
+            <tfoot role="rowgroup">
+                @if (Rows != null)
+                {
+                    @foreach (Row<object> Row in Rows)
+                    {
+                    @if (Parent.ShouldRenderHiddenColumns || Row.Cells.Any(cell => (cell.Column?.Visible ?? false) && cell.AggregateColumn != null))
+                        {
+                            <tr class="e-summaryrow" role="row">
+                                @foreach (Cell<object> Cell in Row.Cells)
+                                {
+                                    if (IsFrozen == null || IsFrozen == Cell.IsFrozen && !Cell.IsFrozen || (Cell.Freeze.Equals(FreezeDirection.Left) && Cell.IsFrozen && IsFrozen == true && !IsFrozenRight) || (Cell.Freeze.Equals(FreezeDirection.Right) && Cell.IsFrozen && IsFrozen == true && IsFrozenRight))
+                                    {
+                                        string cellType = Cell.CellType.ToString().ToLower(CultureInfo.InvariantCulture);
+                                        string txtAlign = GetTextAlign(Cell.Column!) ?? "left";
+                                        string txtClass = GridUtils.GetAlignmentClass(Cell?.Column!);
+                                        string FrozenClass = GetFrozenClass(Cell?.Column!);
+                                        if (cellType.Equals("indent") || cellType.Equals("rowdrag"))
+                                        {
+                                            <td class="e-indentcell e-indentcelltop"></td>
+                                        }
+                                        else if (cellType.Equals("detailindent"))
+                                        {
+                                            <td class="e-indentcell"></td>
+                                        }
+                                        else if (@Cell?.AggregateColumn != null && @Cell.AggregateColumn.FooterTemplate != null)
+                                        {
+                                            var AggregateContext = BuildAggregateContext(Cell);
+                                            string cellCssClass = GetAggregateCellCssClass(Cell, txtClass, FrozenClass, isTemplate: true);
+                                            @if(txtAlign.Equals("none")) {
+                                                <td class="@cellCssClass" role="gridcell" tabindex="-1" data-cell="@Cell.Column?.HeaderText" @attributes="GridUtils.GetStyleAttributes(GetStyles(Cell.Column!))">
+                                                    @Cell.AggregateColumn.FooterTemplate(AggregateContext)
+                                                </td>
+                                            }
+                                            else 
+                                            {
+                                                <td class="@cellCssClass" role="gridcell" tabindex="-1" data-cell="@Cell.Column?.HeaderText" data-sf-style="@GetStyles(Cell.Column!)">
+                                                    @Cell.AggregateColumn.FooterTemplate(AggregateContext)
+                                                </td>
+                                            }
+                                            
+                                        }
+                                        else if (Cell?.AggregateValue != null)
+                                        {
+                                            string cellCssClass = GetAggregateCellCssClass(Cell, txtClass, FrozenClass, isTemplate: false);
+                                            @if (txtAlign.Equals("none"))
+                                            {
+                                                <td class="@cellCssClass" tabindex="-1" role="gridcell" data-cell="@Cell.Column?.HeaderText" @attributes="GridUtils.GetStyleAttributes(GetStyles(Cell?.Column!))">@Cell?.AggregateValue</td>
+                                            }
+                                            else 
+                                            {
+                                            <td class="@cellCssClass" tabindex="-1" role="gridcell" data-cell="@Cell.Column?.HeaderText" data-sf-style="@GetStyles(Cell?.Column!)">@Cell?.AggregateValue</td>
+                                            }
+                                            
+                                        }
+                                        else 
+                                        {
+                                            string cellCssClass = GetAggregateCellCssClass(Cell, txtClass, FrozenClass, isTemplate: false);
+                                            @if (txtAlign.Equals("none"))
+                                            {
+                                                <td class="@cellCssClass" tabindex="-1" role="gridcell" data-cell="@Cell?.Column?.HeaderText" @attributes="GridUtils.GetStyleAttributes(GetStyles(Cell?.Column!))">&nbsp;</td>
+                                            }
+                                            else 
+                                            {
+                                                <td class="@cellCssClass" tabindex="-1" role="gridcell" data-cell="@Cell?.Column?.HeaderText" data-sf-style="@GetStyles(Cell?.Column!, true)">&nbsp;</td>
+                                            }
+                                            
+                                        }
+                                    }
+                                }
+                            </tr>
+                        }
+                    }
+                }
+                </tfoot>
+        }
+    </table>
+@code {
+    #region Data Parameters
+
+    [Parameter]
+    public IEnumerable<object>? Data { get; set; }
+
+    [Parameter]
+    public Object? Aggregate { get; set; }
+
+    [Parameter]
+    public List<Row<Object>>? Rows { get; set; }
+
+    #endregion
+    
+    #region Frozen State Settings
+    [Parameter]
+    public bool? IsFrozen { get; set; } = null;
+
+    [Parameter]
+    public bool IsFrozenRight { get; set; }
+    #endregion
+    
+    #region Cascading Context
+
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+
+    #endregion
+
+    #region Lifecycle
+    protected override void OnInitialized()
+    {
+        Parent!.EventAggregator.Add("RefreshFooterContent", FooterStateChanged);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Aggregate != null && Parent != null && Parent.Aggregates?.Count() > 0)
+        {
+            Rows = IsFrozen.HasValue ? Rows : new SummaryModelGenerator<TContent>(Parent).GeneratorRows(Parent.Aggregates, Aggregate);
+        }
+    }
+    #endregion
+
+    #region Event Handlers
+    private void FooterStateChanged(object arg)
+    {
+        Aggregate = Parent!.Aggregate!;
+        OnParametersSet();
+        StateHasChanged();
+    }
+    #endregion
+
+    #region Style Helpers
+    public string GetTextAlign(GridColumn column)
+    {
+        string? tAlign = column?.TextAlign.ToString();
+        if (string.IsNullOrEmpty(tAlign)) { return null!; }
+        return tAlign.ToLower();
+    }
+
+    private string GetStyles(GridColumn Column, bool IsEmptyCell = false)
+    {
+        var Styles = "";
+        if (Parent != null && Parent.EnableAdaptiveUI && Parent.RowRenderingMode.Equals(RowDirection.Vertical) && IsEmptyCell)
+        {
+            if ((Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && !Parent.SyncfusionService.IsDeviceMode) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && Parent.SyncfusionService.IsDeviceMode))
+            {
+                return string.Empty;
+            }
+            return "display:none";
+        }
+        if (Column.IsFrozen || (Column.Index < Parent!.FrozenColumns))
+        {
+            Styles = Parent!.FreezeModule!.ApplyFrozenColumnsStyles(Column);
+            return Styles;
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }
+
+    private string GetFrozenClass(GridColumn Column)
+    {
+        var Class = "";
+        if ((Column?.IsFrozen == true) && Column.Freeze.Equals(FreezeDirection.Left))
+        {
+            Class = "e-leftfreeze";
+            return Class;
+        }
+        else if ((Column?.IsFrozen == true) && Column.Freeze.Equals(FreezeDirection.Right))
+        {
+            Class = "e-rightfreeze";
+            return Class;
+        }
+        else if ((Column?.IsFrozen == true) && Column.Freeze.Equals(FreezeDirection.Fixed))
+        {
+            Class = "e-fixedfreeze";
+            return Class;
+        }
+        else if (Column?.Index < Parent!.FrozenColumns)
+        {
+            Class = "e-leftfreeze";
+            return Class;
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }
+    #endregion
+
+    #region Aggregate Helper Methods
+    private AggregateTemplateContext BuildAggregateContext(Cell<object> cell)
+    {
+        var context = new AggregateTemplateContext();
+        context.Field = cell.Column?.Field!;
+        var col = GridUtils.GetColumnByField(cell.Column?.Field!, GridUtils.GetColumns(Parent!));
+        context.HeaderText = col?.HeaderText!;
+
+        switch (cell.AggregateColumn?.Type)
+        {
+            case AggregateType.Sum:
+                context.Sum = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.Average:
+                context.Average = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.Max:
+                context.Max = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.Min:
+                context.Min = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.Count:
+                context.Count = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.TrueCount:
+                context.TrueCount = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.FalseCount:
+                context.FalseCount = cell.AggregateValue?.ToString()!;
+                break;
+            case AggregateType.Custom:
+                context.Custom = cell.AggregateValue?.ToString()!;
+                break;
+        }
+
+        return context;
+    }
+
+    private string GetAggregateCellCssClass(Cell<object>? cell, string txtClass, string frozenClass, bool isTemplate = false)
+    {
+        if (cell == null)
+        {
+            return string.Empty;
+        }
+
+        string baseClass = isTemplate ? "e-summarycell e-templatecell" : "e-summarycell";
+        return $"{baseClass} {frozenClass} {txtClass}";
+    }
+    #endregion
+}

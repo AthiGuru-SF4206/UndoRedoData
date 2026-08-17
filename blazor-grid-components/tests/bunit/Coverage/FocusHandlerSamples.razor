@@ -1,0 +1,280 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Focus on the last cell of the 'Add form' when shiftTab is pressed">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowAddNewRow="true" NewRowPosition="NewRowPosition.Top"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-rowcell")[4].Click();
+        cut.FindAll(".e-rowcell")[4].KeyDown(new KeyboardEventArgs()
+        {
+            Key = "Tab",
+            ShiftKey = true
+        });
+    }
+}
+
+<SfFixture @ref="fixture1" TestAsync="GridBasicRendering1" Description="Focus on the last cell of the 'Add form' when ArrowDown is pressed">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid1" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowAddNewRow="true" NewRowPosition="NewRowPosition.Top"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> Grid1;
+    public List<Order> GridData1 { get; set; }
+
+    public async Task GridBasicRendering1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-rowcell")[4].Click();
+        cut.FindAll(".e-rowcell")[4].KeyDown(new KeyboardEventArgs()
+        {
+            Key = "ArrowUp"
+        });
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridTabNavigationWithFrozenColumns" Description="GetNextCellIndex tab case covered">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="GridFrozen" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> GridFrozen;
+    private SfFixture fixture3;
+
+    public async Task GridTabNavigationWithFrozenColumns(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        await gridFocusHandler.ProcessGridKeyDown(new KeyboardEventArgs { Key = "Tab", Code = "Tab" }, bf: null, isPagerFocused: true, isToolbarFocused: false, cellIndex: null, rowIndex: null);
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridTabNavigationColumns4" Description="GetNextCellIndex Shift+tab case covered">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid4" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid4;
+    private SfFixture fixture4;
+
+    public async Task GridTabNavigationColumns4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        await gridFocusHandler.ProcessGridKeyDown(new KeyboardEventArgs { Key = "Tab", ShiftKey = true }, bf: null, isPagerFocused: true, isToolbarFocused: false, cellIndex: null, rowIndex: null);
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="GridTabNavigationColumns5" Description="ProcessGridKeyDown template tab case covered">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid5" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150">
+                    <Template>
+                        @{
+
+                            <SfTextBox></SfTextBox>
+                        }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid5;
+    private SfFixture fixture5;
+
+    public async Task GridTabNavigationColumns5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[1].Click();
+        await gridFocusHandler.ProcessGridKeyDown(new KeyboardEventArgs { Key = "Tab" }, bf: null, isPagerFocused: true, isToolbarFocused: false, cellIndex: null, rowIndex: 0, templateCellIndex: 1, focusColumnTemplate: true);
+    }
+}
+
+<SfFixture @ref="fixture6" TestAsync="GridTabNavigationColumns6" Description="ProcessGridKeyDown rowdrag and cellindex - 579 line">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid6" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })" AllowRowDragAndDrop="true">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid6;
+    private SfFixture fixture6;
+
+    public async Task GridTabNavigationColumns6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        var formInput = cut.Find(".e-gridform input");
+        formInput.Change("test");
+        await gridFocusHandler.ProcessGridKeyDown(new KeyboardEventArgs { Key = "Tab" }, bf: null, isPagerFocused: true, isToolbarFocused: false, cellIndex: 2);
+    }
+}
+
+<SfFixture @ref="fixture7" TestAsync="GridTabNavigationColumns7" Description="ProcessKeyDown with filtering and arrowdown - 229 line">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid7" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })" AllowFiltering="true">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid7;
+    private SfFixture fixture7;
+
+    public async Task GridTabNavigationColumns7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[0].Click();
+        var dataRow = cut.Instance.Rows?.FirstOrDefault(r => r.Visible != false);
+        var targetCell = dataRow?.Cells?.FirstOrDefault(c => c.Visible && c.Index == 0);
+        await gridFocusHandler.ProcessKeyDown(new KeyboardEventArgs { Key = "ArrowUp" }, row: dataRow, cell: targetCell, isHeader: false);
+    }
+}
+
+<SfFixture @ref="fixture8" TestAsync="GridTabNavigationColumns8" Description="ProcessKeyDown with filtering and visible columns - 238 line">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid8" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })" AllowFiltering="true">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid8;
+    private SfFixture fixture8;
+
+    public async Task GridTabNavigationColumns8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-rowcell")[0].Click();
+        var headerRow = cut.Instance.Rows?.FirstOrDefault();
+        var cell = headerRow?.Cells?.FirstOrDefault(c => c.Column?.Field == "CustomerID");
+        await gridFocusHandler.ProcessKeyDown(new KeyboardEventArgs { Key = "ArrowUp", Code = "ArrowUp" }, headerRow, cell, isHeader: true);
+    }
+}
+
+<SfFixture @ref="fixture9" TestAsync="GridTabNavigationColumns9" Description="Covered SetCurrentArea - MoveDownCell">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="Grid9" DataSource="GenerateOrderData()" AllowSelection="true" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "ColumnChooser" })">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal" AllowAdding="true" AllowDeleting="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfGrid<Order> Grid9;
+    private SfFixture fixture9;
+
+    public async Task GridTabNavigationColumns9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var gridFocusHandler = new Syncfusion.Blazor.Grids.Internal.FocusHandler<Order>(cut.Instance);
+        cut.FindAll(".e-headercell")[0].Click();
+        var headerRow = cut.Instance.HeaderRows?.FirstOrDefault();
+        var cell = headerRow?.Cells?.FirstOrDefault(c => c.Column?.Field == "OrderID");
+        await gridFocusHandler.ProcessKeyDown(new KeyboardEventArgs { Key = "ArrowDown", Code = "ArrowDown" }, headerRow, cell, isHeader: true);
+    }
+}

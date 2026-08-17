@@ -1,0 +1,153 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering6" Description="Virtualization Column Reordering then row drag and drop">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GetVirtualData()" ID="DestGrid" RowHeight="38" Height="410" OverscanCount="5" Width="700" EnableHover="false" EnableVirtualization="true"
+                EnableVirtualMaskRow="true" EnableColumnVirtualization="true"
+                AllowGrouping AllowSorting AllowFiltering AllowReordering AllowRowDragAndDrop AllowResizing ShowColumnChooser
+                Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel", "Search", "Indent", "Outdent", "ColumnChooser" })">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridSelectionSettings PersistSelection Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEditSettings AllowAdding AllowDeleting AllowEditing NewRowPosition="NewRowPosition.Bottom" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(TaskDetails.TaskID) HeaderText="TaskID" Uid="Task1" IsPrimaryKey TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Engineer) HeaderText="Engineer" Uid="Task2" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Designation) HeaderText="Designation" Uid="Task3" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Estimation) HeaderText="Estimation" Uid="Task4" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status) HeaderText="Status" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status1) HeaderText="Status1" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status2) HeaderText="Status2" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status3) HeaderText="Status3" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status4) HeaderText="Status4" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status5) HeaderText="Status5" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status6) HeaderText="Status6" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status7) HeaderText="Status7" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status8) HeaderText="Status8" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status9) HeaderText="Status9" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status10) HeaderText="Status10" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status11) HeaderText="Status11" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status12) HeaderText="Status12" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status13) HeaderText="Status13" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status14) HeaderText="Status14" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(TaskDetails.Status15) HeaderText="Status15" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    public List<TaskDetails> TaskData { get; set; }
+    void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<TaskDetails>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.OverscanCount > 0);
+        Assert.True(cut.Instance.Rows.Count == 50, "Rows Rendered Properly");
+        Assert.True(cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "TaskID", "columns rearranged properly");
+        Assert.True(cut.FindAll("th")[2].GetElementsByTagName("span")[0].InnerHtml == "Engineer", "columns rearranged properly");
+        //Column Reordering through JS Interop
+        cut.InvokeAsync(() =>
+        cut.Instance._jsAdaptor.ColumnReordered("{\"requestType\":\"reorder\",\"fromIndex\":1,\"toIndex\":0,\"toColumnUid\":\"Task1\"}"
+        ).GetAwaiter());
+        // Wait for the component to re-render
+        cut.Render();
+        // Wait for DOM to update
+        cut.WaitForState(() => cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "Engineer", timeout: TimeSpan.FromSeconds(5));
+
+        Assert.True(cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "Engineer", "columns rearranged properly");
+        Assert.True(cut.FindAll("th")[2].GetElementsByTagName("span")[0].InnerHtml == "TaskID", "columns rearranged properly");
+
+        //Row Reordering through API
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)")[1].QuerySelectorAll("td")[2].InnerHtml == "2", "Before Row Reorder Check");
+        cut.InvokeAsync(() => cut.Instance.ReorderRowAsync(1, 2));
+        cut.WaitForState(() => cut.FindAll(".e-row:not(.e-masked-row)")[1].QuerySelectorAll("td")[2].InnerHtml == "3", timeout: TimeSpan.FromSeconds(5));
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)")[1].QuerySelectorAll("td")[2].InnerHtml == "3", "After Row Reorder Check");
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)").Count == 50 , "After Row Reorder tr count check");
+
+        //Virtual Scrolling through JS Interop
+        var virtualArgs = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":960,\"virtualEndIndex\":1000,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.InvokeAsync(() => cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs, scrollTop: 36480).GetAwaiter());
+        // Wait for the component to re-render
+        cut.Render();
+        // Column Reordering through JS Interop
+        Assert.True(cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "Engineer", "columns rearranged properly");
+        Assert.True(cut.FindAll("th")[2].GetElementsByTagName("span")[0].InnerHtml == "TaskID", "columns rearranged properly");
+        cut.InvokeAsync(() => cut.Instance._jsAdaptor.ColumnReordered("{\"requestType\":\"reorder\",\"fromIndex\":1,\"toIndex\":0,\"toColumnUid\":\"Task1\"}").GetAwaiter());
+        // Wait for the component to re-render
+        cut.Render();
+        // Wait for DOM to update
+        cut.WaitForState(() => cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "TaskID", timeout: TimeSpan.FromSeconds(5));
+        Assert.True(cut.FindAll("th")[1].GetElementsByTagName("span")[0].InnerHtml == "TaskID", "columns rearranged properly");
+        Assert.True(cut.FindAll("th")[2].GetElementsByTagName("span")[0].InnerHtml == "Engineer", "columns rearranged properly");
+        //Row Reordering through API
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)")[49].QuerySelectorAll("td")[1].InnerHtml == "1000", "After Row Reorder Check");
+        cut.InvokeAsync(() => cut.Instance.ReorderRowAsync(998, 999));
+        // Wait for the component to re-render
+        cut.Render();
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)")[49].QuerySelectorAll("td")[1].InnerHtml == "999", "After Row Reorder Check");
+        Assert.True(cut.FindAll(".e-row:not(.e-masked-row)").Count == 50, "After Row Reorder tr count check");
+    }
+    public List<TaskDetails> GetVirtualData()
+    {
+        var names = new List<string> { "TOM", "Hawk", "Jon", "Chandler", "Monica", "Rachel", "Phoebe", "Gunther", "Ross", "Geller", "Joey", "Bing", "Tribbiani", "Janice", "Bong", "Perk", "Green", "Ken", "Adams" };
+        var hours = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        var designations = new List<string> { "Manager", "Engineer 1", "Engineer 2", "Developer", "Tester" };
+        var statusValues = new List<string> { "Completed", "Open", "In Progress", "Review", "Testing" };
+        var result = new List<TaskDetails>();
+        for (int i = 0; i < 1000; i++)
+        {
+            result.Add(new TaskDetails
+            {
+                TaskID = i + 1,
+                Engineer = names[i % names.Count],
+                Designation = designations[i % designations.Count],
+                Estimation = hours[i % hours.Count],
+                Status = statusValues[i % statusValues.Count],
+                Status1 = "Status1",
+                Status2 = "Status2",
+                Status3 = "Status3",
+                Status4 = "Status4",
+                Status5 = "Status5",
+                Status6 = "Status6",
+                Status7 = "Status7",
+                Status8 = "Status8",
+                Status9 = "Status9",
+                Status10 = "Status10",
+                Status11 = "Status11",
+                Status12 = "Status12",
+                Status13 = "Status13",
+                Status14 = "Status14",
+                Status15 = "Status15"
+            });
+        }
+        return result;
+    }
+    public class TaskDetails
+    {
+        public int TaskID { get; set; }
+        public string Engineer { get; set; }
+        public string Designation { get; set; }
+        public int Estimation { get; set; }
+        public string Status { get; set; }
+        public string Status1 { get; set; }
+        public string Status2 { get; set; }
+        public string Status3 { get; set; }
+        public string Status4 { get; set; }
+        public string Status5 { get; set; }
+        public string Status6 { get; set; }
+        public string Status7 { get; set; }
+        public string Status8 { get; set; }
+        public string Status9 { get; set; }
+        public string Status10 { get; set; }
+        public string Status11 { get; set; }
+        public string Status12 { get; set; }
+        public string Status13 { get; set; }
+        public string Status14 { get; set; }
+        public string Status15 { get; set; }
+    }
+}

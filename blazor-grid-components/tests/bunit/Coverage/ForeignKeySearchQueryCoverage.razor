@@ -1,0 +1,351 @@
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+@using System.Collections.Generic
+@using System.Linq
+@inherits GridTestBase
+
+<!-- Test Case 1: SearchQuery with Foreign Key Column (Int) -->
+<SfFixture @ref="fixture1" TestAsync="ForeignKeySearchQueryTest" Description="SearchQuery with Foreign Key Column Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@Orders" Height="315" AllowSearching="true">
+            <GridSearchSettings Fields="@SearchFields" Key="@SearchKey" IgnoreCase="true"></GridSearchSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150" AllowSearching="true"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 2: SearchQuery with Foreign Key Column (UInt) -->
+<SfFixture @ref="fixture2" TestAsync="ForeignKeySearchQueryUIntTest" Description="SearchQuery with Foreign Key Column UInt Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="@UIntOrders" Height="315" AllowSearching="true">
+            <GridSearchSettings Fields="@SearchFields" Key="@SearchKey" IgnoreCase="true"></GridSearchSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(UIntOrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+                <GridForeignColumn Field=@nameof(UIntOrderDetails.EmployeeID) HeaderText="Employee ID" ForeignKeyValue="EmployeeID" ForeignDataSource="@UIntEmployees" Width="150" AllowSearching="true"></GridForeignColumn>
+                <GridColumn Field=@nameof(UIntOrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(UIntOrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 3: SearchQuery with Foreign Key Column (Double) -->
+<SfFixture @ref="fixture3" TestAsync="ForeignKeySearchQueryDoubleTest" Description="SearchQuery with Foreign Key Column Double Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="@DoubleOrders" Height="315" AllowSearching="true">
+            <GridSearchSettings Fields="@SearchFields" Key="@SearchKey" IgnoreCase="true"></GridSearchSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(DoubleOrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+                <GridForeignColumn Field=@nameof(DoubleOrderDetails.ProductPrice) HeaderText="Product Price" ForeignKeyValue="ProductPrice" ForeignDataSource="@DoubleProducts" Width="150" AllowSearching="true"></GridForeignColumn>
+                <GridColumn Field=@nameof(DoubleOrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(DoubleOrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120" AllowSearching="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfFixture fixture2 { get; set; }
+    SfFixture fixture3 { get; set; }
+
+    private SfGrid<OrderDetails> Grid { get; set; }
+    private SfGrid<UIntOrderDetails> Grid2 { get; set; }
+    private SfGrid<DoubleOrderDetails> Grid3 { get; set; }
+
+    private List<OrderDetails> Orders { get; set; } = new();
+    private List<EmployeeDetails> Employees { get; set; } = new();
+    private List<UIntOrderDetails> UIntOrders { get; set; } = new();
+    private List<UIntEmployeeDetails> UIntEmployees { get; set; } = new();
+    private List<DoubleOrderDetails> DoubleOrders { get; set; } = new();
+    private List<DoubleProductDetails> DoubleProducts { get; set; } = new();
+
+    private string SearchKey { get; set; } = "Nancy";
+    private string[] SearchFields { get; set; } = new[] { "OrderID", "EmployeeID", "ShipCity" };
+
+    // Test Method 1: Int Foreign Key
+    async Task ForeignKeySearchQueryTest(Fixture fixture)
+    {
+        if (Orders.Count == 0)
+            Orders = OrderDetails.GetAllRecords();
+        if (Employees.Count == 0)
+            Employees = EmployeeDetails.GetAllRecords();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        Assert.NotNull(cut);
+        Assert.NotNull(Grid);
+
+        // Call SearchQuery with Query object and set ODataV4Adaptor
+        var query = new Query();
+        Grid.SearchSettings.Key = "5";
+        Grid.DataManager.Adaptor = Adaptors.ODataV4Adaptor;
+        Grid.DataModule.SearchQuery(query);
+        Grid.ColumnQueryMode = ColumnQueryModeType.ExcludeHidden;
+        Grid.DataModule.GenerateQuery();
+        Assert.NotNull(Grid);
+    }
+
+    // Test Method 2: UInt Foreign Key
+    async Task ForeignKeySearchQueryUIntTest(Fixture fixture)
+    {
+        if (UIntOrders.Count == 0)
+            UIntOrders = UIntOrderDetails.GetAllRecords();
+        if (UIntEmployees.Count == 0)
+            UIntEmployees = UIntEmployeeDetails.GetAllRecords();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<UIntOrderDetails>>();
+        Assert.NotNull(cut);
+        Assert.NotNull(Grid2);
+
+        // Call SearchQuery with Query object - uint type and set ODataV4Adaptor
+        var query = new Query();
+        Grid2.SearchSettings.Key = "3";
+        Grid2.DataManager.Adaptor = Adaptors.ODataV4Adaptor;
+        Grid2.DataModule.SearchQuery(query);
+        Grid2.ColumnQueryMode = ColumnQueryModeType.Schema;
+        Grid2.DataModule.GenerateQuery();
+        Assert.NotNull(Grid2);
+    }
+
+    // Test Method 3: Double Foreign Key
+    async Task ForeignKeySearchQueryDoubleTest(Fixture fixture)
+    {
+        if (DoubleOrders.Count == 0)
+            DoubleOrders = DoubleOrderDetails.GetAllRecords();
+        if (DoubleProducts.Count == 0)
+            DoubleProducts = DoubleProductDetails.GetAllRecords();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DoubleOrderDetails>>();
+        Assert.NotNull(cut);
+        Assert.NotNull(Grid3);
+
+        // Call SearchQuery with Query object - double type and set ODataV4Adaptor
+        var query = new Query();
+        Grid3.SearchSettings.Key = "29.95";
+        Grid3.DataManager.Adaptor = Adaptors.ODataV4Adaptor;
+        Grid3.DataModule.SearchQuery(query);
+        Assert.NotNull(Grid3);
+    }
+
+    public class OrderDetails
+    {
+        public static List<OrderDetails> order = new List<OrderDetails>();
+
+        public OrderDetails(int OrderID, string Shipcity, int EmployeeId, int CustomerId, double Freight)
+        {
+            this.OrderID = OrderID;
+            this.ShipCity = Shipcity;
+            this.EmployeeID = EmployeeId;
+            this.CustomerID = CustomerId;
+            this.Freight = Freight;
+        }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            if (order.Count == 0)
+            {
+                order.Add(new OrderDetails(10248, "Reims", 5, 1, 32.38));
+                order.Add(new OrderDetails(10249, "Münster", 6, 2, 11.61));
+                order.Add(new OrderDetails(10250, "Rio de Janeiro", 4, 3, 65.83));
+                order.Add(new OrderDetails(10251, "Lyon", 3, 1, 41.34));
+                order.Add(new OrderDetails(10252, "Charleroi", 4, 2, 51.3));
+                order.Add(new OrderDetails(10253, "Rio de Janeiro", 3, 3, 58.17));
+                order.Add(new OrderDetails(10254, "Bern", 5, 1, 22.98));
+                order.Add(new OrderDetails(10255, "Genève", 9, 2, 48.33));
+                order.Add(new OrderDetails(10256, "Resende", 3, 3, 13.97));
+                order.Add(new OrderDetails(10257, "San Cristóbal", 4, 1, 81.91));
+                order.Add(new OrderDetails(10258, "Graz", 1, 2, 40.51));
+                order.Add(new OrderDetails(10259, "México D.F.", 4, 3, 3.25));
+                order.Add(new OrderDetails(10260, "Köln", 4, 1, 55.09));
+                order.Add(new OrderDetails(10261, "Rio de Janeiro", 4, 2, 3.05));
+                order.Add(new OrderDetails(10262, "Albuquerque", 8, 3, 48.29));
+            }
+            return order;
+        }
+
+        public int OrderID { get; set; }
+        public string ShipCity { get; set; }
+        public int EmployeeID { get; set; }
+        public int CustomerID { get; set; }
+        public double Freight { get; set; }
+    }
+
+    public class EmployeeDetails
+    {
+        public static List<EmployeeDetails> employee = new List<EmployeeDetails>();
+
+        public EmployeeDetails(int employeeID, string firstName)
+        {
+            this.EmployeeID = employeeID;
+            this.FirstName = firstName;
+        }
+
+        public static List<EmployeeDetails> GetAllRecords()
+        {
+            if (employee.Count == 0)
+            {
+                employee.Add(new EmployeeDetails(1, "Nancy"));
+                employee.Add(new EmployeeDetails(2, "Andrew"));
+                employee.Add(new EmployeeDetails(3, "Janet"));
+                employee.Add(new EmployeeDetails(4, "Margaret"));
+                employee.Add(new EmployeeDetails(5, "Steven"));
+                employee.Add(new EmployeeDetails(6, "Michael"));
+                employee.Add(new EmployeeDetails(7, "Robert"));
+                employee.Add(new EmployeeDetails(8, "Laura"));
+                employee.Add(new EmployeeDetails(9, "Anne"));
+            }
+            return employee;
+        }
+
+        public int EmployeeID { get; set; }
+        public string FirstName { get; set; }
+    }
+
+    public class CustomerDetails
+    {
+        public static List<CustomerDetails> customer = new List<CustomerDetails>();
+
+        public CustomerDetails(int customerId, string customerName)
+        {
+            this.CustomerID = customerId;
+            this.CustomerName = customerName;
+        }
+
+        public static List<CustomerDetails> GetAllRecords()
+        {
+            if (customer.Count == 0)
+            {
+                customer.Add(new CustomerDetails(1, "Alfreds Futterkiste"));
+                customer.Add(new CustomerDetails(2, "Ana Trujillo"));
+                customer.Add(new CustomerDetails(3, "Antonio Moreno"));
+            }
+            return customer;
+        }
+
+        public int CustomerID { get; set; }
+        public string CustomerName { get; set; }
+    }
+
+    // UInt Order Details for testing uint foreign key
+    public class UIntOrderDetails
+    {
+        public static List<UIntOrderDetails> order = new List<UIntOrderDetails>();
+
+        public UIntOrderDetails(uint OrderID, string Shipcity, uint EmployeeId, double Freight)
+        {
+            this.OrderID = OrderID;
+            this.ShipCity = Shipcity;
+            this.EmployeeID = EmployeeId;
+            this.Freight = Freight;
+        }
+
+        public static List<UIntOrderDetails> GetAllRecords()
+        {
+            if (order.Count == 0)
+            {
+                order.Add(new UIntOrderDetails(10248, "Reims", 5, 32.38));
+                order.Add(new UIntOrderDetails(10249, "Münster", 6, 11.61));
+                order.Add(new UIntOrderDetails(10250, "Rio de Janeiro", 4, 65.83));
+                order.Add(new UIntOrderDetails(10251, "Lyon", 3, 41.34));
+                order.Add(new UIntOrderDetails(10252, "Charleroi", 4, 51.3));
+            }
+            return order;
+        }
+
+        public uint OrderID { get; set; }
+        public string ShipCity { get; set; }
+        public uint EmployeeID { get; set; }
+        public double Freight { get; set; }
+    }
+
+    public class UIntEmployeeDetails
+    {
+        public static List<UIntEmployeeDetails> employee = new List<UIntEmployeeDetails>();
+
+        public UIntEmployeeDetails(uint employeeID, string firstName)
+        {
+            this.EmployeeID = employeeID;
+            this.FirstName = firstName;
+        }
+
+        public static List<UIntEmployeeDetails> GetAllRecords()
+        {
+            if (employee.Count == 0)
+            {
+                employee.Add(new UIntEmployeeDetails(1, "Nancy"));
+                employee.Add(new UIntEmployeeDetails(2, "Andrew"));
+                employee.Add(new UIntEmployeeDetails(3, "Janet"));
+                employee.Add(new UIntEmployeeDetails(4, "Margaret"));
+                employee.Add(new UIntEmployeeDetails(5, "Steven"));
+            }
+            return employee;
+        }
+
+        public uint EmployeeID { get; set; }
+        public string FirstName { get; set; }
+    }
+
+    // Double Order Details for testing double foreign key
+    public class DoubleOrderDetails
+    {
+        public static List<DoubleOrderDetails> order = new List<DoubleOrderDetails>();
+
+        public DoubleOrderDetails(int OrderID, string Shipcity, double ProductPrice, double Freight)
+        {
+            this.OrderID = OrderID;
+            this.ShipCity = Shipcity;
+            this.ProductPrice = ProductPrice;
+            this.Freight = Freight;
+        }
+
+        public static List<DoubleOrderDetails> GetAllRecords()
+        {
+            if (order.Count == 0)
+            {
+                order.Add(new DoubleOrderDetails(10248, "Reims", 29.95, 32.38));
+                order.Add(new DoubleOrderDetails(10249, "Münster", 15.99, 11.61));
+                order.Add(new DoubleOrderDetails(10250, "Rio de Janeiro", 49.99, 65.83));
+                order.Add(new DoubleOrderDetails(10251, "Lyon", 19.99, 41.34));
+                order.Add(new DoubleOrderDetails(10252, "Charleroi", 39.99, 51.3));
+            }
+            return order;
+        }
+
+        public int OrderID { get; set; }
+        public string ShipCity { get; set; }
+        public double ProductPrice { get; set; }
+        public double Freight { get; set; }
+    }
+
+    public class DoubleProductDetails
+    {
+        public static List<DoubleProductDetails> products = new List<DoubleProductDetails>();
+
+        public DoubleProductDetails(double productPrice, string productName)
+        {
+            this.ProductPrice = productPrice;
+            this.ProductName = productName;
+        }
+
+        public static List<DoubleProductDetails> GetAllRecords()
+        {
+            if (products.Count == 0)
+            {
+                products.Add(new DoubleProductDetails(29.95, "Product A"));
+                products.Add(new DoubleProductDetails(15.99, "Product B"));
+                products.Add(new DoubleProductDetails(49.99, "Product C"));
+                products.Add(new DoubleProductDetails(19.99, "Product D"));
+                products.Add(new DoubleProductDetails(39.99, "Product E"));
+            }
+            return products;
+        }
+
+        public double ProductPrice { get; set; }
+        public string ProductName { get; set; }
+    }
+}

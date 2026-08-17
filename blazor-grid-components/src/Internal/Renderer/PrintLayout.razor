@@ -1,0 +1,111 @@
+@typeparam T 
+@namespace Syncfusion.Blazor.Grids.Internal
+
+@using Syncfusion.Blazor.Data
+
+<div class="e-print-offscreen">
+        <SfGrid @ref="_printGrid" TValue="T" ID="@($"{Parent?.ID}_sfprint")" class="e-print-grid-layout"
+                Query="Parent?.Query?.Clone()"
+                DataSource="Parent?.DataSource"
+                AllowSorting="Parent?.AllowSorting ?? false"
+                AllowFiltering="Parent?.AllowFiltering ?? false"
+                AllowGrouping="Parent?.AllowGrouping ?? false"
+                AllowMultiSorting="Parent?.AllowMultiSorting ?? false"
+                AllowTextWrap="Parent?.AllowTextWrap ?? false"
+                Columns="Parent?.Columns"
+                TextWrapSettings="Parent?.TextWrapSettings"
+                SearchSettings="Parent?.SearchSettings"
+                Aggregates="Parent?.Aggregates"
+                ColumnQueryMode="Parent?.ColumnQueryMode ?? ColumnQueryModeType.All"
+                EnableAltRow="Parent?.EnableAltRow ?? true"
+                EnableRtl="Parent?.EnableRtl ?? false"
+                AllowSelection="Parent?.AllowSelection ?? false"
+                GridLines="Parent?.GridLines ?? GridLine.Default"
+                RowHeight="Parent?.RowHeight ?? default"
+                AutoSpan="Parent!.AutoSpan"
+                AllowPaging="Parent.PrintMode.Equals(PrintMode.CurrentPage)"
+                Height="auto" Width="auto" Toolbar="@(null)">
+                @if (isDataManager)
+                {
+                    <SfDataManager @attributes="dmAttr">
+                        @Parent?.DataManager!.ChildContent
+                    </SfDataManager>
+                }
+                <GridPageSettings CurrentPage="Parent.PageSettings!.CurrentPage"
+                                  PageSize="Parent.PageSettings.PageSize"></GridPageSettings>
+            <GridGroupSettings ShowGroupedColumn="Parent.GroupSettings!.ShowGroupedColumn"
+                               Columns="Parent.GroupSettings?.Columns"
+                               ShowDropArea="Parent.GroupSettings?.Columns?.Count() > 0"></GridGroupSettings>
+            <GridFilterSettings Columns="Parent.FilterSettings!.Columns"></GridFilterSettings>
+            <GridSortSettings Columns="Parent.SortSettings!.Columns"></GridSortSettings>
+            <GridTemplates RowTemplate="((IGrid)Parent).GridTemplates?.RowTemplate" DetailTemplate="((IGrid)Parent).GridTemplates?.DetailTemplate"></GridTemplates>
+            <EventRegister Name="InternalDataBound" Handler="InvokePrint" T="T"></EventRegister>
+        </SfGrid>
+</div>
+@code
+{
+    #region Parameters & Component References
+
+    [Parameter]
+    public SfGrid<T>? Parent { get; set; }
+
+    private SfGrid<T>? _printGrid { get; set; }
+
+    #endregion
+
+    #region State
+
+    private bool isDataManager = false;
+    private IDictionary<string, object> dmAttr = new Dictionary<string, object>();
+
+    #endregion
+
+    #region Lifecycle
+
+    protected override void OnInitialized()
+    {
+        InitializeDataManagerAttributes();
+    }
+
+    #endregion
+
+    #region Initialization Helpers
+
+    private void InitializeDataManagerAttributes()
+    {
+        if (Parent?.DataManager != null && Parent.DataManager.IsDataManager)
+        {
+            isDataManager = true;
+            DataManager dm = Parent.DataManager;
+
+            dmAttr = new Dictionary<string, object>()
+            {
+                { nameof(DataManager.Accept), dm.Accept },
+                { nameof(DataManager.Adaptor), dm.Adaptor },
+                { nameof(DataManager.AdaptorInstance), dm.AdaptorInstance! },
+                { nameof(DataManager.CrossDomain), dm.CrossDomain },
+                { nameof(DataManager.DataType), dm.DataType! },
+                { nameof(DataManager.Headers), dm.Headers! },
+                { nameof(DataManager.Json), dm.Json! },
+                { nameof(DataManager.Offline), dm.Offline },
+                { nameof(DataManager.Url), dm.Url },
+                { nameof(DataManager.RequestType), dm.RequestType! },
+                { nameof(DataManager.RequiresFormat), dm.RequiresFormat },
+                { nameof(DataManager.GraphQLAdaptorOptions), dm.GraphQLAdaptorOptions! }
+            };
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers / Actions
+
+    private void InvokePrint(object args)
+    {
+        _printGrid?.InvokeMethod("sfBlazor.Grid.printGrid", new object[] { _printGrid.DataId }).GetAwaiter();
+        Parent!.IsPrinting = false;
+        Parent.CallStateHasChanged();
+    }
+
+    #endregion
+}

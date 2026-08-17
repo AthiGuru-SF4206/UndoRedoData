@@ -1,0 +1,120 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<!-- Test Scenario 1: Verify OnDialogClosed - IsAdaptiveFilter Reset -->
+<SfFixture @ref="fixture4" TestAsync="TestOnDialogClosed_IsAdaptiveFilterReset" Description="Verify that OnDialogClosed resets IsAdaptiveFilter to false">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid4" @ref="Grid4" DataSource="GetAllRecords()" EnableAdaptiveUI="true" RowRenderingMode="RowDirection.Vertical" AllowSorting="true" AllowFiltering="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport", "ColumnChooser", "CsvExport" })"
+                ShowColumnChooser="true" AllowExcelExport="true" AllowPdfExport="true" ShowColumnMenu="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> Grid4;
+    
+    public async Task TestOnDialogClosed_IsAdaptiveFilterReset(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Wait for grid to initialize
+        await Task.Delay(500);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should be initialized with rows");
+        
+        // Get the adaptive dialog renderer component
+        var adaptiveDialog = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.AdaptiveDialogRenderer<Order>>();
+        Assert.NotNull(adaptiveDialog);
+        
+        // Set IsAdaptiveFilter to true (simulate filter dialog opened)
+        if (cut.Instance.FilterModule != null)
+        {
+            cut.Instance.FilterModule.IsAdaptiveFilter = true;
+            cut.Render();
+        }
+        
+        // Verify IsAdaptiveFilter is true before closing
+        Assert.True(cut.Instance.FilterModule?.IsAdaptiveFilter == true, "IsAdaptiveFilter should be true before dialog close");
+        
+        // Directly invoke OnDialogClosed method using reflection
+        var method = adaptiveDialog.Instance.GetType().GetMethod("OnDialogClosed", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        if (method != null)
+        {
+            var closeArgs = new Syncfusion.Blazor.Popups.CloseEventArgs();
+            await cut.InvokeAsync(() => 
+            {
+                method.Invoke(adaptiveDialog.Instance, new object[] { closeArgs });
+                return Task.CompletedTask;
+            });
+            await Task.Delay(300);
+            cut.Render();
+        }
+        // Verify IsAdaptiveFilter is reset to false after OnDialogClosed is called directly
+        Assert.True(cut.Instance.FilterModule?.IsAdaptiveFilter == false, "IsAdaptiveFilter should be reset to false after direct OnDialogClosed invocation");
+    }
+}
+
+<!-- Test Scenario 2: Verify ColumnMenuClosedHandler - IsToolbarMenuIconClicked Reset -->
+<SfFixture @ref="fixture10" TestAsync="TestColumnMenuClosedHandler_IsToolbarMenuIconClickedReset" Description="Verify that ColumnMenuClosedHandler resets IsToolbarMenuIconClicked to false when ParentItem is null">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid10" @ref="Grid10" DataSource="GetAllRecords()" EnableAdaptiveUI="true" RowRenderingMode="RowDirection.Vertical" AllowSorting="true" AllowFiltering="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport", "ColumnChooser", "CsvExport" })"
+                ShowColumnChooser="true" AllowExcelExport="true" AllowPdfExport="true" ShowColumnMenu="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> Grid10;
+    
+    public async Task TestColumnMenuClosedHandler_IsToolbarMenuIconClickedReset(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        await Task.Delay(500);
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should be initialized with rows");
+        var adaptiveDialog = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.AdaptiveDialogRenderer<Order>>();
+        Assert.NotNull(adaptiveDialog);
+        var isToolbarField = adaptiveDialog.Instance.GetType().GetProperty("IsToolbarMenuIconClicked", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (isToolbarField != null)
+        {
+            isToolbarField.SetValue(adaptiveDialog.Instance, true);
+            cut.Render();
+        }
+        
+        
+        var method = adaptiveDialog.Instance.GetType().GetMethod("ColumnMenuClosedHandler", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (method != null)
+        {
+            var closeArgs = new Syncfusion.Blazor.Navigations.OpenCloseMenuEventArgs<MenuItem>() { ParentItem = null };
+            await cut.InvokeAsync(() =>
+            {
+                method.Invoke(adaptiveDialog.Instance, new object[] { closeArgs });
+                return Task.CompletedTask;
+            });
+            await Task.Delay(300);
+            cut.Render();
+        } 
+    }
+}

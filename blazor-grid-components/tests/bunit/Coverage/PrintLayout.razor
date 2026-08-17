@@ -1,0 +1,61 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Data
+
+<SfFixture @ref="fixture3" Test="Test_PrintLayout_OnInitialized_WithDataManager" 
+           Description="Verify that OnInitialized correctly handles when Parent has a DataManager">
+    <ComponentUnderTest>
+        <SfGrid TValue="Order"
+                @ref="parentGridWithDataManager"
+                AllowPaging="true"
+                ID="gridWithDataManager">
+
+            <SfDataManager Url="https://services.syncfusion.com/js/demos/ejServices/api/Orders"
+                           Adaptor="Syncfusion.Blazor.Adaptors.ODataAdaptor">
+            </SfDataManager>
+
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" Width="120" />
+                <GridColumn Field="CustomerID" HeaderText="Customer ID" Width="150" />
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" Width="120" />
+                <GridColumn Field="OrderDate" HeaderText="Order Date"  Format="d" Type="ColumnType.Date" Width="130" />
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <Syncfusion.Blazor.Grids.Internal.PrintLayout @ref="printLayoutWithDataManager" Parent="@parentGridWithDataManager" T="Order" />
+    </Fragment>
+</SfFixture>
+
+
+@code {
+    // Fixtures
+    SfFixture fixture3 { get; set; }
+
+    // Parent Grids
+    SfGrid<Order> parentGridWithDataManager { get; set; }
+
+    // PrintLayout Components
+    PrintLayout<Order> printLayoutWithDataManager { get; set; }
+
+    // Test 1: OnInitialized - With DataManager
+    public void Test_PrintLayout_OnInitialized_WithDataManager(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var printLayoutComponent = fixture.GetFragment<PrintLayout<Order>>();
+
+        cut.WaitForState(() => cut.Instance != null, TimeSpan.FromMilliseconds(3000));
+        printLayoutComponent.WaitForState(() => printLayoutComponent.Instance != null, TimeSpan.FromMilliseconds(3000));
+
+        Assert.NotNull(cut.Instance.DataManager);
+
+        if (cut.Instance.DataManager != null)
+        {
+            var dm = cut.Instance.DataManager;
+            var htmlContent = printLayoutComponent.Markup;
+            Assert.Contains("e-print-grid-layout", htmlContent, System.StringComparison.OrdinalIgnoreCase);
+        }
+    }
+}

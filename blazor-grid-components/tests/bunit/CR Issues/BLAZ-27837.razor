@@ -1,0 +1,53 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="After checked select all, press esc key it's appear unselect.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowFiltering="true" AllowSelection="true">
+             <GridFilterSettings Type ="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+             <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" CheckboxOnly="true" PersistSelection="true"></GridSelectionSettings>
+            <GridColumns>
+                 <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Visible="false" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    public List<Order> GridData { get; set; }
+    string? Class
+    {
+        get
+        {
+            return null;
+        }
+    }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-checkselectall")[0].Click();
+        cut.WaitForState(() => cut.Instance.CheckBoxState.Equals(CheckState.Check));
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.Check), "CheckBox State Updated Properly");
+        cut.Find(".e-checkselectall").KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+        cut.WaitForState(() => cut.Instance.CheckBoxState.Equals(CheckState.UnCheck));
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.UnCheck), "CheckBox State Updated Properly");
+        Assert.True(cut.Instance.SelectedRecords.Count == 0, "Selection has been cleared");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+}

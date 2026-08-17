@@ -1,0 +1,74 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Dynamic;
+@using System.Collections.ObjectModel
+
+@using ColumnType = Syncfusion.Blazor.Grids.ColumnType
+@using SelectionMode = Syncfusion.Blazor.Grids.SelectionMode
+@using SelectionType = Syncfusion.Blazor.Grids.SelectionType
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="SortComparer is not working properly with ExpandoObject">
+    <ComponentUnderTest>
+        <SfGrid @ref="_sfGrid" TValue="Model" DataSource="GenerateRecords()" ShowColumnChooser="true" Height="300"
+                ID="pg" EnablePersistence="true" EnableInfiniteScrolling="true"
+                AllowReordering="true" AllowResizing="true" AllowSelection="true" AllowSorting="true">
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridSelectionSettings Mode="SelectionMode.Row" Type="SelectionType.Multiple" CheckboxMode="CheckboxSelectionType.ResetOnRowClick" />
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50" LockColumn="true" />
+                <GridColumn HeaderText="#" Width="165" ShowInColumnChooser="false">
+                    <GridCommandColumns>
+                        <GridCommandColumn ID="ViewDetails" Title="Details"
+                                           ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-folder-open",
+                                       CssClass = "e-flat" })" />
+                        <GridCommandColumn ID="Edit" Title="Edit"
+                                           ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-edit",
+                                           CssClass = "e-flat" })" />
+                        <GridCommandColumn ID="Delete" Title="Delete"
+                                           ButtonOption="@(new CommandButtonOptions { IconCss = "e-icons e-delete",
+                                           CssClass = "e-flat" })" />
+                    </GridCommandColumns>
+                </GridColumn>
+                <GridColumn Field="@nameof(Model.Id)" HeaderText="Id" />
+                <GridColumn Field="@nameof(Model.Name)" HeaderText="Name" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Model> Grid;
+    public List<Model> Orders { get; set; }
+    private SfGrid<Model>? _sfGrid;
+
+    private ObservableCollection<Model> _models = new();
+    public ObservableCollection<Model> GenerateRecords()
+    {
+        return _models = new ObservableCollection<Model>()
+        {
+            new Model { Id = 1, Name = "Item 1" },
+            new Model { Id = 2, Name = "Item 2" },
+            new Model { Id = 3, Name = "Item 3" },
+            new Model { Id = 4, Name = "Item 4" },
+            new Model { Id = 5, Name = "Item 5" },
+        };
+    }
+
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Model>>();
+        Assert.True(cut.Instance.EnableInfiniteScrolling);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 5);
+        await cut.Instance.ResetPersistDataAsync();
+        Assert.True(cut.Instance.CurrentViewData.Count() == 5);
+    }
+
+    public class Model
+    {
+        public long Id { get; set; }
+
+        public string Name { get; set; }
+    }
+}

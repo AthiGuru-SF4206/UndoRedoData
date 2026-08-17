@@ -1,0 +1,313 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<!-- 1. CustomAttribute alone -->
+<SfFixture @ref="fixture1" Test="GridCellAndHeaderStylingCustomAlone" Description="Testing cell and header styling with CustomAttribute alone">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoNoOp" HeaderCellInfo="OnHeaderQueryCellInfoNoOp" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-cls" }, { "style", "color: red;" }, { "data-custom", "customAttributeValue" } })"></GridColumn>
+                <GridColumn Field="CustomerID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-header-cls" }, { "style", "color: red;" } })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 2. SetAttribute alone (via QueryCellInfo and HeaderCellInfo) -->
+<SfFixture @ref="fixture2" Test="GridCellAndHeaderStylingSetAttributeAlone" Description="Testing cell and header styling with SetAttribute alone">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoSetAlone" HeaderCellInfo="OnHeaderQueryCellInfoSetAlone" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID"></GridColumn>
+                <GridColumn Field="CustomerID"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 3. AddStyle/AddClass alone (via QueryCellInfo and HeaderCellInfo) -->
+<SfFixture @ref="fixture3" Test="GridCellAndHeaderStylingAddAlone" Description="Testing cell and header styling with AddStyle and AddClass alone">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoAddAlone" HeaderCellInfo="OnHeaderQueryCellInfoAddAlone" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID"></GridColumn>
+                <GridColumn Field="CustomerID"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 4. CustomAttribute + SetAttribute -->
+<SfFixture @ref="fixture4" Test="GridCellAndHeaderStylingCustomAndSet" Description="Testing cell and header styling with CustomAttribute and SetAttribute combination">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoSetAlone" HeaderCellInfo="OnHeaderQueryCellInfoSetAlone" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-cls" }, { "style", "color: red;" }, { "data-custom", "customAttributeValue" } })"></GridColumn>
+                <GridColumn Field="CustomerID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-header-cls" }, { "style", "color: red;" } })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 5. CustomAttribute + AddStyle/AddClass -->
+<SfFixture @ref="fixture5" Test="GridCellAndHeaderStylingCustomAndAdd" Description="Testing cell and header styling with CustomAttribute and AddStyle/AddClass combination">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoAddAlone" HeaderCellInfo="OnHeaderQueryCellInfoAddAlone" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-cls" }, { "style", "color: red;" }, { "data-custom", "customAttributeValue" } })"></GridColumn>
+                <GridColumn Field="CustomerID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-header-cls" }, { "style", "color: red;" } })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 6. SetAttribute + AddStyle/AddClass -->
+<SfFixture @ref="fixture6" Test="GridCellAndHeaderStylingSetAndAdd" Description="Testing cell and header styling with SetAttribute and AddStyle/AddClass combination">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoSetAndAdd" HeaderCellInfo="OnHeaderQueryCellInfoSetAndAdd" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID"></GridColumn>
+                <GridColumn Field="CustomerID"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- 7. All three: CustomAttribute + SetAttribute + AddStyle/AddClass -->
+<SfFixture @ref="fixture7" Test="GridCellAndHeaderStylingAllThree" Description="Testing cell and header styling with CustomAttribute, SetAttribute, and AddStyle/AddClass combination">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()">
+            <GridEvents QueryCellInfo="OnQueryCellInfoSetAndAdd" HeaderCellInfo="OnHeaderQueryCellInfoSetAndAdd" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-cls" }, { "style", "color: red;" }, { "data-custom", "customAttributeValue" } })"></GridColumn>
+                <GridColumn Field="CustomerID" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-header-cls" }, { "style", "color: red;" } })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfFixture fixture2 { get; set; }
+    SfFixture fixture3 { get; set; }
+    SfFixture fixture4 { get; set; }
+    SfFixture fixture5 { get; set; }
+    SfFixture fixture6 { get; set; }
+    SfFixture fixture7 { get; set; }
+
+    // Sample data generation
+    List<Order> GenerateOrderData() => Enumerable.Range(1, 20).Select(i => new Order { OrderID = 1000 + i, CustomerID = $"CUST{i}" }).ToList();
+
+    // No-op handlers to satisfy GridEvents when not testing QueryCellInfo/HeaderCellInfo
+    public void OnQueryCellInfoNoOp(QueryCellInfoEventArgs<Order> args) { }
+    public void OnHeaderQueryCellInfoNoOp(HeaderCellInfoEventArgs args) { }
+
+    // Test 1: CustomAttribute alone
+    void GridCellAndHeaderStylingCustomAlone(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0]; // OrderID column
+        Assert.True("color: red;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: Style applied via CustomAttribute alone");
+        Assert.True(orderIdCell.ClassList.Contains("e-rowcell") && orderIdCell.ClassList.Contains("custom-cls"), "Cell: Class appended via CustomAttribute");
+        Assert.True("customAttributeValue" == orderIdCell.GetAttribute("data-custom"), "Cell: data-custom is added");
+        // Header assertions
+        var headerCells = cut.FindAll(".e-headercell");
+        Assert.True(2 == headerCells.Count, "Number of header cells correct");
+        var customerIdHeader = headerCells[1]; // CustomerID column
+        Assert.True("color: red;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: Style applied via CustomAttribute alone");
+        Assert.True(customerIdHeader.ClassList.Contains("e-headercell") && customerIdHeader.ClassList.Contains("custom-header-cls"), "Header: Class appended via CustomAttribute");
+    }
+
+    // Handlers for SetAttribute alone
+    public void OnQueryCellInfoSetAlone(QueryCellInfoEventArgs<Order> args)
+    {
+        if (args.Column.Field == "OrderID")
+        {
+            args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "color: blue;" }, { "class", "set-cls" }, { "data-setattribute", "setAttributeValue" }, { "data-custom", "setAttributeValue" } });
+        }
+    }
+    public void OnHeaderQueryCellInfoSetAlone(HeaderCellInfoEventArgs args)
+    {
+        args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "color: blue;" }, { "class", "set-header-cls" }, { "data-setattribute", "setAttributeValue" }, { "data-custom", "setAttributeValue" } });
+
+    }
+
+    // Test 2: SetAttribute alone
+    void GridCellAndHeaderStylingSetAttributeAlone(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: blue;" == orderIdCell.GetAttribute("style"), "Cell: Style set via SetAttribute alone");
+        Assert.True("set-cls" == orderIdCell.GetAttribute("class"), "Cell: Class overridden via SetAttribute");
+        Assert.True("setAttributeValue" == orderIdCell.GetAttribute("data-setattribute"), "Cell: data-setAttribute is added");
+        // Header assertions
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[0].QuerySelectorAll("th");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: blue;" == customerIdHeader.GetAttribute("style"), "Header: Style set via SetAttribute alone");
+        Assert.True("set-header-cls" == customerIdHeader.GetAttribute("class"), "Header: Class overridden via SetAttribute");
+        Assert.True("setAttributeValue" == customerIdHeader.GetAttribute("data-custom"), "HeaderCell: data-custom is added");
+        Assert.True("setAttributeValue" == headerCells[0].GetAttribute("data-setattribute"), "Cell: data-setAttribute is added");
+    }
+
+    // Handlers for AddStyle/AddClass alone
+    public void OnQueryCellInfoAddAlone(QueryCellInfoEventArgs<Order> args)
+    {
+        if (args.Column.Field == "OrderID")
+        {
+            args.Cell.AddStyle(new[] { "color: green;" });
+            args.Cell.AddClass(new[] { "add-cls" });
+        }
+    }
+    public void OnHeaderQueryCellInfoAddAlone(HeaderCellInfoEventArgs args)
+    {        
+        args.Cell.AddStyle(new[] { "color: green;" });
+        args.Cell.AddClass(new[] { "add-header-cls" });
+
+    }
+
+    // Test 3: AddStyle/AddClass alone
+    void GridCellAndHeaderStylingAddAlone(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: green;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: Style added via AddStyle alone");
+        Assert.True(orderIdCell.ClassList.Contains("e-rowcell") && orderIdCell.ClassList.Contains("add-cls"), "Cell: Class appended via AddClass");
+        // Header assertions
+        var headerCells = cut.FindAll(".e-headercell");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: green;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: Style added via AddStyle alone");
+        Assert.True(customerIdHeader.ClassList.Contains("e-headercell") && customerIdHeader.ClassList.Contains("add-header-cls"), "Header: Class appended via AddClass");
+    }
+
+    // Test 4: CustomAttribute + SetAttribute
+    void GridCellAndHeaderStylingCustomAndSet(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: red;color: blue;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: (hierarchy: SetAttribute > CustomAttribute)");
+        Assert.True("set-cls" == orderIdCell.GetAttribute("class"), "Cell: Class overridden by SetAttribute");
+        Assert.True("customAttributeValue" == orderIdCell.GetAttribute("data-custom"), "Cell: data-custom is added");
+        Assert.True("setAttributeValue" == orderIdCell.GetAttribute("data-setattribute"), "Cell: data-setAttribute is added");
+        // Header assertions
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[0].QuerySelectorAll("th");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: red;color: blue;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: (hierarchy: SetAttribute > CustomAttribute)");
+        Assert.True("set-header-cls" == customerIdHeader.GetAttribute("class"), "Header: Class overridden by SetAttribute");
+        Assert.True("setAttributeValue" == customerIdHeader.GetAttribute("data-setattribute"), "HeaderCell: data-setAttribute is added");
+        Assert.True("setAttributeValue" == customerIdHeader.GetAttribute("data-custom"), "HeaderCell: data-custom is added");
+        Assert.True("customAttributeValue" == headerCells[0].GetAttribute("data-custom"), "HeaderCell: data-custom is added");
+        Assert.True("setAttributeValue" == headerCells[0].GetAttribute("data-setattribute"), "HeaderCell: data-setAttribute is added");
+        // Note: In browser, color: red; is struck then color: blue; active for both.
+    }
+
+    // Test 5: CustomAttribute + AddStyle/AddClass
+    void GridCellAndHeaderStylingCustomAndAdd(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: red;color: green;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: AddStyle appends to CustomAttribute, green takes precedence (hierarchy: AddStyle > CustomAttribute)");
+        Assert.True(orderIdCell.ClassList.Contains("e-rowcell") && orderIdCell.ClassList.Contains("custom-cls") && orderIdCell.ClassList.Contains("add-cls"), "Cell: Classes appended from CustomAttribute and AddClass");
+        Assert.True("customAttributeValue" == orderIdCell.GetAttribute("data-custom"), "Cell: data-custom is added");
+        // Header assertions
+        var headerCells = cut.FindAll(".e-headercell");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: red;color: green;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: AddStyle appends to CustomAttribute, green takes precedence");
+        Assert.True(customerIdHeader.ClassList.Contains("e-headercell") && customerIdHeader.ClassList.Contains("custom-header-cls") && customerIdHeader.ClassList.Contains("add-header-cls"), "Header: Classes appended from CustomAttribute and AddClass");
+        Assert.True("customAttributeValue" == headerCells[0].GetAttribute("data-custom"), "HeaderCell: data-custom is added");
+        // Note: In browser, color: red; is struck, color: green; active for both.
+    }
+
+    
+    // Handlers for SetAttribute + AddStyle/AddClass
+    public void OnQueryCellInfoSetAndAdd(QueryCellInfoEventArgs<Order> args)
+    {
+        if (args.Column.Field == "OrderID")
+        {
+            args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "color: blue;" }, { "class", "set-cls" } });
+            args.Cell.AddStyle(new[] { "color: green;" });
+            args.Cell.AddClass(new[] { "add-cls" });
+        }
+    }
+    public void OnHeaderQueryCellInfoSetAndAdd(HeaderCellInfoEventArgs args)
+    {
+        args.Cell.SetAttribute(new Dictionary<string, object> { { "style", "color: blue;" }, { "class", "set-header-cls" } });
+        args.Cell.AddStyle(new[] { "color: green;" });
+        args.Cell.AddClass(new[] { "add-header-cls" });
+    }
+
+    // Test 6: SetAttribute + AddStyle/AddClass
+    void GridCellAndHeaderStylingSetAndAdd(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: blue;color: green;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: AddStyle appends to SetAttribute, green takes precedence (hierarchy: AddStyle > SetAttribute)");
+        Assert.True(orderIdCell.ClassList.Contains("set-cls") && !orderIdCell.ClassList.Contains("add-cls"), "Cell: Class set by SetAttribute, which overrides all other classes");
+        // Header assertions
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[0].QuerySelectorAll("th");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: blue;color: green;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: AddStyle appends to SetAttribute, green takes precedence");
+        Assert.True(customerIdHeader.ClassList.Contains("set-header-cls") && !customerIdHeader.ClassList.Contains("add-header-cls"), "Header: Class set by SetAttribute, overrides other classes");
+        // Note: In browser, color: blue; is struck, color: green; active for both.
+    }
+
+    // Test 7: All three
+    void GridCellAndHeaderStylingAllThree(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Cell assertions
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        var orderIdCell = row1Cells[0];
+        Assert.True("color: red;color: blue;color: green;" == orderIdCell.GetAttribute("data-sf-style"), "Cell: green takes precedence (hierarchy: AddStyle > SetAttribute > CustomAttribute)");
+        Assert.True(orderIdCell.ClassList.Contains("set-cls") && !orderIdCell.ClassList.Contains("add-cls"), "Cell: Class set by SetAttribute overrides all other classes");
+        Assert.True("customAttributeValue" == orderIdCell.GetAttribute("data-custom"), "Cell: data-custom is added");
+        // Header assertions
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[0].QuerySelectorAll("th");
+        var customerIdHeader = headerCells[1];
+        Assert.True("color: red;color: blue;color: green;" == customerIdHeader.GetAttribute("data-sf-style"), "Header: SetAttribute overrides CustomAttribute, AddStyle appends, green takes precedence");
+        Assert.True(customerIdHeader.ClassList.Contains("set-header-cls") && !customerIdHeader.ClassList.Contains("add-header-cls"), "Header: Class set by SetAttribute overrides all other classes");
+        Assert.True("customAttributeValue" == headerCells[0].GetAttribute("data-custom"), "HeaderCell: data-custom is added");
+        // Note: In browser, color: red; is struck, color: blue; is struck, color: green; active for both.
+    }
+
+    public class Order
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}

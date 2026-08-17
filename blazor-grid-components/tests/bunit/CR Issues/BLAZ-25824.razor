@@ -1,0 +1,80 @@
+﻿
+@using Syncfusion.Blazor.Grids
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Pager External Message not updated">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging="true">
+            <GridSelectionSettings Mode="SelectionMode.Row" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" PersistSelection="true"></GridSelectionSettings>
+            <GridEvents TValue="Order" RowSelecting="RowSelectingHandler" RowSelected="RowSelectHandler" RowDeselecting="Deselecting" RowDeselected="Deselected"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEditSettings AllowEditing="true"></GridEditSettings>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture { get; set; }
+    public List<Order> Orders { get; set; }
+    public SfGrid<Order> grid{ get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        int[] rowIndexs = new int[]
+            {
+            2,
+            5,
+            8
+            };
+        grid.SelectRowsAsync(rowIndexs).GetAwaiter();
+        var count = grid.GetSelectedRecordsAsync();
+        grid.SelectRowAsync(1).GetAwaiter();
+    }
+
+    protected List<Order> GenerateRows()
+    {
+        return Orders = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+
+    }
+
+    public void RowSelectingHandler(RowSelectingEventArgs<Order> args)
+    {
+        // Here, you can customize your code.
+    }
+    public void RowSelectHandler(RowSelectEventArgs<Order> args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void Deselecting(RowDeselectEventArgs<Order> args)
+    {
+
+    }
+    public void Deselected(RowDeselectEventArgs<Order> args)
+    {
+        Assert.True(args.Datas.Count == 3);
+        Assert.True(args.RowIndexes.Count == 3);
+        Assert.True(args.RowIndexes[0] == 2);
+        Assert.True(args.RowIndexes[1] == 5);
+        Assert.True(args.RowIndexes[2] == 8);
+    }
+    public class Order {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+}

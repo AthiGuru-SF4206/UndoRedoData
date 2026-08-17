@@ -1,0 +1,380 @@
+﻿@using Microsoft.AspNetCore.Components.Web;
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using System.Globalization;
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+@if (IsFilterIconClicked || IsSortIconClicked)
+{
+    <div id="ResDialog" class="e-dlg-grid-element e-hide">
+        <SfDialog @ref="FilterResponsiveDialog" ID="@(($"{Parent?.ID}customfilter"))" CloseOnEscape="true" HtmlAttributes="@MaxHeight" Height="100%" Width="100%" Target="@(($"#{Parent?.ID}"))" CssClass="@GetClassList()" EnableRtl="Parent!.EnableRtl">
+            <DialogEvents Closed="OnDialogClosed"  Created="Rendered"></DialogEvents>
+            <DialogTemplates>
+                <Header>
+                    <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn" @onclick="@CloseHandler" HtmlAttributes="@title"></SfButton>
+                    <div class="e-dlg-header">
+                        <div class="e-res-custom-element">
+                            @if (!IsSortIconClicked)
+                            {
+                                <div class="e-dlg-custom-header" id="@(($"{Parent.ID}responsive_filter_dialog_wrapper"))">@Parent?.Localizer?.GetText("Grid_FilterButton")</div>
+                                <SfButton IconCss="e-icon-filter-clear e-icons" CssClass="e-primary e-flat e-res-filter-clear-btn" @onclick="@ClearFiltering"></SfButton>
+                            }
+                            else
+                            {
+                                <div class="e-dlg-custom-header" id="@(($"{Parent.ID}responsive_sort_dialog_wrapper"))">@Parent?.Localizer?.GetText("Grid_Sort")</div>
+                                <SfButton CssClass="e-primary e-flat e-res-sort-clear-btn" Content=@(Parent?.Localizer?.GetText("Grid_ClearButton")) @onclick="@ClearHandler"></SfButton>
+                                <SfButton CssClass="e-primary e-flat e-res-apply-btn" Content=@(Parent?.Localizer?.GetText("Grid_OKButton")) @onclick="@Submit"></SfButton>
+                            }
+                        </div>
+                    </div>
+                </Header>
+                <Content>
+                    <div class="columndiv">
+                        @{
+                            var columns = GridUtils.GetColumns(Parent);
+                            foreach (GridColumn col in columns)
+                            {
+                                if ((IsFilterIconClicked && !col.AllowFiltering) || (IsSortIconClicked && !col.AllowSorting))
+                                {
+                                    continue; 
+                                }
+                                <div class="e-responsivecoldiv" data-e-mappingname="@($"{ col.Field }")" data-e-mappinguid="@($"{col.Uid}")" @onclick="@(e=> FilterItemClicked(col))">
+                                    <span class="e-res-header-text">@($"{col.HeaderText}")</span>
+                                    @if (!IsSortIconClicked && Parent != null && Parent.FilterSettings?.Columns != null && Parent.FilterSettings.Columns.Where(e => e.Field.Equals(col.Field, StringComparison.Ordinal)).Any())
+                                    {
+                                        <div class="e-icons e-res-icon e-filtersetdiv" @onclick="(e=>FilterIconClicked(col))">
+                                            <span class="e-icons e-res-icon e-filterset e-filter-icon"></span>
+                                        </div>
+                                    }
+                                    @if (IsSortIconClicked)
+                                    {
+                                        <div class="e-ressortbutton-parent">
+                                            @if (!Directions.ContainsKey(col.Uid))
+                                            {
+                                                Directions.Add(col.Uid, "None");
+                                            }
+                                            @{
+                                            if(Directions[col.Uid] == "Ascending")
+                                            {
+                                                locale = @Parent?.Localizer?.GetText("Grid_Ascending");
+                                            }
+                                            else if (Directions[col.Uid] == "Descending")
+                                            {
+                                                locale = @Parent?.Localizer?.GetText("Grid_Descending");
+                                            }
+                                            else
+                                            {
+                                                locale = @Parent?.Localizer?.GetText("Grid_None");
+                                            }
+                                            }
+                                            <SfButton @key="@col.Uid" id="@($"{col.Field}sortbutton")" Content="@locale" @onclick="@(e=> SortClick(Directions[col.Uid], col.Uid))" CssClass="e-ressortbutton"></SfButton>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </Content>
+            </DialogTemplates>
+        </SfDialog>
+    </div>
+}
+else if (IsToolbarMenuIconClicked)
+{
+    <SfContextMenu @ref="contextMenu" CssClass="@Parent?.ColumnMenuClass" EnableRtl="@Parent!.EnableRtl" Items="BuildDefaultItems()">
+        <MenuEvents TValue="MenuItem" OnOpen="BeforeOpenHandler" Created="OnMenuCreated" Opened="ColumnMenuOpenedHandler" ItemSelected="ItemSelected" OnClose="OnCloseMenu" Closed="ColumnMenuClosedHandler"></MenuEvents>
+    </SfContextMenu>
+}
+@code {
+    private SfDialog? FilterResponsiveDialog { get; set; }
+    SfContextMenu<MenuItem>? contextMenu;
+    [CascadingParameter]
+    internal SfGrid<TContent>? Parent { get; set; }
+
+    internal List<GridColumn>? Columns { get; set; }
+
+    private string? locale;
+
+    private IDictionary<string, string> Directions = new Dictionary<string, string>();
+    [Parameter]
+    public bool IsSortIconClicked { get; set; }
+
+    [Parameter]
+    public bool IsFilterIconClicked { get; set; }
+
+    [Parameter]
+    public bool IsToolbarMenuIconClicked { get; set; }
+
+    private bool IsFilterClicked { get; set; }
+    private Dictionary<string, object> title = new Dictionary<string, object>()
+    {
+        { "title", "Close"}
+    };
+
+    private Dictionary<string, object> MaxHeight = new Dictionary<string, object>()
+    {
+        { "data-sf-style", "max-height:100%"}
+    };
+    private List<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+    private List<MenuItem> SubMenuItems { get; set; } = new List<MenuItem>();
+    private string GetClassList()
+    {
+        if (IsFilterIconClicked)
+        {
+            return "e-bigger e-customfilterdiv e-customfilter e-responsive-dialog e-dlg-fullscreen";
+        }
+        else
+        {
+            return "e-bigger e-customfilterdiv e-responsive-dialog e-dlg-fullscreen";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Parent != null)
+        {
+            Parent.EventAggregator.Add("CloseAdaptiveDialog", CloseHandler);
+        }
+
+        Columns = GridUtils.GetColumns(Parent!);
+        foreach (GridColumn col in Columns)
+        {
+            SetSortingDirection(col);
+        }
+    }
+
+    private void FilterItemClicked(GridColumn column)
+    {
+        if (!IsFilterClicked && !IsSortIconClicked && Parent != null && Parent.AllowFiltering && !(Parent.FilterSettings?.Type.Equals(FilterType.FilterBar) == true))
+        {
+            if(Parent.FilterModule != null)
+            {
+                Parent.FilterModule.FilterIconColumn = column;
+            }
+
+            Parent.EventAggregator.Trigger("AdaptiveFilterComponent", null!);
+        }
+        IsFilterClicked = false;
+    }
+
+    private async Task FilterIconClicked(GridColumn column)
+    {
+        IsFilterClicked = true;
+        if(Parent != null && Parent.FilterModule != null)
+        {
+            await Parent.FilterModule.RemoveFilterColumnByField(column?.Field ?? string.Empty);
+        }
+
+    }
+
+    private void OnDialogClosed(CloseEventArgs args)
+    {
+        if(this.Parent?.FilterModule != null)
+        {
+            this.Parent.FilterModule.IsAdaptiveFilter = false;
+            this.Parent.FilterModule.IsAdaptiveSort = false;
+        }
+        if(Parent?.FilterModule != null)
+        {
+            Parent.FilterModule.FilterIconColumn = null!;
+        }
+        Parent?.EventAggregator.Trigger("FilterComponentUpdate", null!);
+    }
+
+    private async Task Rendered()
+    {
+        if(Parent != null)
+        {
+            await Parent.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Parent?.ID}customfilter" });
+        }
+
+    }
+
+    private async Task ClearFiltering()
+    {
+        IsFilterClicked = true;
+        if(Parent != null)
+        {
+            await Parent.ClearFilteringAsync();
+        }
+
+    }
+
+    internal void SetSortingDirection(GridColumn column)
+    {
+        if (Parent?.SortModule != null && column?.Field != null)
+        {
+            Directions[column?.Uid!] = Parent.SortModule.GetSortDirectionStringByField(column!.Field);
+        }
+    }
+
+    internal void SortClick(string direction, string uid)
+    {
+        if (Parent?.SortModule != null)
+        {
+            Directions[uid] = Sort<TContent>.GetNextSortDirection(direction);
+        }
+    }
+
+    internal void ClearHandler()
+    {
+        Columns = GridUtils.GetColumns(Parent!);
+        foreach (GridColumn col in Columns)
+        {
+            Directions[col?.Uid!] = "None";
+        }
+    }
+
+    internal async Task Submit()
+    {
+        Columns = GridUtils.GetColumns(Parent!);
+        Parent?.SortSettings?.UpdateColumns("Columns", null!);
+        foreach (GridColumn col in Columns)
+        {
+            if ((IsSortIconClicked && col?.AllowSorting != true) || (IsFilterIconClicked && col?.AllowFiltering !=  true))
+            {
+                continue;
+            }
+            if (Directions[col?.Uid!]?.Equals("None", StringComparison.Ordinal) != true)
+            {
+                Parent?.SortModule?.UpdateModel(col?.Field!, (SortDirection)Enum.Parse(typeof(SortDirection), Directions[col?.Uid!]));
+            }
+        }
+
+        await Parent?.ModelChanged(new ActionEventArgs<TContent>()
+        {
+            RequestType = Syncfusion.Blazor.Grids.Action.Sorting,
+            Cancel = false
+        })!;
+
+        await FilterResponsiveDialog?.HideAsync()!;
+        IsSortIconClicked = false;
+        IsFilterIconClicked = false;
+        if(Parent.FilterModule != null)
+        {
+            Parent.FilterModule.IsAdaptiveSort = false;
+        }
+
+        Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+    }
+
+    internal void CloseHandler(object args)
+    {
+        FilterResponsiveDialog?.HideAsync().GetAwaiter();
+        IsSortIconClicked = false;
+        IsFilterIconClicked = false;
+        if(this.Parent != null && this.Parent.FilterModule != null)
+        {
+            this.Parent.FilterModule.IsAdaptiveFilter = false;
+            this.Parent.FilterModule.IsAdaptiveSort = false;
+        }
+
+        Parent?.EventAggregator.Trigger("FilterComponentUpdate", null!);
+
+        foreach (GridColumn col in Columns!)
+        {
+            SetSortingDirection(col);
+        }
+    }
+
+    private void BeforeOpenHandler(BeforeOpenCloseMenuEventArgs<MenuItem> args)
+    {
+        args.ScrollHeight = 307;
+    }
+
+    internal void OnMenuCreated()
+    {
+        Parent!.ColumnMenuClass = $"e-hide-menu e-{Parent.ID}-column-menu e-grid-column-menu e-grid-menu";
+        this.contextMenu?.OpenAsync(1, 1);
+    }
+
+    internal async Task ItemSelected(MenuEventArgs<MenuItem> args)
+    {
+        var item = this.getKeyFromId(args?.Item?.Id?.ToString()!); // temp
+        switch (item)
+        {
+            case "PdfExport":
+                await this.Parent?.ExportToPdfAsync()!;
+                break;
+            case "ExcelExport":
+                await this.Parent?.ExportToExcelAsync()!;
+                break;
+            case "CsvExport":
+                await this.Parent?.ExportToCsvAsync()!;
+                break;
+            case "Print":
+                await this.Parent?.PrintAsync()!;
+                break;
+            case "ColumnChooser":
+                this.Parent!.RenderColumnChooser = !this.Parent.RenderColumnChooser;
+                this.Parent.ShowChooser = true;
+                this.Parent.EventAggregator.Trigger("ColumnChooserComp", null!);
+                break;
+        }
+    }
+
+    internal void OnCloseMenu(BeforeOpenCloseMenuEventArgs<MenuItem> Args)
+    {
+        contextMenu!.scrollHeight = Args.ScrollHeight;
+    }
+
+    private List<MenuItem> BuildDefaultItems()
+    {
+        MenuItems.Clear();
+        var items = ((IEnumerable<Object>)Parent!.Toolbar!)!;
+        foreach(var item in items)
+        {
+            var DefaultItem = item?.ToString();
+            var itemStr = (DefaultItem)?.ToLower();
+            var localeName = $"{itemStr?.Substring(0, 1)?.ToUpper()}{itemStr?.Substring(1)}";
+#pragma warning disable BL0005
+            if(PreItems.Any(dItem => dItem == DefaultItem))
+            {
+                MenuItems.Add(new MenuItem { Text = Parent?.Localizer?.GetText($"Grid_{localeName}"), IconCss = $"e-{itemStr} e-icons e-btn-icon", Id = generateID(DefaultItem!) });
+            }
+#pragma warning restore BL0005
+        }
+        return MenuItems;
+    }
+
+    private List<string> PreItems = new List<string>() { "ColumnChooser", "PdfExport", "ExcelExport", "CsvExport", "Print" };
+
+    private string generateID(string item, string append = "")
+    {
+        return this.Parent?.ID + "_toolbarmenu_" + (append != "" ? append + item : item);
+    }
+
+    private string getKeyFromId(string id, string append = "")
+    {
+        if (id?.Contains("_toolbarmenu_") == true)
+        {
+            return id.Replace(this.Parent?.ID + "_toolbarmenu_" + (append != "" ? append : ""), "");
+        }
+        else
+        {
+            return "";
+        }
+    }
+
+    private async void ColumnMenuOpenedHandler(OpenCloseMenuEventArgs<MenuItem> args)
+    {
+        await Parent?.InvokeMethod("sfBlazor.Grid.renderAdaptiveMenuItems", new object[] { Parent.DataId })!;
+        Parent.ColumnMenuClass = $"e-{Parent.ID}-column-menu";
+        StateHasChanged();
+    }
+
+    private void ColumnMenuClosedHandler(OpenCloseMenuEventArgs<MenuItem> args)
+    {
+        if (args?.ParentItem == null)
+        {
+            IsToolbarMenuIconClicked = false;
+            if(this.Parent != null && this.Parent.FilterModule != null)
+            {
+                this.Parent.FilterModule.IsAdaptiveToolbarMenu = false;
+            }
+        }
+    }
+}

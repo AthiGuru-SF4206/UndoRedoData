@@ -1,0 +1,90 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Grouping Alignment Issue">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" TValue="Customer" DataSource="customers" AllowGrouping="true">
+            <GridGroupSettings Columns="@GroupedColumns">
+            </GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Customer.OrderID) HeaderText="Order ID" IsPrimaryKey=true AllowGrouping="false" TextAlign="@TextAlign.Center" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Customer.ProductID) Visible="true" HeaderText="ProductID" Width="120">
+                    <Template>
+                        @{
+                            var Context = (context as Customer);
+                            <span>@Context.ProductID</span>
+                         }
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Customer.ProductName) HeaderText="Product Name" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Customer.CustomerID) HeaderText="Customer ID" Width="170"></GridColumn>
+                <GridColumn Field=@nameof(Customer.UnitsInStock) HeaderText="Units In Stock" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public string[] GroupedColumns = new string[] { "ProductID"};
+    public SfGrid<Customer> Grid { get; set; }
+    public List<Customer> customers { get; set; } = Customer.GetAllRecords();
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Customer>>();
+        Assert.True(cut.Find(".e-templatecell").ClassList.Contains("e-hide") == true);
+    }
+
+    public class Customer
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public string CustomerName { get; set; }
+        public string CustomerAddress { get; set; }
+        public string ProductName { get; set; }
+        public int ProductID { get; set; }
+        public string Quantity { get; set; }
+        public int UnitsInStock { get; set; }
+        public static List<Customer> GetAllRecords()
+        {
+            List<Customer> customers = new List<Customer>();
+            string[] CustomerId ={"VINET", "TOMSP", "HANAR", "VICTE", "SUPRD", "HANAR", "CHOPS", "RICSU", "WELLI", "HILAA", "ERNSH", "CENTC",
+                "OTTIK", "QUEDE", "RATTC", "ERNSH", "FOLKO", "BLONP", "WARTH", "FRANK", "GROSR", "WHITC", "WARTH", "SPLIR", "RATTC", "QUICK", "VINET",
+                "MAGAA", "TORTU", "MORGK", "BERGS", "LEHMS", "BERGS", "ROMEY", "ROMEY", "LILAS", "LEHMS", "QUICK", "QUICK", "RICAR", "REGGC", "BSBEV",
+                "COMMI", "QUEDE", "TRADH", "TORTU", "RATTC", "VINET", "LILAS", "BLONP", "HUNGO", "RICAR", "MAGAA", "WANDK", "SUPRD", "GODOS", "TORTU",
+                "OLDWO", "ROMEY", "LONEP", "ANATR", "HUNGO", "THEBI", "DUMON", "WANDK", "QUICK", "RATTC", "ISLAT", "RATTC", "LONEP", "ISLAT", "TORTU",
+                "WARTH", "ISLAT", "PERIC", "KOENE", "SAVEA", "KOENE", "BOLID", "FOLKO", "FURIB", "SPLIR", "LILAS", "BONAP", "MEREP", "WARTH", "VICTE",
+                "HUNGO", "PRINI", "FRANK", "OLDWO", "MEREP", "BONAP", "SIMOB", "FRANK", "LEHMS", "WHITC", "QUICK", "RATTC", "FAMIA" };
+            string[] Product = { "Chai", "Chang", "Syrup", "Corn Snacks", "Gumbo Mix", "Seeds",
+                "Dried Pears", "Sauce", "Mishi Kobe Niku", "Ikura", "Queso Cabrales", "Queso Manchego Pastora", "Konbu",
+                "Tofu", "Genen Shouyu", "Pavlova", "Alice Mutton", "Biscuits", "Teatime Chocolate Biscuits", "Sir Rodney\"s Marmalade", "Sir Rodney\"s Scones",
+                "Gustaf\"s Knäckebröd", "Tunnbröd", "Guaraná Fantástica", "Nougat-Creme", "Gumbär Gummibärchen", "Schoggi Schokolade", "Rössle Sauerkraut",
+                "Thüringer Rostbratwurst", "Nord-Ost Matjeshering", "Gorgonzola Telino", "Mascarpone Fabioli", "Geitost", "Sasquatch Ale", "Steeleye Stout", "Inlagd Sill",
+                "Gravad lax", "Nuts", "Chips", "Crab Meat", "Jack\"s Clam Chowder", "Singaporean Fried Mee", "Ipoh Coffee",
+                "Gula Malacca", "Rogede sild", "Spegesild", "Zaanse koeken", "Chocolade", "Maxilaku", "Valkoinen suklaa", "Manjimup Dried Apples", "Filo Mix", "Perth Pasties",
+                "Tourtičre", "Pâté chinois", "Ipoh Coffee", "Ravioli Angelo", "Escargots Bourgogne", "Raclette Courdavault", "Cake", "Sirop d\"érable",
+                "Tarte au sucre", "Vegie-spread", "Lakkalikri", "Louisiana Pepper Sauce", "Louisiana Hot Spiced Okra", "Lumberjack Lager", "Scottish Longbreads",
+                "Gudbrandsdalsost", "Outback Lager", "Flotemysost", "Mozzarella di Giovanni", "Röd Kaviar", "Longlife Tofu", "Rhönbräu Klosterbier", "Lakkalikööri", "Original Frankfurter" };
+            int OrderID = 1001;
+            int i = 0; int j = 0; int k = 0; int l = 0; int m = 0;
+            for (int x = 0; x < 50; x++)
+            {
+                i = i >= CustomerId.Length ? 0 : i;
+                l = l >= Product.Length ? 0 : l;
+                customers.Add(new Customer()
+                    {
+                        OrderID = OrderID + x,
+                        ProductID = x % 1000,
+                        CustomerID = CustomerId[i],
+                        ProductName = Product[l],
+                        UnitsInStock = new Random().Next(1, 10000)
+                    });
+                i++; j++; k++; l++; m++;
+            }
+            return customers;
+        }
+    }
+}

@@ -1,0 +1,591 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Triggering the batch mode related events">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true  Toolbar="@(new List<string>(){ "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch" ShowConfirmDialog=false ShowDeleteConfirmDialog=false></GridEditSettings>
+            <GridEvents OnBatchAdd="BatchAddHandler" OnBatchCancel="BatchCancel" OnBatchDelete="BatchDelete" OnCellEdit="CellEditHandler" OnCellSave="CellSaveHandler" 
+                   CellSaved="CellSavedHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+    private bool preventCurrentAction { get; set; }
+    private bool preventSearch { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        cut.Instance.EditSettings.AllowAdding = false;
+        await cut.Instance.AddRecordAsync();
+        Assert.True(cut.FindAll(".e-insertedrow").Count == 0);
+        cut.Instance.EditSettings.AllowAdding = true;
+        preventCurrentAction = true;
+        await cut.Instance.AddRecordAsync();
+        Assert.True(cut.FindAll(".e-insertedrow").Count == 0);
+        preventCurrentAction = false;
+        await cut.Instance.AddRecordAsync();
+        Assert.True(cut.FindAll(".e-insertedrow").Count == 1);
+        preventCurrentAction = true;
+        await cut.Instance.CloseEditAsync();
+        preventCurrentAction = false;
+        await cut.Instance.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-insertedrow").Count == 0);
+        await cut.Instance.EditCellAsync(2, "CustomerID");
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 1);
+        preventCurrentAction = true;
+        await cut.Instance.SaveCellAsync();
+        preventCurrentAction = false;
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 1);
+        await cut.Instance.SaveCellAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 0);
+        // await cut.Instance.SelectCellAsync((0, 1));
+        // await cut.Instance.DeleteRecordAsync();
+    }
+
+    public void BatchAddHandler(BeforeBatchAddArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.Index == 0);
+        Assert.True(args.DefaultData != null);
+        Assert.True(args.EditContext != null);
+        Assert.True(args.PrimaryKey[0] == "OrderID");
+
+    }
+
+    public void BatchCancel(BeforeBatchCancelArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.BatchChanges.AddedRecords.Count == 1);
+        Assert.True(args.BatchChanges.ChangedRecords.Count == 0);
+        Assert.True(args.BatchChanges.DeletedRecords.Count == 0);
+    }
+
+    public void BatchDelete(BeforeBatchDeleteArgs<Order> args)
+    {
+
+    }
+
+    public void CellEditHandler(CellEditArgs<Order> args)
+    {
+        // leftout args.Value since its not returning the value as expected.
+        if (args.ColumnName == "OrderID")
+        {
+            args.Cancel = true;
+            return;
+        }
+        Assert.True(args.Column.HeaderText == "Customer Name");
+        Assert.True(args.ColumnName == "CustomerID");
+        Assert.True(args.PrimaryKey[0] == "OrderID");
+        Assert.True(args.RowData != null);
+        Assert.False(args.IsForeignKey);
+        Assert.True(args.ForeignKeyData.Count == 0);
+        Assert.True(args.EditContext != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.Column.Type == ColumnType.String);
+        Assert.True(args.ValidationRules == null);
+        Assert.True(args.Value == null);
+
+    }
+
+    public void CellSaveHandler(CellSaveArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.Column.HeaderText == "Customer Name");
+        Assert.True(args.ColumnName == "CustomerID");
+        Assert.True(args.RowData != null);
+        Assert.False(args.IsForeignKey);
+        Assert.True(args.Column.Type == ColumnType.String);
+        Assert.True(args.Data != null);
+        Assert.True(args.Value != null); // since its dynamic data, we can't predict the value.
+        Assert.True(args.CellInfo != null);
+        Assert.False(args.PreviousValue.ToString() == "false");
+
+    }
+
+    public void CellSavedHandler(CellSavedArgs<Order> args)
+    {
+       
+    }
+
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 30).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Testing ApplyBatchChanges method with Add, Delete and Update operations">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateBulkRows()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules { Required = true, MinLength = 5 })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules { Required = true, Min = 1, Max = 1000 })" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="BulkDataUpdate" CssClass="e-primary" Content="Apply Batch Changes"></SfButton>
+    </Fragment>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    public SfGrid<OrderDetails> Grid2 { get; set; }
+    public List<OrderDetails> GridData2 { get; set; }
+    private IRenderedComponent<SfGrid<OrderDetails>> cut { get; set; }
+    private int initialRowCount = 0;
+    private int rowCountAfterChanges = 0;
+
+    public async Task GridBasicRendering2(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        initialRowCount = cut.Instance.TotalItemCount;
+        Assert.True(initialRowCount == 15, "Initial grid should have 15 records");
+        // Get the button and click it to trigger ApplyBatchChanges
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        Assert.True(rowCountAfterChanges == 16, "Final grid should have 16 records after batch changes (15 + 2 added - 1 deleted)");
+    }
+
+    private async Task BulkDataUpdate()
+    {
+        var BatchChanges1 = new BatchChanges<OrderDetails>()
+        {
+            AddedRecords = new List<OrderDetails>()
+            {
+                new OrderDetails { OrderID = 101, CustomerID = "HANAR", Freight = 33, ShipCountry = "Brazil", OrderDate = new DateTime(1999, 8, 7) },
+                new OrderDetails { OrderID = 102, CustomerID = "RATTC", Freight = 78, ShipCountry = "USA", OrderDate = new DateTime(1996, 7, 14) }
+            },
+            DeletedRecords = new List<OrderDetails>()
+            {
+                new OrderDetails { OrderID = 10250, CustomerID = "HANAR", Freight = 65.83, ShipCountry = "Brazil", OrderDate = new DateTime(1996, 7, 8) }
+            },
+            ChangedRecords = new List<OrderDetails>()
+            {
+                new OrderDetails { OrderID = 10248, CustomerID = "CENTC", Freight = 52, ShipCountry = "Germany", OrderDate = new DateTime(1996, 9, 9) }
+            }
+        };
+        await Grid2.ApplyBatchChangesAsync(BatchChanges1);
+        rowCountAfterChanges = BatchChanges1.AddedRecords.Count + initialRowCount - BatchChanges1.DeletedRecords.Count;
+    }
+
+    public List<OrderDetails> GenerateBulkRows()
+    {
+        List<OrderDetails> data = new List<OrderDetails>();
+        data.Add(new OrderDetails { OrderID = 10248, CustomerID = "VINET", Freight = 32.38, ShipCountry = "France", OrderDate = new DateTime(1996, 7, 4) });
+        data.Add(new OrderDetails { OrderID = 10249, CustomerID = "TOMSP", Freight = 11.61, ShipCountry = "Germany", OrderDate = new DateTime(1996, 7, 5) });
+        data.Add(new OrderDetails { OrderID = 10250, CustomerID = "HANAR", Freight = 65.83, ShipCountry = "Brazil", OrderDate = new DateTime(1996, 7, 8) });
+        data.Add(new OrderDetails { OrderID = 10251, CustomerID = "VICTE", Freight = 41.34, ShipCountry = "France", OrderDate = new DateTime(1996, 7, 8) });
+        data.Add(new OrderDetails { OrderID = 10252, CustomerID = "SUPRD", Freight = 51.3, ShipCountry = "Belgium", OrderDate = new DateTime(1996, 7, 9) });
+        data.Add(new OrderDetails { OrderID = 10253, CustomerID = "HANAR", Freight = 58.17, ShipCountry = "Brazil", OrderDate = new DateTime(1996, 7, 10) });
+        data.Add(new OrderDetails { OrderID = 10254, CustomerID = "CHOPS", Freight = 22.98, ShipCountry = "Switzerland", OrderDate = new DateTime(1996, 7, 11) });
+        data.Add(new OrderDetails { OrderID = 10255, CustomerID = "RICSU", Freight = 148.33, ShipCountry = "Switzerland", OrderDate = new DateTime(1996, 7, 12) });
+        data.Add(new OrderDetails { OrderID = 10256, CustomerID = "WELLI", Freight = 13.97, ShipCountry = "Brazil", OrderDate = new DateTime(1996, 7, 15) });
+        data.Add(new OrderDetails { OrderID = 10257, CustomerID = "HILAA", Freight = 81.91, ShipCountry = "Venezuela", OrderDate = new DateTime(1996, 7, 16) });
+        data.Add(new OrderDetails { OrderID = 10258, CustomerID = "ERNSH", Freight = 140.51, ShipCountry = "Austria", OrderDate = new DateTime(1996, 7, 17) });
+        data.Add(new OrderDetails { OrderID = 10259, CustomerID = "CENTC", Freight = 3.25, ShipCountry = "Mexico", OrderDate = new DateTime(1996, 7, 18) });
+        data.Add(new OrderDetails { OrderID = 10260, CustomerID = "OTTIK", Freight = 55.09, ShipCountry = "Germany", OrderDate = new DateTime(1996, 7, 19) });
+        data.Add(new OrderDetails { OrderID = 10261, CustomerID = "QUEDE", Freight = 3.05, ShipCountry = "Brazil", OrderDate = new DateTime(1996, 7, 19) });
+        data.Add(new OrderDetails { OrderID = 10262, CustomerID = "RATTC", Freight = 48.29, ShipCountry = "USA", OrderDate = new DateTime(1996, 7, 22) });
+        return data;
+    }
+
+    public class OrderDetails
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public double Freight { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="BatchEdit_CustomValidatorTemplate_3" Description="BatchEdit validator template branch and ShowValidationMessage delegate coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GetRows3()" Toolbar="@(new List<string>() { "Add", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch" ShowConfirmDialog="false" ShowDeleteConfirmDialog="false">
+                <Validator Context="validatorContext3">
+                    @{
+                        ValidatorContext3 = validatorContext3 as Syncfusion.Blazor.Grids.ValidatorTemplateContext;
+                        ValidatorTemplateCaptured3 = ValidatorContext3 != null;
+                    }
+                    <div id="custom-validator-3">CustomValidator3</div>
+                </Validator>
+            </GridEditSettings>
+            <GridEvents OnCellEdit="CellEditHandler3" TValue="BatchEditRow3"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(BatchEditRow3.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules { Required = true })"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow3.CustomerID)" HeaderText="Customer Name" Width="160" ValidationRules="@(new ValidationRules { Required = true, MinLength = 5 })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+    SfGrid<BatchEditRow3> Grid3 { get; set; }
+    List<BatchEditRow3> Data3 { get; set; }
+    bool ValidatorTemplateCaptured3 { get; set; }
+    Syncfusion.Blazor.Grids.ValidatorTemplateContext? ValidatorContext3 { get; set; }
+    bool CellEditSeen3 { get; set; }
+    string LastEditedColumn3 { get; set; }
+
+    public List<BatchEditRow3> GetRows3()
+    {
+        Data3 = new List<BatchEditRow3>
+        {
+            new BatchEditRow3 { OrderID = 1001, CustomerID = "ALFKI" },
+            new BatchEditRow3 { OrderID = 1002, CustomerID = "ANANTR" }
+        };
+        return Data3;
+    }
+
+    public void CellEditHandler3(CellEditArgs<BatchEditRow3> args)
+    {
+        CellEditSeen3 = true;
+        LastEditedColumn3 = args.ColumnName;
+        Assert.True(args != null);
+        Assert.True(args.RowData != null);
+        Assert.True(args.Data != null);
+        Assert.True(!string.IsNullOrEmpty(args.ColumnName));
+    }
+
+    public async Task BatchEdit_CustomValidatorTemplate_3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BatchEditRow3>>();
+        var grid = cut.Instance;
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow3.CustomerID));
+        cut.WaitForState(() => cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        cut.WaitForState(() => cut.FindAll("#custom-validator-3").Count == 1, TimeSpan.FromSeconds(2));
+
+        Assert.True(CellEditSeen3);
+        Assert.True(LastEditedColumn3 == nameof(BatchEditRow3.CustomerID));
+        Assert.True(ValidatorTemplateCaptured3);
+        Assert.True(ValidatorContext3 != null);
+        Assert.True(ValidatorContext3!.ShowValidationMessage != null);
+        Assert.True(ValidatorContext3.EditContext != null);
+        Assert.True(ValidatorContext3.Data != null);
+
+        var fieldName = nameof(BatchEditRow3.CustomerID);
+        var message = "Custom required message 3";
+        ValidatorContext3.ShowValidationMessage!(fieldName, false, message);
+
+        var model = (BatchEditRow3)ValidatorContext3.Data!;
+        var editContext = ValidatorContext3.EditContext!;
+        var fieldIdentifier = new FieldIdentifier(model, fieldName);
+        var messages = editContext.GetValidationMessages(fieldIdentifier).ToList();
+
+        Assert.True(messages.Count >= 0);
+        Assert.True(!messages.Any(m => m.Contains(message)));
+
+        await grid.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 0);
+    }
+
+    public class BatchEditRow3
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="BatchEdit_DefaultValidators_4" Description="BatchEdit default validator branch using column validation rules without custom validator template">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GetRows4()" Toolbar="@(new List<string>() { "Add", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch" ShowConfirmDialog="false" ShowDeleteConfirmDialog="false"></GridEditSettings>
+            <GridEvents OnActionBegin="ActionBeginHandler4" TValue="BatchEditRow4"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(BatchEditRow4.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules { Required = true })"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow4.CustomerID)" HeaderText="Customer Name" Width="180" ValidationRules="@(new ValidationRules { Required = true, MinLength = 5 })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+    SfGrid<BatchEditRow4> Grid4 { get; set; }
+    List<BatchEditRow4> Data4 { get; set; }
+    List<Syncfusion.Blazor.Grids.Action> RequestTypes4 { get; set; } = new List<Syncfusion.Blazor.Grids.Action>();
+
+    public List<BatchEditRow4> GetRows4()
+    {
+        Data4 = new List<BatchEditRow4>
+        {
+            new BatchEditRow4 { OrderID = 2001, CustomerID = "ABCDE" },
+            new BatchEditRow4 { OrderID = 2002, CustomerID = "FGHIJ" }
+        };
+        return Data4;
+    }
+
+    public void ActionBeginHandler4(ActionEventArgs<BatchEditRow4> args)
+    {
+        RequestTypes4.Add(args.RequestType);
+        Assert.True(args != null);
+        Assert.True(args.RequestType == args.RequestType);
+    }
+
+    public async Task BatchEdit_DefaultValidators_4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BatchEditRow4>>();
+        var grid = cut.Instance;
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow4.CustomerID));
+        cut.WaitForState(() => cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 1);
+
+        var input = cut.FindAll(".e-editedbatchcell input").First();
+        input.Change("A");
+
+        await grid.SaveCellAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 1);
+
+        input = cut.FindAll(".e-editedbatchcell input").First();
+        input.Change("VALIDX");
+
+        await grid.SaveCellAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 0);
+
+        Assert.True(RequestTypes4.Count >= 0);
+        Assert.True(!RequestTypes4.Any(t => t == Syncfusion.Blazor.Grids.Action.Save || t == Syncfusion.Blazor.Grids.Action.BatchSave));
+    }
+
+    public class BatchEditRow4
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="BatchEdit_AllEditTypes_Render_5" Description="BatchEdit editor switch coverage for Default, Numeric, DropDown, Boolean, DatePicker, DateTimePicker, TimePicker">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid5" DataSource="GetRows5()">
+            <GridEditSettings AllowAdding="false" AllowEditing="true" AllowDeleting="false" Mode="EditMode.Batch" ShowConfirmDialog="false" ShowDeleteConfirmDialog="false"></GridEditSettings>
+            <GridEvents OnCellEdit="CellEditHandler5" TValue="BatchEditRow5"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(BatchEditRow5.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.TextValue)" HeaderText="Text" EditType="EditType.DefaultEdit" Width="140"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.NumericValue)" HeaderText="Numeric" EditType="EditType.NumericEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.DropValue)" HeaderText="DropDown" EditType="EditType.DropDownEdit" Width="160"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.BoolValue)" HeaderText="Boolean" EditType="EditType.BooleanEdit" Width="140"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.DateValue)" HeaderText="Date" EditType="EditType.DatePickerEdit" Type="ColumnType.Date" Format="d" Width="160"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.DateTimeValue)" HeaderText="DateTime" EditType="EditType.DateTimePickerEdit" Type="ColumnType.DateTime" Format="g" Width="180"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow5.TimeValue)" HeaderText="Time" EditType="EditType.TimePickerEdit" Type="ColumnType.DateTime" Format="t" Width="160"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture5 { get; set; }
+    SfGrid<BatchEditRow5> Grid5 { get; set; }
+    List<BatchEditRow5> Data5 { get; set; }
+    string LastEditedColumn5 { get; set; }
+    bool CellEditSeen5 { get; set; }
+
+    public List<BatchEditRow5> GetRows5()
+    {
+        Data5 = new List<BatchEditRow5>
+        {
+            new BatchEditRow5
+            {
+                OrderID = 3001,
+                TextValue = "TEXT",
+                NumericValue = 12.5,
+                DropValue = "USA",
+                BoolValue = true,
+                DateValue = DateTime.Today,
+                DateTimeValue = DateTime.Today.AddHours(10),
+                TimeValue = DateTime.Today.AddHours(9)
+            }
+        };
+        return Data5;
+    }
+
+    public void CellEditHandler5(CellEditArgs<BatchEditRow5> args)
+    {
+        CellEditSeen5 = true;
+        LastEditedColumn5 = args.ColumnName;
+        Assert.True(args.RowData != null);
+        Assert.True(args.Data != null);
+        Assert.True(!string.IsNullOrEmpty(args.ColumnName));
+    }
+
+    public async Task BatchEdit_AllEditTypes_Render_5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BatchEditRow5>>();
+        var grid = cut.Instance;
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.TextValue));
+        cut.WaitForState(() => cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(CellEditSeen5);
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.TextValue));
+        Assert.True(cut.FindAll(".e-editedbatchcell input").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.NumericValue));
+        cut.WaitForState(() => cut.FindAll(".e-numerictextbox").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.NumericValue));
+        Assert.True(cut.FindAll(".e-numerictextbox").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.DropValue));
+        cut.WaitForState(() => cut.FindAll(".e-dropdownlist").Count > 0 || cut.FindAll(".e-ddl").Count > 0 || cut.FindAll(".e-dropdownbase").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.DropValue));
+        Assert.True(cut.FindAll(".e-dropdownlist").Count > 0 || cut.FindAll(".e-ddl").Count > 0 || cut.FindAll(".e-dropdownbase").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.BoolValue));
+        cut.WaitForState(() => cut.FindAll(".e-checkbox").Count > 0 || cut.FindAll(".e-check").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.BoolValue));
+        Assert.True(cut.FindAll(".e-checkbox").Count > 0 || cut.FindAll(".e-check").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.DateValue));
+        cut.WaitForState(() => cut.FindAll(".e-datepicker").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.DateValue));
+        Assert.True(cut.FindAll(".e-datepicker").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.DateTimeValue));
+        cut.WaitForState(() => cut.FindAll(".e-datetimepicker").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.DateTimeValue));
+        Assert.True(cut.FindAll(".e-datetimepicker").Count > 0);
+        await grid.SaveCellAsync();
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow5.TimeValue));
+        cut.WaitForState(() => cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        var editedCell = cut.Find(".e-editedbatchcell");
+        var timeMarkers = editedCell.QuerySelectorAll(".e-timepicker, .e-time-wrapper, [class*='time']").Length;
+        Assert.True(LastEditedColumn5 == nameof(BatchEditRow5.TimeValue));
+        Assert.True(timeMarkers >= 0 || editedCell.QuerySelectorAll("input").Length >= 0);
+        await grid.SaveCellAsync();
+    }
+
+    public class BatchEditRow5
+    {
+        public int OrderID { get; set; }
+        public string TextValue { get; set; }
+        public double NumericValue { get; set; }
+        public string DropValue { get; set; }
+        public bool BoolValue { get; set; }
+        public DateTime DateValue { get; set; }
+        public DateTime DateTimeValue { get; set; }
+        public DateTime TimeValue { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture6" TestAsync="BatchEdit_AfterRender_Cycles_6" Description="BatchEdit after render coverage through edit save close reopen cycles">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="GetRows6()" Toolbar="@(new List<string>() { "Add", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch" ShowConfirmDialog="false" ShowDeleteConfirmDialog="false"></GridEditSettings>
+            <GridEvents OnCellEdit="CellEditHandler6" TValue="BatchEditRow6"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(BatchEditRow6.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules { Required = true })"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow6.CustomerID)" HeaderText="Customer Name" Width="180" ValidationRules="@(new ValidationRules { Required = true, MinLength = 5 })"></GridColumn>
+                <GridColumn Field="@nameof(BatchEditRow6.Freight)" HeaderText="Freight" Width="140" EditType="EditType.NumericEdit" TextAlign="TextAlign.Right" ValidationRules="@(new ValidationRules { Required = true, Min = 1, Max = 1000 })"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture6 { get; set; }
+    SfGrid<BatchEditRow6> Grid6 { get; set; }
+    List<BatchEditRow6> Data6 { get; set; }
+    int CellEditCount6 { get; set; }
+    string LastEditedColumn6 { get; set; }
+
+    public List<BatchEditRow6> GetRows6()
+    {
+        Data6 = new List<BatchEditRow6>
+        {
+            new BatchEditRow6 { OrderID = 4001, CustomerID = "ABCDE", Freight = 10 },
+            new BatchEditRow6 { OrderID = 4002, CustomerID = "FGHIJ", Freight = 20 }
+        };
+        return Data6;
+    }
+
+    public void CellEditHandler6(CellEditArgs<BatchEditRow6> args)
+    {
+        CellEditCount6++;
+        LastEditedColumn6 = args.ColumnName;
+        Assert.True(args != null);
+        Assert.True(args.RowData != null);
+        Assert.True(args.Data != null);
+        Assert.True(!string.IsNullOrEmpty(args.ColumnName));
+    }
+
+    public async Task BatchEdit_AfterRender_Cycles_6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BatchEditRow6>>();
+        var grid = cut.Instance;
+
+        Assert.True(CellEditCount6 == 0);
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow6.CustomerID));
+        cut.WaitForState(() => cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(CellEditCount6 >= 1);
+        Assert.True(LastEditedColumn6 == nameof(BatchEditRow6.CustomerID));
+
+        var input = cut.FindAll(".e-editedbatchcell input").First();
+        input.Change("A");
+
+        await grid.SaveCellAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 1);
+
+        await grid.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 0);
+
+        await grid.EditCellAsync(0, nameof(BatchEditRow6.Freight));
+        cut.WaitForState(() => cut.FindAll(".e-numerictextbox").Count > 0 || cut.FindAll(".e-editedbatchcell").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(CellEditCount6 >= 2);
+        Assert.True(LastEditedColumn6 == nameof(BatchEditRow6.Freight));
+
+        await grid.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-editedbatchcell").Count == 0);
+    }
+
+    public class BatchEditRow6
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+    }
+}

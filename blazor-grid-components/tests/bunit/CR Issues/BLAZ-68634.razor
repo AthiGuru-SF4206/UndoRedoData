@@ -1,0 +1,99 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="IgnoreCase property of the GridSearchSettings does not work as expected when performing a search.">
+    <ComponentUnderTest>
+            @{
+                var Tool = (new List<string>() { "Search" });
+            }
+            <SfGrid @ref="grid" DataSource="GenerateRows()" TValue="Order" ID="Grid" AllowSorting="true" AllowFiltering="true" AllowPaging="true" Toolbar=@Tool>
+                <SfDataManager AdaptorInstance="@typeof(CustomAdaptor)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+                <GridSearchSettings Operator=Syncfusion.Blazor.Operator.Contains IgnoreCase="false"></GridSearchSettings>
+                <GridPageSettings PageSize="8"></GridPageSettings>
+                <GridColumns>
+                    <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="@TextAlign.Center" Width="140"></GridColumn>
+                    <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="150"></GridColumn>
+                </GridColumns>
+            </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SearchAsync("anton");
+        var RecordsCount = cut.Instance.CurrentViewData.Count();
+        Assert.True(0 == RecordsCount, "IgnoreCase Property is working properly");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 10001, CustomerID = "ANTON", Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 10002, CustomerID = "ANANTR", Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 10003, CustomerID = "BLONP", Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 10004, CustomerID = "ALFKI", Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 10005, CustomerID = "BOLID", Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 10006, CustomerID = "ANTON", Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 10007, CustomerID = "ANANTR", Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 10008, CustomerID = "BLONP", Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 10009, CustomerID = "ALFKI", Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100010, CustomerID = "BOLID", Freight = 34.7 * 2 });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double? Freight { get; set; }
+    }
+    public class CustomAdaptor : DataAdaptor
+    {
+        // Performs data Read operation
+        public override object Read(DataManagerRequest dm, string key = null)
+        {
+            IEnumerable<Order> DataSource = Orders;
+            if (dm.Search != null && dm.Search.Count > 0)
+            {
+                // Searching
+                DataSource = DataOperations.PerformSearching(DataSource, dm.Search);
+            }
+            if (dm.Sorted != null && dm.Sorted.Count > 0)
+            {
+                // Sorting
+                DataSource = DataOperations.PerformSorting(DataSource, dm.Sorted);
+            }
+            if (dm.Where != null && dm.Where.Count > 0)
+            {
+                // Filtering
+                DataSource = DataOperations.PerformFiltering(DataSource, dm.Where, dm.Where[0].Operator);
+            }
+            int count = DataSource.Cast<Order>().Count();
+            if (dm.Skip != 0)
+            {
+                //Paging
+                DataSource = DataOperations.PerformSkip(DataSource, dm.Skip);
+            }
+            if (dm.Take != 0)
+            {
+                DataSource = DataOperations.PerformTake(DataSource, dm.Take);
+            }
+            DataResult DataObject = new DataResult();
+            if (dm.Aggregates != null) // Aggregation
+            {
+                DataObject.Result = DataSource;
+                DataObject.Count = count;
+                DataObject.Aggregates = DataUtil.PerformAggregation(DataSource, dm.Aggregates);
+
+                return dm.RequiresCounts ? DataObject : (object)DataSource;
+            }
+            return dm.RequiresCounts ? new DataResult() { Result = DataSource, Count = count } : (object)DataSource;
+        }
+    }
+}

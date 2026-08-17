@@ -1,0 +1,72 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+@using Syncfusion.Blazor.Navigations
+
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Toolbar template Issue">
+    <ComponentUnderTest>
+        
+<SfGrid ID="Grid"TValue="Example" DataSource="_data" 
+            EnableAdaptiveUI=true AdaptiveUIMode="AdaptiveMode.Mobile" RowRenderingMode="RowDirection.Vertical">
+    <GridColumns>
+        <GridColumn Field=@nameof(Example.Id) HeaderText="Id Caption" MinWidth="150px"></GridColumn>
+         <GridColumn Field=@nameof(Example.Description) HeaderText="Description Caption" MinWidth="150px" ></GridColumn>
+        <GridColumn Field=@nameof(Example.Price) HeaderText="Price Caption" MinWidth="150px"></GridColumn>
+    </GridColumns>
+    <GridTemplates>
+                <ToolbarTemplate>
+                    <SfToolbar ID="customToolbar">
+                        <ToolbarItems>
+                            <ToolbarItem>
+                                <Template>
+                                    <p> My first toolbar </p>
+                                </Template>
+                            </ToolbarItem>
+                        </ToolbarItems>
+                    </SfToolbar>
+                </ToolbarTemplate>
+    </GridTemplates>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public string[] GroupedColumns = new string[] { "ProductID"};
+    private List<Example> _data = new()
+    {
+        new()
+        {
+            Id = 1,
+            Description = "Example 1",
+            Price = 10
+        },
+        new()
+        {
+            Id = 2,
+            Description = "Example 2",
+            Price = 20
+        },
+        new()
+        {
+            Id = 3,
+            Description = "Example 3",
+            Price = 30
+        }
+    };
+
+    private class Example
+    {
+        public int Id { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public int Price { get; set; }
+    }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Example>>();
+        Assert.True(1 == cut.FindAll("#" + "customToolbar").Count, "Toolbar Template rendering properly");
+    }
+}

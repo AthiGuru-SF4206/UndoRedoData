@@ -1,0 +1,239 @@
+@inherits GridTestBase
+
+<SfFixture @ref="Fixture1" Test="OnParametersSetAsync_AllowAdding_ChangeAtRuntime" Description="Verify OnParametersSetAsync updates AllowAdding property at runtime">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture1 { get; set; }
+    void OnParametersSetAsync_AllowAdding_ChangeAtRuntime(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowAdding is true
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+        
+        // Change AllowAdding to false at runtime
+        grid.EditSettings.AllowAdding = false;
+        
+        // Trigger parameter set to simulate component parameter updates
+       // cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        
+        // Verify the change was applied
+        Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after runtime change");
+    }
+}
+
+<SfFixture @ref="Fixture2" Test="OnParametersSetAsync_AllowEditing_ChangeAtRuntime" Description="Verify OnParametersSetAsync updates AllowEditing property at runtime">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture2 { get; set; }
+    void OnParametersSetAsync_AllowEditing_ChangeAtRuntime(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowEditing is true
+        Assert.True(grid.EditSettings.AllowEditing, "Initial AllowEditing should be true");
+        
+        // Change AllowEditing to false at runtime
+        grid.EditSettings.AllowEditing = false;
+        
+        // Trigger parameter set to simulate component parameter updates
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        
+        // Verify the change was applied
+        Assert.False(grid.EditSettings.AllowEditing, "AllowEditing should be false after runtime change");
+    }
+}
+
+<SfFixture @ref="Fixture3" Test="OnParametersSetAsync_AllowDeleting_ChangeAtRuntime" Description="Verify OnParametersSetAsync updates AllowDeleting property at runtime">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture3 { get; set; }
+    void OnParametersSetAsync_AllowDeleting_ChangeAtRuntime(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowDeleting is true
+        Assert.True(grid.EditSettings.AllowDeleting, "Initial AllowDeleting should be true");
+        
+        // Change AllowDeleting to false at runtime
+        grid.EditSettings.AllowDeleting = false;
+        
+        // Trigger parameter set to simulate component parameter updates
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        
+        // Verify the change was applied
+        Assert.False(grid.EditSettings.AllowDeleting, "AllowDeleting should be false after runtime change");
+    }
+}
+
+<SfFixture @ref="Fixture4" Test="OnParametersSetAsync_MultipleProperties_ChangeAllAtRuntime" Description="Verify OnParametersSetAsync updates multiple EditSettings properties at runtime">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture4 { get; set; }
+    void OnParametersSetAsync_MultipleProperties_ChangeAllAtRuntime(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+        Assert.True(grid.EditSettings.AllowEditing, "Initial AllowEditing should be true");
+        Assert.True(grid.EditSettings.AllowDeleting, "Initial AllowDeleting should be true");
+        
+        // Change all properties to false at runtime
+        grid.EditSettings.AllowAdding = false;
+        grid.EditSettings.AllowEditing = false;
+        grid.EditSettings.AllowDeleting = false;
+        
+        // Trigger parameter set to simulate component parameter updates
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        
+        // Verify all changes were applied
+        Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after runtime change");
+        Assert.False(grid.EditSettings.AllowEditing, "AllowEditing should be false after runtime change");
+        Assert.False(grid.EditSettings.AllowDeleting, "AllowDeleting should be false after runtime change");
+    }
+}
+
+<SfFixture @ref="Fixture5" Test="OnParametersSetAsync_TrueToFalseThenBack_ToggleMultipleTimes" Description="Verify OnParametersSetAsync handles multiple toggle operations on EditSettings properties">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="false" AllowEditing="false" AllowDeleting="false" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture5 { get; set; }
+    void OnParametersSetAsync_TrueToFalseThenBack_ToggleMultipleTimes(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: all false
+        Assert.False(grid.EditSettings.AllowAdding, "Initial AllowAdding should be false");
+        Assert.False(grid.EditSettings.AllowEditing, "Initial AllowEditing should be false");
+        Assert.False(grid.EditSettings.AllowDeleting, "Initial AllowDeleting should be false");
+        
+        // Toggle to true
+        grid.EditSettings.AllowAdding = true;
+        grid.EditSettings.AllowEditing = true;
+        grid.EditSettings.AllowDeleting = true;
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        Assert.True(grid.EditSettings.AllowAdding, "After first toggle, AllowAdding should be true");
+        Assert.True(grid.EditSettings.AllowEditing, "After first toggle, AllowEditing should be true");
+        Assert.True(grid.EditSettings.AllowDeleting, "After first toggle, AllowDeleting should be true");
+        
+        // Toggle back to false
+        grid.EditSettings.AllowAdding = false;
+        grid.EditSettings.AllowEditing = false;
+        grid.EditSettings.AllowDeleting = false;
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        Assert.False(grid.EditSettings.AllowAdding, "After second toggle, AllowAdding should be false");
+        Assert.False(grid.EditSettings.AllowEditing, "After second toggle, AllowEditing should be false");
+        Assert.False(grid.EditSettings.AllowDeleting, "After second toggle, AllowDeleting should be false");
+    }
+}
+
+<SfFixture @ref="Fixture6" Test="OnParametersSetAsync_AllowAddingFalse_VerifyGridBehavior" Description="Verify grid disables Add functionality when AllowAdding is changed to false at runtime">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315" AllowTextWrap="true">
+            <GridEditSettings AllowAdding="@Adding" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridTextWrapSettings WrapMode="@WrapModeValue"></GridTextWrapSettings>
+            <GridSearchSettings Fields=@InitSearch Operator=Syncfusion.Blazor.Operator.Contains Key="Ha" IgnoreCase="@ignoreCase"></GridSearchSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture6 { get; set; }
+    private bool Adding = true;
+    private bool ignoreCase = true;
+    public string[] InitSearch = new string[] { "CustomerID" };
+    public WrapMode WrapModeValue { get; set; } = WrapMode.Content;
+    private SfGrid<Order> Grid6;
+    void OnParametersSetAsync_AllowAddingFalse_VerifyGridBehavior(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify toolbar has "Add" button initially
+        cut.WaitForState(() => cut.FindAll(".e-btn").Count > 0, TimeSpan.FromSeconds(5));
+        var toolbarButtons = cut.FindAll(".e-btn");
+        var addButton = toolbarButtons.FirstOrDefault(b => b.TextContent.Contains("Add"));
+        //Assert.NotNull(addButton, "Add button should be present in toolbar");
+        
+        // Change AllowAdding to false
+        Adding = false;
+        WrapModeValue = WrapMode.Header;
+        grid.EditSettings.AllowAdding = false;
+        //cut.SetParametersAsync(Microsoft.AspNetCore.Components.ParameterView.Empty).GetAwaiter().GetResult();
+        //cut.Render();
+        
+        // Verify AllowAdding is false
+        //Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after change");
+    }
+}

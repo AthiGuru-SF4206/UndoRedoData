@@ -1,0 +1,105 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids.Internal
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Infinite scroll with aggregates">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid6" @ref="Grid6" DataSource="GenerateRows6()" EnableInfiniteScrolling=true AllowGrouping=true Height="400">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(OrderData6.Freight) Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(OrderData6.Freight) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData6.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData6.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<OrderData6> Grid6;
+    public List<OrderData6> GridData6 { get; set; }
+    private string[] Initial = (new string[] { "OrderID" });
+    public void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<OrderData6>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+
+        var captionRow = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+        cut.Instance.Rows.Add(new Row<object>() { Index = null, Uid = "grid-row-122", IsCaptionRow = true, Data = new OrderData6() { OrderID = 1000 + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 } });
+        var captionRow1 = cut.Instance.Rows[120];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow1);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully");
+        var captionRow2 = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.RequestType = "Save";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow2);
+        Assert.True(cut.Instance.Rows.Count == 120, "Current grouped rows updated successfully with request type save");
+        cut.Instance.InfiniteScrollModule.RequestType = "InfiniteScrolling";
+        cut.Instance.InfiniteScrollModule.RequestType = "GroupExpandCollapse";
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow2);
+        Assert.True(cut.Instance.Rows.Count == 122, "Current expanded grouped rows updated successfully");
+        cut.Instance.InfiniteScrollModule.RequestType = "InfiniteScrolling";
+        cut.Instance.GroupColumnAsync("CustomerID").GetAwaiter();
+        Task.Delay(200);
+        captionRow = cut.Instance.Rows[0];
+        cut.Instance.InfiniteScrollModule.SetCurrentGroupedRows(captionRow);
+    }
+
+    public List<OrderData6> GenerateRows6()
+    {
+        List<OrderData6> data = new List<OrderData6>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData6() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData6() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData6 = data;
+        return data;
+    }
+
+    public class OrderData6
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

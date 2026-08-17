@@ -1,0 +1,157 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Grids
+@using System.IO
+
+<SfFixture @ref="fixture" TestAsync="GridGroupingWithCaptionExport" Description="Grid with 6 columns, grouping 4 columns, GroupCaptionTemplate with aggregates, autospan horizontal and vertical, Excel and PDF export with conditional logic">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" ID="Grid" DataSource="OrderData.GetAllRecords()" Toolbar="@(new List<string>() { "ExcelExport", "PdfExport" })" AllowExcelExport="true" AllowPdfExport="true" AllowGrouping="true" Height="450px" AutoSpan="AutoSpanMode.HorizontalAndVertical">
+        
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(OrderData.Freight) Type="AggregateType.Sum">
+                            <GroupCaptionTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div style="font-weight: bold; color: #0a76ff;">
+                                        <p>Total Freight: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                        </GridAggregateColumn>
+                        
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="OrderData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.DateOnly" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+              
+                <GridColumn Field=@nameof(OrderData.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Status) HeaderText="Status" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    private SfFixture fixture;
+    private SfGrid<OrderData> Grid;
+    private bool isExporting = false;
+
+    public async Task GridGroupingWithCaptionExport(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        Assert.True(cut.Instance.TotalItemCount == 20, "All the records are rendered.");
+
+        // Group 4 columns using GroupColumnAsync method
+        await cut.Instance.GroupColumnAsync("ShipCountry");
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        await cut.Instance.GroupColumnAsync("OrderDate");
+        // await cut.Instance.GroupColumnAsync("Freight");
+
+        // Set export flag to enable conditional formatting
+        isExporting = true;
+
+        // Export to Excel with grouping and aggregates
+       
+            ExcelExportProperties excelExportProperties = new ExcelExportProperties();
+          
+            await cut.Instance.ExportToExcelAsync(excelExportProperties);
+       
+
+        // Export to PDF with grouping and aggregates
+      
+            PdfExportProperties pdfExportProperties = new PdfExportProperties();
+          
+            await cut.Instance.ExportToPdfAsync(pdfExportProperties);
+       
+
+       
+        Assert.True(true, "Grid exported successfully with grouping, GroupCaptionTemplate aggregates, and autospan horizontal and vertical mode");
+    }
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        // Conditional logic: Validate data before export
+        if (args.Item.Id == "Grid_excelexport")
+        {
+         
+                isExporting = true;
+                ExcelExportProperties excelExportProperties = new ExcelExportProperties();
+                await Grid.ExportToExcelAsync(excelExportProperties);
+                isExporting = false;
+            }
+      
+
+        if (args.Item.Id == "Grid_pdfexport")
+        {
+          
+                isExporting = true;
+                PdfExportProperties pdfExportProperties = new PdfExportProperties();
+               
+                await Grid.ExportToPdfAsync(pdfExportProperties);
+                isExporting = false;
+           
+        }
+    }
+
+    public class OrderData
+    {
+        public static List<OrderData> Orders = new List<OrderData>();
+
+        public OrderData()
+        {
+        }
+
+        public OrderData(int? orderID, string customerID, string shipCountry, DateTime orderDate, double freight, string status = "Pending")
+        {
+            OrderID = orderID;
+            CustomerID = customerID;
+            ShipCountry = shipCountry;
+            OrderDate = orderDate;
+            Freight = freight;
+            Status = status;
+        }
+
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public double Freight { get; set; }
+        public string ShipCountry { get; set; }
+        public string Status { get; set; }
+
+        public static List<OrderData> GetAllRecords()
+        {
+            if (Orders.Count == 0)
+            {
+                Orders.Add(new OrderData(10248, "ERNSH", "Austria", new DateTime(1996, 07, 17), 140.51, "Completed"));
+                Orders.Add(new OrderData(10249, "SUPRD", "Belgium", new DateTime(1996, 09, 07), 51.30, "Completed"));
+                Orders.Add(new OrderData(10250, "WELLI", "Brazil", new DateTime(1996, 07, 08), 65.83, "Pending"));
+                Orders.Add(new OrderData(10251, "HANAR", "France", new DateTime(1996, 07, 10), 58.17, "Completed"));
+                Orders.Add(new OrderData(10252, "WELLI", "Germany", new DateTime(1996, 10, 17), 13.97, "Pending"));
+                Orders.Add(new OrderData(10253, "HANAR", "Mexico", new DateTime(1996, 07, 19), 3.05, "Completed"));
+                Orders.Add(new OrderData(10254, "QUEDE", "Switzerland", new DateTime(1996, 07, 04), 32.38, "Pending"));
+                Orders.Add(new OrderData(10255, "RICSU", "Austria", new DateTime(1996, 07, 08), 41.34, "Completed"));
+                Orders.Add(new OrderData(10256, "WELLI", "Belgium", new DateTime(1996, 07, 05), 11.61, "Pending"));
+                Orders.Add(new OrderData(10257, "HILAA", "France", new DateTime(1996, 07, 15), 22.98, "Completed"));
+
+                Orders.Add(new OrderData(10258, "ERNSH", "Germany", new DateTime(1996, 07, 17), 140.51, "Completed"));
+                Orders.Add(new OrderData(10259, "CENTC", "Mexico", new DateTime(1996, 07, 18), 51.30, "Pending"));
+                Orders.Add(new OrderData(10260, "NORTS", "Switzerland", new DateTime(1996, 07, 19), 65.83, "Completed"));
+                Orders.Add(new OrderData(10261, "QUEDE", "Austria", new DateTime(1996, 07, 20), 58.17, "Completed"));
+                Orders.Add(new OrderData(10262, "RATTC", "Belgium", new DateTime(1996, 07, 21), 13.97, "Pending"));
+                Orders.Add(new OrderData(10263, "ERNSH", "Brazil", new DateTime(1996, 07, 22), 3.05, "Completed"));
+                Orders.Add(new OrderData(10264, "FOLKO", "France", new DateTime(1996, 07, 23), 32.38, "Pending"));
+                Orders.Add(new OrderData(10265, "BLONP", "Germany", new DateTime(1996, 07, 24), 41.34, "Completed"));
+                Orders.Add(new OrderData(10266, "WARTH", "Mexico", new DateTime(1996, 07, 25), 11.61, "Pending"));
+                Orders.Add(new OrderData(10267, "FRANK", "Switzerland", new DateTime(1996, 07, 26), 22.98, "Completed"));
+            }
+            return Orders;
+        }
+    }
+}

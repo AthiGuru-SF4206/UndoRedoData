@@ -1,0 +1,544 @@
+@namespace Syncfusion.Blazor.Grids.Internal
+@using System.Collections.Specialized;
+@using System.Text.Json.Serialization;
+@typeparam TContent
+@implements IRenderer
+@implements IDisposable
+
+@if (Parent != null && Parent.InfiniteScrollModule != null && Parent.InfiniteScrollModule.RenderMaskTable)
+{
+    <table class="e-table e-masked-table">
+        <WidthController TContent="TContent" ID="@(($"{ContentParameters!.Id}content"))" IsFrozen="ContentParameters.IsFrozen" IsFrozenRight="ContentParameters.IsFrozenRight" Columns="@(Parent.EnableColumnVirtualization ? ContentParameters.IsFrozen.HasValue && ContentParameters.IsFrozen == true ? GridUtils.GetColumns(Parent) : Parent.VirtualScrollModule!.GetVirtualColumns() : GridUtils.GetColumns(Parent))"></WidthController>
+        <tbody role="rowgroup" class="e-masked-tbody">
+            @for (var i = 0; i <= Parent.PageSettings?.PageSize; i++)
+            {
+                string styleText = $"height: {Parent.RowHeight}px";
+                <tr role="row" class="e-masked-row e-row" data-sf-style="@styleText">
+                    @if (Parent.AllowGrouping && Parent.GroupSettings?.Columns != null)
+                    {
+                        foreach (var groupcol in Parent.GroupSettings.Columns)
+                        {
+                            <td class="e-masked-cell e-rowcell e-centeralign">
+                                <span class="e-virtualcell"></span>
+                            </td>
+                        }
+                    }
+                    @for (var j = 0; j < Parent.Columns?.Count(); j++)
+                    {
+                        @if (Parent.Columns[j].Visible)
+                        {
+                            string textAlign = GridUtils.IsNoneTextAlign(Parent.Columns[j]) ? string.Empty : "text-align:" + GridUtils.GetTextAlign(Parent.Columns[j]);
+                            <td class="e-masked-cell e-rowcell" @attributes="GridUtils.GetStyleAttributes(textAlign)">
+                                <span class="e-virtualcell"></span>
+                            </td>
+                        }
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<table class="@(this.Parent!.TableClass ? "table table-striped e-table" : "e-table")" id="@(($"{Parent.ID}_content_table"))" data-sf-style="@Parent.GetTableStyles()" role="presentation">
+    <WidthController TContent="TContent" ID="@(($"{ContentParameters!.Id}content"))" IsFrozen="ContentParameters.IsFrozen" IsFrozenRight="ContentParameters.IsFrozenRight" Columns="@(Parent.EnableColumnVirtualization ? ContentParameters.IsFrozen.HasValue && ContentParameters.IsFrozen == true ? GridUtils.GetColumns(Parent) : Parent.VirtualScrollModule!.GetVirtualColumns() : GridUtils.GetColumns(Parent))"></WidthController>
+    <tbody role="rowgroup">
+        @if (Parent.EditSettings!.AllowAdding && Parent.EditSettings.ShowAddNewRow && Rows != null && Parent.EditSettings.NewRowPosition == NewRowPosition.Top && Parent.FrozenRows == 0 && !Parent.EnableInfiniteScrolling)
+        {
+            <GridAddNewRow TRow="TContent"></GridAddNewRow>
+        }
+        @if (Rows != null && Rows.Count > 0)
+        {
+            string Style = $"height: {Parent.RowHeight}px";
+            List<GridColumn> gridColumns = GridUtils.GetColumns(Parent);
+            @foreach (Row<object> Row in Rows)
+            {
+                if (Row.IsDataRow && Parent.IsRenderedFromTreeGrid)
+                {
+                    Parent.EventAggregator.NotifyAsync("VisibilitySet", Row).ConfigureAwait(false);
+                }
+                var rowParameters = new GridRowParameters()
+                {
+                    Row = Row,
+                    IsFrozenRight = ContentParameters.IsFrozenRight,
+                    IsFrozen = ContentParameters.IsFrozen,
+                    IsLastRow = Row?.Equals(Rows?.Where(_ => _.Visible == true)?.Last()) == true ? true : false
+                };
+                var rightFreezeList = Row!.Cells.Where(x => x.IsFrozen && x.Freeze.Equals(FreezeDirection.Right)).ToList();
+                bool isRightFreezeVisible = rightFreezeList.Any() && rightFreezeList.All(y => !y.Visible) && Parent.EnableColumnVirtualization && ContentParameters.IsFrozenRight;
+                bool isFrozenColumnsVisible = Parent.FrozenColumns > 0 && Parent.Columns!.Where(x => x.Index < Parent.FrozenColumns).All(y => !y.Visible) && Parent.EnableColumnVirtualization;
+                if (Row?.IsExpand == true && Row?.IsDetailRow == true && Row?.Visible == true)
+                {
+                    <GridDetailRow TRow="TContent" RowParameters="rowParameters"></GridDetailRow>
+                }
+                else if (Row!.Visible && ContentParameters.IsFrozenVirtual && (ContentParameters.IsFrozen.HasValue && ContentParameters.IsFrozen == false && Row.Index > (Parent.FrozenRows - 1)))
+                {
+                    <GridRow TRow="TContent" RowParameters="rowParameters"></GridRow>
+                }
+                else if (Row.Visible && ContentParameters.IsFrozenVirtual && !isRightFreezeVisible && !isFrozenColumnsVisible && Row.Index > (Parent.FrozenRows - 1))
+                {
+                    <GridRow TRow="TContent" RowParameters="rowParameters"></GridRow>
+                }
+                else if (Row?.Visible == true && !ContentParameters.IsFrozenVirtual)
+                {
+                    <GridRow TRow="TContent" RowParameters="rowParameters"></GridRow>
+                }
+            }
+        }
+        else
+        {
+            int spanCount = 0;
+            if (Parent.AllowGrouping && Parent.GroupSettings?.Columns?.Count() > 0)
+            {
+                foreach (var col in Parent.GroupSettings.Columns)
+                {
+                    spanCount++;
+                }
+            }
+            if (((IGrid)Parent)?.GridTemplates?.DetailTemplate != null)
+            {
+                spanCount++;
+            }
+            if (Parent!.AllowRowDragAndDrop)
+            {
+                spanCount++;
+            }
+            GetVisibleColumns(GridUtils.GetColumns(Parent));
+            var emptyCol = (GetVisibleColumns(GridUtils.GetColumns(Parent))!.Count() + spanCount).ToString();
+            @if (!ContentParameters.IsFrozen.HasValue || ContentParameters.IsFrozen == true)
+            {
+                if (Parent.FreezeModule!.GetFreezeRightCount() != 0)
+                {
+                    if (ContentParameters.IsFrozenRight)
+                    {
+                        emptyCol = ContentParameters.IsFrozen == true ? Parent.FreezeModule!.GetFreezeRightCount().ToString() : emptyCol;
+                    }
+                    else
+                    {
+                        emptyCol = ContentParameters.IsFrozen == true ? Parent.FreezeModule!.GetFreezeLeftCount().ToString() : emptyCol;
+                    }
+
+                }
+                else
+                {
+                    emptyCol = ContentParameters.IsFrozen == true ? Parent.FreezeModule!.GetFrozenCount().ToString() : emptyCol;
+
+                }
+                if (Parent.Rows?.Count == 0 || Parent.TotalItemCount == 0)
+                {
+                    <tr role="row" class="e-emptyrow">
+                        @if (((IGrid)Parent)?.GridTemplates?.EmptyRecordTemplate != null)
+                        {
+                            var emptyRecordContext = new EmptyRecordTemplateContext();
+                            emptyRecordContext.IsDataLoaded = Parent.IsDataLoaded;
+                            <td colspan="@emptyCol" tabindex="0">@(((IGrid)Parent).GridTemplates.EmptyRecordTemplate(emptyRecordContext))</td>
+                        }
+                        else if (ContentParameters.IsFrozenRight && Parent!.FreezeModule!.GetFreezeLeftCount() != 0)
+                        {
+                            <td colspan="@emptyCol" tabindex="0"></td>
+                        }
+                        else
+                        {
+                            <td colspan="@emptyCol" tabindex="0">@(Localizer?.GetText(GridLocaleKeys.EmptyRecord))</td>
+                        }
+                    </tr>
+                }
+            }
+            else if (ContentParameters.IsFrozen == false)
+            {
+                <tr><td></td></tr>
+            }
+        }
+        @if (Parent!.EditSettings.AllowAdding && Parent.EditSettings.ShowAddNewRow && Rows != null && Parent.EditSettings.NewRowPosition == NewRowPosition.Bottom && !Parent.EnableInfiniteScrolling)
+        {
+            <GridAddNewRow TRow="TContent"></GridAddNewRow>
+        }
+        @if (Parent.EnableAutoFill && Parent.EditSettings.Mode == EditMode.Batch && IsSelectedRow && ISBoxSelected)
+        {
+            <div class="e-autofill" id="Grid_autofill" data-sf-style="cursor:crosshair; right:@AutofillRight;left:@AutofillLeft;top:@AutofillTop;display:@AutofillBoxDisplay;"></div>
+        }
+        @if (Parent.EnableAutoFill && Parent.EditSettings.Mode == EditMode.Batch && IsSelectedRow && ISBorderSelected)
+        {
+            <div class="e-xlsel" id="Grid_bdr" data-sf-style="right:@BorderRight;left:@BorderLeft;top:@BorderTop;width:@BorderWidth;border-width:@BordersWidth;height:@BorderHeight; display:@AutofillBorderDisplay;"></div>
+        }
+        @if (Parent.EnableAutoFill && Parent.EditSettings.Mode == EditMode.Batch && IsSelectedRow && IsBorderPositionSelected)
+        {
+            <div class="e-xlselaf" id="Grid_bdrafleft" data-sf-style="right:@BorderLeftAutofillRight;left:@BorderLeftAutofillLeft;top:@BorderLeftAutofillTop;width:@BorderLeftAutofillWidth;height:@BorderLeftAutofillHeight; display:@AutofillDisplay;"></div>
+            <div class="e-xlselaf" id="Grid_bdrafright" data-sf-style="right:@BorderRightAutofillRight;left:@BorderRightAutofillLeft;top:@BorderRightAutofillTop;width:@BorderRightAutofillWidth;height:@BorderRightAutofillHeight; display:@AutofillDisplay;"></div>
+            <div class="e-xlselaf" id="Grid_bdrafbottom" data-sf-style="right:@BorderBottomAutofillRight;left:@BorderBottomAutofillLeft;top:@BorderBottomAutofillTop;width:@BorderBottomAutofillWidth;height:@BorderBottomAutofillHeight; display:@AutofillDisplay;"></div>
+            <div class="e-xlselaf" id="Grid_bdraftop" data-sf-style="right:@BorderTopAutofillRight;left:@BorderTopAutofillLeft;top:@BorderTopAutofillTop;width:@BorderTopAutofillWidth;height:@BorderTopAutofillHeight; display:@AutofillDisplay;"></div>
+        }
+    </tbody>
+</table>
+
+@code {
+
+    #region Public Properties
+
+    [Parameter]
+    public GridContentParameters? ContentParameters { get; set; }
+
+    public IEnumerable<object> Data { get; set; } = System.Linq.Enumerable.Empty<object>();
+
+    #endregion
+
+    #region Cascading Parameters
+
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+
+    [CascadingParameter]
+    [JsonIgnore]
+    BaseComponent? BaseParent { get; set; }
+
+    #endregion
+
+    #region Parameters
+
+    [Parameter]
+    public List<Row<object>> Rows { get; set; } = new List<Row<object>>();
+
+    #endregion
+
+    #region Private Fields
+
+    private IEnumerable<object>? _data { get; set; }
+
+    private bool IsSelectedRow { get; set; } = false;
+    private bool ISBorderSelected { get; set; } = false;
+    private bool ISBoxSelected { get; set; } = false;
+    private bool IsBorderPositionSelected { get; set; } = false;
+
+    private string AutofillRight { get; set; } = string.Empty;
+    private string AutofillLeft { get; set; } = string.Empty;
+    private string AutofillTop { get; set; } = string.Empty;
+    private string AutofillBorderDisplay { get; set; } = string.Empty;
+    private string AutofillBoxDisplay { get; set; } = string.Empty;
+    private string AutofillDisplay { get; set; } = string.Empty;
+
+    private string BorderTop { get; set; } = string.Empty;
+    private string BorderLeft { get; set; } = string.Empty;
+    private string BorderHeight { get; set; } = string.Empty;
+    private string BorderWidth { get; set; } = string.Empty;
+    private string BorderRight { get; set; } = string.Empty;
+    private string BordersWidth { get; set; } = string.Empty;
+
+    private string BorderLeftAutofillLeft = string.Empty;
+    private string BorderLeftAutofillTop = string.Empty;
+    private string BorderLeftAutofillHeight = string.Empty;
+    private string BorderLeftAutofillRight = string.Empty;
+    private string BorderLeftAutofillWidth = string.Empty;
+    private string BorderRightAutofillLeft = string.Empty;
+    private string BorderRightAutofillHeight = string.Empty;
+    private string BorderRightAutofillTop = string.Empty;
+    private string BorderRightAutofillWidth = string.Empty;
+    private string BorderTopAutofillLeft = string.Empty;
+    private string BorderTopAutofillTop = string.Empty;
+    private string BorderTopAutofillWidth = string.Empty;
+    private string BorderTopAutofillRight = string.Empty;
+    private string BorderBottomAutofillLeft = string.Empty;
+    private string BorderBottomAutofillTop = string.Empty;
+    private string BorderBottomAutofillWidth = string.Empty;
+    private string BorderBottomAutofillRight = string.Empty;
+    private string BorderRightAutofillRight = string.Empty;
+    private string BorderTopAutofillHeight = string.Empty;
+    private string BorderBottomAutofillHeight = string.Empty;
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    #endregion
+
+    #region Protected Overrides
+
+    protected override void OnInitialized()
+    {
+        Parent!.Content = this;
+        Parent.EventAggregator.Add("ContentStateChanged", InvokeStateChange);
+        Parent.EventAggregator.Add("ContentAutofillStateChanged", InvokeAutofillStateChange);
+        Localizer = Parent.Localizer!;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Parent!.EnableInfiniteScrolling && Parent.InfiniteScrollModule!.KeyInteractionScroll)
+        {
+            if (Parent.InfiniteScrollModule.CurrentRowIndex > 0)
+            {
+                Row<object>? Row = new Row<object>();
+                if (Parent.Rows?.Where(_ => _.Index == Parent.InfiniteScrollModule.CurrentRowIndex)?.ToList()?.Count > 0)
+                {
+                    Row = Parent.Rows?.Where(_ => _.Index == Parent.InfiniteScrollModule.CurrentRowIndex)?.ToList()?[0];
+                }
+                Cell<object> Cell = Row?.Cells?[Parent.FocusModule!.LastNavigatedCellIdx + 1]!;
+                await Parent.FocusModule!.ProcessKeyDown(Parent.FocusModule.LastKeyCombination!, Row!, Cell!);
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Parent!.IsFreezeLineMoved)
+        {
+            Parent.Rows = Rows = new RowModelGenerator<TContent>(Parent).GeneratorRows(Data!);
+        }
+        if (!Parent.IsClientInitialized)
+        {
+            Parent.EnableRightDefaultCursor = Parent.Columns?.Any(x => x.Freeze == FreezeDirection.Right) ?? false;
+        }
+        bool IsColumnAddedOrRemoved = false;
+        Data = ContentParameters?.Data!;
+        if (Parent.IsRendered && Parent.HasColumnChanges)
+        {
+            IsColumnAddedOrRemoved = true;
+            Parent.HasColumnChanges = false;
+        }
+
+        if ((Data != null && Data != _data) || (Parent.ForceUpdate || Parent.SoftRefresh || Parent.IsCollectionChanged || IsColumnAddedOrRemoved) || IsEmptyRowAdded())
+        {
+            if (Data != null && (Data != _data || !Parent.SoftRefresh || (Parent.IsCollectionChanged && SfBaseUtils.IsObservableCollection(Data) && !Parent.IsAdd) || IsColumnAddedOrRemoved) || IsEmptyRowAdded() || Parent.InfiniteScrollModule!.InfiniteForceRefresh)
+            {
+                var tempData = _data;
+                _data = Data;
+                bool allowInGroup = Parent.DataSource == null && SfBaseUtils.IsObservableCollection(Data) ? Data != null && Data != tempData : true;
+                var groupCount = this.Parent.GroupSettings?.Columns?.Count() > 0 ? this.Parent.GroupSettings.Columns.Count() : 0;
+                if (Parent.AllowGrouping && groupCount > 0 && groupCount != this.Parent.GroupSettings?.Columns!.Where(column => string.IsNullOrEmpty(column)).Count() && this.Parent.GroupSettings!.Columns?.Count() > 0 && allowInGroup)
+                {
+                    if (Parent.EnableInfiniteScrolling)
+                    {
+                        if (Parent.IsRowReordered && Parent.InfiniteScrollModule != null)
+                        {
+                            Parent.InfiniteScrollModule.IsInfiniteInitialRender = true;
+                        }
+                        if (Parent.InfiniteScrollModule != null && Parent.InfiniteScrollModule.RequestType != "GroupExpandCollapse")
+                        {
+                            HandleGroupedInfiniteRows();
+                        }
+                        if (Parent.InfiniteScrollModule != null && Parent.InfiniteScrollModule.InfiniteForceRefresh)
+                        {
+                            Rows = Parent.Rows;
+                            Parent.InfiniteScrollModule.InfiniteForceRefresh = false;
+                        }
+                    }
+                    else
+                    {
+                        //other than infinte scroll enabled normal grouping
+                        Rows = Parent.Rows.Count > 0 && Parent.IsColumnHideOrShow && !Parent.GroupModule!.IsGroupCaptionTemplate() && Parent.GroupSettings.EnableLazyLoading ? Parent.Rows : new GroupModelGenerator<TContent>(Parent).GenerateRows(Data!);
+                    }
+                    if (Parent.IsColumnHideOrShow && Parent.GroupSettings.EnableLazyLoading)
+                    {
+                        List<GridColumn> gridColumns = GridUtils.GetColumns(Parent);
+                        for (int j = 0; j < gridColumns.Count; j++)
+                        {
+                            if (Parent.GroupSettings.Columns.Contains(gridColumns[j].Field))
+                            {
+#pragma warning disable BL0005
+                                gridColumns[j].Visible = Parent.GroupSettings.ShowGroupedColumn ? (gridColumns[j].IsHiddenByGrouping ? true : gridColumns[j].Visible) : Parent.GroupSettings.ShowGroupedColumn;
+                                gridColumns[j].SetVisibility(gridColumns[j].Visible);
+#pragma warning restore BL0005
+                            }
+                        }
+                    }
+                    Parent.CollectionDisposeMethod(tempData!);
+                    Parent.IsCollectionChanged = false;
+                    Parent.IsFirstEventRender = true;
+                }
+                else
+                {
+                    if (ContentParameters!.IsFrozen.HasValue)
+                    {
+                        Rows = ContentParameters.Rows!;
+                    }
+                    else if (Parent.EnableInfiniteScrolling)
+                    {
+                        Rows = new RowModelGenerator<TContent>(Parent).GenerateInfiniteRows(Data!);
+                    }
+                    else
+                    {
+                        Rows = new RowModelGenerator<TContent>(Parent).GeneratorRows(Data!);
+                    }
+                }
+                if (!ContentParameters!.IsFrozen.HasValue)
+                {
+                    Parent.Rows = this.Rows!;
+                }
+                Parent.ForceUpdate = false;
+            }
+            else if (Parent.GroupSettings?.Columns?.Count() > 0 && Parent.FilterSettings?.Columns?.Count > 0 && Parent.Rows != null && Parent.Rows.Any() && Parent.CurrentViewData?.Count() == 0 && !Parent.IsAdd)
+            {
+                Rows = new GroupModelGenerator<TContent>(Parent).GeneratorRows(Data!);
+                Parent.Rows = Rows;
+            }
+        }
+        else if (Data == null)
+        {
+            if (Parent.Rows?.Count() == Parent.Rows?.Where(x => x.Action == EditAction.Added)?.Count())
+            {
+                Rows = Parent.Rows!;
+            }
+            else
+            {
+                Rows = new List<Row<object>>();
+            }
+        }
+        else if (Parent.Columns != null && Parent.Columns.Any() && Parent.IsPivotColumnsModified)
+        {
+            Rows = new RowModelGenerator<TContent>(Parent).GeneratorRows(Data);
+        }
+        if (Parent.FrozenRows > 0)
+        {
+            if (Parent.Rows?.Count > 0)
+            {
+                Parent.EventAggregator.Trigger("HeaderStateChanged", null!);
+            }
+            Rows = Parent.Rows?.Skip((int)Parent.FrozenRows)?.ToList()!;
+        }
+        //Need to check condition because it affects the Freeze right case by changing the position of the columns.
+        if (Parent.FreezeModule!.GetFrozenCount() > 0)
+        {
+            if (!Parent.IsStackedHeader && Parent.AllowGrouping && Parent.GroupSettings?.Columns != null && Parent.GroupSettings.Columns.Any())
+            {
+#pragma warning disable BL0005
+                Parent.Columns = Parent.RearrangeColumns(Parent.Columns!);
+#pragma warning restore BL0005
+            }
+        }
+        Parent.IsAdd = Parent.EditSettings!.ShowAddNewRow;
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    public virtual void InvokeStateChange(object args)
+    {
+        if (args != null && ((bool)args))
+        {
+            Parent!.InfiniteScrollModule!.RenderMaskTable = (bool)args;
+            InvokeAsync(() => StateHasChanged());
+        }
+        else
+        {
+            if (Parent!.IsRowReordered)
+            {
+                this.Data = Parent.CurrentViewData!;
+            }
+            OnParametersSet();
+            if (Parent.GroupSettings!.EnableLazyLoading && Parent.GroupSettings.Columns?.Length > 0)
+            {
+                Rows = Parent.Rows;
+                if (Parent != null && Parent.GroupModule != null && Parent.GroupModule.IsLazyExpand)
+                {
+                    Parent.SetColumnValueType();
+                    Parent.GroupModule.IsLazyExpand = false;
+                }
+            }
+            InvokeAsync(() => StateHasChanged());
+        }
+    }
+
+    public virtual void InvokeAutofillStateChange(object args)
+    {
+        Autofill<object>? row = args as Autofill<object>;
+        if (row != null && row.IsSelected && row.ISBoxSelected)
+        {
+            IsSelectedRow = row.IsSelected;
+            ISBoxSelected = row.ISBoxSelected;
+            AutofillRight = row.AutofillRight!;
+            AutofillTop = row.AutofillTop!;
+            AutofillLeft = row.AutofillLeft!;
+            AutofillBoxDisplay = row.AutofillBoxDisplay!;
+            AutofillDisplay = row.AutofillDisplay!;
+        }
+        else if (row != null && row.IsSelected && row.ISBorderSelected)
+        {
+            IsSelectedRow = row.IsSelected;
+            ISBorderSelected = row.ISBorderSelected;
+            BorderRight = row.BorderRight!;
+            BorderTop = row.BorderTop!;
+            BorderLeft = row.BorderLeft!;
+            BorderHeight = row.BorderHeight!;
+            BorderWidth = row.BorderWidth!;
+            BordersWidth = row.BordersWidth!;
+            AutofillBorderDisplay = row.AutofillBorderDisplay!;
+            AutofillDisplay = row.AutofillDisplay!;
+            AutofillBoxDisplay = row.AutofillBoxDisplay!;
+        }
+        else if (row != null && row.IsSelected && row.IsBorderPositionSelected)
+        {
+            AutofillDisplay = "";
+            BorderLeftAutofillLeft = row.BorderLeftAutofillLeft!;
+            BorderLeftAutofillTop = row.BorderLeftAutofillTop!;
+            BorderLeftAutofillHeight = row.BorderLeftAutofillHeight!;
+            BorderLeftAutofillRight = row.BorderLeftAutofillRight!;
+            BorderRightAutofillLeft = row.BorderRightAutofillLeft!;
+            BorderRightAutofillHeight = row.BorderRightAutofillHeight!;
+            BorderRightAutofillRight = row.BorderRightAutofillRight!;
+            BorderRightAutofillTop = row.BorderRightAutofillTop!;
+            BorderTopAutofillLeft = row.BorderTopAutofillLeft!;
+            BorderTopAutofillTop = row.BorderTopAutofillTop!;
+            BorderTopAutofillWidth = row.BorderTopAutofillWidth!;
+            BorderBottomAutofillLeft = row.BorderBottomAutofillLeft!;
+            BorderBottomAutofillTop = row.BorderBottomAutofillTop!;
+            BorderBottomAutofillWidth = row.BorderBottomAutofillWidth!;
+            IsBorderPositionSelected = row?.IsBorderPositionSelected ?? false;
+            BorderRightAutofillWidth = "2px";
+            BorderLeftAutofillWidth = "2px";
+            BorderTopAutofillHeight = "2px";
+            BorderBottomAutofillHeight = "2px";
+            BorderBottomAutofillRight = row?.BorderBottomAutofillRight!;
+            BorderTopAutofillRight = row?.BorderTopAutofillRight!;
+        }
+        else if (row != null && row.IsSelected && !row.ISBorderSelected && !row.ISBoxSelected)
+        {
+            AutofillBoxDisplay = row.AutofillBoxDisplay!;
+            AutofillBorderDisplay = row.AutofillBorderDisplay!;
+            AutofillDisplay = row.AutofillDisplay!;
+        }
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private List<GridColumn>? GetVisibleColumns(List<GridColumn> columns)
+    {
+        return columns?.Where(column => column.Visible == true)?.ToList();
+    }
+
+    private bool IsEmptyRowAdded()
+    {
+        if (Parent!.DataManager!.Adaptor.Equals(Adaptors.CustomAdaptor) && !Parent.AllowPaging && Data != null && Data == _data)
+        {
+            if (!Parent.IsAdd && Data.Count() != Parent.Rows.Count && (Parent.Rows.Any(x => x.Action == EditAction.Added) || Parent.Rows.Any(x => x.Action == EditAction.Deleted)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private async void HandleGroupedInfiniteRows()
+    {
+        if (Parent!.EnableInfiniteScrolling && Parent.InfiniteScrollModule != null && !Parent.InfiniteScrollModule.InfiniteForceRefresh)
+        {
+            Parent.InfiniteScrollModule.GeneratedInfiniteGroupedRows = Parent.Rows?.Count > 0 && Parent.IsColumnHideOrShow && Parent.GroupSettings!.EnableLazyLoading ? Parent.Rows : new GroupModelGenerator<TContent>(Parent).GenerateInfiniteGroupedRows(Data!);
+        }
+        if (Parent != null && Parent.InfiniteScrollModule != null && Parent.InfiniteScrollModule.RequestType == "GroupExpandCollapseAll")
+        {
+            Rows = Parent.InfiniteScrollModule.GeneratedInfiniteGroupedRows?.Where(row => row.Visible)?.ToList()!;
+        }
+        Rows = Parent?.InfiniteScrollModule?.SetCurrentGroupedRows()!;
+    }
+
+    #endregion
+
+    #region IDisposable
+
+    void IDisposable.Dispose()
+    {
+        Parent?.CollectionDisposeMethod(Data!);
+        Parent?.EventAggregator.Remove("ContentStateChanged", InvokeStateChange);
+        Parent?.EventAggregator.Remove("ContentAutofillStateChanged", InvokeAutofillStateChange);
+    }
+
+    #endregion
+}

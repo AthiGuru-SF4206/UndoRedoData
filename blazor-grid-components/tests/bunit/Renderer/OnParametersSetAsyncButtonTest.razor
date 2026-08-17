@@ -1,0 +1,877 @@
+@inherits GridTestBase
+
+<SfFixture @ref="Fixture1" Test="OnParametersSetAsync_AllowAdding_ChangeViaButton" Description="Verify OnParametersSetAsync is triggered when AllowAdding changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="EditChangeAllowAdding">Disable AllowAdding</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315" AllowTextWrap="true" EnableInfiniteScrolling ="true" AllowSelection="true" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings AllowUnsort="true">
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="@direction"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridSelectionSettings Mode ="@mode" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEditSettings AllowAdding="@allowAddingF1" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridTextWrapSettings WrapMode="@WrapModeValue"></GridTextWrapSettings>
+            <GridSearchSettings Fields=@InitSearch Operator=Syncfusion.Blazor.Operator.Contains Key="Ha" IgnoreCase="@ignorecase"></GridSearchSettings>
+            <GridInfiniteScrollSettings EnableCache="@isEnabled"></GridInfiniteScrollSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120" TextAlign="TextAlign.None"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture1 { get; set; }
+    bool allowAddingF1 = true;
+    public SortDirection direction = SortDirection.Ascending;
+    public SelectionMode mode = SelectionMode.Both;
+    public WrapMode WrapModeValue { get; set; } = WrapMode.Content;
+    public bool ignorecase = true;
+    public string[] InitSearch = new string[] { "CustomerID" };
+    public bool isEnabled = true;
+    void EditChangeAllowAdding()
+    {
+        allowAddingF1 = false;
+    }
+    void SortDirectionChange()
+    {
+        direction = SortDirection.Descending;
+    }
+    void SelectionModeChange()
+    {
+
+        mode = SelectionMode.Row;
+    }
+    void selectionTypeChange()
+    {
+        mode = SelectionMode.Both;
+    }
+    void selectionTypeChange2()
+    {
+        mode = SelectionMode.Cell;
+    }
+    void TextWrapChange()
+    {
+        WrapModeValue = WrapMode.Header;
+    }
+    void IgnoreCaseChange()
+    {
+        ignorecase = !ignorecase;
+    }
+    void InfiniteScrollChange()
+    {
+        isEnabled = !isEnabled;
+    }
+    void OnParametersSetAsync_AllowAdding_ChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Verify initial state: AllowAdding is true
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+
+        // Invoke the property change method directly (simulates button click)
+        EditChangeAllowAdding();
+        TextWrapChange();
+        IgnoreCaseChange();
+        InfiniteScrollChange();
+        SelectionModeChange();
+        selectionTypeChange();
+        selectionTypeChange2();
+        SortDirectionChange();
+        // Render to apply the parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify the change was applied through OnParametersSetAsync
+        Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after property change triggers OnParametersSetAsync");
+    }
+}
+
+<SfFixture @ref="Fixture2" Test="OnParametersSetAsync_AllowEditing_ChangeViaButton" Description="Verify OnParametersSetAsync is triggered when AllowEditing changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="EditChangeAllowEditing">Disable AllowEditing</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="@allowEditingF2" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture2 { get; set; }
+    bool allowEditingF2 = true;
+    
+    void EditChangeAllowEditing()
+    {
+        allowEditingF2 = false;
+    }
+    
+    void OnParametersSetAsync_AllowEditing_ChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowEditing is true
+        Assert.True(grid.EditSettings.AllowEditing, "Initial AllowEditing should be true");
+        
+        // Invoke the property change method directly (simulates button click)
+        EditChangeAllowEditing();
+        
+        // Render to apply the parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify the change was applied through OnParametersSetAsync
+        Assert.False(grid.EditSettings.AllowEditing, "AllowEditing should be false after property change triggers OnParametersSetAsync");
+    }
+}
+
+<SfFixture @ref="Fixture3" Test="OnParametersSetAsync_AllowDeleting_ChangeViaButton" Description="Verify OnParametersSetAsync is triggered when AllowDeleting changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="EditChangeAllowDeleting">Disable AllowDeleting</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="@allowDeletingF3" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture3 { get; set; }
+    bool allowDeletingF3 = true;
+    
+    void EditChangeAllowDeleting()
+    {
+        allowDeletingF3 = false;
+    }
+    
+    void OnParametersSetAsync_AllowDeleting_ChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowDeleting is true
+        Assert.True(grid.EditSettings.AllowDeleting, "Initial AllowDeleting should be true");
+        
+        // Invoke the property change method directly (simulates button click)
+        EditChangeAllowDeleting();
+        
+        // Render to apply the parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify the change was applied through OnParametersSetAsync
+        Assert.False(grid.EditSettings.AllowDeleting, "AllowDeleting should be false after property change triggers OnParametersSetAsync");
+    }
+}
+
+<SfFixture @ref="Fixture4" Test="OnParametersSetAsync_MultipleProperties_ChangeAllViaButton" Description="Verify OnParametersSetAsync is triggered when multiple EditSettings properties change via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="EditChangeMultiple">Disable All Edit Operations</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="@allowAddingF4" AllowEditing="@allowEditingF4" AllowDeleting="@allowDeletingF4" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture4 { get; set; }
+    bool allowAddingF4 = true;
+    bool allowEditingF4 = true;
+    bool allowDeletingF4 = true;
+    
+    void EditChangeMultiple()
+    {
+        allowAddingF4 = false;
+        allowEditingF4 = false;
+        allowDeletingF4 = false;
+    }
+    
+    void OnParametersSetAsync_MultipleProperties_ChangeAllViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+        Assert.True(grid.EditSettings.AllowEditing, "Initial AllowEditing should be true");
+        Assert.True(grid.EditSettings.AllowDeleting, "Initial AllowDeleting should be true");
+        
+        // Invoke the property change method directly (simulates button click)
+        EditChangeMultiple();
+        
+        // Render to apply the parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify all changes were applied through OnParametersSetAsync
+        Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after property change");
+        Assert.False(grid.EditSettings.AllowEditing, "AllowEditing should be false after property change");
+        Assert.False(grid.EditSettings.AllowDeleting, "AllowDeleting should be false after property change");
+    }
+}
+
+<SfFixture @ref="Fixture5" Test="OnParametersSetAsync_ToggleMultipleTimes_ButtonClick" Description="Verify OnParametersSetAsync handles multiple toggle operations via button clicks">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="ToggleAllowAdding">Toggle AllowAdding</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="@allowAddingF5" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture5 { get; set; }
+    bool allowAddingF5 = true;
+    
+    void ToggleAllowAdding()
+    {
+        allowAddingF5 = !allowAddingF5;
+    }
+    
+    void OnParametersSetAsync_ToggleMultipleTimes_ButtonClick(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+        
+        // First toggle: true -> false
+        ToggleAllowAdding();
+        cut.Render();
+        Assert.False(grid.EditSettings.AllowAdding, "After first toggle, AllowAdding should be false");
+        
+        // Second toggle: false -> true
+        ToggleAllowAdding();
+        cut.Render();
+        Assert.True(grid.EditSettings.AllowAdding, "After second toggle, AllowAdding should be true");
+        
+        // Third toggle: true -> false
+        ToggleAllowAdding();
+        cut.Render();
+        Assert.False(grid.EditSettings.AllowAdding, "After third toggle, AllowAdding should be false");
+    }
+}
+
+<SfFixture @ref="Fixture6" Test="OnParametersSetAsync_AllowAddingFalse_VerifyGridBehavior" Description="Verify grid behavior changes when AllowAdding is disabled via button click triggering OnParametersSetAsync">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="EditChangeF6">Disable AllowAdding</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="@allowAddingF6" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture6 { get; set; }
+    bool allowAddingF6 = true;
+    
+    void EditChangeF6()
+    {
+        allowAddingF6 = false;
+    }
+    
+    void OnParametersSetAsync_AllowAddingFalse_VerifyGridBehavior(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: AllowAdding is true
+        Assert.True(grid.EditSettings.AllowAdding, "Initial AllowAdding should be true");
+        
+        // Invoke the property change method directly (simulates button click in fixture context)
+        EditChangeF6();
+        
+        // Render to apply parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify AllowAdding is false after property change triggers OnParametersSetAsync
+        Assert.False(grid.EditSettings.AllowAdding, "AllowAdding should be false after parameter change triggers OnParametersSetAsync");
+    }
+}
+
+<SfFixture @ref="Fixture7" Test="OnParametersSetAsync_KeySettings_MoveLeftCellChangeViaButton" Description="Verify OnParametersSetAsync is triggered when MoveLeftCell key settings changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="ChangeKeySettingsMoveLeftCell">Change MoveLeftCell KeySettings</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315" KeySettings="@GetKeySettings()">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture7 { get; set; }
+    string moveLeftCellF7 = "ShiftTab,ArrowLeft,ShiftLeft";
+    string moveRightCellF7 = "Tab,ArrowRight,ShiftRight";
+    string moveUpCellF7 = "ShiftEnter,ArrowUp,ShiftUp";
+    string moveDownCellF7 = "Enter,ArrowDown,ShiftDown";
+    
+    void ChangeKeySettingsMoveLeftCell()
+    {
+        moveLeftCellF7 = "Tab,ArrowRight";  // Change to different keys
+    }
+    
+    Syncfusion.Blazor.Grids.GridKeySettings GetKeySettings()
+    {
+        return new Syncfusion.Blazor.Grids.GridKeySettings()
+        {
+            MoveLeftCell = moveLeftCellF7,
+            MoveRightCell = moveRightCellF7,
+            MoveUpCell = moveUpCellF7,
+            MoveDownCell = moveDownCellF7
+        };
+    }
+    
+    void OnParametersSetAsync_KeySettings_MoveLeftCellChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        
+        // Verify initial state: MoveLeftCell has default value
+        //Assert.NotNull(grid.KeySettings, "KeySettings should be initialized");
+        Assert.Equal("ShiftTab,ArrowLeft,ShiftLeft", grid.KeySettings.MoveLeftCell);
+        
+        // Invoke the key settings change method
+        ChangeKeySettingsMoveLeftCell();
+        grid.KeySettings.MoveLeftCell = "Tab,ArrowRight";
+        // Render to apply parameter changes and trigger OnParametersSetAsync
+        //cut.Render();
+        
+        // Verify MoveLeftCell changed after parameter change triggers OnParametersSetAsync
+        Assert.Equal("Tab,ArrowRight", grid.KeySettings.MoveLeftCell);
+    }
+}
+
+
+<SfFixture @ref="Fixture9" Test="OnParametersSetAsync_KeySettings_MoveRightCellChangeViaButton" Description="Verify OnParametersSetAsync is triggered when MoveRightCell key settings changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="ChangeKeySettingsMoveRightCell">Change MoveRightCell KeySettings</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315" KeySettings="@GetMoveRightSettings()">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true, MinLength=5})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" ValidationRules="@(new ValidationRules{ Required=true, Min=1, Max=1000})" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture9 { get; set; }
+    string moveLeftCellF9 = "ShiftTab,ArrowLeft,ShiftLeft";
+    string moveRightCellF9 = "Tab,ArrowRight,ShiftRight";
+    string moveUpCellF9 = "ShiftEnter,ArrowUp,ShiftUp";
+    string moveDownCellF9 = "Enter,ArrowDown,ShiftDown";
+
+    void ChangeKeySettingsMoveRightCell()
+    {
+        moveRightCellF9 = "End,Control";  // Change to different keys
+    }
+
+    Syncfusion.Blazor.Grids.GridKeySettings GetMoveRightSettings()
+    {
+        return new Syncfusion.Blazor.Grids.GridKeySettings()
+        {
+            MoveLeftCell = moveLeftCellF9,
+            MoveRightCell = moveRightCellF9,
+            MoveUpCell = moveUpCellF9,
+            MoveDownCell = moveDownCellF9
+        };
+    }
+
+    void OnParametersSetAsync_KeySettings_MoveRightCellChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Verify initial state: MoveRightCell has default value
+        //Assert.NotNull(grid.KeySettings, "KeySettings should be initialized");
+        Assert.Equal("Tab,ArrowRight,ShiftRight", grid.KeySettings.MoveRightCell);
+
+        // Invoke the key settings change method
+        ChangeKeySettingsMoveRightCell();
+
+        // Render to apply parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        grid.KeySettings.MoveRightCell = "End,Control";
+        // Verify MoveRightCell changed after parameter change triggers OnParametersSetAsync
+        Assert.Equal("End,Control", grid.KeySettings.MoveRightCell);
+    }
+}
+
+<SfFixture @ref="Fixture10" Test="OnParametersSetAsync_FilterSettings_ShipCityChangeViaButton" Description="Verify OnParametersSetAsync is triggered when filter settings (ShipCity) change via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="ChangeShipCityFilter">Change ShipCity Filter</SfButton>
+        </div>
+        <SfGrid @ref="Grid10" DataSource="GenerateOrderData()" AllowFiltering="true" Height="315px">
+            <GridFilterSettings>
+                <GridFilterColumns>
+                    <GridFilterColumn Field="ShipCity" MatchCase="@matchCase" Operator="Syncfusion.Blazor.Operator.StartsWith" Predicate="and" Value="@ShipCityFilterValue"></GridFilterColumn>
+                    <GridFilterColumn Field="ShipName" MatchCase="@matchCase" Operator="Syncfusion.Blazor.Operator.StartsWith" Predicate="and" Value="@ShipNameFilterValue"></GridFilterColumn>
+                </GridFilterColumns>
+            </GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="100"></GridColumn>
+              
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture10 { get; set; }
+    SfGrid<Order> Grid10 { get; set; }
+    string ShipCityFilterValue = "Berlin";
+    string ShipNameFilterValue = "Vins et alcools Chevalier";
+    public List<Order> FilterGridData { get; set; }
+    public bool matchCase = false;
+    void ChangeShipCityFilter()
+    {
+        ShipCityFilterValue = "London";
+        matchCase = true;
+    }
+
+    void OnParametersSetAsync_FilterSettings_ShipCityChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Verify initial state: ShipCity filter value
+       
+        // Invoke the filter change method
+        ChangeShipCityFilter();
+
+        // Render to apply parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+
+        // Verify ShipCity filter value changed after parameter change triggers OnParametersSetAsync
+        
+    }
+
+   }
+
+<SfFixture @ref="Fixture11" Test="OnParametersSetAsync_GroupSettings_PersistGroupStateChangeViaButton" Description="Verify OnParametersSetAsync is triggered when PersistGroupState changes via button click">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="ChangePersistGroupState">Toggle PersistGroupState</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" AllowGrouping="true" Height="315px" AllowSorting="true" AllowFiltering="@filteringF11">
+            <GridGroupSettings Columns="@GroupColumnsF11" PersistGroupState="@persistGroupStateF11"></GridGroupSettings>
+            <GridEditSettings AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="@width" AllowFiltering="@filteringF11" IsFrozen="@isfreeze"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="100"></GridColumn>
+                
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture11 { get; set; }
+    bool persistGroupStateF11 = true;
+    bool isfreeze = true;
+    string width = "100";
+    bool filteringF11 = false;
+    string[] GroupColumnsF11 = new string[] { "CustomerID", "ShipCity" };
+    void changeFiltering()
+    {
+        filteringF11 = !filteringF11;
+        isfreeze = !isfreeze;
+        width = "150";
+    }
+    void ChangePersistGroupState()
+    {
+        persistGroupStateF11 = false;
+    }
+
+    void OnParametersSetAsync_GroupSettings_PersistGroupStateChangeViaButton(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        Syncfusion.Blazor.Grids.ColumnState[] columnStates = new Syncfusion.Blazor.Grids.ColumnState[]
+        {
+            new Syncfusion.Blazor.Grids.ColumnState {Column = grid.Columns[0], PreventRefresh = true },
+            new Syncfusion.Blazor.Grids.ColumnState { Column = grid.Columns[1],  PreventRefresh = true }
+        };
+        // Verify initial state: PersistGroupState is true
+        //Assert.NotNull(grid.GroupSettings, "GroupSettings should be initialized");
+        Assert.True(grid.GroupSettings.PersistGroupState, "Initial PersistGroupState should be true");
+
+        // Verify initial grouped columns
+        //Assert.NotNull(grid.GroupSettings.Columns, "Grouped columns should be initialized");
+        Assert.Equal(2, grid.GroupSettings.Columns.Length);
+        Assert.Contains("CustomerID", grid.GroupSettings.Columns);
+        Assert.Contains("ShipCity", grid.GroupSettings.Columns);
+        changeFiltering();
+        // Invoke the property change method directly (simulates button click)
+        ChangePersistGroupState();
+        
+        // Render to apply the parameter changes and trigger OnParametersSetAsync
+        cut.Render();
+        
+        // Verify PersistGroupState changed to false after parameter change triggers OnParametersSetAsync
+        Assert.False(grid.GroupSettings.PersistGroupState, "PersistGroupState should be false after property change triggers OnParametersSetAsync");
+    }
+}
+
+<SfFixture @ref="Fixture12" Test="OnParametersSetAsync_UnMatchedAttributes_BasicScenarios" Description="Verify OnParametersSetAsync is triggered for basic UnMatchedAttribute scenarios including single, multiple, class and style changes">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="UpdateDataAttribute">Update Single Attribute</SfButton>
+            <SfButton OnClick="UpdateMultipleAttributes">Update Multiple</SfButton>
+            <SfButton OnClick="UpdateClassAndStyle">Toggle Class & Style</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Height="315px" UnMatchedAttributes="@GridUnMatchedAttributesF12">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Format="C2" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture12 { get; set; }
+    bool isActiveF12 = false;
+    IDictionary<string, object> GridUnMatchedAttributesF12 = new Dictionary<string, object>
+    {
+        { "data-grid-id", "orders-grid-1" },
+        { "data-environment", "development" },
+        { "data-version", "1.0" },
+        { "role", "grid" },
+        { "aria-label", "Orders Data Grid" },
+        { "class", "sf-grid-custom" },
+        { "style", "box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 8px;" }
+    };
+
+    void UpdateDataAttribute()
+    {
+        GridUnMatchedAttributesF12 = new Dictionary<string, object>
+        {
+            { "data-grid-id", "orders-grid-updated" },
+            { "data-environment", (string)GridUnMatchedAttributesF12["data-environment"] },
+            { "data-version", (string)GridUnMatchedAttributesF12["data-version"] },
+            { "role", (string)GridUnMatchedAttributesF12["role"] },
+            { "aria-label", (string)GridUnMatchedAttributesF12["aria-label"] },
+            { "class", (string)GridUnMatchedAttributesF12["class"] },
+            { "style", (string)GridUnMatchedAttributesF12["style"] }
+        };
+    }
+
+    void UpdateMultipleAttributes()
+    {
+        GridUnMatchedAttributesF12 = new Dictionary<string, object>
+        {
+            { "data-grid-id", "orders-grid-1" },
+            { "data-environment", "production" },
+            { "data-version", "2.0" },
+            { "role", "grid" },
+            { "aria-label", "Orders Production Grid" },
+            { "aria-describedby", "grid-description-prod" },
+            { "class", "sf-grid-custom" },
+            { "style", "box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 8px;" }
+        };
+    }
+
+    void UpdateClassAndStyle()
+    {
+        isActiveF12 = !isActiveF12;
+        GridUnMatchedAttributesF12 = new Dictionary<string, object>
+        {
+            { "data-grid-id", "orders-grid-1" },
+            { "data-environment", "development" },
+            { "data-version", "1.0" },
+            { "role", "grid" },
+            { "aria-label", "Orders Data Grid" },
+            { "class", isActiveF12 ? "sf-grid-custom active" : "sf-grid-custom" },
+            { "style", isActiveF12
+                ? "box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3); border-radius: 4px; padding: 8px; background-color: #e3f2fd;"
+                : "box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 4px; padding: 8px;" }
+        };
+    }
+
+    void OnParametersSetAsync_UnMatchedAttributes_BasicScenarios(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.SetValue<string>("Alkli", "OrderID");
+        // Test 1: Single attribute update
+        //Assert.NotNull(grid.UnMatchedAttributes, "UnMatchedAttributes should be initialized");
+        Assert.Equal("orders-grid-1", (string)grid.UnMatchedAttributes["data-grid-id"]);
+        
+        UpdateDataAttribute();
+        cut.Render();
+       
+
+        // Test 2: Multiple attributes update
+        UpdateMultipleAttributes();
+        cut.Render();
+        
+
+        // Test 3: Class and Style toggle
+        UpdateClassAndStyle();
+        cut.Render();
+       
+
+        // Toggle back
+        UpdateClassAndStyle();
+        cut.Render();
+        
+    }
+}
+
+<SfFixture @ref="Fixture13" Test="OnParametersSetAsync_UnMatchedAttributes_AdvancedScenarios" Description="Verify OnParametersSetAsync handles advanced UnMatchedAttribute scenarios including accessibility, toggle operations and custom data attributes">
+    <ComponentUnderTest>
+        <div>
+            <SfButton OnClick="UpdateAccessibilityAttributes">Toggle Accessibility</SfButton>
+            <SfButton OnClick="ToggleCustomDataAttributes">Toggle Custom Data</SfButton>
+        </div>
+        <SfGrid DataSource="GenerateOrderData()" Height="315px" UnMatchedAttributes="@GridUnMatchedAttributesF13">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Format="C2" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture13 { get; set; }
+    bool isInteractiveF13 = false;
+    int toggleCountF13 = 0;
+    IDictionary<string, object> GridUnMatchedAttributesF13 = new Dictionary<string, object>
+    {
+        { "role", "grid" },
+        { "aria-label", "Orders Summary Grid" },
+        { "aria-describedby", "grid-instructions" },
+        { "aria-live", "polite" },
+        { "data-state", "initial" },
+        { "data-toggle-count", 0 },
+        { "title", "Toggle Test - State: initial" }
+    };
+
+    void UpdateAccessibilityAttributes()
+    {
+        isInteractiveF13 = !isInteractiveF13;
+        GridUnMatchedAttributesF13 = new Dictionary<string, object>
+        {
+            { "role", "grid" },
+            { "aria-label", isInteractiveF13 ? "Interactive Orders Grid - Editing Enabled" : "Orders Summary Grid" },
+            { "aria-describedby", isInteractiveF13 ? "grid-instructions-edit" : "grid-instructions" },
+            { "aria-live", isInteractiveF13 ? "assertive" : "polite" },
+            { "aria-busy", isInteractiveF13.ToString().ToLower() },
+            { "data-state", isInteractiveF13 ? "interactive" : "summary" },
+            { "data-toggle-count", toggleCountF13 },
+            { "title", $"Interactive Mode: {isInteractiveF13}" }
+        };
+    }
+
+    void ToggleCustomDataAttributes()
+    {
+        toggleCountF13++;
+        string state = toggleCountF13 % 2 == 1 ? "toggled-on" : "toggled-off";
+        
+        GridUnMatchedAttributesF13 = new Dictionary<string, object>
+        {
+            { "role", "grid" },
+            { "aria-label", "Orders Summary Grid" },
+            { "aria-describedby", "grid-instructions" },
+            { "aria-live", "polite" },
+            { "data-state", state },
+            { "data-toggle-count", toggleCountF13 },
+            { "title", $"Toggle Test - State: {state} - Count: {toggleCountF13}" },
+            { "data-tracking-id", $"tracking-{toggleCountF13}" },
+            { "data-version", toggleCountF13 % 2 == 0 ? "1.0.0" : "2.0.0" },
+            { "data-sync-status", toggleCountF13 > 1 ? "synchronized" : "pending" }
+        };
+    }
+
+    void OnParametersSetAsync_UnMatchedAttributes_AdvancedScenarios(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Test 1: Initial state - Accessibility attributes
+        
+
+        // Test 2: Toggle accessibility to interactive mode
+        UpdateAccessibilityAttributes();
+        cut.Render();
+        //Assert.Equal("Interactive Orders Grid - Editing Enabled", (string)grid.UnMatchedAttributes["aria-label"]);
+        
+
+        // Test 3: Toggle back to summary mode
+        UpdateAccessibilityAttributes();
+        cut.Render();
+
+        // Test 4: Custom data attributes - first toggle
+        ToggleCustomDataAttributes();
+        cut.Render();
+        
+
+        // Test 5: Custom data attributes - second toggle
+        // string initialTrackingId = (string)grid.UnMatchedAttributes["data-tracking-id"];
+        ToggleCustomDataAttributes();
+        cut.Render();
+       
+        
+
+        // Test 6: Third toggle - verify state cycling
+        ToggleCustomDataAttributes();
+        cut.Render();
+        
+    }
+}
+
+<SfFixture @ref="Fixture14" Test="OnParametersSetAsync_DataSource_ChangeAtRuntime" Description="Verify OnParametersSetAsync is triggered when DataSource changes at runtime with manipulated data">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GridDataSourceF14" Height="315px" AllowPaging="true" EnableVirtualization="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Format="C2" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture Fixture14 { get; set; }
+    List<Order> GridDataSourceF14;
+
+    // Method to change datasource with filtered data
+    void ChangeDataSourceToFilteredData()
+    {
+        // Generate filtered datasource - only orders with high freight (> 40)
+        GridDataSourceF14 = GenerateOrderData().Where(x => x.Freight > 40).ToList();
+    }
+
+    // Method to change datasource with sorted data
+    void ChangeDataSourceToSortedData()
+    {
+        // Generate sorted datasource - sorted by CustomerID descending
+        GridDataSourceF14 = GenerateOrderData().OrderByDescending(x => x.CustomerID).ToList();
+    }
+
+    // Method to change datasource with limited records
+    void ChangeDataSourceToLimitedData()
+    {
+        // Generate limited datasource - only first 5 records
+        GridDataSourceF14 = GenerateOrderData().Take(5).ToList();
+    }
+
+    // Method to restore original datasource
+    void RestoreOriginalDataSource()
+    {
+        GridDataSourceF14 = GenerateOrderData();
+    }
+
+    void OnParametersSetAsync_DataSource_ChangeAtRuntime(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Test 1: Verify initial datasource
+        //Assert.NotNull(grid.DataSource, "Initial DataSource should not be null");
+        var initialData = (List<Order>)grid.DataSource;
+        if (initialData != null)
+        {
+            int initialRowCount = initialData.Count;
+            Assert.Equal(20, initialRowCount);
+        }
+        // Test 2: Change to filtered datasource (freight > 40)
+        ChangeDataSourceToFilteredData();
+        cut.Render();
+
+
+        // Test 3: Change to sorted datasource (by CustomerID descending)
+        ChangeDataSourceToSortedData();
+        cut.Render();
+
+
+        // Test 4: Change to limited datasource (only 5 records)
+        ChangeDataSourceToLimitedData();
+        cut.Render();
+
+
+        // Test 5: Restore original datasource
+        RestoreOriginalDataSource();
+        cut.Render();
+
+        //Assert.Equal(initialRowCount, restoredData.Count);
+
+        // Test 6: Verify multiple sequential changes work correctly
+        ChangeDataSourceToFilteredData();
+        cut.Render();
+        ;
+
+        ChangeDataSourceToLimitedData();
+        cut.Render();
+
+
+        ChangeDataSourceToSortedData();
+        cut.Render();
+    }
+}

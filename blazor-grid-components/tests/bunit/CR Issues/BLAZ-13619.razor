@@ -1,0 +1,113 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Flat grid with filter checkbox type">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="@GenerateCheckBoxData()" AllowFiltering="true" AllowPaging="true" Height="375">
+            <GridEvents OnActionBegin="ActionBeginHandler" TValue="Order"></GridEvents>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Bio" Width="150">
+                    <Template>
+                        @{
+                            var filterContext = (context as Order);
+                            var itemTemplateValue = Employees.Find(x => x.EmployeeID == filterContext.EmployeeID);
+                        }
+                        @itemTemplateValue.FirstName - @itemTemplateValue.LastName
+                    </Template>
+                    <FilterItemTemplate>
+                        @{
+                            var filterContext = (context as FilterItemTemplateContext);
+                            var itemTemplateValue = Employees.Find(x => x.EmployeeID.ToString() == filterContext.Value.ToString());
+                        }
+                        @itemTemplateValue.FirstName - @itemTemplateValue.LastName
+                    </FilterItemTemplate>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+
+    public List<Order> Orders { get; set; }
+    public string FilterCol { get; set; }
+    public int count { get; set; }
+    public List<Employee> Employees { get; set; } = Enumerable.Range(1, 75).Select(x => new Employee()
+    {
+        EmployeeID = x,
+        FirstName = (new string[] { "Nancy", "Andrew", "Janet", "Margaret", "Steven" })[new Random().Next(5)],
+        LastName = (new string[] { "Davalio", "Michael", "Drew", "Rose", "John" })[new Random().Next(5)],
+    }).ToList();
+    SfFixture fixture { get; set; }
+
+    public void ActionBeginHandler(ActionEventArgs<Order> Args)
+    {
+        if (Args.RequestType == Syncfusion.Blazor.Grids.Action.FilterSearchBegin)
+        {
+            //pass the searchstring to custommethod and return the data
+            var lists = GetSearchedList(Args.SearchString);
+            //bind resultant list to CheckboxListData.
+            Args.CheckboxListData = lists;
+            count = lists.Count();
+            Assert.True(count == Args.CheckboxListData.Count(), "count check");
+        }
+    }
+    public List<Order> GetSearchedList(string key)
+    {
+        var empdata = Employees.Where(fil => fil.FirstName.ToLower().ToString().StartsWith(key.ToLower()) || fil.FirstName.ToLower().ToString().StartsWith(key.ToLower())).Select(x => x.EmployeeID).ToList();
+
+        var data = new List<Order>();
+        foreach (var emp in empdata)
+        {
+            data.Add(Orders.Where(x => x.EmployeeID.Equals(emp)).FirstOrDefault());
+        }
+        //perform your custom action.
+        return data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public int? EmployeeID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+    public class Employee
+    {
+        public int? EmployeeID { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+
+    public List<Order> GenerateCheckBoxData()
+    {
+        return Orders = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            EmployeeID = x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = (new DateTime[] { new DateTime(2010, 5, 1), new DateTime(2010, 5, 2), new DateTime(2010, 5, 3), })[new Random().Next(3)],
+        }).ToList();
+    }
+
+    async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        cut.FindAll(".e-filtermenudiv")[2].Click();
+        cut.WaitForState(() => cut.FindAll("#Grid_SearchBox").Count() > 0);
+        cut.FindAll("#Grid_SearchBox")[0].Input(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "A" });
+        cut.WaitForState(() => count > 0, TimeSpan.FromSeconds(10));
+        var checklist = cut.FindAll(".e-ftrchk").Count();
+        Assert.True(count == checklist - 2, "final chckbox count check");
+    }
+}
+

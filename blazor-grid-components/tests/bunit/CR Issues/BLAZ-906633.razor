@@ -1,0 +1,126 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="DeleteRecordAsync with PersistSelection not working properly">
+    <ComponentUnderTest>
+        <SfGrid @ref="@sfGrid" AllowPaging="true" DataSource="GenerateRows()" AllowSelection="true" Height="195">       
+            <GridPageSettings PageCount="5" PageSize="3"></GridPageSettings>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridSelectionSettings CheckboxOnly="true" PersistSelection="true" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+           <GridColumns>
+                <GridColumn Type="Syncfusion.Blazor.Grids.ColumnType.CheckBox" AllowFiltering="false" AllowSorting="false" Width="30"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey=true HeaderText="Order ID" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderInvoiceNumber)  HeaderText="Order Invoice Number" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="Syncfusion.Blazor.Grids.ColumnType.DateTime" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.DeliveryDate) HeaderText="Estimated Delivery Date" Format="d" Type="Syncfusion.Blazor.Grids.ColumnType.DateTime" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.IsDelivered) Type="Syncfusion.Blazor.Grids.ColumnType.Boolean" HeaderText="IsDelivered" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+           </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> sfGrid;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.SelectRowAsync(1);
+        Order deletedRow = new Order()
+            {
+                OrderID = 1003,
+                OrderInvoiceNumber = 2003,
+                CustomerID = "Philip",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            };
+
+        await cut.Instance.DeleteRecordAsync("OrderID", deletedRow);
+        
+        Assert.True(cut.Instance.TotalItemCount == 5);
+
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> orders = new List<Order>();
+
+        orders.Add(new Order
+            {
+                OrderID = 1001,
+                OrderInvoiceNumber = 2001,
+                CustomerID = "Andrew",
+                Freight = 2.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(1),
+                IsDelivered = false
+            });
+        orders.Add(new Order
+            {
+                OrderID = 1002,
+                OrderInvoiceNumber = 2002,
+                CustomerID = "Michael",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            });
+        orders.Add(new Order
+            {
+                OrderID = 1003,
+                OrderInvoiceNumber = 2003,
+                CustomerID = "Philip",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            });
+        orders.Add(new Order
+            {
+                OrderID = 1004,
+                OrderInvoiceNumber = 2004,
+                CustomerID = "David",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            });
+        orders.Add(new Order
+            {
+                OrderID = 1005,
+                OrderInvoiceNumber = 2005,
+                CustomerID = "Jack",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            });
+        orders.Add(new Order
+            {
+                OrderID = 1006,
+                OrderInvoiceNumber = 2006,
+                CustomerID = "Jack",
+                Freight = 4.1,
+                OrderDate = DateTime.Now,
+                DeliveryDate = DateTime.Now.AddDays(3),
+                IsDelivered = false
+            });
+        return orders;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public int? OrderInvoiceNumber { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public DateTime DeliveryDate { get; set; }
+        public double? Freight { get; set; }
+        public bool? IsDelivered { get; set; }
+    }
+}

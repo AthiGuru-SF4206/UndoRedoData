@@ -1,0 +1,152 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridShowHideChildColumnsWithCustom" Description="Testing show/hide child columns with QueryCellInfo, HeaderCellInfo, and CustomAttributes">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" Height="315">
+            <GridEvents QueryCellInfo="QueryCellInfoHandler" HeaderCellInfo="HeaderQueryCellInfoHandler" TValue="OrderData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn HeaderText="Order Details" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center">
+                    <GridColumns>
+                        <GridColumn Field="ChildField1" Width="130" HeaderText="Child 1" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" MinWidth="10" CustomAttributes="@(new Dictionary<string, object> { { "class", "custom-cls" }, { "style", "color: red;" } })"></GridColumn>
+                        <GridColumn Field="ChildField2" Width="130" HeaderText="Child 2" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" MinWidth="10"></GridColumn>
+                        <GridColumn Field="ChildField3" Width="130" HeaderText="Child 3" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" MinWidth="10"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn HeaderText="Ship Details" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center">
+                    <GridColumns>
+                        <GridColumn Field="ShippedDate" Width="140" HeaderText="Shipped Date" Format="d" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" MinWidth="10"></GridColumn>
+                        <GridColumn Field="ShipCountry" Width="140" HeaderText="Ship Country" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" MinWidth="10"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    SfGrid<OrderData> DefaultGrid { get; set; }
+
+    // Sample data generation
+    List<OrderData> GenerateOrderData() => Enumerable.Range(1, 20).Select(i => new OrderData
+    {
+        OrderID = 1000 + i,
+        ChildField1 = DateTime.Now.AddDays(i),
+        ChildField2 = DateTime.Now.AddDays(i + 1),
+        ChildField3 = DateTime.Now.AddDays(i + 2),
+        ShippedDate = DateTime.Now.AddDays(i + 3),
+        ShipCountry = $"Country{i}"
+    }).ToList();
+
+    // QueryCellInfo handler
+    public void QueryCellInfoHandler(QueryCellInfoEventArgs<OrderData> args)
+    {
+        if (args.Data != null)
+        {
+            Dictionary<string, object> o = new Dictionary<string, object>();
+            o.Add("style", "background-color: pink; color: brown;");
+            args.Cell.SetAttribute(o);
+            args.Cell.AddClass(new string[] { "add-cls" });
+        }
+    }
+
+    // HeaderCellInfo handler
+    public void HeaderQueryCellInfoHandler(HeaderCellInfoEventArgs args)
+    {
+        Dictionary<string, object> o = new Dictionary<string, object>();
+        o.Add("style", "color: yellow;");
+        args.Cell.SetAttribute(o);
+        args.Cell.AddStyle(new string[] { "background-color: blue;", "border-color: red;", "border-width: 5px;" });
+        args.Cell.AddClass(new string[] { "add-header-cls" });
+    }
+
+    // Test: Show/Hide child columns with styling and CustomAttributes
+    async void GridShowHideChildColumnsWithCustom(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        DefaultGrid = cut.Instance;
+
+        TestInitialState(cut);
+
+        // Hide Child 2 and Child 3 columns
+        await DefaultGrid.HideColumnsAsync(new[] { "Child 2", "Child 3" }, "HeaderText");
+        cut.Render(); // Re-render to reflect DOM changes
+
+        var rows = cut.FindAll(".e-row");
+        var row1Cells = rows[0].QuerySelectorAll("td");
+        var child2Cell = row1Cells[2]; // ChildField2
+        var child3Cell = row1Cells[3]; // ChildField3
+        Assert.True(child2Cell.ClassList.Contains("e-rowcell") && child2Cell.ClassList.Contains("add-cls") && child2Cell.ClassList.Contains("e-hide"), "Child 2 : Hide Class added");
+        Assert.True(child3Cell.ClassList.Contains("e-rowcell") && child3Cell.ClassList.Contains("add-cls") && child3Cell.ClassList.Contains("e-hide"), "Child 3 : Hide Class added");
+
+        // Verify ChildField1 remains visible and styled
+        var child1Cell = row1Cells[1]; // ChildField1 (now second column after OrderID)
+        Assert.True("color: red;background-color: pink; color: brown;" == child1Cell.GetAttribute("style"), "ChildField1 cell: Style persists after hide");
+        Assert.True(child1Cell.ClassList.Contains("e-rowcell") && child1Cell.ClassList.Contains("custom-cls") && child1Cell.ClassList.Contains("add-cls"), "ChildField1 cell: Classes persist after hide");
+
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[1].QuerySelectorAll("th");
+        Assert.True(5 == headerCells.Length, "After hiding, all 6 header cells visible");
+        var child2Header = headerCells[1]; // ChildField2
+        var child3Header = headerCells[2]; // ChildField3
+        Assert.True(child2Header.ClassList.Contains("e-headercell") && child2Header.ClassList.Contains("add-header-cls") && child2Header.ClassList.Contains("e-hide"), "Child 2 header: Hide Class added");
+        Assert.True(child3Header.ClassList.Contains("e-headercell") && child3Header.ClassList.Contains("add-header-cls") && child3Header.ClassList.Contains("e-hide"), "Child 3 header: Hide Class added");
+        var child1Header = headerCells[0]; // Child 1 header
+        Assert.True("color: red;color: yellow;background-color: blue; border-color: red; border-width: 5px;" == child1Header.GetAttribute("style"), "Child 1 header: Style persists after hide");
+        Assert.True(child1Header.ClassList.Contains("e-headercell") && child1Header.ClassList.Contains("add-header-cls"), "Child 1 header: Class persists after hide");
+
+        // Show Child 2 and Child 3 columns
+        await DefaultGrid.ShowColumnsAsync(new[] { "Child 2", "Child 3" }, "HeaderText");
+        cut.Render(); // Re-render to reflect DOM changes
+
+        TestInitialState(cut);
+    }
+
+    private void TestInitialState(IRenderedComponent<SfGrid<OrderData>> cut)
+    {
+        // Initial state: Verify all columns visible and styled
+        var rows = cut.FindAll(".e-row");
+        Assert.True(20 == rows.Count, "Number of rows generated properly");
+        var row1Cells = rows[1].QuerySelectorAll("td");
+        Assert.True(6 == row1Cells.Length, "All 6 columns visible initially (OrderID, ChildField1, ChildField2, ChildField3, ShippedDate, ShipCountry)");
+
+        // Verify cell styling (ChildField1 with CustomAttributes, ChildField2 and ChildField3 without)
+        var child1Cell = row1Cells[1]; // ChildField1
+        var child2Cell = row1Cells[2]; // ChildField2
+        var child3Cell = row1Cells[3]; // ChildField3
+        Assert.True("color: red;background-color: pink; color: brown;" == child1Cell.GetAttribute("style"), "ChildField1 cell: SetAttribute overrides CustomAttributes(hierarchy: SetAttribute > CustomAttributes)");
+        Assert.True(child1Cell.ClassList.Contains("e-rowcell") && child1Cell.ClassList.Contains("custom-cls") && child1Cell.ClassList.Contains("add-cls"), "ChildField1 cell: Classes appended via CustomAttributes and AddClass");
+        Assert.True("background-color: pink; color: brown;" == child2Cell.GetAttribute("style"), "ChildField2 cell: Style set via QueryCellInfo SetAttribute");
+        Assert.True(child2Cell.ClassList.Contains("e-rowcell") && child2Cell.ClassList.Contains("add-cls"), "ChildField2 cell: Class appended via QueryCellInfo AddClass");
+        Assert.True("background-color: pink; color: brown;" == child3Cell.GetAttribute("style"), "ChildField3 cell: Style set via QueryCellInfo SetAttribute");
+        Assert.True(child3Cell.ClassList.Contains("e-rowcell") && child3Cell.ClassList.Contains("add-cls"), "ChildField3 cell: Class appended via QueryCellInfo AddClass");
+        // Note: In browser, color: brown; (SetAttribute) active, color: red; (CustomAttributes) struck for ChildField1.
+
+        // Verify header styling (Child 1, Child 2, and Child 3 headers)
+        var headerRow = cut.FindAll(".e-columnheader");
+        var headerCells = headerRow[1].QuerySelectorAll("th");
+        Assert.True(5 == headerCells.Length, "All 5 header cells visible initially"); //OrderID cell is in headerRow[0]
+        var child1Header = headerCells[0]; // Child 1 header
+        var child2Header = headerCells[1]; // Child 2 header
+        var child3Header = headerCells[2]; // Child 3 header
+        Assert.True("color: red;color: yellow;background-color: blue; border-color: red; border-width: 5px;" == child1Header.GetAttribute("style"), "Child 1 header: SetAttribute and AddStyle applied (AddStyle takes precedence)");
+        Assert.True(child1Header.ClassList.Contains("e-headercell") && child1Header.ClassList.Contains("add-header-cls"), "Child 1 header: Class appended via HeaderCellInfo AddClass");
+        Assert.True("color: yellow;background-color: blue; border-color: red; border-width: 5px;" == child2Header.GetAttribute("style"), "Child 2 header: SetAttribute and AddStyle applied");
+        Assert.True(child2Header.ClassList.Contains("e-headercell") && child2Header.ClassList.Contains("add-header-cls"), "Child 2 header: Class appended via HeaderCellInfo AddClass");
+        Assert.True("color: yellow;background-color: blue; border-color: red; border-width: 5px;" == child3Header.GetAttribute("style"), "Child 3 header: SetAttribute and AddStyle applied");
+        Assert.True(child3Header.ClassList.Contains("e-headercell") && child3Header.ClassList.Contains("add-header-cls"), "Child 3 header: Class appended via HeaderCellInfo AddClass");
+        // Note: In browser, color: yellow; (SetAttribute) struck, background-color: blue; (AddStyle) active.
+    }
+
+    public class OrderData
+    {
+        public int OrderID { get; set; }
+        public DateTime ChildField1 { get; set; }
+        public DateTime ChildField2 { get; set; }
+        public DateTime ChildField3 { get; set; }
+        public DateTime ShippedDate { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}

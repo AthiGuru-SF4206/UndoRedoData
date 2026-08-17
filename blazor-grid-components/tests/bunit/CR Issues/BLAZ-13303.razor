@@ -1,0 +1,27 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="NullTest"  Description="Search with null values">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderNullData()" Toolbar="@(new List<string>() { "Search" })"  AllowFiltering="true" Height="315">            
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+
+    async Task NullTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SearchAsync("Bl");
+        var gridContent = cut.FindAll(".e-content")[0];
+        Assert.True(gridContent.QuerySelectorAll("tr").Length == 1, "Search with null value testing");
+    }
+
+    }

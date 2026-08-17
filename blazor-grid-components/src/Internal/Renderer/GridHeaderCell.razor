@@ -1,0 +1,725 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+@inherits GridHeaderBase<TContent>
+@using System.Globalization;
+@using System.Linq
+
+@using Microsoft.AspNetCore.Components.Web
+
+@{
+    string? cellType = cell?.CellType.ToString().ToLower(CultureInfo.InvariantCulture );
+    bool columnVisible = IsStackedHeaderColumnsVisible(column!);
+    string className = Parent!.FreezeModule!.GetFreezeLeftCount() > 0 || (Parent.FreezeModule!.GetFrozenCount() > 0 && Parent.FreezeModule!.GetFreezeRightCount() < 1) ? " e-leftfreeze" : "";
+
+    @if (cellType!.Equals("indent"))
+    {
+        string lastClass = Parent.GroupSettings!.Columns!.Count() - 1 == HeaderCellParameters?.Iteration ? " e-lastgroupleftcell" : "";
+        <th class=@($"e-grouptopleftcell {lastClass} {className}") data-sf-style="@GetStyle(HeaderCellParameters?.Row!, cell!)">
+            <div class="e-headercelldiv e-emptycell">
+                   <span class="e-emptyindentcell">Indent</span>
+            </div>
+        </th>
+    }
+    else if (cellType.Equals("detailindent"))
+    {
+        if(Parent.FreezeModule!.GetFreezeLeftCount() > 0 || (Parent.FreezeModule!.GetFrozenCount() > 0 && Parent.FreezeModule!.GetFreezeRightCount() < 1))
+        {
+            <th class=@($"e-detailheadercell {className}") data-sf-style="@GetStyle(HeaderCellParameters?.Row!, cell!)">
+                <div class="e-emptycell">
+                    <span class="e-emptyindentcell">DetailIndent</span>
+                </div>
+            </th>
+        }
+        else
+        {
+            <th class="e-detailheadercell">
+                <div class="e-emptycell">
+                    <span class="e-emptyindentcell">DetailIndent</span>
+                </div>
+            </th>
+        }
+    }
+    else if (cellType.Equals("rowdrag"))
+    {
+        if(Parent.FreezeModule!.GetFreezeLeftCount() > 0 || (Parent.FreezeModule!.GetFrozenCount() > 0 && Parent.FreezeModule!.GetFreezeRightCount() < 1))
+        {
+            <th class=@($"e-rowdragheader {className}") data-sf-style="@GetStyle(HeaderCellParameters?.Row!, cell!)">
+                <div class="e-emptycell">
+                    <span class="e-emptyindentcell">RowDragIndent</span>
+                </div>
+            </th>
+        }
+        else
+        {
+            <th class="e-rowdragheader">
+                <div class="e-emptycell">
+                    <span class="e-emptyindentcell">RowDragIndent</span>
+                </div>
+            </th>
+        }
+    }
+    else if (columnVisible && Parent.ShouldRenderColumn(column!.Visible, column?.Field ?? string.Empty) || IsStackedHeaderVisible(column!))
+    {
+        string headerText = column?.HeaderText ?? column?.Field ?? string.Empty;
+        bool isStackedCell = (cell != null && cell.IsStacked);
+        string styleText = GetHeaderStyle(column!);
+        <th class="@($"{classNames} {focusClass} {selectionClass}")" data-uid="@cell?.Uid"
+        role="columnheader" 
+        tabindex="@(EnsureHeaderTabIndex(cell!))"
+        aria-colindex="@($"{cell?.Index + 1}")"
+        @attributes="GridUtils.GetAttributeValues(attribute!, styleText)"
+        @onclick="@(async (MouseEventArgs args) =>
+                            {
+                                if (!Parent.IsResizing) //Unable to stop this from stopPropagation.
+                                {
+                                    await Parent.FocusModule?.CellClickHandler((HeaderCellParameters!.Row!, cell!), args, true)!;
+                                    await Parent.SortModule?.SortClickHandler(column!, GetSortIconOrAriaValue(column!, "sortIcon"), args)!;
+                                    if(!Parent.EditSettings!.ShowAddNewRow)
+                                    {
+                                        await Parent.FocusModule.Refresh(HeaderCellParameters?.Row!, cell!, isHeader: true, isCtrlOrShiftKeyPressed : args.CtrlKey || args.ShiftKey);
+                                    }
+                                }
+                                else
+                                {
+                                    Parent.IsResizing = false;
+                                }                              
+                                selectionClass = Parent.EnablePivotSelection ? "e-active e-selectionbackground" : string.Empty;
+                            })"
+        @onkeydown:preventDefault="true"
+        @onkeydown="async (KeyboardEventArgs e) => await Parent.FocusModule!.ProcessKeyDown(e, HeaderCellParameters?.Row!, cell!, true)">
+            <div class="@($"e-headercell-container{(isStackedCell ? " e-stacked-header" : "")}")">
+            <div e-mappinguid="@column?.Uid"
+              class="@($"{GetDivClassName(column!, cell!)} {GetAlignmentHeaderText(column!)}")" >
+
+                @if (Parent.SortSettings?.Columns != null && Parent.SortSettings?.Columns.Count > 1 && !isCheckbox && !isStackedCell)
+                {
+                    if (Parent.SortSettings.Columns.Any(col => col.Field == column?.Field))
+                    {
+                        <span class="e-sortnumber">@(Parent.SortSettings?.Columns.FindIndex(col => col.Field == column?.Field) + 1)</span>
+                    }
+                }
+                @if (column?.HeaderTemplate != null)
+                {
+                    <div class="e-headertext">
+                    @column.HeaderTemplate(column)
+                    </div>
+                }
+                else if (isCheckbox)
+                {
+                    var aria = new Dictionary<string, string>() { { "aria-label", Parent.Localizer?.GetText(GridLocaleKeys.HeaderSelectionCheckBoxARIA)! } };
+                    if (Parent.IsRowReordered) {
+                        Parent.SelectionModule?.SetHeaderCheckState();
+                    }
+                    bool isChecked = Parent.CheckBoxState.Equals(CheckState.Check);
+                    bool isIntermediate = Parent.CheckBoxState.Equals(CheckState.Intermediate);
+                    bool isCheckBoxDisable = Parent.CurrentViewData?.Count() == 0 && !isChecked && !isIntermediate  ? true : false;
+                    object checkClass = null!;
+                    column?.CustomAttributes?.TryGetValue("checkboxclass", out checkClass!);
+                    checkClass = checkClass ?? string.Empty;
+                    <CheckBoxRenderer AriaLabel="aria" WrapperClass="@checkClass?.ToString()" Checked="@isChecked" CBSelectAllClass="e-checkselectall" IsDisabled="@isCheckBoxDisable" Intermediate="@isIntermediate" RequireInput="true"
+                    OnClick="async (MouseEventArgs e) => await HeaderClickHandler(e)"></CheckBoxRenderer>
+                }
+                else if (isStackedCell)
+                {
+                    @if (!(column?.DisableHtmlEncode ?? false))
+                    {
+                        if (column?.EnableSanitization == false)
+                        {
+                            @((MarkupString)(headerText))
+                        }
+                        else
+                        {
+                            @(GridUtils.GetRawContent(SanitizeHtmlHelper.Sanitize(headerText)))    
+                        }
+                    }
+                    else
+                    {
+                        @headerText
+                    }
+                }
+                else
+                {
+                    <span class="e-headertext">
+                        @if (!(column?.DisableHtmlEncode ?? false))
+                        {
+                            if (column?.EnableSanitization == false)
+                            {
+                                @((MarkupString)(headerText))
+                            }
+                            else
+                            {
+                                @(GridUtils.GetRawContent(SanitizeHtmlHelper.Sanitize(headerText)))
+                            }
+                        }
+                        else
+                        {
+                            @headerText
+                        }
+                    </span>
+                    if (Parent.AllowGrouping && column != null && column.AllowGrouping && Parent.GroupSettings != null && Parent.GroupSettings.ShowToggleButton)
+                    {
+                        if (Parent.GroupSettings.Columns != null && Parent.GroupSettings.Columns.Any(col => col == column.Field))
+                        {
+                            <span class="e-grptogglebtn e-icons e-toggleungroup e-icon-ungroup"
+                            title="@Localizer?.GetText(GridLocaleKeys.UnGroupButtonARIA)" role="button"
+                            @onclick:stopPropagation="true"
+                            @onclick="(async (MouseEventArgs args) => await Parent.UngroupColumnAsync(column.Field))"></span>
+                        }
+                        else
+                        {
+                            <span class="e-grptogglebtn e-icons e-togglegroup e-icon-group"
+                            title="@Localizer?.GetText(GridLocaleKeys.GroupButtonARIA)" role="button"
+                            @onclick:stopPropagation="true"
+                            @onclick="(async (MouseEventArgs args) => await Parent.GroupColumnAsync(column.Field))"></span>
+                        }
+
+                    }
+                }
+            </div>
+
+            @if (requiresFilterIcon || requiresColumnMenuIcon || Parent.AllowGrouping || Parent.AllowSorting)
+            {
+                <span id="@($"headerTitle-{column?.Uid}")" class="e-hide">@accessibility</span>
+            }
+
+            @if (!isStackedCell && ((Parent.AllowSorting && column!.AllowSorting) || (Parent.AllowGrouping && Parent.GroupSettings!.ShowGroupedColumn && Parent.GroupSettings?.Columns?.Any(col => col == column?.Field) == true)))
+            {
+                <div class="@($"e-sortfilterdiv e-icons {GetSortIconOrAriaValue(column!, "sortIcon")}")"></div>
+            }
+
+            @if (requiresFilterIcon)
+            {
+                <div class="@($"e-filtermenudiv e-icons e-icon-filter {AddFilteredClass(column!)}")" title="@Localizer?.GetText(GridLocaleKeys.FilterMenuIconARIA)" role="button" e-mappinguid="@column?.Uid" @onmousedown:stopPropagation="true" @onkeydown:stopPropagation="true" @onclick:stopPropagation="true" @onclick="@(async e => await  FilterIconClicked(column!, e))"></div>
+            }
+
+            @if (requiresColumnMenuIcon)
+            {
+                <div class="@($"e-icons e-columnmenu {AddFilteredClass(column!)}")" title="@Localizer?.GetText(GridLocaleKeys.ColumnMenuIconARIA)" role="button" @onclick:stopPropagation="true" @onclick="@(() => { Parent.PreventRender(); ColumnMenuIconClick(column!); Parent.PreventRender(false); })"></div>
+            }
+
+            @if (Parent.AllowResizing)
+            {
+                <div @onmousedown="@(() => {
+                    focusClass = string.Empty;
+                    Parent.IsResizing = true;
+                })" class="@(column != null && column.AllowResizing ? "e-rhandler e-rcursor" : "e-rsuppress")">
+                </div>
+            }
+            @if (column?.EnableFrozenLineCursor == true)
+            {
+                string cursorClass = string.Empty;
+                if (Parent.FrozenColumns == 0 && column?.EnableLeftFrozenLineCursor == true)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-right-cursor e-frozen-default-cursor";
+                }
+                else if (column?.EnableRightFrozenLineCursor == true && Parent.EnableRightDefaultCursor) 
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-left-cursor e-frozen-default-cursor";
+                }
+                if (Parent.FrozenColumns > 0)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-left-cursor";
+                }
+                else if (column?.IsFrozen == true && column?.Freeze == FreezeDirection.Left)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-left-cursor";
+                }
+                else if (column?.IsFrozen == true && column?.Freeze == FreezeDirection.Right)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-right-cursor";
+                }
+                if(HeaderCellParameters!.IsFrozen.HasValue && HeaderCellParameters.IsFrozen == true)
+                {
+                    cursorClass = HeaderCellParameters.IsFrozenRight ? "e-frozen-cursor e-frozen-right-cursor" : "e-frozen-cursor e-frozen-left-cursor";
+                }
+                if (Parent.AllowResizing && column?.AllowResizing == true)
+                {
+                    cursorClass = string.Concat(cursorClass, " e-frozen-resize-cursor");
+                }
+                if(column?.EnableFixedLeftFreezeLineCursor == true)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-fixedleft-cursor";
+                }
+                if (column?.EnableFixedRightFreezeLineCursor == true)
+                {
+                    cursorClass = "e-frozen-cursor e-frozen-fixedright-cursor";
+                }
+                if (column?.EnableFixedLeftFreezeLineCursor == true && column?.EnableFixedRightFreezeLineCursor == true)
+                {
+                    <div class="e-frozen-cursor e-frozen-fixedleft-cursor"></div>
+                    <div class="e-frozen-cursor e-frozen-fixedright-cursor"></div>
+                }
+                else
+                {
+                    <div class="@(cursorClass)"></div>
+                }
+            }
+            </div>
+        </th>
+    }
+}
+
+@code
+{
+    #region Public Properties
+
+    [Parameter]
+    public GridHeaderCellParameters? HeaderCellParameters { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    private string focusClass { get; set; } = string.Empty;
+    private CellDOM? _cellDom { get; set; }
+    private Cell<object>? cell { get; set; }
+    private GridColumn? column{ get; set; }
+    private string? textAlign;
+    private IDictionary<string, object>? attribute;
+    private string? accessibility;
+    private bool isCheckbox;
+    private bool requiresColumnMenuIcon;
+    private bool requiresFilterIcon;
+    private string? classNames;
+    private bool isEventTriggered { get; set; }
+
+    private Cell<object>? _cell { get; set; }
+    private List<string> classList { get; set; } = new List<string>();
+    private List<string> cellAddClassList { get; set; } = new List<string>();
+    private List<string> styleList { get; set; } = new List<string>();
+    private IDictionary<string, object> attributesList { get; set; } = new Dictionary<string, object>();
+    private string selectionClass { get; set; } = string.Empty;
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override void OnInitialized()
+    {
+        Localizer = Parent?.Localizer!;
+    }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        cell = HeaderCellParameters?.Cells?[HeaderCellParameters.Iteration];
+        column = cell?.Column;
+        bool isLastCell = HeaderCellParameters?.Iteration == HeaderCellParameters!.Row?.Cells.Count - 1;
+
+        if (cell != null && column != null && (cell != _cell || (_cellDom?.HasChanges != false) || isEventTriggered || Parent!.IsColumnHeaderChange))
+        {
+            if (_cell != null && cell != _cell && Parent!.IsColumnHeaderChange && (_cellDom != null || !isEventTriggered))
+            {
+                if (_cellDom != null)
+                {
+                    _cellDom.HasChanges = false;
+                }
+                isEventTriggered = false;
+            }
+            textAlign = GetTextAlign(column) ?? "left";
+            string alignClass = textAlign;
+            string elementDescription = "";
+            isCheckbox = column != null && column.Type.Equals(ColumnType.CheckBox);
+            requiresColumnMenuIcon = Parent!.ShowColumnMenu && !isCheckbox && column != null && column.ShowColumnMenu && !string.IsNullOrEmpty(column?.Field);
+            requiresFilterIcon = Parent.AllowFiltering && !Parent.FilterSettings!.Type.Equals(FilterType.FilterBar) && !requiresColumnMenuIcon
+                && !isCheckbox && column != null && column.AllowFiltering && !string.IsNullOrEmpty(column.Field);
+            cell.IsStacked = cell.IsStacked;
+            classNames = GetClasses(column!, cell, alignClass, requiresColumnMenuIcon || requiresFilterIcon, rowIndex: HeaderCellParameters.RowIteration, cellIndex: HeaderCellParameters.Iteration, isLastCell: isLastCell);
+            classList = classNames?.Split(" ").ToList()!;
+            if (!isEventTriggered)
+            {
+                styleList = new List<string>();
+                cellAddClassList = new List<string>();
+                if ((cell?.CellType == CellType.Data || cell?.CellType == CellType.StackedHeader))
+                {
+                    if (Parent.GridEvents?.HeaderCellInfo.HasDelegate == true || Parent.IsRenderedFromTreeGrid)
+                    {
+                        isEventTriggered = true;
+                        _cellDom = new CellDOM(cellAddClassList, styleList, attributesList);
+                        HeaderCellInfoEventArgs eventArgs = new HeaderCellInfoEventArgs()
+                        {
+                            Cell = _cellDom,
+                            Column = column!,
+                            Parent = Parent
+                        };
+                        if (Parent.IsRenderedFromTreeGrid)
+                        {
+                            Parent.EventAggregator.NotifyAsync("HeaderCellInfo", eventArgs).GetAwaiter().GetResult();
+                        }
+                        else
+                        {
+                            await Parent.GridEvents?.HeaderCellInfo.InvokeAsync(eventArgs)!;
+                        }
+                    }
+                }
+            }
+            classList = classList.Concat(cellAddClassList).ToList();
+            _cell = cell;
+            attribute = BuildAttributes(column!, cell!, elementDescription);
+            ApplyClassAndStyles();
+        }
+    }
+
+    #endregion
+    
+    #region Add Class
+
+    public string GetDivClassName(GridColumn column, Cell<object> cell)
+    {
+        string className = cell.IsStacked ? "e-stackedheadercelldiv" : "e-headercelldiv";
+
+        if (column.Type.Equals(ColumnType.CheckBox))
+        {
+            className = $"{className} e-headerchkcelldiv";
+        }
+        return className;
+    }
+
+    public string GetClasses(GridColumn column, Cell<object> cell, string alignClass,
+        bool needFIcon, int rowIndex, int cellIndex, bool isLastCell)
+    {
+        string cellType = cell.CellType.ToString().ToLower(CultureInfo.InvariantCulture);
+        string classNames = !cell.IsStacked ? $"e-headercell {alignClass}" : $"e-headercell e-stackedheadercell {alignClass}";
+        GridGroupSettings? _settings = Parent!.GroupSettings;
+        if (_settings != null && (!column.Visible && (!cell.IsStacked && !IsStackedHeaderVisible(column))
+            || (Parent.AllowGrouping && !_settings.ShowGroupedColumn && _settings.Columns != null && !column.IsHiddenByGrouping &&
+            _settings.Columns.Any(_ => _.Equals(column?.Field)))))
+        {
+            classNames = $"{classNames} e-hide";
+        }
+
+        if ((!column.FixedColumn && (Parent.AllowGrouping || Parent.AllowReordering)) || Parent.AllowSorting)
+        {
+            if (column.AllowGrouping || column.AllowReordering || column.AllowSorting)
+            {
+                classNames = $"{classNames} e-mousepointer";
+            }
+        }
+
+        if (Parent.IsStackedHeader)
+        {
+            if (Parent.AllowReordering && !column.FixedColumn)
+            {
+                classNames = $"{classNames} e-mousepointer";
+            }
+
+            if (!(rowIndex == 0 && cellIndex == 0))
+            {
+                classNames = $"{classNames} e-firstcell";
+            }
+
+        }
+
+        if (isLastCell)
+        {
+            classNames = rowIndex > 0 && Parent.IsStackedHeader ? $"{classNames} e-laststackcell" : $"{classNames} e-lastcell";
+        }
+
+        if (needFIcon)
+        {
+            classNames = $"{classNames} e-fltr-icon";
+        }
+
+        if (column.ClipMode.Equals(ClipMode.Clip) || Parent.ClipMode.Equals(ClipMode.Clip))
+        {
+            classNames = $"{classNames} e-gridclip";
+        }
+
+        if ((column.ClipMode.Equals(ClipMode.EllipsisWithTooltip) || (Parent.ClipMode.Equals(ClipMode.EllipsisWithTooltip))) && !column.Type.Equals(ColumnType.CheckBox))
+        {
+            classNames = $"{classNames} e-ellipsistooltip";
+        }
+
+        if (column.CustomAttributes != null && column.CustomAttributes.Any())
+        {
+            object classnames = null!;
+            column.CustomAttributes.TryGetValue("class", out classnames!);
+            if (classnames != null && classnames.ToString() != string.Empty)
+            {
+                classNames = $"{classNames} {classnames}";
+            }
+        }
+        return classNames;
+    }
+   
+    internal string AddFilteredClass(GridColumn column)
+    {
+        var FColumns = Parent?.FilterSettings!.Columns;
+        if (FColumns != null && FColumns.Any(col => column.IsForeignColumn() ? col.Field == column.ForeignKeyValue && col.Uid == column.Uid : col.Field == column.Field && col.Uid == column.Uid))
+        {
+            return "e-filtered";
+        }
+        return "";
+    } 
+
+    #endregion
+
+    #region Add Style
+    
+    internal string GetHeaderStyle(GridColumn column)
+    {
+        string styleText = (Parent!.RowHeight != 0 ? "height:" + Parent.RowHeight + "px" : "");
+        if (Parent.FreezeModule!.GetFrozenCount() > 0)
+        {
+            styleText = Parent.RowHeight != 0 ? $"{styleText};  {Parent.FreezeModule!.ApplyFrozenColumnsStyles(column)}" : Parent.FreezeModule!.ApplyFrozenColumnsStyles(column);
+        }
+        string customAttributeStyleString = string.Empty;
+        if (column?.CustomAttributes != null && column.CustomAttributes.Any())
+        {
+            customAttributeStyleString = GridUtils.GetStyleAsStringFromObject(column?.CustomAttributes!);
+        }
+        string setAttributeStyleString = GridUtils.GetStyleAsStringFromObject(attribute!);
+        string uniqueStyle = GridUtils.EnsureUniqueStyles(customAttributeStyleString, setAttributeStyleString);
+        uniqueStyle = (styleList.Count > 0) ? GridUtils.EnsureUniqueStyles(uniqueStyle, string.Join(" ", styleList.ToArray())) : uniqueStyle;
+        if (string.IsNullOrEmpty(styleText))
+        {
+            styleText = uniqueStyle;
+        }
+        else
+        {
+            styleText = GridUtils.GetStyleEndsWithSemiColon(styleText);
+            styleText = GridUtils.EnsureUniqueStyles(uniqueStyle, styleText);
+        }
+        return styleText;
+    }
+    
+    private void ApplyClassAndStyles()
+    {
+        var uniqueClasses = classList;
+        if (Parent!.FreezeModule!.GetFrozenCount() > 0 && cell != null)
+        {
+            var frozenClasses = Parent.FreezeModule!.ApplyFrozenColumnsClass(cell.Column!);
+            uniqueClasses = GridUtils.GetUniqueStringList(classList, frozenClasses);
+        }
+        classNames = string.Join(" ", uniqueClasses);
+    }
+
+    private string GetStyle(Row<object> row, Cell<object> cell)
+    {
+        var styleText = string.Empty;
+        var indent = 0;
+        for (int i = 0; i < row.Cells.Count; i++)
+        {
+            if (row.Cells[i] == cell && i > 0)
+            {
+                indent = 30 * i;
+                styleText = $"Left: {indent}px";
+            }
+            else
+            {
+                styleText = $"Left: {indent}px";
+            }
+
+        }
+        return styleText;
+    }
+
+    #endregion
+
+    #region Add Style Attribute
+
+    private IDictionary<string, object> GetStyleAttributes(string textAlign)
+    {
+        string style = GetTextAlignStyle(textAlign);
+        return GridUtils.GetStyleAttributes(style);
+    }
+    
+    public IDictionary<string, object> BuildAttributes(GridColumn column, Cell<object> cell, string elementDescription)
+    {
+        IDictionary<string, object> attributes = attributesList;
+        if (Parent!.AllowSorting && column.AllowSorting)
+        {
+            string sortAria = GetSortIconOrAriaValue(column, "sortAria");
+            attributes.AddOrUpdateItem("aria-sort", sortAria);
+            string sortDescription = Localizer!.GetText(GridLocaleKeys.SortDescription)!;
+            if (sortAria.Equals("ascending"))
+            {
+                sortDescription = Localizer.GetText(GridLocaleKeys.SortedAscending)!;
+            }
+            else if (sortAria.Equals("descending"))
+            {
+                sortDescription = Localizer.GetText(GridLocaleKeys.SortedDescending);
+            }
+            elementDescription = !string.IsNullOrEmpty(elementDescription) ? elementDescription + ". " + sortDescription : sortDescription;
+        }
+        if (Parent.AllowGrouping && column.AllowGrouping)
+        {
+            attributes.AddOrUpdateItem("aria-grabbed", "false");
+            elementDescription = !string.IsNullOrEmpty(elementDescription) ? elementDescription + ". " + Localizer?.GetText(GridLocaleKeys.GroupDescription) : Localizer!.GetText(GridLocaleKeys.GroupDescription) ;
+        }
+        if (Parent.AllowFiltering && !Parent.FilterSettings!.Type.Equals(FilterType.FilterBar))
+        {
+            elementDescription = !string.IsNullOrEmpty(elementDescription) ? elementDescription + ". " + Localizer?.GetText(GridLocaleKeys.FilterDescription) : Localizer!.GetText(GridLocaleKeys.FilterDescription) ;
+        }
+        if (Parent.ShowColumnMenu && column.ShowColumnMenu)
+        {
+            elementDescription =!string.IsNullOrEmpty(elementDescription) ? elementDescription + ". " + Localizer?.GetText(GridLocaleKeys.ColumnMenuDescription) : Localizer!.GetText(GridLocaleKeys.ColumnMenuDescription) ;
+        }
+        if (column.Type.Equals(ColumnType.CheckBox))
+        {
+            attributes.AddOrUpdateItem("aria-label", Localizer?.GetText(GridLocaleKeys.HeaderSelectionCheckBoxARIA)!);
+        }
+        if(!string.IsNullOrEmpty(elementDescription))
+        {
+            accessibility = elementDescription;
+        }
+        attributes.AddOrUpdateItem("rowspan", cell.RowSpan!);
+        attributes.AddOrUpdateItem("colspan", cell.ColSpan!);
+
+        if (column != null && column.CustomAttributes != null && column.CustomAttributes.Any())
+        {
+            IEnumerable<KeyValuePair<string, object>> pairs = column.CustomAttributes.Where(_ => !_.Key.Equals("class") && !_.Key.Equals("style"));
+            foreach(var item in pairs)
+            {
+                attributes.AddOrUpdateItem(item.Key, item.Value);
+            }
+        }
+        if(requiresFilterIcon || requiresColumnMenuIcon || Parent.AllowGrouping || Parent.AllowSorting)
+        {
+            attributes.AddOrUpdateItem("aria-describedby", $"headerTitle-{column?.Uid}");
+        }
+
+        return attributes;
+    }
+
+    #endregion
+
+    #region Alignment Handling
+
+    internal string GetHeaderTextAlign(GridColumn column)
+    {
+        if (column != null)
+        {
+            return column.HeaderTextAlign != TextAlign.None ? column.HeaderTextAlign.ToString() : column.TextAlign.ToString();
+        }
+        return column?.TextAlign.ToString()!;
+    }
+
+    internal string GetAlignmentHeaderText(GridColumn column)
+    {
+        return column?.HeaderTextAlign switch
+        {
+            TextAlign.Right => "e-rightalign",
+            TextAlign.Left => "e-leftalign",
+            TextAlign.Center => "e-centeralign",
+            TextAlign.Justify => "e-justifyalign",
+            TextAlign.None => GridUtils.GetAlignmentClass(column),
+            _ => string.Empty
+        };
+    }
+
+    public string GetTextAlign(GridColumn column)
+    {
+        string hAlign = column?.HeaderTextAlign != TextAlign.None ? GetAlignmentHeaderText(column!) : " e-leftalign";
+        string tAlign = GridUtils.GetAlignmentClass(column!);
+        if (string.IsNullOrEmpty(hAlign) && string.IsNullOrEmpty(tAlign)) { return null!; }
+        string alignment = hAlign.Equals(tAlign) ? tAlign : GetAlignmentHeaderText(column!);
+
+        if (column?.Commands != null)
+        {
+            alignment = column.HeaderTextAlign != TextAlign.None ? GetAlignmentHeaderText(column) : (column.directParamKeys.Contains("TextAlign") && column.TextAlign != TextAlign.None) ? GridUtils.GetAlignmentClass(column) : " e-rightalign";
+        }
+
+        return alignment;
+    }
+    
+    private string GetTextAlignStyle(string textAlign)
+    {
+        if (!string.IsNullOrEmpty(textAlign) && (textAlign.ToLower().Equals("none")))
+        {
+            return string.Empty;
+        }
+
+        return $"text-align:{textAlign}";
+    }
+
+    #endregion
+
+    #region ClickHandler
+
+    internal async Task HeaderClickHandler(MouseEventArgs e)
+    {
+        if(Parent?.SelectionModule != null)
+        await Parent.SelectionModule.HeaderClickHandler(e, Parent.CheckBoxState);
+    }
+
+    private async void ColumnMenuIconClick(GridColumn column)
+    {
+        Parent!.EventAggregator.Trigger("ColumnMenuUpdate", column);
+    }
+
+    internal async Task FilterIconClicked(GridColumn Col, MouseEventArgs Args)
+    {
+        if (Parent!.FilterModule != null)
+        {
+            this.Parent.FilterModule.IsCustomFilterApplied = false;
+            this.Parent.FilterModule.FilterIconIsClicked = true;
+            this.Parent.FilterModule.FilterIconColumn = Col;
+            this.Parent.EventAggregator.Trigger("FilterComponentUpdate", null!);
+        }
+    }
+
+    #endregion
+
+    #region Condition Helpers
+    
+    private bool IsStackedHeaderColumnsVisible(GridColumn column)
+    {
+        bool columnVisibility = false;
+        if (!Parent!.IsStackedHeader)
+        {
+            return true;
+        }
+        if (column?.Columns != null && column?.Columns.Count > 0)
+        {
+            foreach (var col in column.Columns)
+            {
+                if (IsStackedHeaderColumnsVisible(col) && cell != null && cell.IsStacked)
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            columnVisibility = cell != null && cell.IsStacked && column != null ? column.Visible : true;
+        }
+        return columnVisibility;
+    }
+
+    // Recursively checks if any child column is visible to render the Parent stacked header.
+    private bool IsStackedHeaderVisible(GridColumn column)
+    {
+        return column.Columns?.Any(child => child.Visible || IsStackedHeaderVisible(child)) ?? false;
+    }
+    
+    #endregion
+    
+    #region Tab Index Handling
+
+    private int EnsureHeaderTabIndex(Cell<object> cell)
+    {
+        if (ReturnZeroTabIndex(cell))
+        {
+            return 0;
+        }
+        else
+        {
+            return cell.TabIndex;
+        }
+    }
+
+    private bool ReturnZeroTabIndex(Cell<object> cell)
+    {
+        var visibleColumns = HeaderCellParameters!.Columns?.Where(e => e.Visible)!;
+        var firstVisibleColumnIndex = visibleColumns.FirstOrDefault()?.Index;
+        var lastVisibleColumnIndex = visibleColumns.LastOrDefault()?.Index;
+
+        return (firstVisibleColumnIndex == cell.Index || lastVisibleColumnIndex == cell.Index) &&
+               (!(Parent!.IsEdit || Parent.IsAdd) || (Parent.EditSettings!.ShowAddNewRow && !Parent.IsEdit && Parent.IsAdd));
+    }
+    
+    #endregion
+
+}

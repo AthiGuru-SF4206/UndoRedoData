@@ -1,0 +1,178 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@using System.Collections;
+@namespace Syncfusion.Blazor.Grids.Internal
+
+
+    <div class="e-checkbox-wrapper e-css @WrapperClass @ClassName @RtlClassName" @onclick="ClickHandler">
+        @if (RequireInput)
+        {
+            string ariaAttribute = AriaLabel.ContainsKey("aria-labelledby") ? "aria-labelledby" : AriaLabel.ContainsKey("aria-label") ? "aria-label" : null!;
+            string checkboxClass = CCClass ?? CBSelectAllClass ?? "e-checkselect e-focus";
+            string tabIndex = CCClass != null ? "0" : "-1";
+            string ariaValue = ariaAttribute != null ? AriaLabel[ariaAttribute] : null!;
+            var inputAttributes = new Dictionary<string, object>{{ "class", checkboxClass },{ "type", "checkbox" },{ "checked", Checked },{ "tabindex", tabIndex }};
+            if (ariaAttribute != null)
+            {
+                inputAttributes.Add(ariaAttribute, ariaValue);
+            }
+            <input @attributes=inputAttributes/>
+        }
+
+        @if (CCSelectAll)
+        {
+            @if (!CheckBoxClass.Contains("e-checkboxfiltertext"))
+            {
+                @if (Intermediate)
+                {
+                    <span class="e-frame e-icons e-selectall e-stop @CheckBoxClass"></span>
+                }
+                else if (Checked)
+                {
+                    <span class="e-frame e-icons e-selectall e-check @CheckBoxClass"></span>
+                }
+                else
+                {
+                    <span class="e-frame e-icons e-selectall e-uncheck @CheckBoxClass"></span>
+                }
+            }
+            
+            else if (CheckBoxClass.Contains("e-checkboxfiltertext")) 
+            {
+                
+                @if (Checked)
+                {
+                    <span class="e-frame e-icons e-selectall e-check e-add-current"></span>
+                }
+                else
+                {
+                    <span class="e-frame e-icons e-selectall e-uncheck e-add-current"></span>
+                }
+            }
+            
+        }
+        else
+        {
+            @if (!CheckBoxClass.Contains("e-checkboxfiltertext"))
+            {
+                @if (Checked)
+                {
+                    <span class="e-frame e-icons e-check @CheckBoxClass"></span>
+                }
+                else if (Intermediate)
+                {
+                    <span class="e-frame e-icons e-stop @CheckBoxClass"></span>
+                }
+                else
+                {
+                    <span class="e-frame e-icons e-uncheck @CheckBoxClass"></span>
+                }
+            }
+            
+            else if (CheckBoxClass.Contains("e-checkboxfiltertext")) 
+            {
+                @if (Checked)
+                {
+                    <span class="e-frame e-icons e-check e-add-current"></span>
+                }
+                else
+                {
+                    <span class="e-frame e-icons e-uncheck e-add-current"></span>
+                }
+            }
+        }
+        @if (Lable != null)
+        {
+            <span class="e-label @CheckBoxClass" id="@AriaLabel["aria-labelledby"]">
+                @if (Column != null && Column.FilterItemTemplate != null && CheckBoxClass.Contains("e-fltrcheck"))
+                {
+                    var Args = new FilterItemTemplateContext() { Value = Lable, Column = Column, Record = Records };
+                    @Column.FilterItemTemplate(Args);
+                }
+                else if (Column != null && !Column.DisableHtmlEncode)
+                {
+                    if (Column?.EnableSanitization == false)
+                    {
+                        @((MarkupString)(Lable))
+                    }
+                    else
+                    {
+                        @(GridUtils.GetRawContent(SanitizeHtmlHelper.Sanitize(Lable)))
+                    }
+                }
+                else
+                {
+                    @Lable
+                }
+            </span>
+        }
+        else if (IsRenderedTreeGrid)
+        {
+            <span class="e-label @CheckBoxClass"> </span>
+        }
+    </div>
+
+@code {
+    [Parameter]
+    public bool Checked { get; set; } = false;
+
+    [Parameter]
+    public string CheckBoxClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public string WrapperClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public GridColumn? Column { get; set; }
+
+    [Parameter]
+    public bool RequireInput { get; set; } = true;
+
+    [Parameter]
+    public string Lable { get; set; } = null!;
+
+    [Parameter]
+    public bool CCSelectAll { get; set; } = false;
+
+    [Parameter]
+    public bool Intermediate { get; set; } = false;
+
+    [Parameter]
+    public string CCClass { get; set; } = null!;
+
+    [Parameter]
+    public string CBSelectAllClass { get; set; } = null!;
+
+    [Parameter]
+    public bool IsDisabled { get; set; } = false;
+
+    [Parameter]
+    public bool IsRtl { get; set; } = false;
+
+    [Parameter]
+    public object? Records { get; set; }
+
+    [Parameter]
+    public Dictionary<string, string> AriaLabel { get; set; } = new Dictionary<string, string>();
+
+    [Parameter]
+    public Action<MouseEventArgs>? OnClick { get; set; }
+
+    public string RtlClassName { get; set; } = string.Empty;
+
+    public string ClassName { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsRenderedTreeGrid { get; set; } = false;
+
+    protected override void OnParametersSet()
+    {
+        ClassName = IsDisabled ? "e-checkbox-disabled" : "";
+        RtlClassName = IsRtl ? "e-rtl" : "";
+    }
+
+    private void ClickHandler(MouseEventArgs e)
+    {
+        OnClick?.Invoke(e);
+    }     
+}
+

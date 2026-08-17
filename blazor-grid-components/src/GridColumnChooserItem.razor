@@ -1,0 +1,50 @@
+﻿@namespace Syncfusion.Blazor.Grids
+
+@using Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+
+@if (IsSelectAll)
+{
+    var aria = new Dictionary<string, string>() { { "aria-labelledby", "SelectAll" } };
+    <div class="e-ccheck e-cchooser-chk" uid="grid-selectAll" @onclick="@((MouseEventArgs args) => ColumnChooser?.SelectAllClickHandler())">
+        <CheckBoxRenderer AriaLabel="aria" CheckBoxClass="e-choosercheck" Intermediate=@ColumnChooser!.Intermediate Checked=@ColumnChooser.SelectAllCheckbox CCSelectAll="true" CCClass="e-chk-hidden e-cc e-cc-chbox e-selectall" IsRtl="@(Parent?.EnableRtl ?? false)" Lable="@(string.IsNullOrEmpty(Title) ? "Select All" : Title)"></CheckBoxRenderer>
+    </div>     
+   }
+else
+{
+    var aria = new Dictionary<string, string>() { { "aria-labelledby", Column?.Uid! } };
+    <div class="e-ccheck e-cchooser-chk" @onclick="@CheckBoxClick" @onclick:stopPropagation="true" uid="@Column?.Uid">
+        <CheckBoxRenderer AriaLabel="aria" Column="@Column" CheckBoxClass="e-choosercheck" @key="@Column?.HeaderText" Checked=@(Column?.ColumnVisible ?? true) CCClass="e-chk-hidden e-cc e-cc-chbox" IsRtl="@(Parent?.EnableRtl ?? false)" Lable="@(string.IsNullOrEmpty(Title) ? Column?.HeaderText : Title)"></CheckBoxRenderer>
+    </div>
+}
+
+
+@code
+{
+
+    [CascadingParameter]
+    internal IColumnChooser? ColumnChooser { get; set; }
+
+    [CascadingParameter]
+    internal IGrid? Parent { get; set; }
+
+    /// <summary>
+    /// Specifies the label value.
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+    /// <summary>
+    /// Specifies the grid column
+    /// </summary>
+    [Parameter]
+    public GridColumn? Column { get; set; }
+    /// <summary>
+    /// Specifies that the checkbox is select all.
+    /// </summary>
+    [Parameter]
+    public bool IsSelectAll { get; set; }
+
+    internal void CheckBoxClick(MouseEventArgs args)
+        => ColumnChooser?.CheckBoxClickHandler(args, Column!);
+}

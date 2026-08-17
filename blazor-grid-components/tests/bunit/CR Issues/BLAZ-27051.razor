@@ -1,0 +1,149 @@
+﻿<h3>BLAZ_27051</h3>
+
+@inherits GridTestBase
+@using Syncfusion.Blazor.Grids;
+@using Syncfusion.Blazor;
+@using Syncfusion.Blazor.Data;
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Add form rendering in batch mode">
+    <ComponentUnderTest>
+        <SfGrid TValue="Order" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel"})" AllowPaging=false>          
+            <SfDataManager AdaptorInstance="@typeof(CustomAdaptor)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>           
+             <GridEditSettings AllowEditing="true" AllowDeleting="true" AllowAdding="true" Mode="@EditMode.Batch"></GridEditSettings>
+                <GridColumns>
+                    <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="@TextAlign.Center" Width="140"></GridColumn>
+                    <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Width="150"></GridColumn>
+                </GridColumns>
+                  
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    SfGrid<Order> Grid;
+    public static List<Order> Orders { get; set; } = Enumerable.Range(1, 5).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+            ShipCountry = (new string[] { "USA", "UK", "CHINA", "RUSSIA", "INDIA" })[new Random().Next(5)]
+        }).ToList();
+
+
+    async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.AddRecordAsync();
+		var tr = cut.FindAll("tr");
+        var td = tr[1].QuerySelectorAll("td");
+		td[1].Click();
+        Assert.True(cut.Instance.GetBatchChangesAsync().Result.AddedRecords.Count == 1);
+    }
+
+    // Implementing custom adaptor by extending the DataAdaptor class
+    public class CustomAdaptor : DataAdaptor
+    {
+        // Performs data Read operation
+        public override object Read(DataManagerRequest dm, string key = null)
+        {
+            IEnumerable<Order> DataSource = Orders;
+            if (dm.Search != null && dm.Search.Count > 0)
+            {
+                // Searching
+                DataSource = DataOperations.PerformSearching(DataSource, dm.Search);
+            }
+            if (dm.Sorted != null && dm.Sorted.Count > 0)
+            {
+                // Sorting
+                DataSource = DataOperations.PerformSorting(DataSource, dm.Sorted);
+            }
+            if (dm.Where != null && dm.Where.Count > 0)
+            {
+                // Filtering
+                DataSource = DataOperations.PerformFiltering(DataSource, dm.Where, dm.Where[0].Operator);
+            }
+            int count = DataSource.Cast<Order>().Count();
+            if (dm.Skip != 0)
+            {
+                //Paging
+                DataSource = DataOperations.PerformSkip(DataSource, dm.Skip);
+            }
+            if (dm.Take != 0)
+            {
+                DataSource = DataOperations.PerformTake(DataSource, dm.Take);
+            }
+            return dm.RequiresCounts ? new DataResult() { Result = DataSource, Count = count } : (object)DataSource;
+        }
+
+        // Performs Insert operation
+        public override async Task<Object> InsertAsync(DataManager dm, object value, string key)
+        {
+            Orders.Insert(0, value as Order);
+            return value;
+        }
+
+        // Performs Remove operation
+        public override async Task<Object> RemoveAsync(DataManager dm, object value, string keyField, string key)
+        {
+            Orders.Remove(Orders.Where(or => or.OrderID == int.Parse(value.ToString())).FirstOrDefault());
+            return value;
+        }
+
+        // Performs Update operation
+        public override async Task<Object> UpdateAsync(DataManager dm, object value, string keyField, string key)
+        {
+            var data = Orders.Where(or => or.OrderID == (value as Order).OrderID).FirstOrDefault();
+            if (data != null)
+            {
+                data.OrderID = (value as Order).OrderID;
+                data.CustomerID = (value as Order).CustomerID;
+                data.Freight = (value as Order).Freight;
+            }
+            return value;
+        }
+		
+		public override object BatchUpdate(DataManager dm, object Changed, object Added, object Deleted, string KeyField, string Key, int? dropIndex)
+        {
+            if (Changed != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Changed)
+                {
+                    Order val = Orders.Where(or => or.OrderID == rec.OrderID).FirstOrDefault();
+                    val.OrderID = rec.OrderID;
+                    val.CustomerID = rec.CustomerID;
+                    val.Freight = rec.Freight;
+                }
+
+            }
+            if (Added != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Added)
+                {
+                    Orders.Add(rec);
+                }
+
+            }
+            if (Deleted != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Deleted)
+                {
+                    Orders.Remove(Orders.Where(or => or.OrderID == rec.OrderID).FirstOrDefault());
+                }
+
+            }
+            return Orders;
+        }
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}

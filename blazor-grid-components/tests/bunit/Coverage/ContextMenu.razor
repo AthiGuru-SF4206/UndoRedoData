@@ -1,0 +1,298 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Navigations
+
+<SfFixture @ref="fixture" TestAsync="ContextMenuEventsCoverage" Description="ContextMenu Render with ContextMenuItemModel">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GetAllRecords()" AllowPaging="true" ContextMenuItems="@ContextMenuItems">
+            <GridEvents TValue="Order" ContextMenuItemClicked="OnContextMenuClick" ContextMenuOpen="OnContextMenuOpen"></GridEvents>
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" IsPrimaryKey="true" />
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" />
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" />
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="yMd" TextAlign="TextAlign.Right" Width="130" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    private List<ContextMenuItemModel> ContextMenuItems = new()
+    {
+        new ContextMenuItemModel
+        {
+            Text = "Clipboard",
+            Target = ".e-content",
+            Id = "clipboard",
+            Items = new List<Syncfusion.Blazor.Navigations.MenuItem>
+            {
+                new Syncfusion.Blazor.Navigations.MenuItem { Text = "Copy", Id = "copy" },
+                new Syncfusion.Blazor.Navigations.MenuItem { Text = "Copy With Header", Id = "copywithheader" }
+            }
+        },
+        new ContextMenuItemModel
+        {
+            Text = "Sorting",
+            Target = ".e-header",
+            Id = "sorting",
+            Items = new List<Syncfusion.Blazor.Navigations.MenuItem>
+            {
+                new Syncfusion.Blazor.Navigations.MenuItem { Text = "Sort Ascending", Id = "sortasc" },
+                new Syncfusion.Blazor.Navigations.MenuItem { Text = "Sort Descending", Id = "sortdesc" }
+            }
+        }
+    };
+
+    private bool contextMenuOpenedEventFired = false;
+    private bool contextMenuItemClickedEventFired = false;
+    private ContextMenuTarget capturedTarget = ContextMenuTarget.None;
+    private int eventFiredCount = 0;
+
+    public async Task ContextMenuEventsCoverage(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 50, "All the records are rendered.");
+
+        // Test 1: Right-click on content area to trigger ContextMenuBeforeOpenEvent
+        eventFiredCount = 0;
+        contextMenuOpenedEventFired = false;
+        await TriggerContextMenuOnContent(cut);
+
+        // Wait for context menu to open
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(contextMenuOpenedEventFired, "ContextMenuOpen event should be fired");
+        Assert.True(capturedTarget == ContextMenuTarget.Content, "Target should be Content");
+
+        // Test 2: Close context menu to trigger ContextMenuCloseEvent and UpdateItemStatus
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+        
+        // Test 3: Right-click on header area
+        eventFiredCount = 0;
+        contextMenuOpenedEventFired = false;
+        capturedTarget = ContextMenuTarget.None;
+        await TriggerContextMenuOnHeader(cut);
+        
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0);
+        Assert.True(contextMenuOpenedEventFired, "ContextMenuOpen event should be fired for header");
+        Assert.True(capturedTarget == ContextMenuTarget.Header, "Target should be Header");
+        
+        // Test 4: Close context menu again - tests UpdateItemStatus resets state
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+        
+        // Test 5: Right-click on pager area
+        eventFiredCount = 0;
+        contextMenuOpenedEventFired = false;
+        capturedTarget = ContextMenuTarget.None;
+        await TriggerContextMenuOnPager(cut);
+        
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(contextMenuOpenedEventFired, "ContextMenuOpen event should be fired for pager");
+        Assert.True(capturedTarget == ContextMenuTarget.Pager, "Target should be Pager");
+        
+        // Test 6: Close context menu - final UpdateItemStatus call
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+    }
+
+    public void OnContextMenuOpen(ContextMenuOpenEventArgs<Order> args)
+    {
+        contextMenuOpenedEventFired = true;
+        capturedTarget = args.Target;
+        eventFiredCount++;
+        Assert.NotNull(args.Items);
+        Assert.NotNull(args.ContextMenu);
+    }
+
+    public void OnContextMenuClick(ContextMenuClickEventArgs<Order> args)
+    {
+        contextMenuItemClickedEventFired = true;
+        Assert.NotNull(args.Item);
+    }
+}
+
+
+<SfFixture @ref="fixture2" TestAsync="ContextMenuEventsCoverage2" Description="ContextMenu Render with default items">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GetAllRecords()" AllowPaging="true" ContextMenuItems="@ContextMenuItems2">
+            <GridEvents TValue="Order" ContextMenuItemClicked="OnContextMenuClick2" ContextMenuOpen="OnContextMenuOpen2"></GridEvents>
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" IsPrimaryKey="true" />
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" />
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" />
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="yMd" TextAlign="TextAlign.Right" Width="130" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> Grid2;
+    private List<object> ContextMenuItems2 = new()
+    {
+        "AutoFit", "AutoFitAll", "SortAscending", "SortDescending", "Copy",
+        "Edit", "Delete", "Save", "Cancel", "PdfExport", "ExcelExport", "CsvExport",
+        "FirstPage", "PrevPage", "LastPage", "NextPage", "Group", "Ungroup"
+    };
+
+    private bool contextMenuOpenedEventFired2 = false;
+    private bool contextMenuItemClickedEventFired2 = false;
+    private ContextMenuTarget capturedTarget2 = ContextMenuTarget.None;
+    private int eventFiredCount2 = 0;
+
+    public async Task ContextMenuEventsCoverage2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 50, "All the records are rendered.");
+
+        // Test 1: Right-click on content area to trigger ContextMenuBeforeOpenEvent
+        eventFiredCount2 = 0;
+        contextMenuOpenedEventFired2 = false;
+        await TriggerContextMenuOnContent(cut);
+
+        // Wait for context menu to open
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(contextMenuOpenedEventFired2, "ContextMenuOpen event should be fired");
+        Assert.True(capturedTarget2 == ContextMenuTarget.Content, "Target should be Content");
+
+        // Test 2: Close context menu to trigger ContextMenuCloseEvent and UpdateItemStatus
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+        
+        // Test 3: Right-click on header area
+        eventFiredCount2 = 0;
+        contextMenuOpenedEventFired2 = false;
+        capturedTarget2 = ContextMenuTarget.None;
+        await TriggerContextMenuOnHeader(cut);
+        
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0);
+        Assert.True(contextMenuOpenedEventFired2, "ContextMenuOpen event should be fired for header");
+        Assert.True(capturedTarget2 == ContextMenuTarget.Header, "Target should be Header");
+        
+        // Test 4: Close context menu again - tests UpdateItemStatus resets state
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+        
+        // Test 5: Right-click on pager area
+        eventFiredCount2 = 0;
+        contextMenuOpenedEventFired2 = false;
+        capturedTarget2 = ContextMenuTarget.None;
+        await TriggerContextMenuOnPager(cut);
+        
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count > 0, TimeSpan.FromSeconds(2));
+        Assert.True(contextMenuOpenedEventFired2, "ContextMenuOpen event should be fired for pager");
+        Assert.True(capturedTarget2 == ContextMenuTarget.Pager, "Target should be Pager");
+        
+        // Test 6: Close context menu - final UpdateItemStatus call
+        await CloseContextMenu(cut);
+        cut.Render();
+        cut.WaitForState(() => cut.FindAll(".e-contextmenu").Count == 0);
+    }
+
+    public void OnContextMenuOpen2(ContextMenuOpenEventArgs<Order> args)
+    {
+        contextMenuOpenedEventFired2 = true;
+        capturedTarget2 = args.Target;
+        eventFiredCount2++;
+        Assert.NotNull(args.Items);
+        Assert.NotNull(args.ContextMenu);
+    }
+
+    public void OnContextMenuClick2(ContextMenuClickEventArgs<Order> args)
+    {
+        contextMenuItemClickedEventFired2 = true;
+        Assert.NotNull(args.Item);
+    }
+}
+
+
+@* Common codes *@
+@code
+{
+    private async Task TriggerContextMenuOnHeader(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(async () =>
+        {
+            var headerCell = cut.FindAll(".e-headercell").FirstOrDefault();
+            if (headerCell != null)
+            {
+                var cellUid = headerCell.GetAttribute("data-uid");
+                
+                cut.Instance._jsAdaptor.MouseDownHandler("Header", cellUid, null, null);
+                await Task.Delay(100);
+                
+                var contextMenuComponent = cut.FindComponent<SfContextMenu<MenuItem>>();
+                if (contextMenuComponent != null)
+                {
+                    await contextMenuComponent.Instance.OpenAsync(50, 50);
+                }
+            }
+        });
+    }
+
+    private async Task TriggerContextMenuOnContent(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance.SelectRowAsync(0);
+            await Task.Delay(50);
+            var contentCell = cut.FindAll(".e-rowcell").FirstOrDefault();
+            if (contentCell != null)
+            {
+                var cellUid = contentCell.GetAttribute("data-uid");
+                cut.Instance._jsAdaptor.MouseDownHandler("Content", cellUid, null, null);
+                await Task.Delay(100);
+                var contextMenuComponent = cut.FindComponent<SfContextMenu<MenuItem>>();
+                if (contextMenuComponent != null)
+                {
+                    await contextMenuComponent.Instance.OpenAsync(50, 50);
+                }
+            }
+        });
+    }
+    
+    private async Task TriggerContextMenuOnPager(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(async () =>
+        {
+            var pagerElement = cut.FindAll(".e-pager").FirstOrDefault();
+            if (pagerElement != null)
+            {
+                cut.Instance._jsAdaptor.MouseDownHandler("Pager", null, null, null);
+                await Task.Delay(100);
+                
+                var contextMenuComponent = cut.FindComponent<SfContextMenu<MenuItem>>();
+                if (contextMenuComponent != null)
+                {
+                    await contextMenuComponent.Instance.OpenAsync(50, 50);
+                }
+            }
+        });
+    }
+
+    private async Task CloseContextMenu(IRenderedComponent<SfGrid<Order>> cut)
+    {
+        await cut.InvokeAsync(async () =>
+        {
+            var contextMenuComponent = cut.FindComponent<SfContextMenu<MenuItem>>();
+            if (contextMenuComponent != null)
+            {
+                await contextMenuComponent.Instance.CloseMenuAsync();
+            }
+        });
+    }
+}

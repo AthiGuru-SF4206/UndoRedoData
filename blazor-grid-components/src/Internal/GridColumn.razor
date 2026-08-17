@@ -1,0 +1,15 @@
+﻿@using Microsoft.AspNetCore.Components;
+
+@namespace Syncfusion.Blazor.Grids
+
+@inherits SfDataBoundComponent
+@implements IGridColumn
+
+
+<CascadingValue Value="@this" IsFixed="true">
+    @ChildContent
+</CascadingValue>
+
+
+
+

@@ -1,0 +1,94 @@
+@page "/single-click-batch-editing"
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+
+<h2>Single-Click Batch Editing Demo</h2>
+<p>Click once on a cell to edit it (instead of double-click). Navigate between cells with Tab/Shift+Tab. Click Save to commit changes.</p>
+
+<SfGrid DataSource="@OrderData" AllowPaging="true" Toolbar="@ToolbarItems">
+    <GridEditSettings AllowAdding="true" 
+                      AllowEditing="true" 
+                      AllowDeleting="true" 
+                      Mode="EditMode.Batch"
+                      AllowEditOnSingleClick="true">
+    </GridEditSettings>
+    <GridEvents TValue="OrderDetails"
+                OnCellEdit="CellEditHandler"
+                OnCellSave="CellSaveHandler"
+                CellSaved="CellSavedHandler"
+                OnBatchSave="BatchSaveHandler">
+    </GridEvents>
+    <GridColumns>
+        <GridColumn Field="@nameof(OrderDetails.OrderID)" IsPrimaryKey="true" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.CustomerID)" HeaderText="Customer ID" Width="100"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.OrderDate)" HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="yMd" Width="130"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.Freight)" HeaderText="Freight" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.ShipCity)" HeaderText="Ship City" Width="150"></GridColumn>
+    </GridColumns>
+</SfGrid>
+
+@code {
+    private List<OrderDetails> OrderData = new();
+    private string[] ToolbarItems = new string[] { "Add", "Edit", "Delete", "Update", "Cancel" };
+
+    protected override void OnInitialized()
+    {
+        OrderData = OrderDetails.GetAllRecords();
+    }
+
+    private void CellEditHandler(CellEditArgs<OrderDetails> args)
+    {
+        Console.WriteLine($"Cell edit started for column: {args.ColumnName}");
+    }
+
+    private void CellSaveHandler(CellSaveArgs<OrderDetails> args)
+    {
+        Console.WriteLine($"Cell save: {args.ColumnName} changed from {args.PreviousValue} to {args.Value}");
+    }
+
+    private void CellSavedHandler(CellSavedArgs<OrderDetails> args)
+    {
+        Console.WriteLine($"Cell saved: {args.ColumnName}");
+    }
+
+    private void BatchSaveHandler(BeforeBatchSaveArgs<OrderDetails> args)
+    {
+        Console.WriteLine($"Batch save triggered with {args.BatchChanges.ChangedRecords.Count} changed records");
+    }
+
+    public class OrderDetails
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public double Freight { get; set; }
+        public string ShipCity { get; set; }
+
+        public OrderDetails(int orderID, string customerID, DateTime orderDate, double freight, string shipCity)
+        {
+            OrderID = orderID;
+            CustomerID = customerID;
+            OrderDate = orderDate;
+            Freight = freight;
+            ShipCity = shipCity;
+        }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            return new List<OrderDetails>
+            {
+                new OrderDetails(10248, "VINET", new DateTime(1996, 7, 4), 32.38, "Reims"),
+                new OrderDetails(10249, "TOMSP", new DateTime(1996, 7, 5), 11.61, "Münster"),
+                new OrderDetails(10250, "HANAR", new DateTime(1996, 7, 8), 65.83, "Rio de Janeiro"),
+                new OrderDetails(10251, "VICTE", new DateTime(1996, 7, 8), 41.34, "Lyon"),
+                new OrderDetails(10252, "SUPRD", new DateTime(1996, 7, 9), 51.30, "Charleroi"),
+                new OrderDetails(10253, "HANAR", new DateTime(1996, 7, 10), 58.17, "Rio de Janeiro"),
+                new OrderDetails(10254, "CHOPS", new DateTime(1996, 7, 11), 22.98, "Bern"),
+                new OrderDetails(10255, "RICSU", new DateTime(1996, 7, 12), 148.33, "Genève"),
+                new OrderDetails(10256, "WELLI", new DateTime(1996, 7, 15), 13.55, "Resende"),
+                new OrderDetails(10257, "HILAA", new DateTime(1996, 7, 16), 81.91, "San Cristóbal")
+            };
+        }
+    }
+}

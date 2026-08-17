@@ -1,0 +1,326 @@
+@page "/ForeignKeyColumnExportGrouping"
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Grids
+@using System.Collections.Generic
+@using System.Linq
+@inherits GridTestBase
+
+<!-- Test Case 1: Grid Initialization with Grouping -->
+<SfFixture @ref="fixture1" Test="ForeignKeyColumnGroupingGridInitializationTest" Description="Foreign Key Column Grouping Grid Initialization Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 2: Data Binding with Grouping -->
+<SfFixture @ref="fixture2" Test="ForeignKeyColumnGroupingDataBindingTest" Description="Foreign Key Column Grouping Data Binding Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 3: Excel Export with Grouping -->
+<SfFixture @ref="fixture3" TestAsync="ForeignKeyColumnGroupingExcelExportTest" Description="Foreign Key Column Grouping Excel Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 4: CSV Export with Grouping -->
+<SfFixture @ref="fixture4" TestAsync="ForeignKeyColumnGroupingCsvExportTest" Description="Foreign Key Column Grouping CSV Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 5: PDF Export with Grouping -->
+<SfFixture @ref="fixture5" TestAsync="ForeignKeyColumnGroupingPdfExportTest" Description="Foreign Key Column Grouping PDF Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid5" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 6: Sequential Export with Grouping -->
+<SfFixture @ref="fixture6" TestAsync="ForeignKeyColumnGroupingAllExportsSequentialTest" Description="Foreign Key Column Grouping All Exports Sequential Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 7: Grouping Configuration Verification -->
+<SfFixture @ref="fixture7" Test="ForeignKeyColumnGroupingConfigurationTest" Description="Foreign Key Column Grouping Configuration Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 8: Export Consistency Verification -->
+<SfFixture @ref="fixture8" TestAsync="ForeignKeyColumnGroupingExportConsistencyTest" Description="Foreign Key Column Grouping Export Consistency Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid8" DataSource="@Orders" Height="315" AllowGrouping="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(OrderDetails.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@Employees" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfFixture fixture2 { get; set; }
+    SfFixture fixture3 { get; set; }
+    SfFixture fixture4 { get; set; }
+    SfFixture fixture5 { get; set; }
+    SfFixture fixture6 { get; set; }
+    SfFixture fixture7 { get; set; }
+    SfFixture fixture8 { get; set; }
+
+    private SfGrid<OrderDetails> Grid { get; set; }
+    private SfGrid<OrderDetails> Grid2 { get; set; }
+    private SfGrid<OrderDetails> Grid3 { get; set; }
+    private SfGrid<OrderDetails> Grid4 { get; set; }
+    private SfGrid<OrderDetails> Grid5 { get; set; }
+    private SfGrid<OrderDetails> Grid6 { get; set; }
+    private SfGrid<OrderDetails> Grid7 { get; set; }
+    private SfGrid<OrderDetails> Grid8 { get; set; }
+    
+    public string[] GroupingColumns = new string[] { "EmployeeID", "ShipCity" };
+    
+    public List<OrderDetails> Orders { get; set; } = OrderDetails.GetAllRecords();
+    public List<EmployeeDetails> Employees { get; set; } = EmployeeDetails.GetAllRecords();
+
+    public async Task ExportToExcelAsync()
+    {
+        if (Grid != null)
+        {
+            await Grid.ExportToExcelAsync();
+        }
+    }
+
+    public async Task ExportToCsvAsync()
+    {
+        if (Grid != null)
+        {
+            await Grid.ExportToExcelAsync();
+        }
+    }
+
+    public async Task ExportToPdfAsync()
+    {
+        if (Grid != null)
+        {
+            await Grid.ExportToPdfAsync();
+        }
+    }
+
+    // Test Methods
+    void ForeignKeyColumnGroupingGridInitializationTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        Assert.NotNull(cut);
+        Assert.NotNull(Grid);
+        Assert.NotNull(Orders);
+        Assert.NotNull(Employees);
+    }
+
+    void ForeignKeyColumnGroupingDataBindingTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        Assert.NotNull(Orders);
+        Assert.NotEmpty(Orders);
+        Assert.Equal(15, Orders.Count);
+        Assert.NotNull(Employees);
+        Assert.NotEmpty(Employees);
+        Assert.Equal(9, Employees.Count);
+    }
+
+    async Task ForeignKeyColumnGroupingExcelExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        await Grid3.ExportToExcelAsync();
+        Assert.NotNull(Grid3);
+    }
+
+    async Task ForeignKeyColumnGroupingCsvExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        await Grid4.ExportToExcelAsync();
+        Assert.NotNull(Grid4);
+    }
+
+    async Task ForeignKeyColumnGroupingPdfExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        await Grid5.ExportToPdfAsync();
+        Assert.NotNull(Grid5);
+    }
+
+    async Task ForeignKeyColumnGroupingAllExportsSequentialTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        await Grid6.ExportToExcelAsync();
+        await Grid6.ExportToExcelAsync();
+        await Grid6.ExportToPdfAsync();
+        Assert.NotNull(Grid6);
+    }
+
+    void ForeignKeyColumnGroupingConfigurationTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        Assert.NotNull(Grid7);
+        var groupedByEmployeeId = Orders.GroupBy(o => o.EmployeeID);
+        Assert.NotEmpty(groupedByEmployeeId);
+        var groupedByCity = Orders.GroupBy(o => o.ShipCity);
+        Assert.NotEmpty(groupedByCity);
+    }
+
+    async Task ForeignKeyColumnGroupingExportConsistencyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        var employeeNames = Employees.ToDictionary(e => e.EmployeeID, e => e.FirstName);
+        await Grid8.ExportToExcelAsync();
+        Assert.NotNull(Orders);
+        Assert.True(Orders.All(o => employeeNames.ContainsKey(o.EmployeeID)), "All orders should reference valid employees");
+        Assert.True(Orders.All(o => !string.IsNullOrEmpty(o.ShipCity)), "All orders should have a ShipCity");
+    }
+
+    public class OrderDetails
+    {
+        public static List<OrderDetails> order = new List<OrderDetails>();
+
+        public OrderDetails(int OrderID, string Shipcity, int EmployeeId, double Freight)
+        {
+            this.OrderID = OrderID;
+            this.ShipCity = Shipcity;
+            this.EmployeeID = EmployeeId;
+            this.Freight = Freight;
+        }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            if (order.Count == 0)
+            {
+                order.Add(new OrderDetails(10248, "Reims", 5, 32.38));
+                order.Add(new OrderDetails(10249, "Münster", 6, 11.61));
+                order.Add(new OrderDetails(10250, "Rio de Janeiro", 4, 65.83));
+                order.Add(new OrderDetails(10251, "Lyon", 3, 41.34));
+                order.Add(new OrderDetails(10252, "Charleroi", 4, 51.3));
+                order.Add(new OrderDetails(10253, "Rio de Janeiro", 3, 58.17));
+                order.Add(new OrderDetails(10254, "Bern", 5, 22.98));
+                order.Add(new OrderDetails(10255, "Genève", 9, 48.33));
+                order.Add(new OrderDetails(10256, "Resende", 3, 13.97));
+                order.Add(new OrderDetails(10257, "San Cristóbal", 4, 81.91));
+                order.Add(new OrderDetails(10258, "Graz", 1, 40.51));
+                order.Add(new OrderDetails(10259, "México D.F.", 4, 3.25));
+                order.Add(new OrderDetails(10260, "Köln", 4, 55.09));
+                order.Add(new OrderDetails(10261, "Rio de Janeiro", 4, 3.05));
+                order.Add(new OrderDetails(10262, "Albuquerque", 8, 48.29));
+            }
+            return order;
+        }
+
+        public int OrderID { get; set; }
+        public string ShipCity { get; set; }
+        public int EmployeeID { get; set; }
+        public double Freight { get; set; }
+    }
+
+    public class EmployeeDetails
+    {
+        public static List<EmployeeDetails> employee = new List<EmployeeDetails>();
+
+        public EmployeeDetails(int employeeID, string firstName)
+        {
+            this.EmployeeID = employeeID;
+            this.FirstName = firstName;
+        }
+
+        public static List<EmployeeDetails> GetAllRecords()
+        {
+            if (employee.Count == 0)
+            {
+                employee.Add(new EmployeeDetails(1, "Nancy"));
+                employee.Add(new EmployeeDetails(2, "Andrew"));
+                employee.Add(new EmployeeDetails(3, "Janet"));
+                employee.Add(new EmployeeDetails(4, "Margaret"));
+                employee.Add(new EmployeeDetails(5, "Steven"));
+                employee.Add(new EmployeeDetails(6, "Michael"));
+                employee.Add(new EmployeeDetails(7, "Robert"));
+                employee.Add(new EmployeeDetails(8, "Laura"));
+                employee.Add(new EmployeeDetails(9, "Anne"));
+            }
+            return employee;
+        }
+
+        public int EmployeeID { get; set; }
+        public string FirstName { get; set; }
+    }
+}

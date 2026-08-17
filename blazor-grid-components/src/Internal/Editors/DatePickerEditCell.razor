@@ -1,0 +1,130 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@inherits EditorCellBase<TCell>
+
+@using Syncfusion.Blazor.Calendars
+
+@if (Column != null && Column.EditType == EditType.DatePickerEdit)
+{
+    if (Column.ValueType == typeof(DateTime?))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTime?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                      Value="@(Value as DateTime?)" ValueChanged="@ValueChanged" ValueExpression="@NullableDateExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents ValueChange="@ValueChange" TValue="DateTime?"></DatePickerEvents>
+        </SfDatePicker>
+    }
+    else if (Column.ValueType == typeof(DateTime))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTime" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                      Value="@((DateTime)Value!)" ValueChanged="@ValueChanged" ValueExpression="@DateExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents ValueChange="@ValueChange" TValue="DateTime"></DatePickerEvents>
+        </SfDatePicker>
+    }
+    else if (Column.ValueType == typeof(DateOnly?))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateOnly?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                      Value="@(Value as DateOnly?)" ValueChanged="@ValueChanged" ValueExpression="@NullableDateOnlyExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents ValueChange="@ValueChange" TValue="DateOnly?"></DatePickerEvents>
+        </SfDatePicker>
+    }
+    else if (Column.ValueType == typeof(DateOnly))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateOnly" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                      Value="@((DateOnly)Value!)" ValueChanged="@ValueChanged" ValueExpression="@DateOnlyExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents ValueChange="@ValueChange" TValue="DateOnly"></DatePickerEvents>
+        </SfDatePicker>
+    }
+    else if (Column.ValueType == typeof(DateTimeOffset))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTimeOffset" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@((DateTimeOffset)Value!)" ValueChanged="ValueChanged" ValueExpression="@OffsetExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents TValue="DateTimeOffset" ValueChange="@ValueChange"></DatePickerEvents>
+        </SfDatePicker>
+    }
+    else if (Column.ValueType == typeof(DateTimeOffset?))
+    {
+        <SfDatePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTimeOffset?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@((DateTimeOffset?)Value)" ValueChanged="ValueChanged" ValueExpression="@NullableOffsetExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DatePickerEvents TValue="DateTimeOffset?" ValueChange="@ValueChange"></DatePickerEvents>
+        </SfDatePicker>
+    }
+}
+else
+{
+    if (Column != null && Column.ValueType == typeof(DateTime?))
+    {
+        <SfDateTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTime?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@(Value as DateTime?)" ValueChanged="@ValueChanged" ValueExpression="@NullableDateExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DateTimePickerEvents TValue="DateTime?" ValueChange="@ValueChange"></DateTimePickerEvents>
+        </SfDateTimePicker>
+    }
+    else if (Column != null && Column.ValueType == typeof(DateTime))
+    {
+        <SfDateTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTime" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@((DateTime)Value!)" ValueChanged="@ValueChanged" ValueExpression="@DateExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DateTimePickerEvents TValue="DateTime" ValueChange="@ValueChange"></DateTimePickerEvents>
+        </SfDateTimePicker>
+    }
+    else if (Column != null && Column.ValueType == typeof(DateTimeOffset))
+    {
+        <SfDateTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTimeOffset" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@((DateTimeOffset)Value!)" ValueChanged="@ValueChanged" ValueExpression="@OffsetExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DateTimePickerEvents TValue="DateTimeOffset" ValueChange="@ValueChange"></DateTimePickerEvents>
+        </SfDateTimePicker>
+    }
+    else if (Column != null && Column.ValueType == typeof(DateTimeOffset?))
+    {
+        <SfDateTimePicker ID="@FieldName" Format="@(Column.ApplyFormatInEditMode ? Column.Format : null)" TValue="DateTimeOffset?" Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" StrictMode="true"
+                          Value="@((DateTimeOffset?)Value)" ValueChanged="@ValueChanged" ValueExpression="@NullableOffsetExp" Enabled="@(PreventAddForm ? false : Enabled)" @attributes="attributes">
+            <DateTimePickerEvents TValue="DateTimeOffset?" ValueChange="@ValueChange"></DateTimePickerEvents>
+        </SfDateTimePicker>
+    }
+}
+
+@code{
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Column != null && Column.EditorSettings is DateEditCellParams param && param.Params != null)
+        {
+            DatePickerModel model = param.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.Readonly), model.Readonly },
+                { nameof(model.ShowClearButton), model.ShowClearButton },
+                { nameof(model.Format), model.Format },
+                { nameof(model.FirstDayOfWeek), model.FirstDayOfWeek }
+            };
+        }
+        if (Column != null && Column.EditorSettings is DateTimeEditCellParams<DateTime> dateTimeParam && dateTimeParam.Params != null)
+        {
+            DateTimePickerModel<DateTime> model = dateTimeParam.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.Readonly), model.Readonly },
+                { nameof(model.ShowClearButton), model.ShowClearButton },
+                { nameof(model.Format), model.Format },
+                { nameof(model.TimeFormat), model.TimeFormat },
+                { nameof(model.FirstDayOfWeek), model.FirstDayOfWeek }
+            };
+        }
+
+            Value = Parent?.PropHelper?.GetObject(Column?.Field!, RowData!)!;
+    }
+
+    internal void ValueChange<T>(ChangedEventArgs<T> args)
+    {
+        Value = args.Value!;
+        if (Parent != null && Parent.EditModule != null)
+        Parent.EditModule.SetValue<T>(args.Value, Column?.Field!);
+    }
+}
+
+

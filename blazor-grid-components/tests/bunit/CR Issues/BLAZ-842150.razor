@@ -1,0 +1,64 @@
+﻿@inherits GridTestBase
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="NullReferenceException is thrown when an invalid column name is passed to the ShowColumnsAsync() method">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Center" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" TextAlign="TextAlign.Center"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Visible="false" Type="ColumnType.Date" TextAlign="TextAlign.Center" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Visible="false" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public string[] ColumnItems = new string[] { "Order Date", "Freight1" };
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        await Grid.ShowColumnsAsync(ColumnItems);
+        Assert.True(Grid.GetVisibleColumnsAsync().Result.Count() == 3, "Columns are rendered properly.");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 10001, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 10002, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 10003, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 10004, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 10005, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 10006, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 10007, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 10008, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 10009, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100010, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2 });
+        data.Add(new Order() { OrderID = 100011, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 100012, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 100013, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 100014, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 100015, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 100016, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 100017, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 100018, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 100019, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100020, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2 });
+        return GridData = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTimeOffset OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

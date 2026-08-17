@@ -1,0 +1,418 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Triggering the events in the Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowPaging=true AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true  Toolbar="@(new List<string>(){ "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridEvents EditCanceling="EditCancelingHandler" EditCanceled="EditCanceledHandler" RowCreating=RowCreatingHandler RowCreated=RowCreatedHandler
+            	PageChanging="PageChangingHandler" PageChanged="PageChangedHandler" RowEditing="RowEditingHandler" RowEdited="RowEditedHandler" 
+            	RowDeleting="RowDeletingHandler" RowDeleted="RowDeletedHandler" OnRowEditStart="RowEditStartHandler" RowUpdating="RowUpdatingHandler"
+            	RowUpdated="RowUpdatedHandler" OnRecordClick="RecordClickHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+    private bool preventCurrentAction { get; set; } 
+    private bool preventStartEdit { get; set; } 
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        preventCurrentAction = true;
+        await cut.Instance.AddRecordAsync();
+        Assert.True(cut.FindAll(".e-addedrow").Count == 0);
+        preventCurrentAction = false;
+        await cut.Instance.AddRecordAsync();
+        Assert.True(cut.FindAll(".e-addedrow").Count == 1);
+        preventCurrentAction = true;
+        await cut.Instance.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-addedrow").Count == 1);
+        preventCurrentAction = false;
+        await cut.Instance.CloseEditAsync();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        await cut.Instance.SelectRowAsync(0);
+        
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.FindAll(".e-selectionbackground").Count > 0, "Row is selected.");
+        }, TimeSpan.FromSeconds(2));
+
+        //Assert.True(cut.FindAll(".e-selectionbackground").Count > 0, "Row is selected.");
+        preventCurrentAction = true;
+        await cut.Instance.StartEditAsync();
+        Assert.True(cut.FindAll(".e-inline-edit").Count == 0, "Editing has not started");
+        preventCurrentAction = false;
+        preventStartEdit = true;
+        await cut.Instance.StartEditAsync();
+        Assert.True(cut.FindAll(".e-inline-edit").Count == 0, "Editing has not started");
+        preventStartEdit = false;
+        await cut.Instance.StartEditAsync();
+        Assert.True(cut.FindAll(".e-inline-edit").Count > 0, "Editing has been initiated.");
+    }
+
+    public void RowCreatingHandler(RowCreatingEventArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.EditContext != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.Index == 0);
+    }
+
+    public void RowCreatedHandler(RowCreatedEventArgs<Order> args)
+    {
+
+    }
+
+    public void EditCancelingHandler(EditCancelingEventArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.Data != null);
+        Assert.True(args.Index == 0);
+        Assert.True(args.PreviousData != null);
+        Assert.True(args.PrimaryKeys[0] == "OrderID");
+    }
+
+    public void EditCanceledHandler(EditCanceledEventArgs<Order> args)
+    {
+
+    }
+
+    public void PageChangingHandler(PageChangingEventArgs args)
+    {
+        // args.Cancel = preventCurrentAction;
+        // Assert.True(args.CurrentPage == 2);
+        // Assert.True(args.PreviousPage == 1);
+    }
+
+    public void PageChangedHandler(PageChangedEventArgs args)
+    {
+        // Assert.True(args.CurrentPage == 2);
+        // Assert.True(args.PreviousPage == 1);
+    }
+
+    public void RowEditStartHandler(OnRowEditStartEventArgs args)
+    {
+        args.Cancel = preventCurrentAction;
+    }
+
+    public void RowEditingHandler(RowEditingEventArgs<Order> args)
+    {
+        args.Cancel = preventStartEdit;
+        Assert.True(args.EditContext != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.PrimaryKeys[0] == "OrderID");
+        Assert.True(args.Index == 0);
+        Assert.True(args.ForeignKeyData.Count == 0);
+        Assert.True((args.PrimaryKeyValue as string[])[0] == "1001");
+    }
+
+    public void RowEditedHandler(RowEditedEventArgs<Order> args)
+    {
+
+    }
+
+    public void RowUpdatingHandler(RowUpdatingEventArgs<Order> args)
+    {
+        args.Cancel = preventCurrentAction;
+        Assert.True(args.Data != null);
+        Assert.True(args.PrimaryKeys[0] == "OrderID");
+        Assert.True(args.PrimaryKeyValue == "1001");
+        Assert.False(args.IsShiftKeyPressed);
+        Assert.True(args.KeyCode == null);
+        Assert.True(args.Index == 0);
+        Assert.True(args.PreviousData != null);
+    }
+
+    public void RowUpdatedHandler(RowUpdatedEventArgs<Order> args)
+    {
+        
+    }
+
+    public void RowDeletingHandler(RowDeletingEventArgs<Order> args)
+    {
+        
+    }
+
+    public void RowDeletedHandler(RowDeletedEventArgs<Order> args)
+    {
+        
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 30).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering1" Description="Other Events">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateRows()" AllowPaging=true AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true Toolbar="@(new List<string>(){ "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridEvents OnRecordClick="RecordClickHandler" OnRecordDoubleClick="RecordDoubleClickHandler" Created="CreatedHandler" RowDragStarting="RowDragStarting" RowDataBound="RowDataBoundHandler" 
+                ColumnVisibilityChanging="VisibilityChangingHandler" ColumnVisibilityChanged="VisibilityChangedHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Customer" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    SfGrid<Order> Grid2 {get; set; }
+    bool preventAction { get; set; } 
+    string currentAction { get; set; }
+
+    public async Task GridBasicRendering1(Fixture fixture)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        cut.FindAll(".e-rowcell ")[1].Click();
+        await cut.FindAll(".e-rowcell ")[1].DoubleClickAsync(new MouseEventArgs());
+        Assert.True(cut.FindAll(".e-inline-edit").Count > 0, "Editing has been initiated.");
+        await cut.Instance.CloseEditAsync();
+        Assert.True(cut.FindAll(".e-inline-edit").Count == 0, "Editing row is not visible in grid");
+        preventAction = true;
+        await cut.Instance.HideColumnAsync("Customer Name");
+        preventAction = false;
+        currentAction = "Hide";
+        await cut.Instance.HideColumnAsync("Customer Name");
+        Assert.False(cut.Instance.Columns[1].Visible, "Column is hidden");
+        currentAction = "Show";
+        await cut.Instance.ShowColumnAsync("Customer Name");
+        Assert.True(cut.Instance.Columns[1].Visible, "Column is visible");
+        currentAction = null;
+    }
+
+    public void RecordClickHandler(RecordClickEventArgs<Order> args)
+    {
+        Assert.True(args.RowIndex == 0);
+        Assert.True(args.CellIndex == 1);
+        Assert.True(args.RowData != null);
+        Assert.True(args.ForeignKeyData == null);
+        Assert.True(args.Column.Field == "CustomerID");
+    }
+
+    public void RecordDoubleClickHandler(RecordDoubleClickEventArgs<Order> args)
+    {
+
+    }
+
+    public void CreatedHandler(object args)
+    {
+        Assert.True(true, "Grid created successfully");
+    }
+
+    public void RowDragStarting(RowDragStartingEventArgs<Order> args)
+    {
+
+    }
+
+    public void RowDataBoundHandler(RowDataBoundEventArgs<Order> args)
+    {
+        Assert.True(args.Data != null);
+        Assert.True(args.Row != null);
+    }
+
+    public void VisibilityChangingHandler(ColumnVisibilityChangingEventArgs args)
+    {
+        if (currentAction == null) {return;}
+        if (preventAction)
+        {
+            args.Cancel = true;
+        }
+        Assert.True(currentAction.Equals("Hide", StringComparison.Ordinal) ? args.HiddenColumns.Count() == 1 : args.HiddenColumns.Count() == 0);
+        Assert.True(currentAction.Equals("Hide", StringComparison.Ordinal) ? args.VisibleColumns.Count == 3 : args.VisibleColumns.Count == 4);
+    }
+
+    public void VisibilityChangedHandler(ColumnVisibilityChangedEventArgs args)
+    {
+        
+    }
+}
+
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Grid Public Methods">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GenerateRows()" AllowGrouping=true AllowPaging=true AllowReordering=true AllowSorting=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true 
+             Toolbar="@(new List<string>() { "ExcelExport", "CsvExport", "PdfExport", "Search" })" AllowExcelExport="true" AllowPdfExport="true">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    SfGrid<Order> Grid3 { get; set; }
+    public string[] Initial = (new string[] { "CustomerID", "OrderDate" });
+    public List<Syncfusion.Blazor.Grids.SortColumn> sortColumns { get; set; } = new List<Syncfusion.Blazor.Grids.SortColumn>();
+
+    public async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        await cut.InvokeAsync(() => cut.Instance.ClearGroupingAsync());
+        cut.WaitForState(() => cut.FindAll(".e-groupheadercell").Count() == 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-groupheadercell").Count() == 0, "Grouping has been cleared.");
+        await cut.InvokeAsync(() => cut.Instance.SelectRowsByRangeAsync(1, 3));
+        var selectedIndexes = cut.Instance.GetSelectedRowIndexesAsync();
+        cut.WaitForState(() => selectedIndexes.Result.Count() == 3, TimeSpan.FromMilliseconds(200));
+        Assert.True(selectedIndexes.Result.Count() == 3, "Rows selected successfully.");
+        await cut.InvokeAsync(() =>cut.Instance.ClearRowSelectionAsync());
+        cut.WaitForState(() => cut.Instance.SelectedRowIndex == -1, TimeSpan.FromMilliseconds(200));
+        Assert.True(cut.Instance.SelectedRowIndex == -1, "Row selection cleared successfully.");
+        sortColumns.Add(new() { Field = nameof(Order.Freight), Direction = SortDirection.Descending });
+        sortColumns.Add(new() { Field = nameof(Order.CustomerID), Direction = SortDirection.Ascending});
+        await cut.InvokeAsync(() => cut.Instance.SortColumnsAsync(sortColumns,true));
+        cut.WaitForState(() => cut.Instance.SortSettings.Columns.Count() == 2, TimeSpan.FromMilliseconds(10));
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 2, "Sorting applied successfully.");
+        List<string> listItems = new List<string>();
+        listItems.Add("Freight");
+        listItems.Add("CustomerID");
+        await cut.InvokeAsync(() => cut.Instance.ClearSortingAsync(listItems));
+        cut.WaitForState(() => cut.Instance.SortSettings.Columns.Count() == 0, TimeSpan.FromMilliseconds(10));
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 0, "Sorting cleared successfully.");
+        var uid = cut.Instance.GetUidByColumnFieldAsync("OrderID");
+        Assert.True(uid != null, "Column UID retrieved successfully.");
+        var rowIndex = cut.Instance.GetRowIndexByPrimaryKeyAsync(1001);
+        Assert.False(await cut.Instance.IsDirtyAsync(), "Returns false since the edit mode is not in batch");
+        await cut.InvokeAsync(() => cut.Instance.ExportToCsvAsync());
+        Assert.True(true, "CSV Exported successfully.");
+
+        // cut.Instance.ReorderColumnByTargetIndex("OrderID", 1);
+        // cut.WaitForState(() => cut.FindAll(".e-headertext")[0].TextContent != "OrderID", TimeSpan.FromMilliseconds(1000));
+        // Assert.True(cut.FindAll(".e-headertext")[0].TextContent == "Customer Name");
+        // cut.Instance.ReorderColumnByIndex(2, 0);
+        // cut.Instance.AutoFitColumns();
+        // Assert.True(cut.Find(".e-grid").OffsetWidth > cut.Find(".e-columnheader").OffsetWidth, "Autofit applied");
+        // Assert.True(true, "Columns auto fitted successfully.");
+
+        var fieldNames = cut.Instance.GetColumnFieldNamesAsync();
+        Assert.True(fieldNames.Result.Count == 4, "Column field names retrieved successfully.");
+        await cut.Instance.HideColumnAsync("CustomerID", "Field");
+        Assert.True(cut.Instance.Columns.Where(x => x.Visible).Count() == 3, "Columns hidden successfully.");
+        await cut.Instance.ShowColumnAsync("CustomerID", "Field");
+        Assert.True(cut.Instance.Columns.Where(x => x.Visible).Count() == 4, "Columns shown successfully.");
+        var rowData = new Order() { OrderID = 1006, CustomerID = "Nancy", OrderDate = new DateTime(1995, 03, 25), Freight = 25.7 * 2 };
+        await cut.Instance.SetRowDataAsync(1006, rowData);
+        Assert.True((cut.Instance.Rows[5].Data as Order).CustomerID.ToString() == "Nancy", "Row Data has been set");
+        var updateData = new Order() { OrderID = 1001, CustomerID = "Davolio", OrderDate = new DateTime(1995, 03, 25), Freight = 25.7 * 2 };
+        await cut.Instance.UpdateRowAsync(0, updateData);
+        Assert.True((cut.Instance.Rows[0].Data as Order).CustomerID.ToString() == "Davolio", "Row Data has been updated");   
+    }
+}
+
+
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="Row Updating(ed) events in the Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GenerateRows()" AllowPaging=true AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true  Toolbar="@(new List<string>(){ "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridEvents RowUpdating="RowUpdatingHandler4" RowUpdated="RowUpdatedHandler4" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> Grid4;
+    bool isAdd4 = true;
+
+    public async Task GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        Order addRecord = new Order()
+            {
+                OrderID = 1111,
+                CustomerID = "ABCDE",
+                Freight = 25.7,
+                OrderDate = new DateTime(2010, 5, 1)
+            };
+        await Grid4.AddRecordAsync(addRecord);
+        isAdd4 = false;
+        await cut.Instance.SelectRowAsync(1);
+        var data = new Order() { OrderID = 10, CustomerID = "BOLID", Freight = 25.7 * 2, OrderDate = new DateTime(2020, 05, 15) };
+        await cut.Instance.UpdateRowAsync(0, data);
+        isAdd4 = true;
+    }
+
+    public void RowUpdatingHandler4(RowUpdatingEventArgs<Order> args)
+    {
+        if(isAdd4)
+        {
+            Assert.True(args.Action == SaveActionType.Added, "Row updating action is added");
+            Assert.False(args.Action == SaveActionType.Edited, "Row updating action is not edited");
+        }
+        else
+        {
+            Assert.False(args.Action == SaveActionType.Added, "Row updating action is not added");
+            Assert.True(args.Action == SaveActionType.Edited, "Row updating action is edited");
+        }
+    }
+
+    public void RowUpdatedHandler4(RowUpdatedEventArgs<Order> args)
+    {
+        if (isAdd4)
+        {
+            Assert.True(args.Action == SaveActionType.Added, "Row updated action is added");
+            Assert.False(args.Action == SaveActionType.Edited, "Row updated action is not edited");
+        }
+        else
+        {
+            Assert.False(args.Action == SaveActionType.Added, "Row updated action is not added");
+            Assert.True(args.Action == SaveActionType.Edited, "Row updated action is edited");
+        }
+    }
+}

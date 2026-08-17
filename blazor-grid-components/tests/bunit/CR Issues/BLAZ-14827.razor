@@ -1,0 +1,66 @@
+@inherits GridTestBase
+@using System.Timers
+
+@using Syncfusion.Blazor.Grids
+
+
+<button @onclick="Change">Visible/Invisible CustomerID, ShipName and ShipCountry</button>
+
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Header text is not shown in frozen columns.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" AllowSelection="false" EnableHover="false" FrozenColumns="2"FrozenRows="2"  AllowReordering="true" Width="100%" Height="400"
+                ShowColumnChooser="true" Toolbar=@ToolbarItems>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right"  Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Visible="@IsVisible"  Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Visible="@IsVisible" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+  
+    </SfFixture>
+
+    @code{
+
+        SfFixture fixture { get; set; }
+        private SfGrid<Order> DefaultGrid;
+        bool IsVisible { get; set; }
+        public string[] ToolbarItems = new string[] { "ColumnChooser" };
+        public List<Order> Orders { get; set; }
+        public string[] HideItems = new string[] { "OrderDate", "Freight" };
+        public string[] HideHeaderItems = new string[] { "Order Date", "Customer ID" };
+        public string[] ShowItem = new string[] { "OrderDate" };
+        public string[] ShowHeaderItems = new string[] { "Order Date", "Customer ID" };
+        public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+        void GridBasicRendering(Fixture fixture)
+        {
+
+            //Assert.True(4 == cut.Instance.GetVisibleColumns().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+            //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+
+            IsVisible = !IsVisible;
+            cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+            var aa = cut.FindAll(".e-headertext");
+            Assert.True("Customer Name" == aa.ElementAt(1).InnerHtml, "Name of the visiblity changed column");
+
+
+        }
+
+
+
+
+
+
+
+
+
+        public void Change()
+        {
+            IsVisible = !IsVisible;
+        } }

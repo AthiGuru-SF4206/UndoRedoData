@@ -1,0 +1,60 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="ForeignRendering" Description="Predicate generate with different ForeignKey field and column field name">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" Height="315">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) ForeignKeyField="@nameof(EmployeeData.ID)" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmpData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    List<EmployeeData> Employees = new List<EmployeeData>();
+
+    async void ForeignRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-filtermenudiv").Count == 4, "Filter icon renders properly");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var CheckBoxRenderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterCheckBoxRenderer<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        Assert.True(cut.FindAll(".e-filter-popup").Count > 0, "filter dialog opened");
+        cut.FindAll(".e-searchinput")[0].Input("Nancy");
+        Query result = await CheckBoxRenderer.Instance.GenerateWherePredicate(false);
+        Assert.True("EmployeeID" == result.Queries.Where[0].predicates[0].predicates[0].predicates[0].Field, "Search predicates generated properly");
+    }
+
+    public List<EmployeeData> GenerateEmpData()
+    {
+        if (Employees.Count == 0) {
+            Employees.Add(new EmployeeData() { FirstName = "Nancy", LastName = "Davolio", HireDate = new DateTime(1992, 01, 05), Country = "USA", City = "Seattle", ID = 1, Title = "Sales Representative" });
+            Employees.Add(new EmployeeData() { FirstName = "Andrew", LastName = "Fuller", HireDate = new DateTime(1993, 03, 08), Country = "USA", City = "Tacoma", ID = 2, Title = "Vice President, Sales " });
+            Employees.Add(new EmployeeData() { FirstName = "Janet", LastName = "Leverling", HireDate = new DateTime(1992, 11, 04), Country = "UK", City = "Kirkland", ID = 3, Title = "Sales Representative" });
+            Employees.Add(new EmployeeData() { FirstName = "Steven", LastName = "Peacock", HireDate = new DateTime(1992, 05, 05), Country = "USA", City = "Redmond", ID = 4, Title = "Sales Representative" });
+            Employees.Add(new EmployeeData() { FirstName = "Margaret", LastName = "Buchanan", HireDate = new DateTime(1993, 07, 05), Country = "UK", City = "London", ID = 5, Title = "Sales Manager" });
+            Employees.Add(new EmployeeData() { FirstName = "Micheal", LastName = "Suyama", HireDate = new DateTime(1993, 08, 05), Country = "UK", City = "London", ID = 6, Title = "Sales Representative" });
+            Employees.Add(new EmployeeData() { FirstName = "Robert", LastName = "King", HireDate = new DateTime(1993, 09, 05), Country = "USA", City = "London", ID = 7, Title = "Sales Representative" });
+            Employees.Add(new EmployeeData() { FirstName = "Laura", LastName = "Callahan", HireDate = new DateTime(1993, 10, 05), Country = "UK", City = "Seattle", ID = 8, Title = "Inside Sales Coordinator" });
+            Employees.Add(new EmployeeData() { FirstName = "Anne", LastName = "Dodsworth", HireDate = new DateTime(1993, 11, 05), Country = "USA", City = "London", ID = 9, Title = "Sales Representative" });
+        }
+        return Employees;
+    }
+
+    public class EmployeeData
+    {
+        public int ID { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Title { get; set; }
+        public DateTime HireDate { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+    }
+}

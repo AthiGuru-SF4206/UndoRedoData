@@ -1,0 +1,21 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public RenderFragment<object>? ChildContent { get; set; }
+
+    [CascadingParameter]
+    public GridCellRegister<T>? cellRegister { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (Name == null)
+            throw new MissingMemberException($"Name must be provided to add Custom cell component");
+        cellRegister?.Parent?.CellService.AddCell(Name, ChildContent!);
+    }
+}

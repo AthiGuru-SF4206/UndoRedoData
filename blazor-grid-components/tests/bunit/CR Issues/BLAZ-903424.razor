@@ -1,0 +1,70 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Stacked columns hidding properly">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="GenerateRows()" AllowPaging="true">
+             <GridColumns>
+        <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+        <GridColumn HeaderText="Order Details" TextAlign="TextAlign.Center">
+            <GridColumns>
+                <GridColumn Field="OrderDate" Width="130" HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Width="135" Format="C2" TextAlign="TextAlign.Right" MinWidth="10">
+                    <GridColumns>
+                        <GridColumn Field="ChildField1" Width="130" HeaderText="Child 1" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                        <GridColumn Field="ChildField2" Width="130" HeaderText="Child 2" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+            </GridColumns>
+        </GridColumn>
+        <GridColumn HeaderText="Ship Details" TextAlign="TextAlign.Center">
+            <ChildContent>
+                <GridColumns>
+                    <GridColumn Field="ShippedDate" Width="140" HeaderText="Shipped Date" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                    <GridColumn Field="ShipCountry" Width="140" HeaderText="Ship Country" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                </GridColumns>
+            </ChildContent>
+            <HeaderTemplate>
+                Ship Details <span>(<i class="fa fa-truck"></i>)</span>
+            </HeaderTemplate>           
+        </GridColumn>
+    </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+    public string[] ColumnItems = new string[] { "Child 1", "Child 2" };
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Find(".e-headercontent").GetElementsByClassName("e-stackedheadercelldiv").Count() == 3);
+        Assert.True(cut.Find(".e-headercontent").GetElementsByClassName("e-stackedheadercelldiv")[2].InnerHtml == "Freight");
+        await cut.Instance.HideColumnsAsync(ColumnItems, "HeaderText");
+        Assert.True(cut.Find(".e-headercontent").GetElementsByClassName("e-stackedheadercelldiv").Count() == 2, "Freight Stacked header is hide based on the child visible");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 12345678901, ShipCountry = "France", ShippedDate = new DateTime(1996, 05, 09) });
+        data.Add(new Order() { OrderID = 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 12345678902, ShipCountry = "Germany", ShippedDate = new DateTime(1996, 06, 19) });
+        data.Add(new Order() { OrderID = 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 12345678903, ShipCountry = "Brazil", ShippedDate = new DateTime(1996, 11, 09) });
+        data.Add(new Order() { OrderID = 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 12345678904, ShipCountry = "Belgium", ShippedDate = new DateTime(1996, 11, 21) });
+        data.Add(new Order() { OrderID = 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 12345678905, ShipCountry = "Switzerland", ShippedDate = new DateTime(1996, 02, 18) });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public long? Freight { get; set; }
+        public DateTime? ShippedDate { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}

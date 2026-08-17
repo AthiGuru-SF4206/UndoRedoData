@@ -1,0 +1,69 @@
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Web;
+
+@using Syncfusion.Blazor;
+@using Syncfusion.Blazor.Internal;
+@using Syncfusion.Blazor.DropDowns;
+@using Syncfusion.Blazor.Grids.Internal;
+@namespace Syncfusion.Blazor.Grids
+@typeparam TValue
+
+@if (ShouldRenderFooter())
+{
+    <div class="e-gridfooter">
+        <div class="e-summarycontent @(Parent!.FreezeModule!.GetFrozenCount() != 0 ? "e-summary-frozen" : "")">
+            @if (Parent.Aggregate != null)
+            {
+                <FooterContent TContent="TValue" Data="@Parent.CurrentViewData" Aggregate="@Parent.Aggregate"></FooterContent>
+            }
+        </div>
+    </div>
+}
+
+@code
+{
+    #region Parameters & State
+
+    [CascadingParameter]
+    public SfGrid<TValue>? Parent { get; set; }
+
+    private string FooterStyleText { get; set; } = string.Empty;
+
+    #endregion
+
+    #region Lifecycle
+
+    protected override void OnInitialized()
+    {
+        Parent?.EventAggregator?.Add("RenderAggregate", InvokeRefresh);
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    internal void InvokeRefresh(object args)
+    {
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Render Logic
+
+    private bool ShouldRenderFooter()
+    {
+        if (!Parent!.ShouldRenderHiddenColumns)
+        {
+            return Parent?.Aggregates != null &&
+                   Parent.Columns!.Any(column => column.Visible &&
+                   (Parent.Aggregates?.Any(agg => agg.Columns!.Any(aggCol => aggCol.Field == column.Field)) ?? false));
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    #endregion
+}

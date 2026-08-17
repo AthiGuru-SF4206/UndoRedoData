@@ -1,0 +1,121 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Rendering
+@typeparam TRow
+@inherits GridRowBase<TRow>
+
+@using Microsoft.AspNetCore.Components.Web 
+@using System.Globalization
+@using System.Text
+
+@if (RowParameters!.Row?.IsTemplate == true)
+{
+    <tr class="@ClassNames" role="@GetRole()" data-sf-style="@StyleText" @attributes="Attributes" @onclick:stopPropagation="true">
+        @{
+            var data = new RowTemplateData() { Data = RowParameters.Row?.Data! };
+            Parent!.EventAggregator?.Trigger("RowTemplateData", data);
+        }
+        <CascadingValue Value="data.Data" Name="RowData">
+            <CascadingValue Value="RowParameters.Row" Name="RowObject">
+                @if (((IGrid)Parent)?.GridTemplates?.RowTemplate != null)
+                {
+                    @(((IGrid)Parent).GridTemplates.RowTemplate(data.Data))
+                }
+            </CascadingValue>    
+        </CascadingValue>
+    </tr>
+}
+
+else
+{
+    ClassNames = RowParameters.Row?.IsEdit == true ? (Parent!.EditModule?.IsAdd == true && !Parent.EditSettings!.ShowAddNewRow ? $"{ClassNames} e-addedrow" : $"{ClassNames} e-editedrow") : ClassNames;
+    int startColumnIndex = Parent!.VirtualScrollModule?.StartColumnIndex ?? 0;
+    int endColumnIndex = Parent.VirtualScrollModule?.EndColumnIndex ?? 0;
+    if (!string.IsNullOrEmpty(StyleText))
+    {
+        Attributes.AddOrUpdateItem("data-sf-style", StyleText);
+    }
+    else
+    {
+        Attributes.Remove("style");
+        Attributes.AddOrUpdateItem("data-sf-style", StyleText);
+    }
+    <tr class="@(ClassNames)" role="@GetRole()" @attributes="Attributes" @onclick:stopPropagation="true">
+        @if (!RowParameters.Row?.IsEdit == true || (RowParameters.Row?.IsEdit == true && Parent.EditSettings?.Mode.Equals(EditMode.Dialog) == true))
+        {
+            @foreach (Cell<object> cell in GetCells((int?)startColumnIndex, (int?)endColumnIndex))
+            {
+                CellComponentService? service = Parent.CellService;
+                string cellType = service?.CellSelector != null ? service.CellSelector(RowParameters.Row!, cell) : cell.CellType.ToString();
+                cellType = Parent.CellService?.HasCell(cellType) == true ? cellType : null!;
+                if (cell.CellType != CellType.Data && cellType == null)
+                {
+                    var cellParams = new GridCellParameters()
+                    {
+                        Row = RowParameters.Row!,
+                        Cell = cell,
+                        IsFrozen = RowParameters.IsFrozen ?? false,
+                        IsFrozenRight = RowParameters.IsFrozenRight
+                    };
+                    if (cell.CellType == CellType.Expand)
+                    {
+                        @RenderExpandCell(cellParams)
+                    }
+                    if (cell.CellType == CellType.GroupCaption)
+                    {
+                        @RenderGroupCaptionCell(cellParams)
+                    }
+                    if (cell.CellType == CellType.Indent || cell.CellType == CellType.DetailIndent)
+                    {
+                        @RenderIndentCell(cellParams)
+                    }
+                    if(cell.CellType == CellType.RowDrag)
+                    {
+                        @RenderRowDragCell(cellParams)
+                    }
+                    if(cell.CellType == CellType.Detail)
+                    {
+                        @RenderDetailCell(cellParams)
+                    }
+                    if(cell.CellType == CellType.CaptionSummary)
+                    {
+                        @RenderCaptionSummaryCell(cellParams)
+                    }
+                    if(cell.CellType == CellType.Summary)
+                    {
+                        @RenderSummaryCell(cellParams)
+                    }
+                    if(cell.CellType == CellType.CommandColumn)
+                    {
+                        @RenderCommandColumnCell(cellParams)
+                    }
+                }
+                else if(cellType == null)
+                {
+                    var rfCtx = new GridCellParameters()
+                    {
+                        Row = RowParameters.Row!,
+                        Cell = cell,
+                        IsFrozen = RowParameters.IsFrozen ?? false,
+                        IsFrozenRight = RowParameters.IsFrozenRight
+                    };
+                    @RenderCell(rfCtx)
+                }
+                else if(cellType != null)
+                {
+                    @Parent.CellService?.GetCell(cellType)(new CellContext<object>() { Row = RowParameters.Row!, Cell = cell})
+                }
+            }
+        }
+        else
+        {
+            <NormalEdit TCell="TRow" Row="RowParameters.Row" Cells="@GetCells()"></NormalEdit>
+        }
+    </tr>
+    if(IsDummyRowNeeded())
+    {
+        string style = (Parent.EditModule != null && Parent.EditModule.IsEmptyRowRendered) ? "" : "none";
+        <tr role="row" data-sf-style="display:@style"><td></td></tr>
+    }
+}
+
+

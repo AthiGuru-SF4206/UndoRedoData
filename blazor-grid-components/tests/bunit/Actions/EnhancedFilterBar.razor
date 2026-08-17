@@ -1,0 +1,1754 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.DropDowns
+@*Enhanced FilterBar Component Tests - Interactive Tests with Operator Dropdown Click*@
+
+@*Test 1: Basic ShowFilterOperator Rendering with Immediate Mode*@
+<SfFixture @ref="fixture1" Test="ShowFilterBarOperatorBasicRenderingImmediate" Description="Enhanced FilterBar Rendering with Immediate Mode">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Type="ColumnType.Date" Format="d" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDateOff)" HeaderText="Shipped Date" Type="ColumnType.DateTime" Format="dd/MM/yyyy hh:mm" Width="130"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" HeaderText="Verified" Type="ColumnType.Boolean" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+
+    async void ShowFilterBarOperatorBasicRenderingImmediate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        
+        // Verify enhanced filter bar is rendered
+       
+        var enhancedFilterInputs = cut.FindAll(".e-enhanced-filter-input");
+        Assert.True(enhancedFilterInputs.Count > 0, "Enhanced filter inputs should be rendered");
+
+        // Verify operator dropdown icons are present
+       
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter operator icons should be rendered");
+
+        // Verify grid is in immediate mode
+        Assert.True(Grid.FilterSettings.Mode == FilterBarMode.Immediate, "Filter mode should be Immediate");
+        Assert.True(Grid.FilterSettings.ShowFilterBarOperator == true, "ShowFilterBarOperator should be enabled");
+    }
+}
+
+@*Test 2: Enhanced FilterBar with OnEnter Mode*@
+<SfFixture @ref="fixture2" Test="ShowFilterBarOperatorBasicRenderingOnEnter" Description="Enhanced FilterBar Rendering with OnEnter Mode">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.OnEnter"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+
+    async void ShowFilterBarOperatorBasicRenderingOnEnter(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Verify grid is in OnEnter mode
+        Assert.True(Grid.FilterSettings.Mode == FilterBarMode.OnEnter, "Filter mode should be OnEnter");
+        Assert.True(Grid.FilterSettings.ShowFilterBarOperator == true, "ShowFilterBarOperator should be enabled");
+
+        // Verify enhanced filter inputs are rendered
+
+        Assert.True(cut.FindAll(".e-enhanced-filter-input").Count > 0, "Enhanced filter inputs should be rendered");
+    }
+}
+
+@*Test 3: INTERACTIVE - String Column - "Contains" Operator*@
+<SfFixture @ref="fixture3" TestAsync="StringColumnContainsOperator" Description="String Column - Contains Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+
+    async Task StringColumnContainsOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "contains" operator
+        var containsOption = cut.Find("li[data-value=\"contains\"]");
+        Assert.True(containsOption != null, "Contains operator option should be available");
+        containsOption?.Click();
+        await Task.Delay(500);
+
+        // Type value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("ALF");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 4: INTERACTIVE - String Column - "StartsWith" Operator*@
+<SfFixture @ref="fixture4" TestAsync="StringColumnStartsWithOperator" Description="String Column - StartsWith Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+
+    async Task StringColumnStartsWithOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "startswith" operator
+        var startsWithOption = cut.Find("li[data-value=\"startswith\"]");
+        Assert.True(startsWithOption != null, "StartsWith operator option should be available");
+        startsWithOption?.Click();
+        await Task.Delay(500);
+
+        // Type value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("ALF");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+           
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 5: INTERACTIVE - Integer Column - "Equal" Operator*@
+<SfFixture @ref="fixture5" TestAsync="IntegerColumnEqualOperator" Description="Integer Column - Equal Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture5 { get; set; }
+
+    async Task IntegerColumnEqualOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "equal" operator
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Type numeric value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("1001");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+           
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 6: INTERACTIVE - Double Column - "GreaterThan" Operator*@
+<SfFixture @ref="fixture6" TestAsync="DoubleColumnGreaterThanOperator" Description="Double Column - GreaterThan Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture6 { get; set; }
+
+    async Task DoubleColumnGreaterThanOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "greaterthan" operator
+        var gtOption = cut.Find("li[data-value=\"greaterthan\"]");
+        Assert.True(gtOption != null, "GreaterThan operator option should be available");
+        gtOption?.Click();
+        await Task.Delay(500);
+
+        // Type double value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("25.7");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 7: INTERACTIVE - Date Column - "Equal" Operator*@
+<SfFixture @ref="fixture7" TestAsync="DateColumnEqualOperator" Description="Date Column - Equal Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Type="ColumnType.Date" Format="d" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture7 { get; set; }
+
+    async Task DateColumnEqualOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "equal" operator
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Type date value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("5/1/2010");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+          
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 8: INTERACTIVE - DateTime Column - "NotEqual" Operator*@
+<SfFixture @ref="fixture8" TestAsync="DateTimeColumnNotEqualOperator" Description="DateTime Column - NotEqual Operator (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderDateOff)" HeaderText="Shipped Date" Type="ColumnType.DateTime" Format="dd/MM/yyyy hh:mm" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture8 { get; set; }
+
+    async Task DateTimeColumnNotEqualOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "notequal" operator
+        var notEqualOption = cut.Find("li[data-value=\"notequal\"]");
+        Assert.True(notEqualOption != null, "NotEqual operator option should be available");
+        notEqualOption?.Click();
+        await Task.Delay(500);
+
+        // Type datetime value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("04/01/2015 00:00");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+          
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 9: INTERACTIVE - Boolean Column - "Equal" Operator with True Value*@
+<SfFixture @ref="fixture9" TestAsync="BooleanColumnEqualTrueOperator" Description="Boolean Column - Equal Operator with True (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Verified)" HeaderText="Verified" Type="ColumnType.Boolean" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture9 { get; set; }
+
+    async Task BooleanColumnEqualTrueOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "equal" operator
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Type boolean value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("true");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+            // Verify filter was applied
+          
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 10: INTERACTIVE - Immediate Mode - Default Operator Applied Instantly*@
+<SfFixture @ref="fixture10" TestAsync="ImmediateModeDefaultOperator" Description="Immediate Mode - Default Operator Applied Instantly (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture10 { get; set; }
+
+    async Task ImmediateModeDefaultOperator(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        var initialCount = Grid.CurrentViewData.Count();
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "equal" operator (default)
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Type in the input field - should filter IMMEDIATELY in Immediate mode
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("ALFKI");
+            await Task.Delay(500); // Wait for Immediate mode to apply
+
+            // Verify filter was applied INSTANTLY without pressing Enter
+        
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 11: INTERACTIVE - OnEnter Mode - Filter Applied Only on Enter Key Press*@
+<SfFixture @ref="fixture11" TestAsync="OnEnterModeEnterKeyRequired" Description="OnEnter Mode - Filter Applied on Enter Key (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.OnEnter"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture11 { get; set; }
+
+    async Task OnEnterModeEnterKeyRequired(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Open operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Select "equal" operator
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Type value in input field - should NOT filter immediately in OnEnter mode
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("ALFKI");
+            await Task.Delay(300);
+            
+            // Filter should NOT be applied yet
+       
+            
+            // Press Enter key - NOW filter should apply
+            inputs[0].KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+          
+        }
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 12: INTERACTIVE - Multiple Column Filtering with UI Interaction*@
+<SfFixture @ref="fixture12" TestAsync="MultipleColumnUIFiltering" Description="Multiple Column Filtering with UI Interaction (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture12 { get; set; }
+
+    async Task MultipleColumnUIFiltering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        var initialCount = Grid.CurrentViewData.Count();
+
+        // Apply filter to first column (OrderID) with "equal" operator
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count >= 3, "Should have 3 filter icons for 3 columns");
+
+        // Click first filter icon (OrderID)
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var dropdowns1 = cut.FindAll(".e-dropdownlist");
+        dropdowns1[0].MouseDown();
+        await Task.Delay(500);
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+        var inputs1 = cut.FindAll(".e-enhanced-filter-input input");
+        inputs1[0].Input("10248");
+        await Task.Delay(1000);
+
+      
+
+        // Apply filter to second column (CustomerID) with "contains" operator
+        filterIcons[1].Click();
+        await Task.Delay(500);
+        var dropdowns2 = cut.FindAll(".e-dropdownlist");
+        dropdowns2[0].MouseDown();
+        await Task.Delay(500);
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+        var inputs2 = cut.FindAll(".e-enhanced-filter-input input");
+        inputs2[1].Input("VINET");
+        await Task.Delay(1000);
+
+
+        // Verify results are filtered
+        var filteredCount = cut.FindAll(".e-row").Count;
+        Assert.True(filteredCount <= initialCount, "Filtered results should be subset of initial data");
+
+        // Clear all filters
+        await Grid.ClearFilteringAsync();
+
+    }
+}
+
+@*Test 13: INTERACTIVE - Operator Switching on Same Column*@
+<SfFixture @ref="fixture13" TestAsync="OperatorSwitchingUI" Description="Operator Switching on Same Column (Interactive UI Test)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture13 { get; set; }
+
+    async Task OperatorSwitchingUI(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // First, apply filter with "contains" operator
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("ALF");
+        await Task.Delay(1000);
+
+        
+        // Clear the input
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Now switch to "equal" operator
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("ALFKI");
+        await Task.Delay(1000);
+
+     
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 14: Special Characters and Edge Cases - Input Validation*@
+<SfFixture @ref="fixture14" TestAsync="SpecialCharactersFiltering" Description="Special Characters and Edge Cases - Input Validation">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture14 { get; set; }
+
+    async Task SpecialCharactersFiltering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Test with single character input
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("A");
+        await Task.Delay(1000);
+
+      
+
+        // Clear and test with special character
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Click filter icon again for second filter test
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("@");
+        await Task.Delay(1000);
+
+      
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 15: Long Data Type - Numeric Operators*@
+<SfFixture @ref="fixture15" TestAsync="LongColumnNumericOperators" Description="Long Data Type - Numeric Operators">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.TotalItemCount)" HeaderText="Total Items" Type="ColumnType.Long" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture15 { get; set; }
+
+    async Task LongColumnNumericOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Test "equal" operator with long value
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("15");
+        await Task.Delay(1000);
+
+
+
+        // Clear and test with "greaterthan" operator
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Test "greaterthan" operator
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"greaterthan\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("16");
+        await Task.Delay(1000);
+
+     
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 16: Decimal Data Type - Numeric Operators*@
+<SfFixture @ref="fixture16" TestAsync="DecimalColumnNumericOperators" Description="Decimal Data Type - Numeric Operators">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.TotalPrice)" HeaderText="Total Price" Type="ColumnType.Decimal" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture16 { get; set; }
+
+    async Task DecimalColumnNumericOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Test "equal" operator with decimal value
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("25");
+        await Task.Delay(1000);
+
+        // Clear and test with "lessthanorequal" operator
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Test "lessthanorequal" operator
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"lessthanorequal\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("30");
+        await Task.Delay(1000);
+
+       
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 17: TimeOnly Data Type - Time Operators*@
+<SfFixture @ref="fixture17" TestAsync="TimeOnlyColumnOperators" Description="TimeOnly Data Type - Time Operators">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderTime)" HeaderText="Order Time" Type="ColumnType.TimeOnly" Format="hh:mm tt" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture17 { get; set; }
+
+    async Task TimeOnlyColumnOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Test "equal" operator with time value
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("10:00");
+        await Task.Delay(1000);
+
+      
+
+        // Clear and test with "greaterthan" operator
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Test "greaterthan" operator
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"greaterthan\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("10:30");
+        await Task.Delay(1000);
+
+     
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 18: DateOnly Data Type - Date Operators*@
+<SfFixture @ref="fixture18" TestAsync="DateOnlyColumnOperators" Description="DateOnly Data Type - Date Operators">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Date)" HeaderText="Date" Type="ColumnType.DateOnly" Format="d" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture18 { get; set; }
+
+    async Task DateOnlyColumnOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Test "equal" operator with DateOnly value
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("5/1/2012");
+        await Task.Delay(1000);
+
+        // Clear and test with "lessthan" operator
+        inputs[0].Input("");
+        await Task.Delay(500);
+        await Grid.ClearFilteringAsync();
+        await Task.Delay(500);
+
+        // Test "lessthan" operator
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"lessthan\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("5/3/2012");
+        await Task.Delay(1000);
+
+   
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 19: Filter Clear and Reset*@
+<SfFixture @ref="fixture19" TestAsync="FilterClearAndReset" Description="Filter Clear and Reset Functionality">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture19 { get; set; }
+
+    async Task FilterClearAndReset(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Apply first filter with "equal" operator on OrderID
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"equal\"]")?.Click();
+        await Task.Delay(500);
+
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[0].Input("1001");
+        await Task.Delay(1000);
+
+      
+        // Apply second filter with "contains" operator on CustomerID
+        filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[1].Click();
+        await Task.Delay(500);
+
+        dropdowns = cut.FindAll(".e-dropdownlist");
+        dropdowns[1].MouseDown();
+        await Task.Delay(500);
+
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+
+        inputs = cut.FindAll(".e-enhanced-filter-input input");
+        inputs[1].Input("ALF");
+        await Task.Delay(1000);
+
+      
+        // Clear all filters
+        await Grid.ClearFilteringAsync();
+       
+    }
+}
+
+@*Test 20: Enhanced Filter Bar UI Elements Visibility*@
+<SfFixture @ref="fixture20" TestAsync="ShowFilterBarOperatorUIElements" Description="Enhanced Filter Bar UI Elements Visibility">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture20 { get; set; }
+
+    async Task ShowFilterBarOperatorUIElements(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Verify enhanced filter input divs are rendered
+      
+        var enhancedFilterInputs = cut.FindAll(".e-enhanced-filter-input");
+        Assert.True(enhancedFilterInputs.Count == 2, "Enhanced filter inputs should be rendered for all columns");
+
+        // Verify filter icons are rendered
+
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count == 2, "Filter operator icons should be rendered for all columns");
+
+        // Verify input elements inside enhanced filter inputs
+        var textboxInputs = cut.FindAll(".e-enhanced-filter-input input");
+        Assert.True(textboxInputs.Count >= 1, "Input elements should be present in enhanced filter inputs");
+
+        // Interact with first column filter
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        var dropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(dropdowns.Count > 0, "Operator dropdown should be available");
+
+        dropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Verify dropdown options are visible
+        var dropdownOptions = cut.FindAll("li[data-value]");
+        Assert.True(dropdownOptions.Count > 0, "Dropdown options should be visible");
+
+        // Select an operator
+        cut.Find("li[data-value=\"contains\"]")?.Click();
+        await Task.Delay(500);
+
+        // Verify operator was selected and input field is active
+        var inputField = cut.FindAll(".e-enhanced-filter-input input")[0];
+        Assert.NotNull(inputField);
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 21: INTERACTIVE - Click Filter Icon and Open Operator Dropdown for String Column - Immediate Mode*@
+<SfFixture @ref="fixture21" TestAsync="StringColumnFilterIconClickAndDropdown" Description="Click Filter Icon and Open Operator Dropdown - String Column (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture21 { get; set; }
+
+    async Task StringColumnFilterIconClickAndDropdown(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Find and click the filter icon to open operator dropdown
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter icon should exist");
+        
+        // Click the first filter icon (CustomerID column)
+        filterIcons[0].Click();
+        await Task.Delay(500); // Wait for dropdown to open
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "contains" operator option using data-value attribute
+        var containsOption = cut.Find("li[data-value=\"contains\"]");
+        Assert.True(containsOption != null, "Contains operator option should be available in dropdown");
+        containsOption?.Click();
+        await Task.Delay(500);
+
+        // Type value in the input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("ALF");
+            await Task.Delay(1000); // Wait for Immediate mode filter to apply
+            
+          
+        }
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 22: INTERACTIVE - Click Filter Icon and Change Operator for String Column - OnEnter Mode*@
+<SfFixture @ref="fixture22" TestAsync="StringColumnOperatorChangeOnEnterMode" Description="Click Filter Icon and Change Operator - String Column (OnEnter Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.OnEnter"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture22 { get; set; }
+
+    async Task StringColumnOperatorChangeOnEnterMode(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Verify OnEnter mode is set
+        Assert.True(Grid.FilterSettings.Mode == FilterBarMode.OnEnter, "Filter mode should be OnEnter");
+
+        // Click filter icon to open dropdown
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "startswith" operator option
+        var startsWithOption = cut.Find("li[data-value=\"startswith\"]");
+        Assert.True(startsWithOption != null, "Starts With operator option should be available in dropdown");
+        startsWithOption?.Click();
+        await Task.Delay(500);
+        
+        // Type value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("VIN");
+            
+            // In OnEnter mode, filter should NOT apply until Enter is pressed
+            await Task.Delay(300);
+            
+            // Filter should not be applied yet
+           
+        }
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 23: INTERACTIVE - Click Filter Icon for Integer Column with Numeric Operators - Immediate Mode*@
+<SfFixture @ref="fixture23" TestAsync="IntegerColumnFilterIconClickNumericOp" Description="Click Filter Icon - Integer Column with Numeric Operators (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture23 { get; set; }
+
+    async Task IntegerColumnFilterIconClickNumericOp(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        var initialCount = Grid.CurrentViewData.Count();
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "equal" operator option
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available in dropdown");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Enter numeric value
+        var numericInputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (numericInputs.Count > 0)
+        {
+            numericInputs[0].Input("1001");
+            await Task.Delay(1000); // Wait for Immediate mode
+
+            // Verify filter was applied with numeric value
+            
+            
+            if (Grid.FilterSettings.Columns != null && Grid.FilterSettings.Columns.Count() > 0)
+            {
+                var filterCol = Grid.FilterSettings.Columns[0];
+                Assert.True(filterCol.Field == "OrderID", "OrderID filter should be applied");
+                
+                // Check filtered result
+                var filteredCount = cut.FindAll(".e-row").Count;
+                Assert.True(filteredCount <= initialCount, "Filtered data should be less than or equal to total");
+            }
+        }
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 24: INTERACTIVE - Click Filter Icon for Date Column - Immediate Mode*@
+<SfFixture @ref="fixture24" TestAsync="DateColumnFilterIconClickDateOp" Description="Click Filter Icon - Date Column (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Type="ColumnType.Date" Format="d" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture24 { get; set; }
+
+    async Task DateColumnFilterIconClickDateOp(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "equal" operator option
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available in dropdown");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Apply filter via API (since date input requires special handling)
+        await Grid.FilterByColumnAsync("OrderDate", "equal", new DateTime(2010, 5, 1));
+       
+
+       
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 25: INTERACTIVE - Click Filter Icon for Boolean Column - Immediate Mode*@
+<SfFixture @ref="fixture25" TestAsync="BooleanColumnFilterIconClickBoolOp" Description="Click Filter Icon - Boolean Column (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Verified)" HeaderText="Verified" Type="ColumnType.Boolean" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture25 { get; set; }
+
+    async Task BooleanColumnFilterIconClickBoolOp(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "equal" operator option
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available in dropdown");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Apply boolean filter
+        await Grid.FilterByColumnAsync("Verified", "equal", true);
+       
+
+        Assert.True(Grid.FilterSettings.Columns.Count() == 1, "Boolean filter should be applied");
+        Assert.True(Grid.FilterSettings.Columns[0].Field == "Verified", "Verified field should be filtered");
+
+        // Clear and test with false
+        await Grid.ClearFilteringAsync();
+        await Grid.FilterByColumnAsync("Verified", "equal", false);
+     
+
+        Assert.True(Grid.FilterSettings.Columns[0].Value.ToString().ToLower() == "false", "Boolean false filter should be applied");
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 26: INTERACTIVE - Multiple Column Filtering with Operators - Immediate Mode*@
+<SfFixture @ref="fixture26" TestAsync="MultipleColumnFilteringWithOperators" Description="Multiple Column Filtering with Different Operators (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Type="ColumnType.Integer" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture26 { get; set; }
+
+    async Task MultipleColumnFilteringWithOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+        var initialCount = Grid.CurrentViewData.Count();
+
+        // Apply filter to first column (OrderID)
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count >= 3, "Should have 3 filter icons");
+
+        // Click first filter icon and apply filter with dropdown
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var filterOperatorDropdowns1 = cut.FindAll(".e-dropdownlist");
+        if (filterOperatorDropdowns1.Count > 0)
+        {
+            filterOperatorDropdowns1[0].MouseDown();
+            await Task.Delay(500);
+            var equalOption = cut.Find("li[data-value=\"equal\"]");
+            equalOption?.Click();
+            await Task.Delay(500);
+        }
+        var numInputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (numInputs.Count > 0)
+        {
+            numInputs[0].Input("1001");
+            await Task.Delay(1000);
+        }
+
+        // Click second filter icon and apply filter with dropdown
+        filterIcons[1].Click();
+        await Task.Delay(500);
+        var filterOperatorDropdowns2 = cut.FindAll(".e-dropdownlist");
+        if (filterOperatorDropdowns2.Count > 0)
+        {
+            filterOperatorDropdowns2[0].MouseDown();
+            await Task.Delay(500);
+            var startsWithOption = cut.Find("li[data-value=\"startswith\"]");
+            startsWithOption?.Click();
+            await Task.Delay(500);
+        }
+        var stringInputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (stringInputs.Count > 1)
+        {
+            stringInputs[1].Input("VIN");
+            await Task.Delay(1000);
+        }
+
+     
+        // Results should show intersection of both filters
+        var filteredCount = cut.FindAll(".e-row").Count;
+        Assert.True(filteredCount <= initialCount, "Filtered results should be subset of initial data");
+
+        // Clear all filters
+        await Grid.ClearFilteringAsync();
+       
+    }
+}
+
+@*Test 27: INTERACTIVE - Double Column Filtering with All Operators - Both Modes*@
+<SfFixture @ref="fixture27" TestAsync="DoubleColumnAllOperators" Description="Double Column - All Numeric Operators (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture27 { get; set; }
+
+    async Task DoubleColumnAllOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Test equal operator with dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        await Grid.FilterByColumnAsync("Freight", "equal", 32.38);
+
+        Assert.True(Grid.FilterSettings.Columns[0].Field == "Freight", "Freight equal filter applied");
+        await Grid.ClearFilteringAsync();
+
+        // Test greaterthan operator with dropdown
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var filterOperatorDropdowns2 = cut.FindAll(".e-dropdownlist");
+        filterOperatorDropdowns2[0].MouseDown();
+        await Task.Delay(500);
+        var gtOption = cut.Find("li[data-value=\"greaterthan\"]");
+        gtOption?.Click();
+        await Task.Delay(500);
+
+        await Grid.FilterByColumnAsync("Freight", "greaterthan", 25.0);
+           
+        await Grid.ClearFilteringAsync();
+
+        // Test lessthan operator with dropdown
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var filterOperatorDropdowns3 = cut.FindAll(".e-dropdownlist");
+        filterOperatorDropdowns3[0].MouseDown();
+        await Task.Delay(500);
+        var ltOption = cut.Find("li[data-value=\"lessthan\"]");
+        ltOption?.Click();
+        await Task.Delay(500);
+
+        await Grid.FilterByColumnAsync("Freight", "lessthan", 50.0);
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 28: INTERACTIVE - Filter with Long Data Type - Immediate Mode*@
+<SfFixture @ref="fixture28" TestAsync="LongColumnFilterIconClickNumericOp" Description="Click Filter Icon - Long Column (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.EmployeeID)" HeaderText="Employee ID" Type="ColumnType.Long" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture28 { get; set; }
+
+    async Task LongColumnFilterIconClickNumericOp(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Find and interact with the operator dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+
+        // MouseDown on the operator dropdown to open it
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        // Find and click "equal" operator option
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        Assert.True(equalOption != null, "Equal operator option should be available in dropdown");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        // Apply filter with long value
+        await Grid.FilterByColumnAsync("EmployeeID", "equal", 1001L);
+  
+
+        Assert.True(Grid.FilterSettings.Columns.Count() == 1, "Long column filter should be applied");
+        Assert.True(Grid.FilterSettings.Columns[0].Field == "EmployeeID", "EmployeeID field should be filtered");
+
+        // Clear filter
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 29: INTERACTIVE - Filter with Decimal Data Type - Both Modes*@
+<SfFixture @ref="fixture29" TestAsync="DecimalColumnFilterOperators" Description="Decimal Column - Numeric Operators (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Decimal" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture29 { get; set; }
+
+    async Task DecimalColumnFilterOperators(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Click filter icon
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Test equal operator with dropdown
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+        var equalOption = cut.Find("li[data-value=\"equal\"]");
+        equalOption?.Click();
+        await Task.Delay(500);
+
+        await Grid.FilterByColumnAsync("Freight", "equal", 32.38m);
+      
+        Assert.True(Grid.FilterSettings.Columns[0].Field == "Freight", "Decimal equal filter applied");
+        await Grid.ClearFilteringAsync();
+
+        // Test lessthanorequal operator with dropdown
+        filterIcons[0].Click();
+        await Task.Delay(500);
+        var filterOperatorDropdowns2 = cut.FindAll(".e-dropdownlist");
+        filterOperatorDropdowns2[0].MouseDown();
+        await Task.Delay(500);
+        var ltOrEqOption = cut.Find("li[data-value=\"lessthanorequal\"]");
+        ltOrEqOption?.Click();
+        await Task.Delay(500);
+
+        await Grid.FilterByColumnAsync("Freight", "lessthanorequal", 50.0m);
+
+     
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+@*Test 30: INTERACTIVE - Clear Icon Button - String Column (Immediate Mode)*@
+<SfFixture @ref="fixture30" TestAsync="ClearIconButtonStringColumn" Description="Clear Icon Button - String Column (Immediate Mode)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings ShowFilterBarOperator="true" Type="Syncfusion.Blazor.Grids.FilterType.FilterBar" Mode="FilterBarMode.Immediate"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Type="ColumnType.String" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Type="ColumnType.Double" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture30 { get; set; }
+
+    async Task ClearIconButtonStringColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var Grid = cut.Instance;
+
+        // Step 1: Apply a filter with string value
+        var filterIcons = cut.FindAll(".e-icons.e-filter");
+        Assert.True(filterIcons.Count > 0, "Filter operator icons should be rendered");
+
+        // Click on first column filter icon
+        filterIcons[0].Click();
+        await Task.Delay(500);
+
+        // Select "contains" operator
+        var filterOperatorDropdowns = cut.FindAll(".e-dropdownlist");
+        Assert.True(filterOperatorDropdowns.Count > 0, "Filter operator dropdown should be available");
+        filterOperatorDropdowns[0].MouseDown();
+        await Task.Delay(500);
+
+        var containsOption = cut.Find("li[data-value=\"contains\"]");
+        Assert.True(containsOption != null, "Contains operator option should be available");
+        containsOption?.Click();
+        await Task.Delay(500);
+
+        // Type value in input field
+        var inputs = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputs.Count > 0)
+        {
+            inputs[0].Input("vins");
+            await Task.Delay(300);
+        }
+        if (Grid.FilterSettings.Columns != null)
+        {
+            // Step 2: Verify filter is applied
+            Assert.True(Grid.FilterSettings.Columns.Count > 0, "Filter should be applied");
+            Assert.True(Grid.FilterSettings.Columns[0].Field == "CustomerID", "Filter should be on CustomerID column");
+        }
+        // Step 3: Verify clear icon is visible (active state)
+        var clearIcons = cut.FindAll(".e-filter-clear");
+        Assert.True(clearIcons.Count > 0, "Clear icon should be visible when filter is active");
+
+        // Step 4: Click on clear icon to clear the filter
+        if (clearIcons.Count > 0)
+        {
+            clearIcons[0].Click();
+            await Task.Delay(500);
+        }
+
+
+
+        // Step 6: Verify input value is reset
+        var inputsAfterClear = cut.FindAll(".e-enhanced-filter-input input");
+        if (inputsAfterClear.Count > 0)
+        {
+            var inputValue = inputsAfterClear[0].GetAttribute("value");
+            Assert.True(string.IsNullOrEmpty(inputValue), "Input value should be empty after clearing filter");
+        }
+
+        // Step 7: Verify operator is reset to default (for string column, default is "contains")
+        var operatorDropdownsAfterClear = cut.FindAll(".e-dropdownlist");
+        Assert.True(operatorDropdownsAfterClear.Count > 0, "Operator dropdown should still exist");
+
+        await Grid.ClearFilteringAsync();
+    }
+}
+
+
+

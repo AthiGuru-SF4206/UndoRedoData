@@ -1,0 +1,456 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Display a Detail Template">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@GenerateEmployeeData()" AllowPaging="true">
+            <GridEvents OnRecordClick="RecordClick" DetailsExpanding="DetailsExpandingHandler" DetailsExpanded="DetailsExpandedHandler" DetailsCollapsing="DetailsCollapsingHandler" DetailsCollapsed="DetailsCollapsedHandler" TValue="Employee"></GridEvents>
+            <GridTemplates>
+                <DetailTemplate>
+                    @{
+                        var employee = (context as Employee);
+                        <table class="detailtable" width="100%">
+                            <colgroup>
+                                <col width="35%">
+                                <col width="35%">
+                                <col width="30%">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <td rowspan="4" style="text-align: center;">
+                                        <img class="photo" src="@($" Images/Employees/{employee.EmployeeID}.png")" alt="@employee.EmployeeID" />
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Employee ID: </span> @employee.FirstName
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Hire Date: </span> @employee.HireDate
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 500;">Last Name: </span> @employee.LastName
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">City: </span> @employee.City
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 500;">Title: </span> @employee.Title
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Country: </span> @employee.Country
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+                </DetailTemplate>
+            </GridTemplates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Employee.FirstName) HeaderText="First Name" Width="110"> </GridColumn>
+                <GridColumn Field=@nameof(Employee.LastName) HeaderText="Last Name" Width="110"></GridColumn>
+                <GridColumn Field=@nameof(Employee.Title) HeaderText="Title" Width="110"></GridColumn>
+                <GridColumn Field=@nameof(Employee.Country) HeaderText="Country" Width="110"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture;
+    private SfGrid<Employee> Grid { get; set; }
+    private bool preventExpanding { get; set; }
+    private bool preventCollapsing { get; set; }
+
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Employee>>();
+
+        Assert.True(9 == cut.FindAll(".e-row").Count, "All rows are rendered properly");
+        Assert.True(9 == cut.FindAll(".e-detailrowcollapse").Count, "detail template rows are rendered");
+        Assert.False(cut.FindAll(".e-icons")[0].ClassList.Contains("e-dtdiagonaldown e-icon-gdownarrow"), "detail template is not expanded");
+        Assert.True(0 == cut.FindAll(".e-detailrow").Count, "detail template hasn't rendered");        
+
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+
+        Assert.True(1 == cut.FindAll(".e-detailrow").Count, "detail template has been rendered");
+        Assert.True(8 == cut.FindAll(".e-detailrowcollapse").Count, "other eight rows are rendered without expanding");
+        Assert.True(1 == cut.FindAll(".e-detailrowexpand").Count, "Detail template rendering properly");
+        Assert.True(1 == cut.FindAll(".e-dtdiagonaldown").Count, "detail template row is expanded properly");
+
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+
+        // using the cancel propert to prevent from expanding and collapsing the detail template.
+        preventExpanding = true;
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+        Assert.True(9 == cut.FindAll(".e-detailrowcollapse").Count, "All the rows are in collapsed state");
+
+        preventExpanding = false;
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+        Assert.True(8 == cut.FindAll(".e-detailrowcollapse").Count, "other eight rows are rendered without expanding");
+
+        var RowExpand = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridRow<Employee>>();
+        var rowData = new Employee()
+        {
+            FirstName = "Alfki",
+            LastName = "Alfki",
+            Title = "Alfki",
+            Country = "Alfki"
+        };
+        RowExpand.Instance.IsExpanded(rowData, true);
+
+        preventCollapsing = true;
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+        Assert.True(8 == cut.FindAll(".e-detailrowcollapse").Count, "other eight rows are rendered without expanding");
+
+        preventCollapsing = false;
+        cut.FindAll(".e-row")[0].Children[0].Click(new MouseEventArgs());
+        Assert.True(9 == cut.FindAll(".e-detailrowcollapse").Count, "All the rows are in collapsed state");
+
+        
+    }
+
+    public async Task DetailsExpandingHandler(DetailsExpandingEventArgs<Employee> args)
+    {
+        args.Cancel = preventExpanding;
+        Assert.True(args.Data != null);
+        // below line is commented since its not working fine need to fix this in source level.
+        // Assert.True(args.RowIndex == 0);
+    }
+
+    public void DetailsExpandedHandler(DetailsExpandedEventArgs<Employee> args)
+    {
+    }
+
+    public void RecordClick(RecordClickEventArgs<Employee> args)
+    {
+        
+    }
+
+    public async Task DetailsCollapsingHandler(DetailsCollapsingEventArgs<Employee> args)
+    {
+        args.Cancel = preventCollapsing;
+        Assert.True(args.Data != null);
+        // below line is commented since its not working fine need to fix this in source level.
+        // Assert.True(args.RowIndex == 0);
+    }
+
+    public void DetailsCollapsedHandler(DetailsCollapsedEventArgs<Employee> args)
+    {
+    }
+    
+}
+<SfFixture @ref="fixture6" TestAsync="GridBasicRendering6" Description="Detail template with events">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows6()" @ref="Grid6">
+            <GridEvents TValue="EmployeeData6"
+                        DetailsExpanding="DetailExpandingHandler"
+                        OnActionComplete="ActionCompleteHandler"
+                        DetailDataBound="DetailDataBoundHandler"
+                        DetailsExpanded="DetailExpandedHandler"
+                        DetailsCollapsed="DetailCollapsedHandler">
+            </GridEvents>
+            <GridTemplates>
+                <DetailTemplate>
+                    @{
+                        var employee = (context as EmployeeData6);
+                        <table class="detailtable" width="100%">
+                            <colgroup>
+                                <col width="35%">
+                                <col width="35%">
+                                <col width="30%">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <td rowspan="4" style="text-align: center;">
+                                        <img class="photo" src="@($" scripts/Images/Employees/{employee.EmployeeID}.png")" alt="@employee.EmployeeID" />
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Employee ID: </span> @employee.FirstName
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Hire Date: </span> @employee.HireDate.Value.ToShortDateString()
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 500;">Last Name: </span> @employee.LastName
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">City: </span> @employee.City
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span style="font-weight: 500;">Title: </span> @employee.Title
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;">Country: </span> @employee.Country
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+                </DetailTemplate>
+            </GridTemplates>
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeData6.FirstName) HeaderText="First Name" Width="110"> </GridColumn>
+                <GridColumn Field=@nameof(EmployeeData6.LastName) HeaderText="Last Name" Width="110"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeData6.Title) HeaderText="Title" Width="110"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeData6.Country) HeaderText="Country" Width="110"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture6 { get; set; }
+    public SfGrid<EmployeeData6> Grid6 { get; set; }
+    public List<EmployeeData6> Employees6 { get; set; }
+
+    private bool isDetailExpanding { get; set; }
+    private bool isActionComplete { get; set; }
+    private bool isDetailDataBound { get; set; }
+    private bool isDetailExpanded { get; set; }
+    private bool isDetailCollapsed { get; set; }
+
+    public async Task GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeData6>>();
+
+        await Grid6.ExpandCollapseDetailRowAsync("FirstName", "Nancy");
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(isDetailExpanding, "DetailExpanding event fired");
+            Assert.True(isDetailDataBound, "DetailDataBound event fired");
+            Assert.True(isDetailExpanded, "DetailExpanded event fired");
+        }, TimeSpan.FromSeconds(50));
+
+        // Assert.True(isDetailExpanding, "DetailExpanding event fired");
+        // Assert.True(isDetailDataBound, "DetailDataBound event fired");
+        // Assert.True(isDetailExpanded, "DetailExpanded event fired");
+
+        isDetailCollapsed = false;
+        await Grid6.ExpandCollapseDetailRowAsync("FirstName", "Nancy");
+        Assert.True(isDetailCollapsed, "DetailCollapsed event fired");
+
+        await Grid6.ExpandAllDetailRowAsync();
+        Assert.True(cut.FindAll(".detailtable").Count == 9);
+        await Grid6.CollapseAllDetailRowAsync();
+        Assert.True(cut.FindAll(".detailtable").Count == 0);
+        Assert.True(isActionComplete, "OnActionComplete event fired");
+    }
+
+    public void DetailExpandingHandler(DetailsExpandingEventArgs<EmployeeData6> args)
+    {
+        isDetailExpanding = true;
+    }
+
+    public void ActionCompleteHandler(ActionEventArgs<EmployeeData6> args)
+    {
+        isActionComplete = true;
+    }
+
+    public void DetailDataBoundHandler(DetailDataBoundEventArgs<EmployeeData6> args)
+    {
+        isDetailDataBound = true;
+    }
+
+    public void DetailExpandedHandler(DetailsExpandedEventArgs<EmployeeData6> args)
+    {
+        isDetailExpanded = true;
+    }
+
+    public void DetailCollapsedHandler(DetailsCollapsedEventArgs<EmployeeData6> args)
+    {
+        isDetailCollapsed = true;
+    }
+
+    public List<EmployeeData6> GenerateRows6()
+    {
+        return Employees6 = Enumerable.Range(1, 9).Select(x => new EmployeeData6()
+        {
+            EmployeeID = x,
+            FirstName = (new string[] { "Nancy", "Andrew", "Janet", "Margaret", "Steven" })[new Random().Next(5)],
+            LastName = (new string[] { "Davolio", "Fuller", "Leverling", "Peacock", "Buchanan" })[new Random().Next(5)],
+            Title = (new string[] { "Sales Representative", "Vice President, Sales", "Sales Manager",
+                                    "Inside Sales Coordinator" })[new Random().Next(4)],
+            HireDate = DateTime.Now.AddDays(-x),
+            City = (new string[] { "Seattle", "Tacoma", "Redmond", "Kirkland", "London" })[new Random().Next(5)],
+            Country = (new string[] { "USA", "UK" })[new Random().Next(2)],
+        }).ToList();
+    }
+
+    public class EmployeeData6
+    {
+        public int? EmployeeID { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Title { get; set; }
+        public DateTime? HireDate { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="KeyHandler triggering keys in a Detail Template">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="EmployeeData.GetAllRecords()" Height="300px">
+     <GridTemplates>
+        <DetailTemplate>
+            @{
+                var employee = (context as EmployeeData);
+            }
+            <SfGrid DataSource="OrderData.GetAllRecords1()" Query="@(new Query().Where("EmployeeID", "equal", employee.EmployeeID))">
+                <GridAggregates>
+                    <GridAggregate>
+                        <GridAggregateColumns>
+                            <GridAggregateColumn Field="@nameof(OrderData.Freight)" Format='C2' Type="AggregateType.Sum">
+                                <FooterTemplate Context="footerContext">
+                                    @{
+                                        var aggregate = (footerContext as AggregateTemplateContext);
+                                    }
+                                    <div>
+                                        Sum: @aggregate.Sum
+                                    </div>
+                                </FooterTemplate>
+                            </GridAggregateColumn>
+                        </GridAggregateColumns>
+                    </GridAggregate>
+                    <GridAggregate>
+                        <GridAggregateColumns>
+                            <GridAggregateColumn Field="@nameof(OrderData.Freight)" Format='C2' Type="AggregateType.Max">
+                                <FooterTemplate Context="footerContext">
+                                    @{
+                                        var aggregate = (footerContext as AggregateTemplateContext);
+                                    }
+                                    <div>
+                                        Max: @aggregate.Max
+                                    </div>
+                                </FooterTemplate>
+                            </GridAggregateColumn>
+                        </GridAggregateColumns>
+                    </GridAggregate>
+                </GridAggregates>
+                <GridColumns>
+                    <GridColumn Field="@nameof(OrderData.OrderID)" HeaderText="Order ID" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="100" />
+                    <GridColumn Field="@nameof(OrderData.CustomerID)" HeaderText="Customer ID" Width="120" />
+                    <GridColumn Field="@nameof(OrderData.Freight)" HeaderText="Freight" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Format="C2" Width="100" />
+                    <GridColumn Field="@nameof(OrderData.ShipCity)" HeaderText="Ship City" Width="120" />
+                    <GridColumn Field="@nameof(OrderData.ShipName)" HeaderText="Ship Name" Width="150" />
+                </GridColumns>
+            </SfGrid>
+        </DetailTemplate>
+    </GridTemplates>
+    <GridColumns>
+        <GridColumn Field="@nameof(EmployeeData.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120" />
+        <GridColumn Field="@nameof(EmployeeData.FirstName)" HeaderText="First Name" Width="150" />
+        <GridColumn Field="@nameof(EmployeeData.LastName)" HeaderText="Last Name" Width="150" />
+        <GridColumn Field="@nameof(EmployeeData.Country)" HeaderText="Country" Width="120" />
+    </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7;
+    private SfGrid<EmployeeData> Grid7 { get; set; }
+    
+    public class EmployeeData
+    {
+        public int EmployeeID { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Country { get; set; }
+
+        public static List<EmployeeData> GetAllRecords()
+        {
+            return new List<EmployeeData>
+        {
+            new EmployeeData { EmployeeID = 1, FirstName = "Nancy", LastName = "Davolio", Country = "USA" },
+            new EmployeeData { EmployeeID = 2, FirstName = "Andrew", LastName = "Fuller", Country = "UK" },
+            new EmployeeData { EmployeeID = 3, FirstName = "Janet", LastName = "Leverling", Country = "USA" },
+            new EmployeeData { EmployeeID = 4, FirstName = "Margaret", LastName = "Peacock", Country = "Canada" },
+            new EmployeeData { EmployeeID = 5, FirstName = "Steven", LastName = "Buchanan", Country = "USA" },
+            new EmployeeData { EmployeeID = 6, FirstName = "Michael", LastName = "Suyama", Country = "Japan" },
+            new EmployeeData { EmployeeID = 7, FirstName = "Robert", LastName = "King", Country = "UK" },
+            new EmployeeData { EmployeeID = 8, FirstName = "Laura", LastName = "Callahan", Country = "USA" },
+            new EmployeeData { EmployeeID = 9, FirstName = "Anne", LastName = "Dodsworth", Country = "Germany" },
+            new EmployeeData { EmployeeID = 10, FirstName = "Paul", LastName = "Henriot", Country = "France" },
+            new EmployeeData { EmployeeID = 11, FirstName = "Thomas", LastName = "Hardy", Country = "UK" },
+            new EmployeeData { EmployeeID = 12, FirstName = "Maria", LastName = "Anders", Country = "Germany" }
+        };
+        }
+    }
+    public class OrderData
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public string ShipCity { get; set; }
+        public string ShipName { get; set; }
+        public int EmployeeID { get; set; }
+        public double Freight { get; set; }
+
+        public static List<OrderData> GetAllRecords1()
+        {
+            return new List<OrderData>
+        {
+            new OrderData { OrderID = 10248, CustomerID = "VINET", ShipCity = "Reims", ShipName = "Vins et alcools Chevalier", EmployeeID = 5, Freight = 32.38 },
+            new OrderData { OrderID = 10249, CustomerID = "TOMSP", ShipCity = "Münster", ShipName = "Toms Spezialitäten", EmployeeID = 6, Freight = 11.61 },
+            new OrderData { OrderID = 10250, CustomerID = "HANAR", ShipCity = "Rio de Janeiro", ShipName = "Hanari Carnes", EmployeeID = 4, Freight = 65.83 },
+            new OrderData { OrderID = 10251, CustomerID = "VICTE", ShipCity = "Lyon", ShipName = "Victuailles en stock", EmployeeID = 3, Freight = 41.34 },
+            new OrderData { OrderID = 10252, CustomerID = "SUPRD", ShipCity = "Charleroi", ShipName = "Suprêmes délices", EmployeeID = 2, Freight = 51.30 },
+            new OrderData { OrderID = 10253, CustomerID = "HANAR", ShipCity = "Rio de Janeiro", ShipName = "Hanari Carnes", EmployeeID = 7, Freight = 58.17 },
+            new OrderData { OrderID = 10254, CustomerID = "CHOPS", ShipCity = "Bern", ShipName = "Chop-suey Chinese", EmployeeID = 5, Freight = 22.98 },
+            new OrderData { OrderID = 10255, CustomerID = "RICSU", ShipCity = "Genève", ShipName = "Richter Supermarkt", EmployeeID = 9, Freight = 148.33 },
+            new OrderData { OrderID = 10256, CustomerID = "WELLI", ShipCity = "Resende", ShipName = "Wellington Importadora", EmployeeID = 3, Freight = 13.97 },
+            new OrderData { OrderID = 10257, CustomerID = "HILAA", ShipCity = "San Cristóbal", ShipName = "HILARION-Abastos", EmployeeID = 4, Freight = 81.91 },
+            new OrderData { OrderID = 10258, CustomerID = "ERNSH", ShipCity = "Graz", ShipName = "Ernst Handel", EmployeeID = 1, Freight = 140.51 },
+            new OrderData { OrderID = 10259, CustomerID = "CENTC", ShipCity = "México D.F.", ShipName = "Centro comercial Moctezuma", EmployeeID = 4, Freight = 3.25 },
+            new OrderData { OrderID = 10260, CustomerID = "OTTIK", ShipCity = "Köln", ShipName = "Ottilies Käseladen", EmployeeID = 1, Freight = 55.09 },
+            new OrderData { OrderID = 10261, CustomerID = "QUEDE", ShipCity = "Rio de Janeiro", ShipName = "Que Delícia", EmployeeID = 4, Freight = 3.05 },
+            new OrderData { OrderID = 10262, CustomerID = "RATTC", ShipCity = "Albuquerque", ShipName = "Rattlesnake Canyon Grocery", EmployeeID = 8, Freight = 48.29 },
+            new OrderData { OrderID = 10263, CustomerID = "ERNSH", ShipCity = "Graz", ShipName = "Ernst Handel", EmployeeID = 9, Freight = 76.13 },
+            new OrderData { OrderID = 10264, CustomerID = "FOLKO", ShipCity = "Bräcke", ShipName = "Folk och fä HB", EmployeeID = 6, Freight = 3.67 },
+            new OrderData { OrderID = 10265, CustomerID = "BLONP", ShipCity = "Strasbourg", ShipName = "Blondel père et fils", EmployeeID = 2, Freight = 55.28 },
+            new OrderData { OrderID = 10266, CustomerID = "WARTH", ShipCity = "Stavern", ShipName = "Wartian Herkku", EmployeeID = 3, Freight = 25.73 },
+            new OrderData { OrderID = 10267, CustomerID = "FRANK", ShipCity = "München", ShipName = "Frankenversand", EmployeeID = 4, Freight = 208.58 }
+        };
+        }
+    }
+    void GridBasicRendering7(Fixture fixture)
+    {
+         var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeData>>();
+
+        // click the expand/collapse icon
+        var collapse = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse.Click(new MouseEventArgs());
+
+        // re-query (DOM may change) and focus then send Enter
+        var collapse2 = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse2.Click(new MouseEventArgs());
+        collapse2.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+         // click the expand/collapse icon
+        var collapse3 = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse3.Click(new MouseEventArgs());
+
+        var collapse4 = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse4.Click(new MouseEventArgs());
+        collapse4.KeyDown(new KeyboardEventArgs { Key = "ArrowUp", CtrlKey = true });
+
+          // click the expand/collapse icon
+        var collapse5 = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse5.Click(new MouseEventArgs());
+
+        var collapse6 = cut.FindAll(".e-detailrowcollapse")[0];
+        collapse6.Click(new MouseEventArgs());
+        collapse6.KeyDown(new KeyboardEventArgs { Key = "ArrowDown", CtrlKey = true });
+    }
+}
+
+	

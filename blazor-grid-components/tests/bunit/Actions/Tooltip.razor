@@ -1,0 +1,30 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Popups
+<SfFixture @ref="fixture1" TestAsync="TooltipByHover" Description="Show Tooltip by hovering over cells">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GenerateOrderData()" ShowTooltip="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1;
+    SfGrid<Order> Grid1;
+    private List<string> initialOrder1;
+    private List<string> finalOrder1;
+    
+    async Task TooltipByHover(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        Assert.True(3 == cut.Find(".e-row").Children.Count(), "Number of cells generated properly");
+        cut.WaitForState(() => cut.FindAll(".e-tooltip").Count == 1);
+        var tooltip = cut.FindComponent<SfTooltip>();
+        // cut.FindAll(".e-row")[0].QuerySelector(".e-rowcell").MouseOver
+    }
+}

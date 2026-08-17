@@ -1,0 +1,225 @@
+﻿@using System.Globalization
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+@*TODO Recalculate indent cell*@
+@*TODO Handle inline edit table *@
+@*TODO If provide width as percentage and enable grouping then do calcultation from element (grid element.offset) *@
+@*TODO Need to handle when enable resizing in Grid*@
+<colgroup id="@(($"{Parent?.ID}{ID}colGroup"))">
+    @if (Parent != null && Parent.AllowGrouping && Parent.GroupSettings!.Columns != null)
+    {
+        foreach (var groupcol in Parent.GroupSettings.Columns)
+        {
+            if(!string.IsNullOrEmpty(groupcol))
+            {
+                <col class="e-group-intent" data-sf-style="@(Parent.GroupModule!.IndentWidth != "" ? $"width: {Parent.GroupModule.IndentWidth}" : "width: 30px")" />
+            }
+        }
+    }
+    @if (Parent != null && ((IGrid)Parent).GridTemplates?.DetailTemplate != null)
+    {
+        <col class="e-detail-intent" data-sf-style="@(Parent.GroupModule!.IndentWidth != "" ? $"width: {Parent.GroupModule.IndentWidth}" : "width: 30px")" />
+    }
+    @if (Parent != null && Parent.AllowRowDragAndDrop)
+    {
+        <col class="e-drag-intent" data-sf-style="@(Parent.RowReorderModule!.RowReorderIndentWidth != "" && Parent.RowReorderModule.RowReorderIndentWidth != "0px" ? $"width: {Parent.RowReorderModule.RowReorderIndentWidth}" : "width: 30px")" />
+    }
+    @{
+        int index = 0;
+		List<GridColumn> GridColumns = GetColumns();
+    } 
+    @foreach (var Column in GridColumns)
+    {
+        if (IsFrozen == null || 
+        ((IsFrozen == true && index < Parent?.FrozenColumns && !IsFrozenRight)
+        || (IsFrozen == true && Column.IsFrozen == true && !IsFrozenRight && !Column.Freeze.Equals(FreezeDirection.Right))
+        || (IsFrozen == true && Column.Freeze.Equals(FreezeDirection.Left) && Column.IsFrozen && !IsFrozenRight) 
+        || (IsFrozen == true && IsFrozenRight && Column.Freeze.Equals(FreezeDirection.Right) && Column.IsFrozen)) 
+        || (IsFrozen == false && index >= Parent?.FrozenColumns && !Column.IsFrozen && !Parent.EnableColumnVirtualization)
+        || (IsFrozen == false && Parent != null && Parent.EnableColumnVirtualization))
+        {
+            var cWidth = GetWidth(Column);
+            if (!Column.Visible || Parent != null && Parent.AllowGrouping && !Parent.GroupSettings!.ShowGroupedColumn && Parent.GroupSettings.Columns != null && Parent.GroupSettings.Columns.Contains(Column.Field))
+            {
+                if (Parent != null && Parent.ShouldRenderColumn(false, Column.Field) && !(Parent.GroupSettings?.ShowGroupedColumn ?? true))
+                {
+                    if (cWidth != null)
+                    {
+                        var fWidth = GridUtils.FormarUnit(cWidth);
+                        <col @key="new Opaque(Column.Width)" data-sf-style="@(($"display:none; width:{fWidth};"))" />
+                    }
+                    else
+                    {
+                        if (IsFrozen == true)
+                        {
+                            var fWidth = GridUtils.FormarUnit("200");
+                            <col @key="new Opaque(Column.Width)" data-sf-style="@(($"display:none; width:{fWidth};"))" />
+                        }
+                        else
+                        {
+                            <col @key="new Opaque(Column.Width)" data-sf-style="display:none" />
+                        }
+                    }
+                }
+                else
+                {
+                    // Skip <col> rendering for non-visible, non-grouped columns when ShouldRenderHiddenColumns is false.
+                    continue;
+                }
+            }
+            else if (cWidth != null)
+            {
+                var fWidth = GridUtils.FormarUnit(cWidth);
+                IDictionary<string, object> attr = new Dictionary<string, object>() {
+                    { "data-sf-style", $"width: {fWidth}" } };
+                <col @key="new Opaque(Column.Width)" @attributes="attr"/>
+            }
+            else
+            {
+                if (IsFrozen == true)
+                {
+                    var fWidth = GridUtils.FormarUnit("200");
+                    <col @key="new Opaque(Column.Width)" data-sf-style="@(($"width:{fWidth};"))" />
+                }
+                else
+                {
+                    <col @key="new Opaque(Column.Width)" />
+                }
+            }
+        }
+        index++;
+    }
+</colgroup>
+
+
+@code {
+
+    #region Parameters
+    [Parameter]
+    public List<GridColumn>? Columns { get; set; }
+
+    [Parameter]
+    public bool? IsFrozen { get; set; } = null;
+
+    [Parameter]
+    public bool IsFrozenRight { get; set; }
+
+    [Parameter]
+    public String ID { get; set; } = string.Empty;
+
+    #endregion
+
+    #region Cascading Parameters
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; } 
+    #endregion
+
+    #region Event Handlers
+
+    internal void ColumnWidthStateChange(object args)
+    {
+        StateHasChanged();
+    }
+
+    #endregion
+    
+    #region Lifecycle Methods
+    protected override void OnInitialized()
+        =>  Parent?.EventAggregator.Add("ColumnWidthStateChange", ColumnWidthStateChange);
+    
+    #endregion
+
+    #region Column Data Retrieval
+
+    private List<GridColumn> GetColumns() {
+        if (Parent != null && Parent.EnableColumnVirtualization && IsFrozen == false)
+        {
+			List<GridColumn> MovableColumns = GridUtils.GetColumns(Parent);
+			return MovableColumns.Skip(Parent.FrozenColumns).Where(x => !x.IsFrozen && x.Visible).Skip(Parent.VirtualScrollModule!.StartColumnIndex).Take(Parent.VirtualScrollModule!.EndColumnIndex - Parent.VirtualScrollModule!.StartColumnIndex + 2).ToList();
+		}
+		else {
+            Columns = Parent?.RearrangeColumns(Columns!);
+			return Columns!;
+		}
+	}
+    
+    #endregion
+
+    #region Column Width Calculation
+    
+    public string GetWidth(GridColumn column)
+    {
+        if (this.Parent != null && this.Parent.MinWidth.Keys.Any(k => k == column.Field))
+        {
+            var columnWidth = this.Parent.MinWidth.Where(x => x.Key == column.Field).FirstOrDefault();
+            return String.IsNullOrEmpty(columnWidth.Value) ? column.Width : columnWidth.Value;
+        }
+        else {
+
+            if ((column.Width == null && Parent != null && Parent.AllowResizing && column.MinWidth == null) ||
+                Parent != null && Parent.FrozenColumns > 0 && column.Width == null && column.Index < Parent.FrozenColumns ||
+                ((column.Width == string.Empty || column.Width == null) && Parent!.Width != "auto" && !Parent.Width.Contains("%")) ||
+                (column.Width == "0" && Parent != null && Parent.Width == "auto" && Parent.AllowResizing))
+            {
+                column.SetWidth("200");
+            }
+            if (column.Width == null || column.Width.Length == 0) { return null!; }
+            if (column.Width == "auto") 
+            {
+                var TotalColumns = Parent!.GetColumnsAsync().Result;
+                double totalColumnWidth = 0;
+                foreach (var col in TotalColumns)
+                {
+                    if (col.Width != "100%" && col.Width != "auto" && col.Width != "")
+                    {
+                        totalColumnWidth += GridUtils.GetDoubleParsedWidth(col.Width);
+                    }
+                }
+                if (Parent.Width != "100%" && Parent.Width != "auto" && Parent.FreezeModule!.GetFrozenCount() > 0 && Parent.IsStackedHeader && GridUtils.GetDoubleParsedWidth(Parent.Width) < totalColumnWidth)
+                {
+                    return column.MinWidth!;
+                }
+                return column.Width; 
+            }
+            double width;
+            string? cWidth = column.Width?.ToString();
+            if (cWidth!.Contains("%"))
+            {
+                width = Convert.ToDouble(cWidth.Substring(0, cWidth.IndexOf("%")), CultureInfo.InvariantCulture);
+            }
+            else if ((column.Width!.ToString().Contains("px")))
+            {
+                width = Convert.ToDouble(cWidth.Substring(0, cWidth.IndexOf("px")), CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                width = Convert.ToDouble(cWidth, CultureInfo.InvariantCulture);
+            }
+            if (column.MinWidth != null && column.MinWidth.Length > 0 && width < GridUtils.GetParsedWidth(column.MinWidth.ToString()))
+            {
+                return column.MinWidth;
+            }
+            else if ((column.MaxWidth != null && column.MaxWidth.Length > 0 && width > GridUtils.GetParsedWidth(column.MaxWidth.ToString())))
+            {
+                return column.MaxWidth;
+            }
+            else
+            {
+                return column.Width!;
+            }
+        }
+    }
+    
+    #endregion
+    
+    #region Utility Types
+    
+    internal class Opaque
+    {
+        public Opaque(string value) => Value = value;
+        public string Value { get; set; }
+    }
+    
+    #endregion
+}

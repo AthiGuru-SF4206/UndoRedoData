@@ -1,0 +1,1016 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+
+@{
+    var Initialgroup1 = (new string[] { "CustomerID" });
+}
+<SfFixture @ref="fixture7" Test="TestComponent" Description="Group with expand/collapse cell">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSelection="@Flag" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridGroupSettings Columns="Initialgroup1" ShowToggleButton="true" ShowGroupedColumn="true" ShowDropArea="true"></GridGroupSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150" DisableHtmlEncode="false" EnableSanitization="false"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture7 { get; set; }
+    public bool Flag { get; set; } = true;
+
+    async void TestComponent(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-sortfilterdiv.e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count() > 0);
+        cut.FindAll(".e-recordplusexpand")[0].Click();
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count() > 0);
+        cut.FindAll(".e-recordpluscollapse")[0].Click();
+        Flag = false;
+
+
+    }
+}
+
+
+<SfFixture @ref="fixture" Test="GroupRendering" Description="Group Feature Testing fixture1">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order" OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" DisableHtmlEncode="false" EditorSettings="@CustomerNameEditParams" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    public List<string> Toolbaritems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel", "Search" };
+    public IEditorSettings CustomerNameEditParams = new DropDownEditCellParams
+    {
+        Params = new DropDownListModel<object, object>() { AllowFiltering = true, ShowClearButton = true }
+    };
+    async void GroupRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count, "Group Drop Area rendering properly");
+        Assert.True(cut.Find(".e-groupdroparea").TextContent == "Drag a column header here to group its column", "Group Drop Area Text rendering properly");
+        await cut.Instance.GroupColumnAsync("CustomerID");
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(1 == cut.Instance.SortSettings.Columns.Count(), "Sort Settings");
+        Assert.True(1 == cut.FindAll(".e-grouptopleftcell").Count(), "Group Indent Cell");
+        Assert.True(cut.FindAll(".e-grouptopleftcell")[0].QuerySelector(".e-headercelldiv").ClassList.Contains("e-emptycell"), "Group Indent Cell Contains empeycell class");
+
+        var content = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+        Assert.True(1 == content[0].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(content[0].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(1 == content[0].QuerySelectorAll(".e-groupcaption").Count(), "Group Caption Cell");
+        Assert.True("3" == content[0].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+        Assert.True("\nCustomer Name: ALFKI - 4 items        " == content[0].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+        Assert.True(1 == content[1].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        var gHeader = cut.FindAll(".e-groupheadercell");
+        Assert.True(1 == gHeader[0].QuerySelectorAll(".e-grouptext").Count(), "Group Text Area");
+        Assert.True("Customer Name" == gHeader[0].QuerySelectorAll(".e-grouptext")[0].TextContent, "Group TextContent");
+        Assert.True(1 == gHeader[0].QuerySelectorAll(".e-groupsort").Count(), "Group Sorting Count");
+        Assert.True(gHeader[0].QuerySelectorAll(".e-groupsort")[0].ClassList.Contains("e-ascending"), "Group Sorting Order");
+        Assert.True(1 == gHeader[0].QuerySelectorAll(".e-ungroupbutton").Count(), "UnGroup Button");
+    }
+
+    public void ActionBeginHandler(ActionEventArgs<Order> args)
+    {
+        Assert.True(args.ColumnName == "CustomerID", "Grouped column name");
+        Assert.True(args.Direction == SortDirection.Ascending, "Grouped column name");
+        Assert.True(args.Cancel == false, "Grouped column name");
+    }
+
+    public void ActionCompleteHandler(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Grouping))
+        {
+            var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(args.ColumnName == "CustomerID", "Grouped column name");
+            Assert.True(args.Direction == SortDirection.Ascending, "Grouped direction check");
+            Assert.True(args.Cancel == false, "args cancel check");
+        }
+    }
+}
+
+@{
+    var Initial = (new string[] { "ShipCountry", "CustomerID", "OrderID" });
+}
+
+<SfFixture @ref="fixture2" Test="MultiGroupRendering" Description="Group Feature Testing multi-group rendering">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowPaging="true">
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+
+    async void MultiGroupRendering(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count, "Group Drop Area rendering properly");
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 3);
+
+        Assert.True(3 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(3 == cut.Instance.SortSettings.Columns.Count(), "Sort Settings");
+        Assert.True(3 == cut.FindAll(".e-grouptopleftcell").Count(), "Group Indent Cell");
+
+        var content = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+
+        Assert.True(1 == content[0].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(content[0].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(0 == content[0].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True(1 == content[1].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(content[1].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(1 == content[1].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True(1 == content[2].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(content[2].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(2 == content[2].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True(3 == content[3].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True("4" == content[0].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+        Assert.True("3" == content[1].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+        Assert.True("2" == content[2].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+
+        Assert.True("\nShip Country: null - 3 items        " == content[0].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+        Assert.True("\nCustomer Name: ALFKI - 4 items        " == content[1].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+        Assert.True("\nOrder ID: 1005 - 1 item        " == content[2].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+
+        await cut.Instance.UngroupColumnAsync("ShipCountry");
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 2);
+        var ungroupContent = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+
+
+        Assert.True(2 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(2 == cut.Instance.SortSettings.Columns.Count(), "Sort Settings");
+        Assert.True(2 == cut.FindAll(".e-grouptopleftcell").Count(), "Group Indent Cell");
+
+        Assert.True(1 == ungroupContent[0].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(ungroupContent[0].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(0 == ungroupContent[0].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True(1 == ungroupContent[1].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(ungroupContent[1].QuerySelectorAll(".e-recordplusexpand")[0].FirstElementChild.ClassList.Contains("e-gdiagonaldown"), "Group Indent Cell");
+        Assert.True(1 == ungroupContent[1].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True(2 == ungroupContent[2].QuerySelectorAll(".e-indentcell").Count(), "Normal Row Indent Cell");
+
+        Assert.True("4" == ungroupContent[0].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+        Assert.True("3" == ungroupContent[1].QuerySelectorAll(".e-groupcaption")[0].GetAttribute("colspan"), "Group caption colspan");
+
+        Assert.True("\nCustomer Name: ALFKI - 4 items        " == ungroupContent[0].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+        Assert.True("\nOrder ID: 1005 - 1 item        " == ungroupContent[1].QuerySelectorAll(".e-groupcaption")[0].TextContent, "Group caption textcontent");
+    }
+}
+
+
+@{
+    var InitialGroup = (new string[] { "CustomerID", "OrderID" });
+}
+
+<SfFixture @ref="fixture3" Test="UnGroupButtonRendering" Description="Group Feature Testing ungroup button rendering">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowPaging="true">
+            <GridGroupSettings Columns="@InitialGroup"></GridGroupSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+
+    async void UnGroupButtonRendering(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(2 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(2 == cut.Instance.SortSettings.Columns.Count(), "Sort Settings");
+
+        cut.FindAll(".e-groupheadercell")[0].QuerySelector(".e-ungroupbutton").Click();
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+
+        var ungroupContent = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(1 == cut.Instance.SortSettings.Columns.Count(), "Sort Settings");
+        Assert.True(1 == cut.FindAll(".e-grouptopleftcell").Count(), "Group Indent Cell");
+        Assert.True(1 == ungroupContent[0].QuerySelectorAll(".e-recordplusexpand").Count(), "Record Expand Cell");
+        Assert.True(1 == cut.FindAll(".e-groupheadercell").Count(), "Record Expand Cell");
+
+        await cut.Instance.CollapseAllGroupAsync();
+
+        cut.WaitForState(() => cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count() == 12);
+        Assert.True(12 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Group Indent Cell");
+
+        await cut.Instance.ExpandAllGroupAsync();
+
+        cut.WaitForState(() => cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count() == 24);
+        Assert.True(24 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Group Indent Cell");
+
+    }
+}
+
+<SfFixture @ref="fixture4" Test="Groupingcolumnshide" Description="Group Feature Testing Groupingcolumnshide">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowPaging="true">
+            <GridGroupSettings ShowGroupedColumn="false" ShowToggleButton="true"></GridGroupSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+
+    async void Groupingcolumnshide(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Count());
+        Assert.True(1 == cut.Instance.SortSettings.Columns.Count());
+        Assert.True(3 == cut.FindAll(".e-headercell:not(.e-hide)").Count());
+        await cut.Instance.UngroupColumnAsync("CustomerID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 0);
+
+        Assert.True(0 == cut.Instance.GroupSettings.Columns.Count());
+        Assert.True(0 == cut.Instance.SortSettings.Columns.Count());
+        Assert.True(4 == cut.FindAll(".e-headercell:not(.e-hide)").Count());
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count());
+        Assert.True(4 == cut.FindAll(".e-grptogglebtn").Count());
+
+        cut.Instance.AllowGrouping = false;
+        await cut.Instance.Refresh();
+        cut.WaitForState(() => cut.FindAll(".e-groupdroparea").Count == 0);
+        Assert.True(0 == cut.FindAll(".e-groupdroparea").Count());
+
+        cut.Instance.AllowGrouping = true;
+        await cut.Instance.Refresh();
+        cut.WaitForState(() => cut.FindAll(".e-groupdroparea").Count == 1);
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count());
+
+        // dynamic group setting changes
+
+        @*cut.Instance.GroupSettings.ShowToggleButton = false;
+            cut.Instance.Refresh();
+            cut.WaitForState(() => cut.FindAll(".e-grptogglebtn").Count == 0);
+            Assert.True(0 == cut.FindAll(".e-grptogglebtn").Count());
+
+            cut.Instance.GroupSettings.ShowToggleButton = true;
+            cut.Instance.Refresh();
+            cut.WaitForState(() => cut.FindAll(".e-grptogglebtn").Count == 4);
+            Assert.True(4 == cut.FindAll(".e-grptogglebtn").Count());
+
+            cut.Instance.GroupSettings.ShowUngroupButton = false;
+            cut.Instance.Refresh();
+            cut.Find(".e-grptogglebtn").MarkupMatches(@"<span class=""e-ungroupbutton e-icons e-icon-hide"" title=""Ungroup by this column"" style=""display: none"" tabindex=""- 1"" aria-label=""Ungroup by this column""></span>","ungroup button element check");
+
+            cut.Instance.GroupSettings.ShowUngroupButton = true;
+            cut.Instance.Refresh();
+            cut.Find(".e-grptogglebtn").MarkupMatches(@"<span class=""e-ungroupbutton e-icons e-icon-hide"" title=""Ungroup by this column"" style="""" tabindex=""- 1"" aria-label=""Ungroup by this column""></span>", "ungroup button element check");
+
+            cut.Instance.GroupSettings.ShowDropArea = false;
+            cut.Instance.Refresh();
+            cut.WaitForState(() => cut.FindAll(".e-groupdroparea").Count == 0);
+            Assert.True(0 == cut.FindAll(".e-groupdroparea").Count());
+
+            cut.Instance.GroupSettings.ShowDropArea = true;
+            cut.Instance.Refresh();
+            cut.WaitForState(() => cut.FindAll(".e-groupdroparea").Count == 1);
+            Assert.True(1 == cut.FindAll(".e-groupdroparea").Count());*@
+
+    }
+}
+
+<SfFixture @ref="fixture5" Test="stackedheadergroup" Description="Group Feature Testing stackedheadergroup">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn HeaderText="Order Details">
+                    <GridColumns>
+                        <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                        <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+            </GridColumns>
+</SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture5 { get; set; }
+
+    async void stackedheadergroup(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Count());
+        Assert.True(1 == cut.Instance.SortSettings.Columns.Count());
+
+    }
+}
+
+@{
+    var Initialgroup = (new string[] { "CustomerID", "OrderID" });
+}
+<SfFixture @ref="fixture6" Test="SortIcon" Description="Group With Sorting Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridGroupSettings Columns="Initialgroup"  ShowToggleButton="true" ShowGroupedColumn="true" ShowDropArea="true"></GridGroupSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture6 { get; set; }
+
+    async void SortIcon(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(2 == cut.FindAll(".e-sortfilterdiv.e-ascending").Count(), "SortDirection Count is proper");
+		
+		  // To focus the groupheadercell
+        cut.Find(".e-groupheadercell").Focus();
+        cut.Find(".e-groupheadercell").Blur();
+
+        cut.FindAll(".e-toggleungroup")[0].Focus();
+        cut.FindAll(".e-toggleungroup")[0].Blur();
+
+        cut.FindAll(".e-ungroupbutton")[0].Focus();
+        cut.FindAll(".e-ungroupbutton")[0].Blur();
+        cut.FindAll(".e-groupsort")[0].Click(new MouseEventArgs());
+        // Perform sorting in the grouped column's sort icon using the Enter key
+        cut.FindAll(".e-groupsort")[0].KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+
+        // Ungroup the grouped column in the Cancel Icon using the Enter key
+        //To perform sorting using mouse click
+        cut.FindAll(".e-toggleungroup")[0].Click(new MouseEventArgs());
+        cut.FindAll(".e-ungroupbutton")[0].KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+
+        await cut.Instance.GroupColumnAsync("Freight");
+
+        await cut.Instance.SelectRowAsync(3);
+        await cut.Instance.StartEditAsync();
+        await cut.Instance.EndEditAsync();
+    }
+}
+<SfFixture @ref="fixturenew8" Test="GridBasicRendering2" Description="Generate the infinite scroll normal mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateRows2()" Height="400" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial5"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData2.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew8 { get; set; }
+    private SfGrid<OrderData2> Grid2;
+    public List<OrderData2> GridData2 { get; set; }
+    private string[] Initial5 = (new string[] { "CustomerID" });
+    public async void GridBasicRendering2(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<OrderData2>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "Infinite scrolling enabled");
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        await cut.Instance.CollapseAllGroupAsync();
+        Assert.True(5 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Collapse State");
+        await cut.Instance.ExpandAllGroupAsync();
+        Assert.True(60 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Expand state");
+        double heights = args.RHeight;
+        string type = args.Type;
+        bool isheader = args.IsHeaderNavigated;
+        args.RHeight = 500;
+        args.Type = "test";
+        args.IsHeaderNavigated = true;
+    }
+
+    public List<OrderData2> GenerateRows2()
+    {
+        List<OrderData2> data = new List<OrderData2>();
+        int count = 1000;
+
+        for (int i = 0; i < 2000; i++)
+        {
+            data.Add(new OrderData2() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData2 = data;
+        return data;
+    }
+
+    public class OrderData2
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixturenew9" Test="GridBasicRendering9" Description="Expand and collapse with Virtualization and Lazyload grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings EnableLazyLoading=true Columns="Grouping"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixturenew9 { get; set; }
+    private SfGrid<Order> Grid7;
+    private string[] Grouping = (new string[] { "OrderID" });
+    async void GridBasicRendering9(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.EnableVirtualization, " Virtualization enabled");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        await cut.Instance.ExpandAllGroupAsync();
+        Assert.True(120 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Collapse State");
+        await cut.Instance.CollapseAllGroupAsync();
+        Assert.True(120 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Expand state");
+    }
+}
+@{
+    var CoverageInitialGroup = (new string[] { "CustomerID", "OrderID" });
+}
+
+<SfFixture @ref="fixture8" Test="ExpandAllGroupAsyncCoverage" Description="ExpandAllGroupAsync full branch coverage">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="@GenerateOrderData()"
+                AllowGrouping="true"
+                AllowSorting="true"
+                AllowPaging="true"
+                EnableVirtualization="true"
+                EnableInfiniteScrolling="true">
+            <GridGroupSettings Columns="CoverageInitialGroup"
+                               EnableLazyLoading="false"
+                               PersistGroupState="true"
+                               ShowToggleButton="true"
+                               ShowDropArea="true"
+                               ShowUngroupButton="true">
+            </GridGroupSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID)
+                            HeaderText="Order ID"
+                            TextAlign="TextAlign.Right"
+                            IsPrimaryKey="true"
+                            Width="120">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID)
+                            HeaderText="Customer Name"
+                            EditType="EditType.DropDownEdit"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate)
+                            HeaderText="Order Date"
+                            EditType="EditType.DatePickerEdit"
+                            Format="d"
+                            Type="ColumnType.Date"
+                            TextAlign="TextAlign.Right"
+                            Width="160">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.Freight)
+                            HeaderText="Freight"
+                            EditType="EditType.NumericEdit"
+                            Format="C2"
+                            ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })"
+                            TextAlign="TextAlign.Right"
+                            Width="200">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture8 { get; set; }
+    async void ExpandAllGroupAsyncCoverage(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 2);
+        cut.Instance.GroupSettings.EnableLazyLoading = false;
+        cut.Instance.EnableInfiniteScrolling = false;
+        cut.Instance.EnableVirtualization = true;
+        cut.Instance.GroupSettings.PersistGroupState = true;
+
+        await cut.Instance.ExpandAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() > 0);
+
+        var visibleVirtual = cut.Find(".e-gridcontent")
+                                .QuerySelectorAll("tr:not([style*='display: none'])")
+                                .Count();
+        Assert.True(visibleVirtual > 0, "ExpandAllGroupAsync with virtualization-only executed");
+
+        cut.Instance.EnableInfiniteScrolling = true;
+        cut.Instance.EnableVirtualization = false;
+        cut.Instance.GroupSettings.EnableLazyLoading = false;
+        cut.Instance.GroupSettings.PersistGroupState = true;
+
+        await cut.Instance.CollapseAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() < visibleVirtual);
+
+        await cut.Instance.ExpandAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() >= visibleVirtual);
+
+        var visibleInfinitePersist = cut.Find(".e-gridcontent")
+                                        .QuerySelectorAll("tr:not([style*='display: none'])")
+                                        .Count();
+        Assert.True(visibleInfinitePersist >= visibleVirtual,
+            "Non-lazy ExpandAllGroupAsync with infinite & PersistGroupState executed");
+
+        cut.Instance.EnableInfiniteScrolling = false;
+        cut.Instance.EnableVirtualization = true;
+        cut.Instance.GroupSettings.EnableLazyLoading = false;
+
+        await cut.Instance.ExpandAllGroupAsync();
+        Assert.NotNull(cut.Instance);
+
+        var visibleBeforeNoGrouping = cut.Find(".e-gridcontent")
+                                         .QuerySelectorAll("tr:not([style*='display: none'])")
+                                         .Count();
+
+        cut.Instance.AllowGrouping = false;
+        await cut.Instance.ExpandAllGroupAsync();
+
+        var visibleAfterNoGrouping = cut.Find(".e-gridcontent")
+                                        .QuerySelectorAll("tr:not([style*='display: none'])")
+                                        .Count();
+
+        Assert.True(
+            visibleBeforeNoGrouping == visibleAfterNoGrouping,
+            "ExpandAllGroupAsync no-op when AllowGrouping is false");
+
+
+        cut.Instance.AllowGrouping = true;
+    }
+}
+<SfFixture @ref="fixture9" Test="CollapseAllGroupAsyncCoverage" Description="CollapseAllGroupAsync full branch coverage">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="@GenerateOrderData()"
+                AllowGrouping="true"
+                AllowSorting="true"
+                AllowPaging="true"
+                EnableVirtualization="true"
+                EnableInfiniteScrolling="true">
+            <GridGroupSettings Columns="CoverageInitialGroup"
+                               EnableLazyLoading="true"
+                               PersistGroupState="true"
+                               ShowToggleButton="true"
+                               ShowDropArea="true"
+                               ShowUngroupButton="true">
+            </GridGroupSettings>
+            <GridEditSettings AllowAdding="true"
+                              AllowDeleting="true"
+                              AllowEditing="true">
+            </GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID)
+                            HeaderText="Order ID"
+                            TextAlign="TextAlign.Right"
+                            IsPrimaryKey="true"
+                            Width="120">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID)
+                            HeaderText="Customer Name"
+                            EditType="EditType.DropDownEdit"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate)
+                            HeaderText="Order Date"
+                            EditType="EditType.DatePickerEdit"
+                            Format="d"
+                            Type="ColumnType.Date"
+                            TextAlign="TextAlign.Right"
+                            Width="160">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.Freight)
+                            HeaderText="Freight"
+                            EditType="EditType.NumericEdit"
+                            Format="C2"
+                            ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })"
+                            TextAlign="TextAlign.Right"
+                            Width="200">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    async void CollapseAllGroupAsyncCoverage(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 2);
+
+        await cut.Instance.ExpandAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() > 0);
+
+        var expandedCount = cut.Find(".e-gridcontent")
+                               .QuerySelectorAll("tr:not([style*='display: none'])")
+                               .Count();
+        Assert.True(expandedCount > 0, "Initial expanded state");
+
+        cut.Instance.GroupSettings.EnableLazyLoading = true;
+        cut.Instance.EnableVirtualization = false;
+        cut.Instance.EnableInfiniteScrolling = false;
+
+        await cut.Instance.CollapseAllGroupAsync();
+
+        var collapsedLazyPaging = cut.Find(".e-gridcontent")
+                                     .QuerySelectorAll("tr:not([style*='display: none'])")
+                                     .Count();
+        Assert.True(collapsedLazyPaging > 0, "Lazy + paging collapse-all executed");
+        cut.Instance.GroupSettings.EnableLazyLoading = false;
+        cut.Instance.GroupSettings.PersistGroupState = true;
+        cut.Instance.EnableInfiniteScrolling = true;
+        cut.Instance.EnableVirtualization = false;
+
+    
+        await cut.Instance.ExpandAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() >= expandedCount);
+
+        await cut.Instance.CollapseAllGroupAsync();
+        cut.WaitForState(() =>
+            cut.Find(".e-gridcontent")
+               .QuerySelectorAll("tr:not([style*='display: none'])")
+               .Count() < expandedCount);
+
+        var collapsedNonLazyPersist = cut.Find(".e-gridcontent")
+                                         .QuerySelectorAll("tr:not([style*='display: none'])")
+                                         .Count();
+        Assert.True(collapsedNonLazyPersist > 0 && collapsedNonLazyPersist < expandedCount,
+            "Non-lazy collapse-all with PersistGroupState & infinite executed");
+
+        cut.Instance.EnableInfiniteScrolling = false;
+        cut.Instance.EnableVirtualization = true;
+        cut.Instance.GroupSettings.EnableLazyLoading = false;
+
+
+        await cut.Instance.ExpandAllGroupAsync();
+        await cut.Instance.CollapseAllGroupAsync();
+
+        Assert.NotNull(cut.Instance);
+
+        var visibleBeforeNoGrouping = cut.Find(".e-gridcontent")
+                                         .QuerySelectorAll("tr:not([style*='display: none'])")
+                                         .Count();
+
+        cut.Instance.AllowGrouping = false;
+        await cut.Instance.CollapseAllGroupAsync();
+
+        var visibleAfterNoGrouping = cut.Find(".e-gridcontent")
+                                        .QuerySelectorAll("tr:not([style*='display: none'])")
+                                        .Count();
+
+        Assert.True(
+            visibleBeforeNoGrouping == visibleAfterNoGrouping,
+            "CollapseAllGroupAsync no-op when AllowGrouping is false");
+
+        // Restore
+        cut.Instance.AllowGrouping = true;
+    }
+}
+@{
+    var PrimaryKeyGroup = (new string[] { "OrderID" });
+}
+
+<SfFixture @ref="fixture10"
+           Test="GetRowIndexByPrimaryKeyAsync_EmptyRowsAndAcrossPage_NonGrouped"
+           Description="Covers Rows.Count == 0 and non-grouped across-record search for GetRowIndexByPrimaryKeyAsync">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()"
+                AllowPaging="true"
+                AllowGrouping="false">
+            <GridEditSettings AllowAdding="true"
+                              AllowDeleting="true"
+                              AllowEditing="true">
+            </GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID)
+                            HeaderText="Order ID"
+                            TextAlign="TextAlign.Right"
+                            IsPrimaryKey="true"
+                            Width="120">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID)
+                            HeaderText="Customer Name"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate)
+                            HeaderText="Order Date"
+                            Type="ColumnType.Date"
+                            TextAlign="TextAlign.Right"
+                            Width="160">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.Freight)
+                            HeaderText="Freight"
+                            TextAlign="TextAlign.Right"
+                            Width="200">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture10 { get; set; }
+    async void GetRowIndexByPrimaryKeyAsync_EmptyRowsAndAcrossPage_NonGrouped(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows != null);
+        cut.Instance.Rows.Clear();
+        var earlyResult = await cut.Instance.GetRowIndexByPrimaryKeyAsync(999, searchAcrossRecords: false);
+        Assert.Equal(-1, earlyResult);
+        await cut.Instance.Refresh();
+        cut.WaitForState(() => cut.Instance.Rows.Any(r => r.IsDataRow));
+        var firstDataRow = cut.Instance.Rows.First(r => r.IsDataRow);
+        var firstOrder = (Order)firstDataRow.Data!;
+        var existingKey = firstOrder.OrderID;
+        var foundIndex = await cut.Instance.GetRowIndexByPrimaryKeyAsync(existingKey, searchAcrossRecords: true);
+        Assert.Equal(firstDataRow.Index, foundIndex);
+        var missingIndex = await cut.Instance.GetRowIndexByPrimaryKeyAsync(int.MaxValue, searchAcrossRecords: true);
+        Assert.Equal(-1, missingIndex);
+    }
+}
+<SfFixture @ref="fixture11"
+           Test="GetRowIndexByPrimaryKeyAsync_AcrossPage_GroupedLazy"
+           Description="Covers grouped & lazy-loading branch in GetPrimaryKeyIndexAcrossPageAsync">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="@GenerateOrderData()"
+                AllowGrouping="true"
+                AllowPaging="true">
+            <GridGroupSettings Columns="PrimaryKeyGroup"
+                               EnableLazyLoading="true">
+            </GridGroupSettings>
+            <GridEditSettings AllowAdding="true"
+                              AllowDeleting="true"
+                              AllowEditing="true">
+            </GridEditSettings>
+            <GridEvents TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID)
+                            HeaderText="Order ID"
+                            TextAlign="TextAlign.Right"
+                            IsPrimaryKey="true"
+                            Width="120">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID)
+                            HeaderText="Customer Name"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate)
+                            HeaderText="Order Date"
+                            Type="ColumnType.Date"
+                            TextAlign="TextAlign.Right"
+                            Width="160">
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.Freight)
+                            HeaderText="Freight"
+                            TextAlign="TextAlign.Right"
+                            Width="200">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture11 { get; set; }
+    async void GetRowIndexByPrimaryKeyAsync_AcrossPage_GroupedLazy(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.Rows != null);
+        await cut.Instance.GroupColumnAsync(nameof(Order.OrderID));
+        cut.WaitForState(() =>
+            cut.Instance.GroupSettings.Columns != null &&
+            cut.Instance.GroupSettings.Columns.Length > 0);
+        Assert.True(cut.Instance.AllowGrouping, "AllowGrouping should be true.");
+        Assert.True(cut.Instance.GroupSettings.Columns.Length > 0, "GroupSettings.Columns should have items.");
+        var firstDataRow = cut.Instance.Rows.First(r => r.IsDataRow);
+        var firstOrder = (Order)firstDataRow.Data!;
+        var existingKey = firstOrder.OrderID;
+        var groupedIndex = await cut.Instance.GetRowIndexByPrimaryKeyAsync(existingKey, searchAcrossRecords: true);
+        await cut.Instance.UpdateExternalMessageAsync("GetRowIndexByPrimaryKeyAsync has called");
+        Assert.True(groupedIndex >= 0, "Grouped ProcessGroupedData path should return a non-negative index.");
+
+    }
+}
+<SfFixture Test="StartEditAsync_Disabled_NoEdit" Description="Editing disabled -> StartEditAsync should early return">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="@GenerateOrderData()" AllowPaging="true">
+            <GridEditSettings AllowEditing="false"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    async void StartEditAsync_Disabled_NoEdit(Fixture f)
+    {
+        var cut = f.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.StartEditAsync();
+
+        // Assert: EditModule.StartEdit should NOT be called
+        Assert.Null(cut.Instance.EditModule!.EditedRow);
+    }
+}
+<SfFixture Test="StartEditAsync_BatchMode_NoEdit" Description="Batch mode prevents StartEditAsync">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="@GenerateOrderData()" AllowPaging="true">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    async void StartEditAsync_BatchMode_NoEdit(Fixture f)
+    {
+        var cut = f.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.StartEditAsync();
+
+        Assert.Null(cut.Instance.EditModule!.EditedRow);
+    }
+}
+<SfFixture Test="StartEditAsync_NoSelection_ShowsAlert" Description="No selected rows -> show validation dialog">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="@GenerateOrderData()" AllowPaging="true">
+            <GridEditSettings AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    async void StartEditAsync_NoSelection_ShowsAlert(Fixture f)
+    {
+        var cut = f.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Precondition: ensure no selected rows
+        cut.Instance.SelectedRecords.Clear();
+
+        await cut.Instance.StartEditAsync();
+
+        Assert.Equal("EditAlert", cut.Instance.EditModule!.AlertMessage);
+    }
+}
+<SfFixture Test="StartEditAsync_FallbackToSelectionModule" Description="SelectedRecords present but no IsSelected row">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="@GenerateOrderData()" AllowPaging="true">
+            <GridEditSettings AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) IsPrimaryKey="true"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    async void StartEditAsync_FallbackToSelectionModule(Fixture f)
+    {
+        var cut = f.GetComponentUnderTest<SfGrid<Order>>();
+
+        var firstRow = cut.Instance.Rows.First(r => r.IsDataRow);
+        cut.Instance.SelectedRecords.Add((Order)firstRow.Data);
+
+        foreach (var r in cut.Instance.Rows)
+        {
+            r.IsSelected = false;
+            r.Index = -1;
+        }
+
+        await cut.Instance.StartEditAsync();
+
+        Assert.NotNull(cut.Instance.EditModule!.EditedRow);
+        Assert.Equal(
+            cut.Instance.SelectionModule!.SelectedRow()!.Index,
+            cut.Instance.EditModule!.EditedRow!.Index
+        );
+    }
+}

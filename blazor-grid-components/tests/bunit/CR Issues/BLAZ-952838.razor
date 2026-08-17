@@ -1,0 +1,65 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture15" TestAsync="GridBasicRendering15" Description="Filtering using buttons">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowFiltering="true">
+            <GridEditSettings AllowAdding AllowDeleting AllowEditing></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="TaskId" Visible=false IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field="TaskName" HeaderText="Task Name"></GridColumn>
+                <GridColumn Field="StartDate" HeaderText="Start Date" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field="EndDate" HeaderText="End Date" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field="Progress"></GridColumn>
+            </GridColumns>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu" />
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture15 { get; set; }
+    public static List<TaskData> Task { get; set; }
+    public async Task GridBasicRendering15(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<TaskData>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        Assert.True(cut.Instance.AllowFiltering == true);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 15, "Before filtering count");
+        await cut.Instance.FilterByColumnAsync("EndDate", "notequal", "4/5/2022", "or", true, false);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 13, "After filtering count");
+        await cut.Instance.FilterByColumnAsync("EndDate", "equal", "4/8/2022", "or", true, false);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 4, "After filtering count");
+        await cut.Instance.FilterByColumnAsync("StartDate", "greaterthan", "4/1/2022", "or", true, false);
+        Assert.True(cut.Instance.CurrentViewData.Count() == 0, "After filtering count");
+    }
+
+    public List<TaskData> GenerateRows()
+    {
+        List<TaskData> Tasks = new List<TaskData>() {
+        new TaskData() { TaskId = 1, TaskName = "Martin Tamer", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 4) },
+        new TaskData() { TaskId = 2, TaskName = "Identify Site Location", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 4) },
+        new TaskData() { TaskId = 3, TaskName = "Site Analyze", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 4) },
+        new TaskData() { TaskId = 4, TaskName = "Margaret Buchanan", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 5) },
+        new TaskData() { TaskId = 5, TaskName = "Perform soil test", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 5,17,00,00) },
+        new TaskData() { TaskId = 6, TaskName = "Fuller King", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 8,17,00,00) },
+        new TaskData() { TaskId = 7, TaskName = "Develop floor plan", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 8,17,00,00) },
+        new TaskData() { TaskId = 8, TaskName = "Tamer Vinet", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 8,17,00,00), },
+        new TaskData() { TaskId = 9, TaskName = "Soil test approval", StartDate = new DateTime(2022, 03, 29), EndDate = new DateTime(2022, 04, 1) },
+        new TaskData() { TaskId = 10, TaskName = "List materials", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 8,17,00,00) },
+        new TaskData() { TaskId = 11, TaskName = "Construction Specification", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 12) },
+        new TaskData() { TaskId = 12, TaskName = "Estimation approval", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 12) },
+        new TaskData() { TaskId = 13, TaskName = "Unassigned Tasks", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 7) },
+        new TaskData() { TaskId = 14, TaskName = "Building approval", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 6) },
+        new TaskData() { TaskId = 15, TaskName = "Construction", StartDate = new DateTime(2022, 04, 1,08,00,00), EndDate = new DateTime(2022, 04, 7) },
+    };
+        return Tasks;
+    }
+    public class TaskData
+    {
+        public int TaskId { get; set; }
+        public string TaskName { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+    }
+}

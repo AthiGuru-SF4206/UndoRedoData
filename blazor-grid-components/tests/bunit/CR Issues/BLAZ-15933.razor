@@ -1,0 +1,54 @@
+﻿
+@inherits GridTestBase
+@using Syncfusion.Blazor.Tests
+@using Syncfusion.Blazor.Grids
+
+
+<button @onclick="OnClick">Change</button>
+
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Header text is not shown dynamically modifying frozen columns.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" EnableHover="false" FrozenColumns="@FrozenColumns" EnableVirtualization="@EnableVirtualization">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+
+</SfFixture>
+
+@code{
+
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    public bool EnableVirtualization = true;
+    public int FrozenColumns { get; set; } = 0;
+
+    public List<Order> Orders { get; set; }
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    void GridBasicRendering(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        EnableVirtualization = false;
+        FrozenColumns = 4;
+        var a = cut.FindAll(".e-headertext");
+        Assert.True("Order ID" == a.ElementAt(0).InnerHtml);
+    }
+
+
+    public async Task OnClick()
+    {
+        EnableVirtualization = false;
+        FrozenColumns = 4;
+        await Task.Yield();
+        DefaultGrid.Refresh();
+    }
+}

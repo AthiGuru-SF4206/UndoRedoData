@@ -1,0 +1,71 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Grouped column field is disabled in the Grid's edit form dialog">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRecords()" TValue="Order"  AllowPaging="true" AllowGrouping="true" Toolbar="@tool">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Dialog"></GridEditSettings>
+            <GridGroupSettings ShowGroupedColumn="false" Columns="@GroupedColumns"></GridGroupSettings>
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" Visible="true"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+@code
+{
+    SfFixture fixture { get; set; }
+    public string[] GroupedColumns = new string[] { "CustomerID" };
+    public GridColumn column;
+    public List<Order> Orders { get; set; }
+    public SfGrid<Order> Grid;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    public string[] tool = new string[] { "Add", "Edit", "Delete", "Update", "Cancel" };
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        cut.WaitForState(() => cut.FindAll(".e-row").Count == 5);
+        cut.Instance.SelectRowAsync(0).GetAwaiter();
+        cut.WaitForState(() => cut.Instance.SelectedRecords.Count == 1);
+        cut.Instance.StartEditAsync().GetAwaiter();
+
+        foreach(var col in Grid.Columns)
+        {
+            if (col.HeaderText.Equals("Customer Name", StringComparison.Ordinal))
+            {
+                column = col;
+            }
+        }
+        // checking wheather the grouped field is visible or not
+        Assert.True(cut.Instance.EditModule.isEditable(column));
+
+    }
+
+    public List<Order> GenerateRecords()
+    {
+        return Orders = Enumerable.Range(1, 25).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

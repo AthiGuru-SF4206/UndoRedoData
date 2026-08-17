@@ -1,0 +1,59 @@
+{
+  "projects": [
+    "src/Syncfusion.Blazor.Grid.csproj"
+  ],
+  "BlazorScripts": {
+    "Grid": {
+        "scripts": ["sf-grid"]
+    }
+  },
+  "packages": {
+    "Grid": {
+      "scripts": [
+        "sf-grid"
+      ],
+      "packageName": "Grid",
+      "tsEntry": "sf-grid",
+      "scriptsDir": "scripts",
+      "outputDir": "scripts/modules",
+      "outputFile": "sf-grid.js",
+      "outputFormat": "iife",
+      "outputName": "sfBlazor.Grid",      
+      "externals": {
+        "@syncfusion/ej2-base": "sf.base",
+        "@syncfusion/ej2-popups": "sf.popups"
+      }
+    }
+  },
+  "CRG": {
+    "SfGrid": {
+      "dependencies": [
+        "sf-grid.js",
+        "sf-textbox.js",
+        "popupsbase.js",
+        "popup.js",
+        "sf-dropdownlist.js",
+        "navigationsbase.js",
+        "sf-contextmenu.js",
+        "sf-toolbar.js",
+        "sf-spinner.js",
+        "sf-calendar.js",
+        "sf-datepicker.js",
+        "sf-timepicker.js",
+        "sf-numerictextbox.js",
+        "sf-dialog.js",
+        "sf-pager.js",
+        "sf-tooltip.js",
+        "sf-checkbox.js"
+      ],
+      "package": "Grid"
+    },
+    "bundleSettings": {
+      "exclude": [],
+      "include": [
+        "base.js",
+        "syncfusion-blazor.js"
+      ]
+    }
+  }
+}

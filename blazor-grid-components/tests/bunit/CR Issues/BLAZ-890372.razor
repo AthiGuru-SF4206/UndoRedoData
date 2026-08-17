@@ -1,0 +1,51 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Cell has changed into Edit State with Ctrl+F2 During Batch Editing">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="GenerateRows()" AllowPaging="true" AllowFiltering="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Type="ColumnType.Long" Width="120px"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { Key = "F2" });
+        Assert.True(cut.Instance.IsEdit == true, "Cell has changed to Edit State");
+        await cut.Instance.SaveCellAsync();
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "F2", CtrlKey = true });
+        Assert.True(cut.Instance.IsEdit == false, "Cell has not changed to Edit State");
+        await cut.Instance.SaveCellAsync();
+    }
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 12345678901 });
+        data.Add(new Order() { OrderID = 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 12345678902 });
+        data.Add(new Order() { OrderID = 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 12345678903 });
+        data.Add(new Order() { OrderID = 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 12345678904 });
+        data.Add(new Order() { OrderID = 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 12345678905 });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public long? Freight { get; set; }
+    }
+}

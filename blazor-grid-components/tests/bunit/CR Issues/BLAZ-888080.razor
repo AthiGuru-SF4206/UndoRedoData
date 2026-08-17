@@ -1,0 +1,158 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Filtering for nested complex column does not works">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateEmployees()" AllowPaging="true" AllowFiltering="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeData.EmployeeID) HeaderText="EmployeeID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Name.FirstName" HeaderText="First Name" Width="150"></GridColumn>
+                <GridColumn Field="Name.LastName" HeaderText="Last Name" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeData.Title) HeaderText="Title" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Details.Position.Title" HeaderText="Position Title" Width="150"></GridColumn>
+                <GridColumn Field="Details.Position.EmployeeRole.RoleTitle" HeaderText="Role Title" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<EmployeeData> Orders { get; set; }
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeData>>();
+        Assert.True(cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.FilterSettings.Columns == null);
+        await cut.Instance.FilterByColumnAsync("Details.Position.Title", "equal", "Developer");
+        Assert.True(cut.Instance.FilterSettings.Columns.Count == 1);
+    }
+
+    public List<EmployeeData> GenerateEmployees()
+    {
+        List<EmployeeData> Employees = new List<EmployeeData>();
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 1,
+            Name = new EmployeeName() { FirstName = "Nancy", LastName = "Davolio" },
+            Title = "Sales Representative",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Manager",
+                    EmployeeRole = new Role() { RoleTitle = "Role 1" }
+                }
+            }
+        });
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 2,
+            Name = new EmployeeName() { FirstName = "Andrew", LastName = "Fuller" },
+            Title = "Vice President, Sales",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Developer",
+                    EmployeeRole = new Role() { RoleTitle = "Role 2" }
+                }
+            }
+        });
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 3,
+            Name = new EmployeeName() { FirstName = "Janet", LastName = "Leverling" },
+            Title = "Sales Manager",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Designer",
+                    EmployeeRole = new Role() { RoleTitle = "Role 3" }
+                }
+            }
+        });
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 4,
+            Name = new EmployeeName() { FirstName = "Margaret", LastName = "Peacock" },
+            Title = "Inside Sales Coordinator",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Analyst",
+                    EmployeeRole = new Role() { RoleTitle = "Role 4" }
+                }
+            }
+        });
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 5,
+            Name = new EmployeeName() { FirstName = "Steven", LastName = "Buchanan" },
+            Title = "Sales Representative",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Manager",
+                    EmployeeRole = new Role() { RoleTitle = "Role 5" }
+                }
+            }
+        });
+
+        Employees.Add(new EmployeeData()
+        {
+            EmployeeID = 6,
+            Name = new EmployeeName() { FirstName = "Nancy", LastName = "Davolio" },
+            Title = "Vice President, Sales",
+            Details = new EmployeeDetails()
+            {
+                Position = new EmployeePosition()
+                {
+                    Title = "Developer",
+                    EmployeeRole = new Role() { RoleTitle = "Role 6" }
+                }
+            }
+        });
+        return Employees;
+    }
+
+    public class EmployeeData
+    {
+        public int? EmployeeID { get; set; }
+        public EmployeeName Name { get; set; }
+        public string Title { get; set; }
+        public EmployeeDetails Details { get; set; }
+    }
+
+    public class EmployeeName
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+
+    public class EmployeeDetails
+    {
+        public EmployeePosition Position { get; set; }
+    }
+
+    public class EmployeePosition
+    {
+        public string Title { get; set; }
+
+        public Role EmployeeRole { get; set; }
+    }
+
+    public class Role
+    {
+        public string RoleTitle { get; set; }
+    }
+}

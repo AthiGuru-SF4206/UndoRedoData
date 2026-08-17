@@ -1,0 +1,676 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Popups
+
+<SfFixture @ref="fixtureDialogHeight" Test="DialogSettings_Height" Description="DialogSettings - Height property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogHeight" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsHeight" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogHeight { get; set; }
+    public SfGrid<Order> gridDialogHeight { get; set; }
+    public DialogSettings DialogParamsHeight { get; set; } = new DialogSettings { Height = "400px" };
+
+    public async void DialogSettings_Height(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0, TimeSpan.FromMilliseconds(1000));
+        var dialog = cut.Find(".e-dialog");
+        
+        Assert.NotNull(dialog);
+        Assert.Contains("400px", cut.Instance.EditSettings.Dialog.Height);
+    }
+}
+
+<SfFixture @ref="fixtureDialogWidth" Test="DialogSettings_Width" Description="DialogSettings - Width property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogWidth" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsWidth" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogWidth { get; set; }
+    public SfGrid<Order> gridDialogWidth { get; set; }
+    public DialogSettings DialogParamsWidth { get; set; } = new DialogSettings { Width = "500px" };
+
+    public async void DialogSettings_Width(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0, TimeSpan.FromMilliseconds(1000));
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog);
+        Assert.Contains("500px", cut.Instance.EditSettings.Dialog.Width);
+    }
+}
+
+<SfFixture @ref="fixtureDialogMinHeight" Test="DialogSettings_MinHeight" Description="DialogSettings - MinHeight property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogMinHeight" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsMinHeight" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogMinHeight { get; set; }
+    public SfGrid<Order> gridDialogMinHeight { get; set; }
+    public DialogSettings DialogParamsMinHeight { get; set; } = new DialogSettings { MinHeight = "250px" };
+
+    public async void DialogSettings_MinHeight(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(2);
+        await cut.Instance.StartEditAsync();
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog.MinHeight);
+        Assert.Equal("250px", cut.Instance.EditSettings.Dialog.MinHeight);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAllowDragging" Test="DialogSettings_AllowDragging" Description="DialogSettings - AllowDragging property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAllowDragging" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsAllowDragging" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAllowDragging { get; set; }
+    public SfGrid<Order> gridDialogAllowDragging { get; set; }
+    public DialogSettings DialogParamsAllowDragging { get; set; } = new DialogSettings { AllowDragging = true };
+
+    public async void DialogSettings_AllowDragging(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog);
+        Assert.True(cut.Instance.EditSettings.Dialog.AllowDragging.GetValueOrDefault(false));
+    }
+}
+
+<SfFixture @ref="fixtureDialogShowCloseIcon" Test="DialogSettings_ShowCloseIcon" Description="DialogSettings - ShowCloseIcon property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogShowCloseIcon" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsShowCloseIcon" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogShowCloseIcon { get; set; }
+    public SfGrid<Order> gridDialogShowCloseIcon { get; set; }
+    public DialogSettings DialogParamsShowCloseIcon { get; set; } = new DialogSettings { ShowCloseIcon = true };
+
+    public async void DialogSettings_ShowCloseIcon(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0, TimeSpan.FromMilliseconds(1000));
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog);
+        Assert.True(cut.Instance.EditSettings.Dialog.ShowCloseIcon.GetValueOrDefault(false));
+    }
+}
+
+<SfFixture @ref="fixtureDialogCloseOnEscape" Test="DialogSettings_CloseOnEscape" Description="DialogSettings - CloseOnEscape property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogCloseOnEscape" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsCloseOnEscape" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogCloseOnEscape { get; set; }
+    public SfGrid<Order> gridDialogCloseOnEscape { get; set; }
+    public DialogSettings DialogParamsCloseOnEscape { get; set; } = new DialogSettings { CloseOnEscape = true };
+
+    public async void DialogSettings_CloseOnEscape(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        
+        Assert.True(cut.Instance.EditSettings.Dialog.CloseOnEscape.GetValueOrDefault(false));
+    }
+}
+
+<SfFixture @ref="fixtureDialogEnableResize" Test="DialogSettings_EnableResize" Description="DialogSettings - EnableResize property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogEnableResize" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsEnableResize" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogEnableResize { get; set; }
+    public SfGrid<Order> gridDialogEnableResize { get; set; }
+    public DialogSettings DialogParamsEnableResize { get; set; } = new DialogSettings { EnableResize = true };
+
+    public async void DialogSettings_EnableResize(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(2);
+        await cut.Instance.StartEditAsync();
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog);
+        Assert.True(cut.Instance.EditSettings.Dialog.EnableResize.GetValueOrDefault(false));
+    }
+}
+
+<SfFixture @ref="fixtureDialogCssClass" Test="DialogSettings_CssClass" Description="DialogSettings - CssClass property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogCssClass" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsCssClass" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogCssClass { get; set; }
+    public SfGrid<Order> gridDialogCssClass { get; set; }
+    public DialogSettings DialogParamsCssClass { get; set; } = new DialogSettings { CssClass = "custom-dialog-class" };
+
+    public async void DialogSettings_CssClass(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        
+        Assert.Equal("custom-dialog-class", cut.Instance.EditSettings.Dialog.CssClass);
+    }
+}
+
+<SfFixture @ref="fixtureDialogTarget" Test="DialogSettings_Target" Description="DialogSettings - Target property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogTarget" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsTarget" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogTarget { get; set; }
+    public SfGrid<Order> gridDialogTarget { get; set; }
+    public DialogSettings DialogParamsTarget { get; set; } = new DialogSettings { Target = "#dialogTarget" };
+
+    public async void DialogSettings_Target(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog.Target);
+        Assert.Equal("#dialogTarget", cut.Instance.EditSettings.Dialog.Target);
+    }
+}
+
+<SfFixture @ref="fixtureDialogXValue" Test="DialogSettings_XValue" Description="DialogSettings - XValue property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogXValue" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsXValue" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogXValue { get; set; }
+    public SfGrid<Order> gridDialogXValue { get; set; }
+    public DialogSettings DialogParamsXValue { get; set; } = new DialogSettings { XValue = "100px" };
+
+    public async void DialogSettings_XValue(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.Equal("100px", cut.Instance.EditSettings.Dialog.XValue);
+    }
+}
+
+<SfFixture @ref="fixtureDialogYValue" Test="DialogSettings_YValue" Description="DialogSettings - YValue property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogYValue" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsYValue" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogYValue { get; set; }
+    public SfGrid<Order> gridDialogYValue { get; set; }
+    public DialogSettings DialogParamsYValue { get; set; } = new DialogSettings { YValue = "50px" };
+
+    public async void DialogSettings_YValue(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.Equal("50px", cut.Instance.EditSettings.Dialog.YValue);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAnimationDelay" Test="DialogSettings_AnimationDelay" Description="DialogSettings - AnimationDelay property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAnimationDelay" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsAnimationDelay" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAnimationDelay { get; set; }
+    public SfGrid<Order> gridDialogAnimationDelay { get; set; }
+    public DialogSettings DialogParamsAnimationDelay { get; set; } = new DialogSettings { AnimationDelay = 200 };
+
+    public async void DialogSettings_AnimationDelay(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.Equal(200, cut.Instance.EditSettings.Dialog.AnimationDelay);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAnimationDuration" Test="DialogSettings_AnimationDuration" Description="DialogSettings - AnimationDuration property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAnimationDuration" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsAnimationDuration" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAnimationDuration { get; set; }
+    public SfGrid<Order> gridDialogAnimationDuration { get; set; }
+    public DialogSettings DialogParamsAnimationDuration { get; set; } = new DialogSettings { AnimationDuration = 600 };
+
+    public async void DialogSettings_AnimationDuration(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.Equal(600, cut.Instance.EditSettings.Dialog.AnimationDuration);
+    }
+}
+
+<SfFixture @ref="fixtureDialogZIndex" Test="DialogSettings_ZIndex" Description="DialogSettings - ZIndex property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogZIndex" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsZIndex" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogZIndex { get; set; }
+    public SfGrid<Order> gridDialogZIndex { get; set; }
+    public DialogSettings DialogParamsZIndex { get; set; } = new DialogSettings { ZIndex = 1500 };
+
+    public async void DialogSettings_ZIndex(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.Equal(1500, cut.Instance.EditSettings.Dialog.ZIndex);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAnimationEffect" Test="DialogSettings_AnimationEffect" Description="DialogSettings - AnimationEffect property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAnimationEffect" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsAnimationEffect" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAnimationEffect { get; set; }
+    public SfGrid<Order> gridDialogAnimationEffect { get; set; }
+    public DialogSettings DialogParamsAnimationEffect { get; set; } = new DialogSettings { AnimationEffect = DialogEffect.Zoom };
+
+    public async void DialogSettings_AnimationEffect(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog.AnimationEffect);
+        Assert.Equal(DialogEffect.Zoom, cut.Instance.EditSettings.Dialog.AnimationEffect);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAllProperties" Test="DialogSettings_AllProperties_Combined" Description="DialogSettings - All properties combined">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAllProperties" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsAllProperties" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAllProperties { get; set; }
+    public SfGrid<Order> gridDialogAllProperties { get; set; }
+    public DialogSettings DialogParamsAllProperties { get; set; } = new DialogSettings 
+    { 
+        Height = "450px",
+        Width = "550px",
+        MinHeight = "300px",
+        AllowDragging = true,
+        ShowCloseIcon = true,
+        CloseOnEscape = true,
+        EnableResize = true,
+        CssClass = "e-custom-dialog",
+        Target = null,
+        XValue = "50px",
+        YValue = "75px",
+        AnimationDelay = 100,
+        AnimationDuration = 500,
+        ZIndex = 1200,
+        AnimationEffect = DialogEffect.Fade
+    };
+
+    public async void DialogSettings_AllProperties_Combined(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var dialog = cut.Instance.EditSettings.Dialog;
+        
+        Assert.Equal("450px", dialog.Height);
+        Assert.Equal("550px", dialog.Width);
+        Assert.Equal("300px", dialog.MinHeight);
+        Assert.True(dialog.AllowDragging.GetValueOrDefault(false));
+        Assert.True(dialog.ShowCloseIcon.GetValueOrDefault(false));
+        Assert.True(dialog.CloseOnEscape.GetValueOrDefault(false));
+        Assert.True(dialog.EnableResize.GetValueOrDefault(false));
+        Assert.Equal("e-custom-dialog", dialog.CssClass);
+        Assert.Equal("50px", dialog.XValue);
+        Assert.Equal("75px", dialog.YValue);
+        Assert.Equal(100, dialog.AnimationDelay);
+        Assert.Equal(500, dialog.AnimationDuration);
+        Assert.Equal(1200, dialog.ZIndex);
+        Assert.Equal(DialogEffect.Fade, dialog.AnimationEffect);
+    }
+}
+
+<SfFixture @ref="fixtureDialogAllAnimationEffects" Test="DialogSettings_AnimationEffects_All" Description="DialogSettings - All animation effects">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogAllAnimationEffects" Toolbar="@(new List<string>() { "Edit" })" Height="315">
+            <GridEditSettings AllowEditing="true" Dialog="@DialogParamsAnimationEffects" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogAllAnimationEffects { get; set; }
+    public SfGrid<Order> gridDialogAllAnimationEffects { get; set; }
+    public DialogSettings DialogParamsAnimationEffects { get; set; } = new DialogSettings { AnimationEffect = DialogEffect.Zoom };
+
+    public async void DialogSettings_AnimationEffects_All(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var dialog = cut.Instance.EditSettings.Dialog;
+        
+        // Test setting different animation effects
+        dialog.AnimationEffect = DialogEffect.Fade;
+        Assert.Equal(DialogEffect.Fade, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.FadeZoom;
+        Assert.Equal(DialogEffect.FadeZoom, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.FlipLeftDown;
+        Assert.Equal(DialogEffect.FlipLeftDown, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.FlipLeftUp;
+        Assert.Equal(DialogEffect.FlipLeftUp, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.FlipRightDown;
+        Assert.Equal(DialogEffect.FlipRightDown, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.FlipRightUp;
+        Assert.Equal(DialogEffect.FlipRightUp, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.SlideLeft;
+        Assert.Equal(DialogEffect.SlideLeft, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.SlideRight;
+        Assert.Equal(DialogEffect.SlideRight, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.SlideTop;
+        Assert.Equal(DialogEffect.SlideTop, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.SlideBottom;
+        Assert.Equal(DialogEffect.SlideBottom, dialog.AnimationEffect);
+
+        dialog.AnimationEffect = DialogEffect.None;
+        Assert.Equal(DialogEffect.None, dialog.AnimationEffect);
+    }
+}
+
+<SfFixture @ref="fixtureDialogHeaderTemplate" Test="DialogSettings_HeaderTemplate" Description="DialogSettings with HeaderTemplate">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogHeaderTemplate" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsHeaderTemplate" Mode="EditMode.Dialog">
+                <HeaderTemplate>
+                    @{
+                        var orderData = context as Order;
+                        <span>Edit Order #@orderData?.OrderID</span>
+                    }
+                </HeaderTemplate>
+            </GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogHeaderTemplate { get; set; }
+    public SfGrid<Order> gridDialogHeaderTemplate { get; set; }
+    public DialogSettings DialogParamsHeaderTemplate { get; set; } = new DialogSettings { Height = "400px", Width = "500px" };
+
+    public async void DialogSettings_HeaderTemplate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0, TimeSpan.FromMilliseconds(1000));
+        
+        Assert.NotNull(cut.Instance.EditSettings.Dialog);
+        Assert.NotNull(cut.Instance.EditModule);
+    }
+}
+
+<SfFixture @ref="fixtureDialogFooterTemplate" Test="DialogSettings_FooterTemplate" Description="DialogSettings with FooterTemplate">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogFooterTemplate" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Dialog="@DialogParamsFooterTemplate" Mode="EditMode.Dialog">
+                <FooterTemplate>
+                    <SfButton OnClick="@SaveEdit" IsPrimary="true">Save</SfButton>
+                    <SfButton OnClick="@CancelEdit">Cancel</SfButton>
+                </FooterTemplate>
+            </GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" ValidationRules="@(new ValidationRules { Required = true })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogFooterTemplate { get; set; }
+    public SfGrid<Order> gridDialogFooterTemplate { get; set; }
+    public DialogSettings DialogParamsFooterTemplate { get; set; } = new DialogSettings { Height = "400px", Width = "500px" };
+
+    public async Task SaveEdit()
+    {
+        if (gridDialogFooterTemplate != null)
+        {
+            await gridDialogFooterTemplate.EndEditAsync();
+        }
+    }
+
+    public async Task CancelEdit()
+    {
+        if (gridDialogFooterTemplate != null)
+        {
+            await gridDialogFooterTemplate.CloseEditAsync();
+        }
+    }
+
+    public async void DialogSettings_FooterTemplate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count > 0, TimeSpan.FromMilliseconds(1000));
+        
+        var buttons = cut.FindAll(".e-btn");
+        Assert.True(buttons.Count > 0);
+    }
+}
+
+<SfFixture @ref="fixtureDialogDefaultValues" Test="DialogSettings_DefaultValues" Description="DialogSettings - Default values verification">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDialogDefaultValues" Toolbar="@(new List<string>() { "Edit" })" Height="315">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDialogDefaultValues { get; set; }
+    public SfGrid<Order> gridDialogDefaultValues { get; set; }
+
+    public async void DialogSettings_DefaultValues(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var dialog = cut.Instance.EditSettings.Dialog;
+        
+        // Verify default values
+        Assert.Equal(400, dialog.AnimationDuration); // Default
+        Assert.Equal(1001, dialog.ZIndex); // Default
+        Assert.Null(dialog.Height); // Nullable, null by default
+        Assert.Null(dialog.Width);
+        Assert.Null(dialog.MinHeight);
+        Assert.Null(dialog.CssClass);
+    }
+}

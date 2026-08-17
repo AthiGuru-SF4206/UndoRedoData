@@ -1,0 +1,63 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Console error throws while using Shift + selection">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true">
+            <GridSelectionSettings Mode="Blazor.Grids.SelectionMode.Both" Type="Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async void  GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Records are binded in the Grid");
+        cut.FindAll(".e-rowcell")[0].Click(new MouseEventArgs() {Type="click", ShiftKey=false, CtrlKey=false});
+        Assert.True(cut.Instance.SelectedRecords.Count > 0, "Record is selected in the Grid");
+        var ctrlC = "{\"key\":\"c\",\"code\":\"KeyC\",\"ctrlKey\":true,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        await cut.Instance._jsAdaptor.GridKeyDown(ctrlC, false, false, false, null);
+        cut.FindAll(".e-rowcell")[10].Click(new MouseEventArgs() {Type="click", ShiftKey=true, CtrlKey=false});
+        Assert.True(cut.Instance.SelectedRecords.Count > 1, "multiple records selected in the Grid");
+    }
+
+    public List<Order> GenerateRows()
+    {
+        var GridData = new List<Order>()
+        {
+            new Order() { OrderID = 1001, CustomerID = "ALFKI", Freight = 2.1, OrderDate = DateTime.Now.AddDays(-1) },
+            new Order() { OrderID = 1002, CustomerID = "ANANTR", Freight = 4.2, OrderDate = DateTime.Now.AddDays(-2) },
+            new Order() { OrderID = 1003, CustomerID = "ANTON", Freight = 6.3, OrderDate = DateTime.Now.AddDays(-3) },
+            new Order() { OrderID = 1004, CustomerID = "BLONP", Freight = 8.4, OrderDate = DateTime.Now.AddDays(-4) },
+            new Order() { OrderID = 1005, CustomerID = "BOLID", Freight = 10.5, OrderDate = DateTime.Now.AddDays(-5) },
+            new Order() { OrderID = 1006, CustomerID = "ALFKI", Freight = 12.6, OrderDate = DateTime.Now.AddDays(-6) },
+            new Order() { OrderID = 1007, CustomerID = "ANANTR", Freight = 14.7, OrderDate = DateTime.Now.AddDays(-7) },
+            new Order() { OrderID = 1008, CustomerID = "ANTON", Freight = 16.8, OrderDate = DateTime.Now.AddDays(-8) },
+            new Order() { OrderID = 1009, CustomerID = "BLONP", Freight = 18.9, OrderDate = DateTime.Now.AddDays(-9) },
+            new Order() { OrderID = 1010, CustomerID = "BOLID", Freight = 21.0, OrderDate = DateTime.Now.AddDays(-10) },
+        };
+        return GridData;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

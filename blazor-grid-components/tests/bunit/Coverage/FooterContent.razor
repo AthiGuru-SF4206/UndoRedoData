@@ -1,0 +1,209 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Aggregate with FooterTemplate and left freeze direction">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="DefaultGrid" AllowPaging="true" FrozenColumns="1">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Min" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Min: @aggregate.Min</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Aggregate with FooterTemplate and right freeze direction">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="DefaultGrid2" AllowPaging="true" FrozenColumns="1">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.FalseCount" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Min: @aggregate.FalseCount</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+
+    public void GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Aggregate with FooterTemplate and Fixed freeze direction">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="DefaultGrid3" AllowPaging="true" FrozenColumns="1">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.TrueCount" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Count: @aggregate.TrueCount</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" IsFrozen="true" Freeze="FreezeDirection.Fixed"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+
+    public void GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="Aggregate with FooterTemplate Count and Frozen">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="DefaultGrid4" AllowPaging="true" FrozenColumns="3">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Count" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Count: @aggregate.Count</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGrid4;
+
+    public async Task GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var dataList = new List<Object>();
+        await cut.InvokeAsync(() => cut.Instance.EventAggregator.Trigger("RefreshFooterContent", dataList));
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="GridBasicRendering5" Description="Aggregate with AggregateTemplateContext()">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="DefaultGrid5" AllowPaging="true" FrozenColumns="3">
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Count" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Foreign: @aggregate.ForeignKey</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> DefaultGrid5;
+
+    public async Task GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var foreign = new AggregateTemplateContext
+        {
+            ForeignKey = "ForeignKeyValue"
+        };
+        string f = foreign.ForeignKey;
+    } 
+}

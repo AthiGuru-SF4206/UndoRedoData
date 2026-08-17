@@ -1,0 +1,920 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations;
+
+<SfFixture @ref="fixture" Test="ForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+
+    void ForeignRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0);
+        Assert.True(9 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+        Assert.True(4 == cut.Find(".e-row").Children.Count(), "Number of cells generated properly");
+        Assert.True(9 == cut.Instance.CurrentViewData.Count(), "CurrentViewData count is proper");
+        Assert.True(cut.Instance.Columns[0].IsForeignColumn() == false, "OrderID column");
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey column");
+        Assert.True(cut.Instance.Columns[1].IsForeignKeyField() == false, "isForeignKeyMethod both field and foreignkey field are same");
+        Assert.True(cut.Instance.Columns[1].ForeignKeyValue == "FirstName", "Foreign Key Value Field");
+    }
+}
+
+<SfFixture @ref="fixture1" Test="InitalSortForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowSorting="true" Height="315">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="EmployeeID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture1 { get; set; }
+
+    void InitalSortForeignRendering(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey column");
+        Assert.True(true == cut.Instance.AllowSorting, "sorting feature enabled properly");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 1);
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On Sorting Direction changes properly");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("EmployeeID"), "sorting field check");
+    }
+}
+
+<SfFixture @ref="fixture2" Test="SortForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowSorting="true" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+
+    async void SortForeignRendering(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey column");
+        Assert.True(true == cut.Instance.AllowSorting, "sorting feature enabled properly");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+        Assert.True(cut.Instance.SortSettings.Columns == null);
+        await cut.Instance.SortColumnAsync("EmployeeID", SortDirection.Descending, true);
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 1);
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Descending), "On Sorting Direction changes properly");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("EmployeeID"), "sorting field check");
+    }
+}
+
+<SfFixture @ref="fixture3" Test="FilterForeignRendering" Description="Filterbar ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" Height="315">
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandlerrr"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture3 { get; set; }
+
+    async void FilterForeignRendering(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.FilterSettings.Type.Equals(Syncfusion.Blazor.Grids.FilterType.FilterBar), "Filterbar filter enabled");
+        Assert.True(cut.FindAll(".e-filterbar").Count() == 1, "AllowFiltering true testing");
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancy");
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 1, "Filter method working properly");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Filter Result");
+       
+        await cut.Instance.ClearFilteringAsync();
+    }
+    void ActionCompleteHandlerrr(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Filtering))
+        {
+            var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(cut.Instance.FilterSettings.Columns.Count() == 2, "Allow filtering testing");
+        }
+    }
+}
+
+<SfFixture @ref="fixture4" Test="SearchForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Toolbar="@(new List<string>() { "Search" })" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandle"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture4 { get; set; }
+
+    async void SearchForeignRendering(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-searchinput")[0].Input("Nancy");
+        Task.Run(async () =>
+        {
+            var eventFn = cut.FindComponent<SfToolbar>().Instance.Items.First().OnClick;
+            var eventHandler = (EventCallback<ClickEventArgs>)eventFn;
+            var clickEventArgs = new ClickEventArgs();
+            
+            // Set Name property
+            GridReflection.SetPropertyValue(clickEventArgs, "Name", "click");
+            
+            // Set Item property with ItemModel
+            var itemModel = new ItemModel()
+            {
+                Id = cut.Instance.ID + "_search",
+                Text = "Search",
+                Type = ItemType.Input
+            };
+            GridReflection.SetPropertyValue(clickEventArgs, "Item", itemModel);
+            await eventHandler.InvokeAsync(clickEventArgs);
+            //var eventArgs = new ClickEventArgs() { Name = "click", Item = new ItemModel() { Id = cut.Instance.ID + "_search", Text = "Search", Type = ItemType.Input } };
+            //await eventHandler.InvokeAsync(eventArgs);
+        }).GetAwaiter();
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        Assert.False(cut.Instance.IsEdit == true, "Edit template working properly while searching");
+        await cut.Instance.EndEditAsync();
+        Assert.True(cut.Instance.IsEdit == false, "Edit condition checks");
+    }
+
+    async void ActionCompleteHandle()
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SearchAsync(" ");
+        Assert.True(1 == cut.Instance.CurrentViewData.Count(), "Current view data working properly");
+    }
+}
+<SfFixture @ref="fixture5" Test="PDFExportForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Toolbar="@(new List<string>() { "PDFExport", "ExcelExport" })" AllowPdfExport="true" AllowExcelExport="true" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" ExportComplete="PdfExportHandler"></GridEvents>
+            <GridEvents TValue="Order" ExportComplete="ExcelExportHandler"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture5 { get; set; }
+    void PDFExportForeignRendering(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-toolbar").Count() == 1, "AllowpdfExport true testing");
+        Assert.True(cut.FindAll(".e-toolbar").Count() == 1, "AllowExcelExport true testing");
+    }
+    public async void ToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        if (args.Item.Text == "Pdf Export")
+        {
+            await cut.Instance.GetColumnByFieldAsync("EmployeeID");
+            await cut.Instance.ExportToPdfAsync();
+        }
+        if (args.Item.Text == "Excel Export")
+        {
+            await cut.Instance.GetColumnByFieldAsync("EmployeeID");
+            await cut.Instance.ExportToExcelAsync();
+        }
+    }
+    public void PdfExportHandler(object args)
+    {
+        Assert.True("Success" == args.ToString(), "Pdf check");
+    }
+    public void ExcelExportHandler(object args)
+    {
+        Assert.True("Success" == args.ToString(), "Excel check");
+    }
+}
+
+<SfFixture @ref="fixture6" Test="EditTemplateForeignRendering" Description="Edit template ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Toolbar="@(new List<string>() { "Add", "edit", "Delete", "Update", "cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowNextRowEdit="true" AllowEditOnDblClick="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    async void EditTemplateForeignRendering(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey Column");
+        Assert.True(5 == cut.FindAll(".e-toolbar-item").Count(), "Context menu items rendering properly");
+        Assert.True(true == cut.Instance.Columns[1].AllowEditing == true, "Editing feature enabled properly");
+        Assert.True(cut.Instance.EditSettings.AllowEditOnDblClick == true, "Double click enabled properly");
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        await cut.Instance.EndEditAsync();
+        Assert.True(cut.Instance.IsEdit == false, "Is edit disabled");
+        await cut.Instance.GetColumnsAsync();
+        await cut.Instance.Refresh();
+        Assert.True(cut.Instance.Columns[1].ForeignKeyField == "EmployeeID");
+        Assert.True(cut.Instance.Columns[1].ForeignKeyValue == "FirstName");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Refresh foreign data Works properly");
+    }
+}
+
+<SfFixture @ref="fixture7" Test="FilterandSortForeignRendering" Description="Foreign column filter when grouping is enabled">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowGrouping="true" AllowSorting="true" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" AllowGrouping="true" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture7 { get; set; }
+
+    async void FilterandSortForeignRendering(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-filterbar").Count() == 1, "AllowFiltering true testing");
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancy", "and", true);
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 1, "Filter method working properly");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Filter Result");
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, true);
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 1, "Sort with filter working properly");
+        //var content = cut.FindAll(".efiltermenudiv")[1].QuerySelectorAll("true");
+        await cut.Instance.GetColumnByFieldAsync("EmployeeID");
+        //Assert.True(cut.FindAll(".e-filtermenudiv")[1].ClassList.Contains(".e-filtered"), "Filter icon for foreignkey column check");
+        await cut.Instance.ClearFilteringAsync();
+        await cut.Instance.ClearGroupingAsync();
+        await cut.Instance.ClearSortingAsync();
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, " current view data working properly");
+    }
+}
+<SfFixture @ref="fixture8" Test="EditingForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" ShowColumnMenu="true" Toolbar="@(new List<string>() { "Add", "edit", "Delete", "Update", "cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowNextRowEdit="true" AllowEditOnDblClick="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture8 { get; set; }
+    async void EditingForeignRendering(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey Column");
+        Assert.True(5 == cut.FindAll(".e-toolbar-item").Count(), "Context menu items rendering properly");
+        Assert.True(true == cut.Instance.Columns[1].AllowEditing == true, "Editing feature enabled properly");
+        Assert.True(cut.Instance.EditSettings.AllowEditOnDblClick == true, "Double click enabled properly");
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        Assert.True(cut.Instance.EditSettings.Mode.Equals(Syncfusion.Blazor.Grids.EditMode.Normal), "Normal mode rendering properly");
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true);
+        Assert.True(cut.Instance.ShowColumnMenu == true, "value enabled");
+        await cut.Instance.EndEditAsync();
+        await cut.Instance.GetColumnByFieldAsync("OrderDate");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "current view data working properly");
+        Assert.True(cut.Instance.EditSettings.AllowNextRowEdit == true, "AllowNext row edit enabled properly");
+        //Assert.True(cut.Instance.EditSettings.Equals("EmployeeID"), "Editing Batch field check");
+        //Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly after batch edit");
+        await cut.Instance.EndEditAsync();
+        //Get foreigndata
+        cut.Instance.Columns[1].GetForeignData();
+        Assert.True(cut.Instance.Columns[1].ForeignKeyValue == "FirstName");
+        await cut.Instance.GetForeignKeyColumnsAsync();
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GroupingForeignRendering" Description="Grouping with ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowSorting="true" AllowPaging="true" AllowGrouping="true" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order" OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture9 { get; set; }
+    async void GroupingForeignRendering(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count, "Group Drop Area rendering properly");
+        Assert.True(cut.Find(".e-groupdroparea").TextContent == "\nDrag a column header here to group its column    ", "Group Drop Area Text rendering properly");
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey Column");
+        await cut.Instance.GroupColumnAsync("EmployeeID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() == 1, "Group settings");
+        await cut.Instance.GetCurrentViewRecordsAsync();
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+    }
+    void ActionBeginHandler(ActionEventArgs<Order> args)
+    {
+        Assert.True(args.ColumnName == "EmployeeID", "Grouped column name");
+    }
+    void ActionCompleteHandler(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.UnGrouping))
+        {
+            var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(args.ColumnName == "EmployeeID", "UnGrouped Column Name");
+            Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+        }
+    }
+}
+
+<SfFixture @ref="fixture10" Test="AggregateForeignRendering" Description="ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowSorting="true" AllowPaging="true" AllowGrouping="true" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.EmployeeID) Type="AggregateType.Custom">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p> Custom: @aggregate.Custom</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridEvents TValue="Order" OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompleteHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    void AggregateForeignRendering(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey Column");
+        Assert.True(1 == cut.Instance.Aggregates.Count, "Normal Aggregates Count check");
+        Assert.True(1 == cut.Instance.Aggregates[0].Columns.Count, "Normal Aggregates column field ");
+        Assert.True(cut.FindAll(".e-summaryrow").Count == 1, "Checking Aggregate column");
+        Assert.True(cut.Instance.Aggregates[0].Columns[0].Type.Equals(Syncfusion.Blazor.Grids.AggregateType.Custom), "Checking Aggregate Type");
+        var a = cut.Instance.Aggregates[0].Columns[0].FooterTemplate != null;
+        Assert.True(cut.Instance.Aggregates[0].Columns[0].FooterTemplate != null, "Checking Aggregate columns footer template");
+    }
+}
+<SfFixture @ref="fixture11" Test="GroupAggregateForeignRendering" Description="Aggregate with ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowSorting="true" AllowPaging="true" AllowGrouping="true" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.EmployeeID) Type="AggregateType.Custom">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p> Custom: @aggregate.Custom</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandlerr"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture11 { get; set; }
+    void GroupAggregateForeignRendering(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeginKey column");
+        Assert.True(cut.Instance.AllowGrouping == true, "Grouping enabled");
+        Assert.True(1 == cut.Instance.Aggregates.Count, "Aggregates Count check");
+        Assert.True(1 == cut.Instance.Aggregates[0].Columns.Count, "Aggregates column field ");
+        Assert.True(cut.FindAll(".e-summaryrow").Count == 1, "Checking Aggregate column");
+        Assert.True(cut.Instance.Aggregates[0].Columns[0].Type.Equals(Syncfusion.Blazor.Grids.AggregateType.Custom), "Checking Aggregate Type");
+        Assert.True(cut.Instance.Aggregates[0].Columns[0].FooterTemplate != null, "Checking Aggregate columns footer template");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+    }
+    void ActionCompleteHandlerr(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Grouping))
+        {
+            var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(args.ColumnName == "EmployeeID", "Grouped Column Name");
+        }
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.UnGrouping))
+        {
+            var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(args.ColumnName == "EmployeeID", "Ungrouped column name");
+            Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+        }
+    }
+}
+<SfFixture @ref="fixture12" Test="SelectionForeignRendering" Description="Selection ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowPaging="true" AllowFiltering="true" AllowSelection="true" Height="315">
+            <GridEvents RowSelected="RowSelectedHandler" RowSelecting="RowSelectingHandler" RowDeselected="RowDeSelectedHandler" RowDeselecting="RowDeSelectingHandler" TValue="Order"></GridEvents>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Single" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="Select" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture12 { get; set; }
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    void SelectionForeignRendering(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        //var btn = fixture12.GetFragment<SfButton>();
+        //btn.FindAll(".e-btn").ElementAt(1).Click();
+    }
+    async void Select()
+    {
+        await cut.Instance.SelectRowAsync(2);
+        Assert.True(2 == this.cut.Instance.SelectedRowIndexes[0], "Number of rows selected using select row method");
+        await cut.Instance.ClearSelectionAsync();
+        Assert.True(0 == this.cut.Instance.SelectedRowIndexes.Count, "Number of Rows selected using Select row indexes method");
+    }
+    public void RowSelectedHandler(RowSelectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row");
+    }
+    public void RowSelectingHandler(RowSelectingEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the selected row");
+    }
+    public void RowDeSelectedHandler(RowDeselectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of the deselected row");
+    }
+    public void RowDeSelectingHandler(RowDeselectEventArgs<Order> args)
+    {
+        Assert.True(2 == args.RowIndex, "RowIndex of The deselcted row");
+    }
+}
+
+<SfFixture @ref="fixture13" Test="CheckBoxForeignRendering" Description="checkbox ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" Height="315">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandlerrr"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture13 { get; set; }
+
+    async void CheckBoxForeignRendering(Fixture fixture13)
+    {
+        var cut = fixture13.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.AllowFiltering == true, "Allow Filtering enabled");
+        //Assert.True(cut.FindAll(".e-filtermenudiv")[1].ClassList.Contains(".e-filtered"), "Filter icon for foreignkey column check");
+        Assert.True(cut.Instance.FilterSettings.Type.Equals(Syncfusion.Blazor.Grids.FilterType.CheckBox), "checkbox filter enabled");
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancy");
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 1, "Filter method working properly");
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Filter Result");
+        await cut.Instance.ClearFilteringAsync();
+    }
+  }
+
+<SfFixture @ref="fixture14" Test="MenuFilteringForeignRendering" Description="MenuFiltering ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" Height="315">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandlerrr"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture14 { get; set; }
+    async void MenuFilteringForeignRendering(Fixture fixture14)
+    {
+        var cut = fixture14.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.AllowFiltering == true, "Allow Filtering enabled");
+        //Assert.True(cut.FindAll(".e-filtermenudiv")[1].ClassList.Contains(".e-filtered"), "Filter icon for foreignkey column check");
+        Assert.True(cut.Instance.FilterSettings.Type.Equals(Syncfusion.Blazor.Grids.FilterType.Menu), "Menu filter enabled");
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancy");
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 1, "Filter method working properly");
+        await cut.Instance.ClearFilteringAsync();
+        Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Filter Result");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+
+    }
+}
+<SfFixture @ref="fixture15" Test="ExcelFilteringForeignRendering" Description="ExcelFiltering ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowPaging="true" AllowFiltering="true" Height="315">
+            <GridEditSettings AllowEditing="true"></GridEditSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture15 { get; set; }
+    void ExcelFilteringForeignRendering(Fixture fixture15)
+    {
+        var cut = fixture15.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.Query = new Query().AddParams("id", 3);
+        Assert.True(cut.Instance.AllowFiltering == true, "Allow Filtering enabled");
+        //Assert.True(cut.FindAll(".e-filtermenudiv")[1].ClassList.Contains(".e-filtered"), "Filter icon for foreignkey column check");
+        Assert.True(cut.Instance.FilterSettings.Type.Equals(Syncfusion.Blazor.Grids.FilterType.Excel), "Excel filter enabled");
+        cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancy").GetAwaiter();
+        cut.WaitForState(() => cut.Instance.FilterSettings.Columns.Count() == 1, TimeSpan.FromMilliseconds(1000));
+        cut.Instance.ClearFilteringAsync().GetAwaiter();
+        cut.WaitForState(() => cut.Instance.CurrentViewData.Count() == 9, TimeSpan.FromMilliseconds(1000));
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        Assert.True(cut.FindAll(".e-filter-popup").Count > 0, "filter dialog opened");
+        cut.InvokeAsync(() => cut.Instance.SelectRowAsync(1)).GetAwaiter();
+        cut.InvokeAsync(() => cut.Instance.StartEditAsync()).GetAwaiter();
+    }
+    void ActionComplete(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.FilterChoiceRequest))
+        {
+            var cut = fixture15.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(cut.Instance.Query.Queries.Params.Count() == 1);
+        }
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.BeginEdit))
+        {
+            var cut = fixture15.GetComponentUnderTest<SfGrid<Order>>();
+            Assert.True(cut.Instance.CurrentViewData.Count() == 9, "Current view data working properly");
+        }
+    }
+}
+<SfFixture @ref="fixture16" Test="CustomdatasourceForeignRendering" Description="customdatasource ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Toolbar="@(new List<string>() { "Add", "edit", "Delete", "Update", "cancel" })"
+                AllowSorting="true" AllowFiltering="true" AllowGrouping="true" AllowPaging="true" Height="315">
+            @*<SfDataManager Adaptor="Adaptors.CustomAdaptor"></SfDataManager>*@
+            <GridEvents TValue="Order" OnActionComplete="ActionCompletes"></GridEvents>
+            <GridPageSettings PageSize="6" PageCount="4"></GridPageSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code{
+    SfFixture fixture16 { get; set; }
+    async void CustomdatasourceForeignRendering(Fixture fixture16)
+    {
+        var cut = fixture16.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].IsForeignColumn() == true, "ForeignKey Column");
+        Assert.True(5 == cut.FindAll(".e-toolbar-item").Count(), "Context menu items rendering properly");
+        //cut.Instance.Columns[1].ColumnData.Equals("GenerateEmployeeData()");
+        Assert.True(cut.Instance.Columns[1].ForeignKeyField.Count() == 10);
+        Assert.True(cut.Instance.AllowPaging == true, "Allow paging enabled");
+        Assert.True(cut.Instance.PageSettings.PageSize == 6, "Pagesize enabled");
+        await cut.Instance.GoToPageAsync(3);
+        Assert.True(cut.Instance.AllowSorting == true, "Sorting enabled properly");
+        await cut.Instance.GetColumnByFieldAsync("EmployeeID");
+        await cut.Instance.SortColumnAsync("EmployeeID", SortDirection.Ascending, false);
+        Assert.True(cut.Instance.AllowFiltering == true, "Filtering enabled properly");
+        Assert.True(cut.Instance.FilterSettings.Type.Equals(Syncfusion.Blazor.Grids.FilterType.CheckBox));
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", "Nancyy", "or", false);
+        Assert.True(cut.Instance.FilterSettings.Columns.Count() == 1, "Filter method working properly");
+        cut.WaitForState(() => cut.Instance.CurrentViewData.Count() == 0);
+        Assert.True(0 == cut.Instance.CurrentViewData.Count(), "Filter Result");
+        await cut.Instance.ClearFilteringAsync();
+        await cut.Instance.ClearSortingAsync();
+        cut.WaitForState(() => cut.Instance.CurrentViewData.Count() == 6);
+        Assert.True(6 == cut.Instance.CurrentViewData.Count(), "currrent view data working properly");
+    }
+    void ActionCompletes(ActionEventArgs<Order> args)
+    {
+        Assert.True(args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Paging));
+        Assert.True(args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Sorting));
+        Assert.True(args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Filtering));
+    }
+}
+@* <SfFixture @ref="fixture17" Test="DropDownEditingForeignRendering" Description="ForeignKey Feature Testing with DropDown">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" ShowColumnMenu="true" Toolbar="@(new List<string>() { "Add", "edit", "Delete", "Update", "cancel" })" Height="315">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowNextRowEdit="true" AllowEditOnDblClick="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture17 { get; set; }
+    void DropDownEditingForeignRendering(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+ *@
+
+ @*GenerateColumnQuery method coverage*@
+<SfFixture @ref="fixture17" Test="SearchForeignkey" Description="Search operation ForeignKey Feature Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Height="315" Toolbar="@ToolbarItems">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture17 { get; set; }
+    private List<string> ToolbarItems = new List<string>() { "Search" };
+    async void SearchForeignkey(Fixture fixture17)
+    {
+        var cut = fixture17.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        Assert.True(grid.TotalItemCount == 9, "Before Searching");
+        await grid.SearchAsync("Nancy");
+        Assert.True(grid.TotalItemCount == 1, "After Searching");
+    }
+}
+
+<SfFixture @ref="fixture18" Test="GridEditingValueChange" Description="Editing value change cover">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" Height="315" Toolbar="@GridToolbarItems" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture18 { get; set; }
+    private List<string> GridToolbarItems = new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update"  };
+    async void GridEditingValueChange(Fixture fixture18)
+    {
+        var cut = fixture18.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        //cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[1].Click();
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[1].Click();
+        Task.Delay(100).GetAwaiter().GetResult();
+        cut.FindAll(".e-menu-item")[1].Click();
+        var menuItemCount = cut.FindAll(".e-menu-item").Count;
+        var equalItem = cut.FindAll(".e-menu-item.e-focused").Count;
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        cut.WaitForState(() => excelFilter.Instance != null);
+        var menuItemCounts = cut.FindAll(".e-menu-item").Count;
+        // await excelFilter.Instance.ItemSelected(new MenuEventArgs<MenuItem>() {})
+        MenuEventArgs<MenuItem> args = new MenuEventArgs<MenuItem>();
+        args.Item = new MenuItem();
+        args.Item.Text = "Equal";
+        args.Item.IconCss = "";
+        args.Item.Id = "equal";
+        cut.InvokeAsync(() => excelFilter.Instance.ItemSelected(args)).GetAwaiter();
+        //var dropdownList = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<int, Employee>>();
+        
+        //await cut.Instance.SelectRowAsync(1);
+        //await cut.Instance.StartEditAsync();
+        //cut.Render();
+        // var editDropDown = cut.FindAll(".e-dropdownlist");
+        // editDropDown[0].MouseDown();
+        // Task.Delay(100).GetAwaiter().GetResult();
+        //cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<Order>>();
+        //var data = new Order() { OrderID = 10248, EmployeeID = 2, Freight = 25.7 * 2, OrderDate = new DateTime(2020, 05, 15) };
+        //await cut.Instance.UpdateRowAsync(6, data);
+    }
+}
+
+
+<SfFixture @ref="fixture19" Test="ForeignKeyEditCell_TypeBranchCoverage" Description="Covers GridForeignColumn ActualType branches">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@BranchOrders" Height="315">
+            <GridEditSettings AllowEditing="true" AllowEditOnDblClick="false" Mode="Syncfusion.Blazor.Grids.EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+
+                <GridForeignColumn Field=@nameof(Order.MyGUIDNullable) HeaderText="Guid" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.MyGUIDNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.MyGUID) HeaderText="Guid?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.MyGUID) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="int" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.EmployeeID) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.NullableValue) HeaderText="int?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.NullableValue) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.CustomerID) HeaderText="string" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.CustomerID) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.PriceValue) HeaderText="double" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.PriceValue) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.Freight) HeaderText="double?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.Freight) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.ShippingCost) HeaderText="float" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ShippingCost) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.ShippingCostNullable) HeaderText="float?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ShippingCostNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.TotalItemCount) HeaderText="long" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.TotalItemCount) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.TotalItemCountNullable) HeaderText="long?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.TotalItemCountNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.ContactNumber) HeaderText="ulong" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ContactNumber) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.ContactNumberNullable) HeaderText="ulong?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ContactNumberNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.ShipCountryCode) HeaderText="short" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ShipCountryCode) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.ShipCountryCodeNullable) HeaderText="short?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ShipCountryCodeNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.SalesCode) HeaderText="ushort" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.SalesCode) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.SalesCodeNullable) HeaderText="ushort?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.SalesCodeNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.StockQuantity) HeaderText="uint" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.StockQuantity) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.StockQuantityNullable) HeaderText="uint?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.StockQuantityNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.TotalPrice) HeaderText="decimal" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.TotalPrice) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.TotalPriceNullable) HeaderText="decimal?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.TotalPriceNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.ProductID) HeaderText="byte" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ProductID) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.ProductIDNullable) HeaderText="byte?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.ProductIDNullable) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+
+                <GridForeignColumn Field=@nameof(Order.SalesID) HeaderText="sbyte" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.SalesID) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+                <GridForeignColumn Field=@nameof(Order.SalesIDNullabele) HeaderText="sbyte?" EditType="EditType.DropDownEdit" ForeignKeyField=@nameof(Order.SalesIDNullabele) ForeignKeyValue=@nameof(Order.CustomerID) ForeignDataSource="@BranchOrders" Width="150"></GridForeignColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture19 { get; set; }
+    private List<Order>? _branchOrders;
+    private List<Order> BranchOrders => _branchOrders ??= GenerateOrderData();
+
+    async void ForeignKeyEditCell_TypeBranchCoverage(Fixture fixture19)
+    {
+        var cut = fixture19.GetComponentUnderTest<SfGrid<Order>>();
+
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count > 0, TimeSpan.FromSeconds(10));
+
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<Guid, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<Guid?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<int, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<int?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<string, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<double, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<double?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<float, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<float?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<long, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<long?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<ulong, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<ulong?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<short, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<short?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<ushort, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<ushort?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<uint, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<uint?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<decimal, object>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<decimal?, object>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<byte, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<byte?, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<sbyte, Order>>().Count > 0);
+        Assert.True(cut.FindComponents<Syncfusion.Blazor.Grids.Internal.ForeignKeyEditCell<sbyte?, Order>>().Count > 0);
+    }
+}
+
+

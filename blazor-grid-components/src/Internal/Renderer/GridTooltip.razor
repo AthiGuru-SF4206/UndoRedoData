@@ -1,0 +1,196 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Internal
+@using System.Globalization
+@typeparam TValue
+@implements IDisposable
+
+@if (Parent != null && RenderTooltip)
+{
+    <SfTooltip @ref="tooltipReference"
+               ID="@(Parent.ID + "_Tooltip")"
+               Target="@($"#{Parent.ID} .e-headercell, #{Parent.ID} .e-rowcell")"
+               ShowTipPointer="false"
+               Position="Position.BottomCenter"
+               TargetContainer="@("#" + Parent.ID)"
+               OpensOn="Hover"
+               MouseTrail="true"
+               WindowCollision="false"
+               OffsetY="5"
+               OnRender="SetTooltip">
+        <ContentTemplate>
+            @if (((IGrid)Parent).GridTemplates != null && ((IGrid)Parent).GridTemplates.TooltipTemplate != null)
+            {
+                UpdateTooltip();
+                @(((IGrid)Parent).GridTemplates.TooltipTemplate(tooltipInfo))
+                ;
+            }
+            else
+            {
+                @tooltipContent
+            }
+        </ContentTemplate>
+    </SfTooltip>
+}
+
+@code {
+
+    #region Cascading Parameters
+
+    [CascadingParameter]
+    public SfGrid<TValue>? Parent { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private bool RenderTooltip = false;
+
+    private SfTooltip? tooltipReference;
+
+    private string? tooltipContent;
+
+    private cellInfoDictionary cellInfo = new cellInfoDictionary();
+
+    private string value = string.Empty;
+
+    private TooltipTemplateContext tooltipInfo = new TooltipTemplateContext();
+
+    #endregion
+
+    #region Protected Overrides
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        RenderTooltip = true;
+    }
+
+    #endregion
+
+    #region Nested Types
+
+    private class cellInfoDictionary
+    {
+        public int ColumnIndex { get; set; }
+        public int RowIndex { get; set; }
+        public string? MappingUid { get; set; }
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private async Task SetTooltip(TooltipEventArgs tooltipEventArgs)
+    {
+        cellInfo = await Parent!.InvokeMethod<cellInfoDictionary>("sfBlazor.Grid.getContentCell", false, new object[] { Parent.DataId, tooltipEventArgs.Top!, tooltipEventArgs.Left! });
+        bool hasEmptyTooltip = false;
+
+        if (cellInfo != null)
+        {
+            hasEmptyTooltip = true;
+            string headerText = string.Empty;
+            List<GridColumn>? cols = Parent.Columns;
+            if (cellInfo.RowIndex == -1 && Parent.Columns != null)
+            {
+                GridColumn column = Parent.Columns.FirstOrDefault(c => c.Uid == cellInfo.MappingUid)!;
+                tooltipContent = Parent.IsStackedHeader
+                    ? GridUtils.GetStackedColumnByUid(Parent.Columns, cellInfo.MappingUid!)?.HeaderText
+                    : column?.HeaderText;
+            }
+            else
+            {
+                tooltipContent = GetCellInformationAsync(cellInfo.RowIndex, cellInfo.ColumnIndex).Result?.ToString()!;
+            }
+            // when we add row and no record(cell value) is added means - prevent empty tooltip
+            if (string.IsNullOrEmpty(tooltipContent))
+            {
+                hasEmptyTooltip = false;
+
+            }
+            value = tooltipContent!;
+
+        }
+        if (!hasEmptyTooltip)
+        {
+            tooltipEventArgs.Cancel = true;
+        }
+        if (Parent != null)
+        {
+            Parent.TooltipInstance = this.tooltipReference;
+        }
+    }
+
+    private async Task<object> GetCellInformationAsync(int rowIndex, int colIndex)
+    {
+        if (Parent?.Rows == null || rowIndex < 0 || colIndex < 0)
+            return null!;
+        var dataRows = (Parent.AllowGrouping && Parent.GroupSettings?.Columns != null) ? Parent.Rows?.Where(r => r.RowType == "Data") : Parent.Rows;
+        Row<object>? row = null!;
+        if (Parent.EnableVirtualization)
+        {
+            row = dataRows?.FirstOrDefault(r => r.Index == rowIndex);
+        }
+        else
+        {
+            if (rowIndex >= dataRows?.Count()) return null!;
+            row = dataRows?.ElementAt(rowIndex);
+        }
+        if (row == null) return null!;
+        var dataCells = row?.Cells.Where(c => c.CellType == CellType.Data).ToList();
+        return (colIndex < dataCells?.Count) ? GridUtils.GetCellValue(dataCells[colIndex], row!) : null!;
+    }
+
+    private void UpdateTooltip()
+    {
+        object? rowData = null!;
+        GridColumn? columnData = null!;
+        Row<object>? row = null!;
+        var dataRows = (Parent!.AllowGrouping && Parent.GroupSettings?.Columns != null) ? Parent.Rows?.Where((R => R.RowType == "Data")).ToList() : Parent.Rows;
+        if (Parent.EnableVirtualization && cellInfo != null)
+        {
+            row = dataRows?.FirstOrDefault(r => r.Index == cellInfo.RowIndex);
+        }
+        else if (dataRows != null && cellInfo != null && dataRows.Count > 0 && cellInfo.RowIndex >= 0 && cellInfo.RowIndex < Parent.Rows?.Count)
+        {
+            row = dataRows![cellInfo.RowIndex];
+        }
+
+        if (cellInfo != null)
+        {
+            if (Parent.Rows != null && row != null && cellInfo.RowIndex >= 0 && cellInfo.ColumnIndex >= 0)
+            {
+                var dataCells = row.Cells.Where(c => c.CellType == CellType.Data).ToList();
+                rowData = row.Data;
+                if (cellInfo.ColumnIndex < dataCells.Count)
+                {
+                    columnData = dataCells[cellInfo.ColumnIndex].Column;
+                }
+            }
+            tooltipInfo.RowIndex = cellInfo.RowIndex;
+            tooltipInfo.ColumnIndex = cellInfo.ColumnIndex;
+            tooltipInfo.Data = rowData;
+            tooltipInfo.Column = columnData;
+            tooltipInfo.Value = value;
+        }
+    }
+
+    #endregion
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        Parent = null;
+        tooltipInfo = null!;
+        if (tooltipReference != null)
+        {
+            tooltipReference.Dispose();
+            tooltipReference = null!;
+        }
+    }
+
+    #endregion
+
+}

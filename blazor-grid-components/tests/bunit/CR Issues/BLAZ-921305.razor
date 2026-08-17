@@ -1,0 +1,38 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+<SfFixture @ref="fixture" Test="ForiegnColumnsPropertyTest" Description="Foreignkey sorting does not work properly with null values">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowPaging="true" AllowSorting="true" Height="315">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="NullableValue" Direction="Syncfusion.Blazor.Grids.SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.NullableValue) ForeignKeyField="EmployeeID" HeaderText="Employee Name" EditType="Syncfusion.Blazor.Grids.EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="Syncfusion.Blazor.Grids.ColumnType.Date" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    SfGrid<Order> GridSource;
+
+    public void ForiegnColumnsPropertyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0);
+        // To find the row value of the first row
+        var content = cut.FindAll(".e-gridcontent")[0].QuerySelectorAll("tr");
+        // check first three row values are null for foreignkey column
+        Assert.True("&nbsp;" == content[0].QuerySelectorAll("td")[1].InnerHtml, "Value Check");
+        Assert.True("&nbsp;" == content[1].QuerySelectorAll("td")[1].InnerHtml, "Value Check");
+        Assert.True("&nbsp;" == content[2].QuerySelectorAll("td")[1].InnerHtml, "Value Check");
+    }
+}

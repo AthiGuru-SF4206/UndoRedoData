@@ -1,0 +1,487 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Data;
+@typeparam TContent
+@implements IRenderer
+
+@implements IDisposable
+
+
+<div class="e-virtualtable" data-sf-style="@GetStyles()">
+    <table class="e-table" data-sf-style="@Parent!.GetTableStyles()" role="presentation" id="@($"{Parent.ID}_content_table")">
+        <WidthController ID="virtualcontent" TContent="TContent" Columns="@Parent.VirtualScrollModule?.GetVirtualColumns()"></WidthController>
+        @if (Rows?.Count > 0)
+        {
+            Rows = Parent.Rows;
+            <tbody role="rowgroup">
+                @if (Parent != null && Parent.EnableVirtualMaskRow && Parent.EnableVirtualization)
+                {
+                    string Style = $"height: {(Parent.RowHeight > 0 ? Parent.RowHeight : Parent.VirtualScrollModule?.RHeight)}px";
+                    List<GridColumn> gridColumns = Parent.RearrangeColumns(GridUtils.GetColumns(Parent));
+                    for (var i = 0; i < Parent.PageSettings!.PageSize; i++)
+                    {
+                        <tr class="e-masked-row e-row" data-sf-style="@Style">
+                            @if (Parent.AllowGrouping && Parent.GroupSettings!.Columns != null && Parent.EnableVirtualization)
+                            {
+                                foreach (var groupcol in Parent.GroupSettings.Columns)
+                                {
+                                    <td class="e-masked-cell e-rowcell e-centeralign">
+                                        <span class="e-virtualcell"></span>
+                                    </td>
+                                }
+                            }
+                            @for (var j = 0; j < gridColumns.Count(); j++)
+                            {
+                                @if (gridColumns[j].Visible)
+                                {
+                                    string textAlign = GridUtils.IsNoneTextAlign(gridColumns[j]) ? string.Empty : "text-align:" + GridUtils.GetTextAlign(gridColumns[j]);
+                                    <td class="e-masked-cell e-rowcell" @attributes="GridUtils.GetStyleAttributes(textAlign)">
+                                        <span class="e-virtualcell"></span>
+                                    </td>
+                                }
+                            }
+                            @if (Parent.AllowRowDragAndDrop)
+                            {
+                                <td class="e-masked-cell e-rowcell e-leftalign">
+                                    <span class="e-virtualcell"></span>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+                @foreach (Row<object> Row in Rows)
+                {
+                    var rowParameters = new GridRowParameters()
+                    {
+                        Row = Row
+                    };
+                    if (Row.IsExpand && Row.IsDetailRow)
+                    {
+                        <GridDetailRow TRow="TContent" RowParameters="@rowParameters"></GridDetailRow>
+                    }
+                    else if (Row.Visible)
+                    {
+                        if (Parent != null && Parent.EnableVirtualization && Parent.Rows.Count <= Parent.PageSettings!.PageSize && Row == Rows.LastOrDefault())
+                        {
+                            rowParameters.IsLastRow = true;
+                        }
+                        <GridRow TRow="TContent" RowParameters="@rowParameters"></GridRow>
+                    }
+                }
+                @if (Parent != null && Parent.EnableVirtualMaskRow && Parent.EnableVirtualization && Parent.VirtualScrollModule?.RowEndIndex != 0 && MaskRowCount() > 0 && Parent.TotalItemCount > Parent.PageSettings!.PageSize)
+                {
+                    string Style = $"height: {(Parent.RowHeight > 0 ? Parent.RowHeight : Parent.VirtualScrollModule?.RHeight)}px";
+                    List<GridColumn> gridColumns = Parent.RearrangeColumns(GridUtils.GetColumns(Parent));
+                    for (var i = 0; i < MaskRowCount(); i++)
+                    {
+                        <tr class="e-masked-row e-row" data-sf-style="@Style">
+                            @if (Parent.AllowGrouping && Parent.GroupSettings?.Columns != null && Parent.EnableVirtualization)
+                            {
+                                foreach (var groupcol in Parent.GroupSettings.Columns)
+                                {
+                                    <td class="e-masked-cell e-rowcell e-centeralign">
+                                        <span class="e-virtualcell"></span>
+                                    </td>
+                                }
+                            }
+                            @for (var j = 0; j < gridColumns.Count(); j++)
+                            {
+                                @if (gridColumns[j].Visible)
+                                {
+                                    string textAlign = GridUtils.IsNoneTextAlign(gridColumns[j]) ? string.Empty : "text-align:" + GridUtils.GetTextAlign(gridColumns[j]);
+                                    <td class="e-masked-cell e-rowcell" @attributes="GridUtils.GetStyleAttributes(textAlign)">
+                                        <span class="e-virtualcell"></span>
+                                    </td>
+                                }
+                            }
+                            @if (Parent.AllowRowDragAndDrop)
+                            {
+                                <td class="e-masked-cell e-rowcell e-leftalign">
+                                    <span class="e-virtualcell"></span>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        }
+        else
+        {
+            <tbody>
+                <tr role="row" class="e-emptyrow">
+                    @{
+                        int spanCount = 0;
+                        if (Parent.AllowGrouping && Parent.GroupSettings!.Columns?.Count() > 0)
+                        {
+                            foreach (var col in Parent.GroupSettings.Columns)
+                            {
+                                spanCount++;
+                            }
+                        }
+                        if (((IGrid)Parent)?.GridTemplates?.DetailTemplate != null)
+                        {
+                            spanCount++;
+                        }
+                        if (Parent != null && Parent.AllowRowDragAndDrop && string.IsNullOrEmpty(Parent.RowDropSettings?.TargetID))
+                        {
+                            spanCount++;
+                        }
+
+                        var emptyCol = (GetVisibleColumns(Parent!.RearrangeColumns(GridUtils.GetColumns(Parent)))!.Count() + spanCount).ToString();
+                        if (((IGrid)Parent)?.GridTemplates?.EmptyRecordTemplate != null)
+                        {
+                            var emptyRecordContext = new EmptyRecordTemplateContext();
+                            emptyRecordContext.IsDataLoaded = Parent.IsDataLoaded;
+                            <td colspan="@emptyCol">@(((IGrid)Parent).GridTemplates.EmptyRecordTemplate(emptyRecordContext))</td>
+                        }
+                        else
+                        {
+                            <td colspan="@emptyCol">@(Localizer?.GetText(GridLocaleKeys.EmptyRecord))</td>
+                        }
+                    }
+                </tr>
+            </tbody>
+        }
+    </table>
+</div>
+
+<div class="e-virtualtrack" data-sf-style="@GetVirtualTrackStyles()"></div>
+
+@code {
+
+    #region Parameters
+
+    [Parameter]
+    public GridVirtualContentParameters? VirtualContentParameter { get; set; }
+
+    public IEnumerable<object> Data { get; set; } = System.Linq.Enumerable.Empty<object>();
+
+    private IEnumerable<object>? _data { get; set; }
+
+    #endregion
+
+    #region Cascading Parameters
+
+    [CascadingParameter]
+    public SfGrid<TContent>? Parent { get; set; }
+
+    #endregion
+
+    #region Public Properties
+
+    public List<Row<object>> Rows { get; set; } = new List<Row<object>>();
+
+    public List<Row<object>>? TempRows { get; set; }
+
+    public bool IsXAxis { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private int TranslateX { get; set; }
+
+    private int TranslateY { get; set; }
+
+    private int previousTranslateY { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    #endregion
+
+    #region Protected Overrides
+
+    protected override void OnInitialized()
+    {
+        Parent!.Content = this;
+        Localizer = Parent.Localizer;
+        Parent.EventAggregator?.Add("VirtualComponentUpdate", VirtualComponentUpdate);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var lastKeyCombination = Parent!.FocusModule?.LastKeyCombination;
+        var lastNavigatedCellIdx = Parent.FocusModule!.LastNavigatedCellIdx;
+        var selectedCellNavigationIndex = Parent.VirtualScrollModule!.SelectedCellNavigation;
+        if (VirtualContentParameter!.NextRowToNavigate > 0)
+        {
+            VirtualContentParameter.NextRowToNavigate =
+            await Parent.VirtualScrollModule.HandleNextRowNavigationAsync(VirtualContentParameter.NextRowToNavigate, lastKeyCombination, lastNavigatedCellIdx);
+        }
+        if (Parent.EnableColumnVirtualization && Parent.AllowPaging && Parent.VirtualScrollModule.FocusFromPager)
+        {
+            await Parent.VirtualScrollModule.HandlePagerFocusAsync();
+        }
+        if (selectedCellNavigationIndex != -1 && !Parent.VirtualScrollModule.IsHeaderNavigated && lastKeyCombination != null)
+        {
+            await Parent.VirtualScrollModule.HandleHorizontalCellNavigationAsync(lastKeyCombination, lastNavigatedCellIdx, selectedCellNavigationIndex);
+        }
+
+        await Parent.VirtualScrollModule.HandlePostRenderOperationsAsync(VirtualContentParameter.RowEndIndex);
+    }
+
+    protected override void OnParametersSet()
+    {
+        Data = VirtualContentParameter?.Data!;
+        if (((Data != null && Data != _data) || Parent!.ForceUpdate) && Parent?.VirtualScrollModule != null)
+        {
+            _data = VirtualContentParameter?.Data!;
+            int virtualRowStartIndex = Parent.VirtualScrollModule.RowStartIndex;
+            int gridPageSize = Parent.PageSettings!.PageSize;
+
+            Parent.VirtualScrollModule!.VirtualRowIndex = Parent.IsRowReordered && Parent.OverscanCount == 0 ? virtualRowStartIndex : Parent.VirtualScrollModule.RowQueryStartIndex;
+            var groupCount = this.Parent.GroupSettings!.Columns?.Count() > 0 ? this.Parent.GroupSettings.Columns.Count() : 0;
+            if (Parent.AllowGrouping && groupCount > 0 && groupCount != this.Parent.GroupSettings.Columns?.Where(column => string.IsNullOrEmpty(column)).Count())
+            {
+                if (Parent.EnableVirtualization)
+                {
+                    if (Parent.FreezeModule!.GetFrozenCount() > 0)
+                    {
+                        if (!Parent.IsStackedHeader && Parent.AllowGrouping && Parent.GroupSettings.Columns?.Length > 0 && !Parent.GroupSettings.EnableLazyLoading)
+                        {
+#pragma warning disable BL0005
+                            Parent.Columns = Parent.RearrangeColumns(Parent.Columns!);
+#pragma warning restore BL0005
+                        }
+                    }
+#pragma warning disable BL0005 // Component parameter should not be set outside of its component.
+                    Parent.EnableVirtualMaskRow = !Parent.EnableVirtualMaskRow && Parent.GroupSettings.EnableLazyLoading ? true : Parent.EnableVirtualMaskRow;
+#pragma warning restore BL0005 // Component parameter should not be set outside of its component.
+                    if (Parent.VirtualScrollModule.GeneratedGroupedRows.Count() == 0 || (groupCount > 0 && Parent.GroupSettings.EnableLazyLoading && Parent.GroupModule != null && Parent.GroupModule.IsLazyExpandAll))
+                    {
+                        if (Parent.VirtualScrollModule!.CurrentGroupedData != null && Parent.VirtualScrollModule!.CurrentGroupedData.Count > 0)
+                        {
+                            var data = VirtualContentParameter?.Data;
+                            if (data != null && (data is Group<TContent> || (data is List<object> && (data as List<object>)?.FirstOrDefault() is Group<TContent>)))
+                            {
+                                var dataToGenerate = new List<GroupModelGenerator<TContent>.GroupedDataParams>(Parent.VirtualScrollModule.GroupGeneratedData.Count);
+
+                                foreach (var item in Parent.VirtualScrollModule.GroupGeneratedData.Values)
+                                {
+                                    dataToGenerate.Add(new GroupModelGenerator<TContent>.GroupedDataParams(
+                                        item.Item!,
+                                        item.Uid,
+                                        item.ParentUid!,
+                                        item.Index,
+                                        item.RowIndex,
+                                        item.Indent,
+                                        item.IsExpand,
+                                        item.Visible,
+                                        item.IsSelected,
+                                        item.IsFooterRow
+                                    ));
+                                }
+
+                                TempRows = new GroupModelGenerator<TContent>(Parent).GroupGeneratorRows(dataToGenerate);
+                                if (Parent.AllowGrouping && !Parent.GroupSettings.EnableLazyLoading && Parent.GroupSettings.Columns?.Length > 0 && Parent.OverscanCount > 0)
+                                {
+                                    int startIndex = Parent.VirtualScrollModule.VirtualIndexes(VirtualContentParameter!.RowStartIndex, VirtualContentParameter.RowEndIndex).startIndex;
+                                    Parent.VirtualScrollModule.SetGroupIndexOnRows(TempRows, startIndex);
+                                }
+                                Parent.Rows = TempRows;
+                                Rows = TempRows;
+                            }
+                            else
+                            {
+                                Parent.VirtualScrollModule.UpdateColumnVisibility();
+                                Parent.Rows = new List<Row<object>>();
+                            }
+                        }
+                        else
+                        {
+                            Parent.VirtualScrollModule.ProcessGroupedData(VirtualContentParameter!);
+                        }
+                    }
+
+                    if (Parent.IsRowReordered)
+                    {
+                        Parent.VirtualScrollModule.AdjustVirtualIndexesForReordering(VirtualContentParameter!);
+                    }
+                    else if (Parent.VirtualScrollModule!.CurrentGroupedData == null)
+                    {
+                        Parent.VirtualScrollModule.SetCurrentViewGroupRows(virtualRowStartIndex, Parent.VirtualScrollModule.RowEndIndex);
+                    }
+                    Rows = Parent.Rows;
+                }
+                else
+                {
+                    Parent.Rows = Rows = new GroupModelGenerator<TContent>(Parent).GenerateRows(VirtualContentParameter?.Data!);
+                }
+            }
+            else
+            {
+                if (Parent.EnableVirtualization)
+                {
+                    var queriedData = Parent.IsRenderedFromTreeGrid && Parent.FocusModule?.IsKeyPressedUpOrDown == true
+                    ? Parent.VirtualScrollModule!.QueriedCurrentViewData! : VirtualContentParameter?.QueriedData!;
+
+                    TempRows = new RowModelGenerator<TContent>(Parent).GeneratorRows(queriedData);
+                    Parent.VirtualScrollModule.AddGeneratedRows(TempRows, VirtualContentParameter!.RowQueryStartIndex, VirtualContentParameter.RowQueryEndIndex);
+                    Rows = Parent.VirtualScrollModule.SetRows(VirtualContentParameter.RowStartIndex, VirtualContentParameter.RowEndIndex);
+                    Parent.Rows = Rows;
+                }
+                else if (Parent.EnableInfiniteScrolling)
+                {
+                    Rows = Parent.Rows;
+                }
+                else
+                {
+                    Parent.Rows = Rows = new RowModelGenerator<TContent>(Parent).GeneratorRows(Data!);
+                }
+            }
+            TranslateY = virtualRowStartIndex * Parent.VirtualScrollModule.RHeight;
+            Parent.ForceUpdate = false;
+            if (Parent.TotalItemCount > gridPageSize && Parent.VirtualScrollModule.RowEndIndex == 0 && virtualRowStartIndex == 0)
+            {
+                Parent.VirtualScrollModule.RowEndIndex = gridPageSize;
+            }
+        }
+        else if (VirtualContentParameter != null && VirtualContentParameter.Data == null)
+        {
+            Rows = new List<Row<object>>();
+        }
+        else
+        {
+            Parent!.VirtualScrollModule?.HandleAddModeRowInsertion(VirtualContentParameter!.RowStartIndex, VirtualContentParameter.RowEndIndex);
+        }
+        if (Parent!.VirtualScrollModule != null && Parent.VirtualScrollModule.IsColumnIdxChanged)
+        {
+            Parent.VirtualScrollModule.IsColumnIdxChanged = false;
+        }
+        if (Parent.FrozenRows > 0)
+        {
+            Rows = Parent.Rows.Skip((int)Parent.FrozenRows + Parent.Rows.FindAll(_ => _.IsAddedTop).Count).ToList();
+        }
+    }
+
+    #endregion
+
+    #region Internal Methods
+
+    internal void VirtualComponentUpdate(object args)
+    {
+        if (args != null && DataUtil.GetObject("StartIndex", args) != null)
+        {
+            VirtualContentParameter!.RowQueryStartIndex = VirtualContentParameter.RowQueryEndIndex = 0;
+            VirtualContentParameter.RowStartIndex = Parent!.VirtualScrollModule!.RowStartIndex = (int)DataUtil.GetObject("StartIndex", args);
+            VirtualContentParameter.RowEndIndex = Parent.VirtualScrollModule.RowEndIndex = (int)DataUtil.GetObject("EndIndex", args);
+            VirtualContentParameter.NextRowToNavigate = (int)DataUtil.GetObject("NextRowToNavigate", args);
+            this.IsXAxis = false;
+        }
+        else if (args != null && DataUtil.GetObject("Axis", args) != null)
+        {
+            var axisObject = DataUtil.GetObject("Axis", args);
+            this.IsXAxis = axisObject != null && axisObject.ToString() == "X";
+        }
+        OnParametersSet();
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private List<GridColumn>? GetVisibleColumns(List<GridColumn> columns)
+    {
+        return columns?.Where(column => column.Visible).ToList();
+    }
+
+    private int MaskRowCount()
+    {
+        int endIndex = Parent!.OverscanCount > 0 ? Parent.VirtualScrollModule!.virtualIndex.endIndex : Parent.VirtualScrollModule!.RowEndIndex;
+        int totalCount = (Parent.AllowGrouping && !Parent.GroupSettings!.EnableLazyLoading
+            && Parent.GroupSettings.Columns?.Count() > 0) ? Parent.VisibleGroupedDataCount : Parent.TotalItemCount;
+        int maskRowCount = totalCount - endIndex;
+        return Math.Min(Parent.PageSettings!.PageSize, maskRowCount);
+    }
+
+    private string GetStyles()
+    {
+        string styleText = "";
+        bool GroupVirtualRefresh = false;
+        if (Parent!.AllowGrouping && Parent.GroupModule != null && Parent.GroupModule.GroupVirtualRefresh)
+        {
+            Parent.GroupModule.GroupVirtualRefresh = false;
+            GroupVirtualRefresh = true;
+        }
+        if (Parent.EnableVirtualMaskRow && Parent.EnableVirtualization)
+        {
+            TranslateY = Parent.VirtualScrollModule!.ScrollTop;
+            var translateY = Parent.VirtualScrollModule.GetVirtualMaskTranslateY(TranslateY, VirtualContentParameter!.RowStartIndex, VirtualContentParameter.RowEndIndex);
+            var translateYdiff = (GroupVirtualRefresh && Parent.GroupSettings!.EnableLazyLoading) && TranslateY > 0 && Parent.VirtualScrollModule.RowEndIndex != Parent.TotalItemCount ? translateY - 20 : translateY;
+            styleText = $"transform:translate({Parent.VirtualScrollModule.TranslateX}px,{translateYdiff}px); ";
+            if (Parent.OverscanCount > 0 && !IsXAxis && Parent.AllowGrouping && translateYdiff > 0 && previousTranslateY == translateYdiff && !Parent.GroupSettings!.EnableLazyLoading && Parent.GroupSettings.Columns?.Count() > 0)
+            {
+                Parent.InvokeMethod("sfBlazor.Grid.forceUpdateTranslate", new object[] { Parent.DataId, translateYdiff }).GetAwaiter();
+            }
+            previousTranslateY = translateYdiff;
+        }
+        else
+        {
+            if (Parent.OverscanCount > 0)
+            {
+                TranslateY = Parent.VirtualScrollModule!.virtualIndex.startIndex * Parent.VirtualScrollModule.RHeight;
+            }
+            else
+            {
+                TranslateY = VirtualContentParameter!.RowStartIndex * Parent.VirtualScrollModule!.RHeight;
+            }
+            styleText = $"transform: translate({Parent.VirtualScrollModule.TranslateX}px,{TranslateY}px); ";
+        }
+        if (Parent.EnableColumnVirtualization && Parent.FreezeModule!.GetFrozenCount() == 0)
+        {
+            styleText = string.Concat(styleText, $"width: {Parent.VirtualScrollModule.GetVTableWidth()}px; ");
+        }
+        if (Parent.FreezeModule!.GetFrozenCount() == 0 || ((!Parent.EnableColumnVirtualization || Parent.OverscanCount > 0) && Parent.FreezeModule!.GetFrozenCount() != 0))
+        {
+            bool isVerticalMode = Parent.EnableAdaptiveUI ? Parent.RowRenderingMode.Equals(RowDirection.Vertical) && (Parent.Width == "100%" || Parent.Width == "auto") : false;
+            string display = isVerticalMode ? "position:absolute;top: 0;left: 0;right: 0;" : "position:absolute";
+            styleText = string.Concat(styleText, $"{display}");
+        }
+        if (Parent.FreezeModule!.GetFrozenCount() == 0 && Parent.EnableColumnVirtualization && !Parent.EnableVirtualization && (Parent.Height == "auto" || Parent.Height == "100%"))
+        {
+            styleText = string.Concat(styleText, " ;position:unset");
+        }
+        return styleText;
+    }
+
+    private string GetVirtualTrackStyles()
+    {
+        int height = 0;
+        int itemCount = (Parent!.GroupSettings!.Columns?.ToList().Count() > 0 && !Parent.GroupSettings.EnableLazyLoading) ? Parent.VirtualScrollModule!.VisibleGroupRows.Count() : Parent.TotalItemCount;
+        if (Parent.VirtualScrollModule!.CurrentGroupedData != null && Parent.VirtualScrollModule!.CurrentGroupedData.Count > 0)
+        {
+            itemCount = Parent.VisibleGroupedDataCount;
+        }
+        else if (this.Parent.EnableVirtualization && !this.Parent.GroupSettings.EnableLazyLoading)
+        {
+            VirtualHeightScroll Vscrollheight;
+            Parent.EventAggregator.Trigger("VirtualTrackHeight", Vscrollheight = new VirtualHeightScroll() { Height = itemCount });
+            itemCount = Vscrollheight.Height;
+        }
+        if (this.Parent.FreezeModule!.GetFrozenCount() > 0 && Parent.TotalItemCount == VirtualContentParameter!.RowEndIndex)
+        {
+            var rowHeight = Parent.RowHeight > 0 ? Parent.RowHeight : Parent.VirtualScrollModule!.RHeight;
+            height = (itemCount * Parent.VirtualScrollModule!.RHeight) - (int)(Parent.PageSettings!.PageSize * rowHeight);
+        }
+        else
+        {
+            height = itemCount * Parent.VirtualScrollModule!.RHeight;
+        }
+        if (!Parent.EnableVirtualization && Parent.EnableColumnVirtualization)
+        {
+            height = 0;
+        }
+        string width = Parent.EnableColumnVirtualization ?
+               VirtualScroll<TContent>.GetColumnsWidth(GridUtils.GetColumns(Parent)) + "px" : "100%";
+        return $"height: {height}px; width:{width};";
+    }
+
+    #endregion
+
+    #region IDisposable
+
+    void IDisposable.Dispose()
+        => Parent!.EventAggregator?.Remove("VirtualComponentUpdate", VirtualComponentUpdate);
+
+    #endregion
+}

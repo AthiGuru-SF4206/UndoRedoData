@@ -1,0 +1,33 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+<SfFixture @ref="fixture" Test="ColumnsPropertyTest" Description="Filtering value pager message in grid for normal columns after foregin key column filter">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateForeignData()" AllowFiltering="true" AllowPaging="true" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridForeignColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee Name" EditType="EditType.DropDownEdit" ForeignKeyValue="FirstName" ForeignDataSource="@GenerateEmployeeData()" Width="150"></GridForeignColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    SfGrid<Order> GridSource;
+
+    async void ColumnsPropertyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count > 0);
+        Assert.True(cut.Instance.AllowPaging, "AllowPaging is true");
+        Assert.True(cut.Instance.AllowFiltering, "Filter bar is enabled");
+        await cut.Instance.FilterByColumnAsync("EmployeeID", "equal", new List<string> { "Nancy", "Andrew"});
+        await cut.Instance.FilterByColumnAsync("OrderID", "equal", "1001");
+        var pagerInstance = cut.FindComponent<SfPager>();
+        Assert.True(pagerInstance.Find(".e-pagerexternalmsg").InnerHtml.Contains("Order ID: 1001"), "Normal column filter value is in pager filter message after foregin key filter value");
+    }
+}

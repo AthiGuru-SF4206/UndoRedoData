@@ -1,0 +1,86 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.ComponentModel.DataAnnotations;
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Data Annotation">
+    <ComponentUnderTest>
+        <SfGrid  @ref="grid" TValue="Order" DataSource="GenerateRows()" AllowFiltering="true" Height="315" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridFilterSettings IgnoreAccent="true"></GridFilterSettings>
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) EditType="EditType.DatePickerEdit" Format="MM/yyyy" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        //Check AutoGenerateFilter is working properly
+
+        Assert.True(grid.Columns.Last().AllowFiltering == false, "Filtering is disabled for Freight column");
+        Assert.True(grid.Columns.FirstOrDefault().AllowFiltering == true, "Filtering is enabled for OrderID column");
+
+        // Check HtmlEncode is working properly
+
+        Assert.True(cut.FindAll(".e-headertext")[1].InnerHtml == "&lt;span&gt; Customer Name &lt;/span&gt;");
+
+        // Check NullDisplayText & ConvertEmptyStringToNull is working properly
+
+        Assert.True(cut.FindAll(".e-row")[0].Children[1].InnerHtml == "Blank");
+        Assert.True(cut.FindAll(".e-row")[1].Children[1].InnerHtml == "Blank");
+        
+    }
+
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 10001, CustomerID = null, OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2 });
+        data.Add(new Order() { OrderID = 10002, CustomerID = string.Empty, OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2 });
+        data.Add(new Order() { OrderID = 10003, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2 });
+        data.Add(new Order() { OrderID = 10004, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2 });
+        data.Add(new Order() { OrderID = 10005, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2 });
+        data.Add(new Order() { OrderID = 10006, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2 });
+        data.Add(new Order() { OrderID = 10007, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2 });
+        data.Add(new Order() { OrderID = 10008, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2 });
+        data.Add(new Order() { OrderID = 10009, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2 });
+        data.Add(new Order() { OrderID = 100010, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2 });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+       // Sets column as primary key
+        [Key]
+        // Sets column as required and error message to be displayed when empty
+        [Required(ErrorMessage = "Order ID  should not be empty")]
+        public int? OrderID { get; set; }
+        [Display(Name = "<span> Customer Name </span>", Description ="List of Customers")]
+        // Sets column as required and error message to be displayed when empty
+        [Required(ErrorMessage = "Field should not be empty")]
+        [DisplayFormat(NullDisplayText = "Blank", ConvertEmptyStringToNull = true, HtmlEncode = false)]
+        public string CustomerID { get; set; }
+        // Sets data type of column as Date
+        [DataType(DataType.Date)]
+        [Display(Name = "Order Date1", Order = 1)]
+        // Sets column as read only
+        [Editable(false)]
+        [DisplayFormat(ApplyFormatInEditMode = false)]
+        public DateTime? OrderDate { get; set; }
+        [Display(Name = "Freight", AutoGenerateFilter = false, AutoGenerateField = false)]
+        [DisplayFormat(HtmlEncode = true)]
+        public double? Freight { get; set; }
+    }
+}

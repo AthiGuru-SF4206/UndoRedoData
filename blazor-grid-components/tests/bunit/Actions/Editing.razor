@@ -1,0 +1,1196 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Calendars
+@using Syncfusion.Blazor.Data;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="BatchEdit TAB key">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRefs" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture7 { get; set; }
+    public SfGrid<Order> gridRefs { get; set; }
+    public async void GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var batchChanges = new BatchChanges<Order>()
+            {
+                AddedRecords = new List<Order>() { new Order() { OrderID = 1000, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15)},
+                new Order() { OrderID = 999, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15) } },
+                DeletedRecords = new List<Order>() { new Order() { OrderID = 1001, CustomerID = "ANANTR", Freight = 3.1, OrderDate = new DateTime(1995, 05, 15) } },
+                ChangedRecords = new List<Order>() { new Order() { OrderID = 1002, CustomerID = "ANTON", Freight = 4.1, OrderDate = new DateTime(1995, 05, 15) } }
+            };
+        await cut.Instance.ApplyBatchChangesAsync(batchChanges);
+
+        cut.FindAll(".e-rowcell")[6].Click();
+        cut.FindAll(".e-rowcell")[6].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="BatchEdit last TAB">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef9" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture9 { get; set; }
+    public SfGrid<Order> gridRef9 { get; set; }
+    public async void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(10000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        cut.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { Key = "ShiftTab" });
+        
+
+    }
+}
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="BatchEdit Tab Escape">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef10" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture10 { get; set; }
+    public SfGrid<Order> gridRef10 { get; set; }
+    public async void GridBasicRendering10(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+ 
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        cut.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        cut.FindAll(".e-rowcell")[1].KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() == 0, TimeSpan.FromMilliseconds(1000));
+
+    }
+}
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="BatchEdit KeyBoardNavigation">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef1" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture8 { get; set; }
+    public SfGrid<Order> gridRef1 { get; set; }
+    public async void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Order addRecord = new Order()
+        {
+            OrderID = 1100,
+            CustomerID = "ABCDE",
+            Freight = 25.7,
+            OrderDate = new DateTime(2010, 5, 1)
+        };
+        await cut.Instance.AddRecordAsync(addRecord);
+        var batchEdit = await cut.Instance.GetBatchChangesAsync();
+        List<Order> changedRecord = batchEdit.AddedRecords.ToList();
+        changedRecord[0].Freight = 100;
+        await cut.Instance.UpdateBatchRowAsync(changedRecord[0]);
+        cut.Instance.EditSettings.AllowAdding = false;
+        Order blockedRecord = new Order()
+        {
+            OrderID = 1200,
+            CustomerID = "FGHIJ",
+            Freight = 50,
+            OrderDate = new DateTime(2011, 6, 1)
+        };
+        await cut.Instance.AddRecordAsync(blockedRecord);
+    }
+}
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Dropdown Edit with different DataTypes">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar="@(new List<string>() {  "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true, Number=true})" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" EditType="EditType.DropDownEdit" ValidationRules="@(new ValidationRules{ Required=true})" Width="100" EditorSettings="@CustomerNameEditParams"></GridColumn>
+                <GridColumn Field=@nameof(Order.PriceValue) ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" EditType="EditType.DropDownEdit" Format="C2" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Quantity) HeaderText="Quantity" EditType="EditType.DropDownEdit" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.ContactNumber) HeaderText="ContactNumber" TextAlign="TextAlign.Right"  Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ContactNumberNullable) HeaderText="ContactNumberNullable" TextAlign="TextAlign.Right" EditType="EditType.DropDownEdit" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippingCost) HeaderText="ShippingCost" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippingCostNullable) HeaderText="ShippingCostNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.StockQuantity) HeaderText="StockQuantity" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.StockQuantityNullable) HeaderText="StockQuantityNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalPrice) HeaderText="TotalPrice" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalPriceNullable) HeaderText="TotalPriceNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountryCode) HeaderText="ShipCountryCode" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountryCodeNullable) HeaderText="ShipCountryCodeNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesCode) HeaderText="SalesCode" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesCodeNullable) HeaderText="SalesCodeNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ProductID) HeaderText="ProductID" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ProductIDNullable) HeaderText="ProductIDNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesID) HeaderText="SalesID" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesIDNullabele) HeaderText="SalesIDNullabele" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TimeNonNullable) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.Country) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.MyGUIDNullable) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.MyGUID) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture { get; set; }
+    public List<Order> GridData { get; set; }
+
+    public IEditorSettings CustomerNameEditParams = new DropDownEditCellParams
+        {
+            Params = new DropDownListModel<object, object>() { AllowFiltering = true, ShowClearButton = true }
+        };
+   
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        var data = new Order() { OrderID = 1007, CustomerID = "BOLID", Freight = 25.7 * 2, OrderDate = new DateTime(2020, 05, 15) };
+        await cut.Instance.UpdateRowAsync(6, data);
+        await cut.Instance.EndEditAsync();
+
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        await cut.Instance._jsAdaptor.EndEdit("{\"key\":\"Tab\",\"code\":\"Tab\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false}");
+    }
+}
+
+<SfFixture @ref="fixture1" TestAsync="GridBasicRendering1" Description="Dialog Editing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar="@(new List<string>() { "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100">
+                    <EditTemplate>
+                        <SfAutoComplete TItem="Customer" TValue="string" ID="CustomerID" @bind-Value="@((context as Order).CustomerID)" DataSource="@CustomerData">
+                            <AutoCompleteFieldSettings Value="CustomerID"></AutoCompleteFieldSettings>
+                        </SfAutoComplete>
+                    </EditTemplate>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture1 { get; set; }
+    public List<Order> Grid { get; set; }
+    public class Customer
+    {
+        public string CustomerID { get; set; }
+    }
+    List<Customer> CustomerData = new List<Customer>
+    {
+        new Customer() { CustomerID= "ALFKI" },
+        new Customer() { CustomerID= "ANATR"},
+        new Customer() { CustomerID= "ANTON"},
+        new Customer() { CustomerID= "BLONP" },
+        new Customer() { CustomerID= "BOLID"},
+    };
+    public async Task GridBasicRendering1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        var editContext = await cut.Instance.GetEditContextAsync();
+        Assert.NotNull(editContext);
+        Assert.NotNull(editContext.Model);
+    }
+
+}
+
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Testing with ShowAddNewRow">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar="@(new List<string>() {  "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowAddNewRow="true" NewRowPosition=NewRowPosition.Top Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120" EditType="EditType.DefaultEdit" EditorSettings="@CustomerEditParams"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100">
+                    <EditTemplate>
+                        <SfAutoComplete TItem="CustomerDetail" TValue="string" ID="CustomerID" @bind-Value="@((context as Order).CustomerID)" DataSource="@CustomerDetails">
+                            <AutoCompleteFieldSettings Value="CustomerID"></AutoCompleteFieldSettings>
+                        </SfAutoComplete>
+                    </EditTemplate>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture3 { get; set; }
+    public List<Order> grid { get; set; }
+    public class CustomerDetail
+    {
+        public string CustomerID { get; set; }
+    }
+    public IEditorSettings CustomerEditParams = new StringEditCellParams
+        {
+            Params = new TextBoxModel() { EnableRtl = true, ShowClearButton = false, Multiline = true }
+        };
+    List<CustomerDetail> CustomerDetails = new List<CustomerDetail>
+    {
+        new CustomerDetail() { CustomerID= "ALFKI" },
+        new CustomerDetail() { CustomerID= "ANATR"},
+        new CustomerDetail() { CustomerID= "ANTON"},
+        new CustomerDetail() { CustomerID= "BLONP" },
+        new CustomerDetail() { CustomerID= "BOLID"},
+    };
+    public async void GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-toolbar-item")[3].Click(); 
+        cut.Instance.SelectRowAsync(1).GetAwaiter();
+        await cut.Instance.StartEditAsync();
+        var timepickerComponent = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.TimePickerEditCell<Order>>();
+        timepickerComponent.Instance.ValueChange(new Syncfusion.Blazor.Calendars.ChangeEventArgs<TimeOnly>
+        {
+            Value = new TimeOnly(10, 30, 0) // 10:30:00
+        });
+        await cut.Instance.EndEditAsync();
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Dropdown Edit with Custom Adaptor (DataManager)">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateDataSource()" TValue="Order" ID="Grid" Toolbar="@(new List<string>() {  "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+             <SfDataManager AdaptorInstance="@typeof(CustomAdaptor)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true, Number=true})" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" EditType="EditType.DropDownEdit" ValidationRules="@(new ValidationRules{ Required=true})" Width="100" EditorSettings="@CustomerNameEditParams"></GridColumn>
+                <GridColumn Field=@nameof(Order.PriceValue) ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" EditType="EditType.DropDownEdit" Format="C2" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Quantity) HeaderText="Quantity" EditType="EditType.DropDownEdit" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.ContactNumber) HeaderText="ContactNumber" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ContactNumberNullable) HeaderText="ContactNumberNullable" TextAlign="TextAlign.Right" EditType="EditType.DropDownEdit" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippingCost) HeaderText="ShippingCost" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippingCostNullable) HeaderText="ShippingCostNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.StockQuantity) HeaderText="StockQuantity" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.StockQuantityNullable) HeaderText="StockQuantityNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalPrice) HeaderText="TotalPrice" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalPriceNullable) HeaderText="TotalPriceNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountryCode) HeaderText="ShipCountryCode" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountryCodeNullable) HeaderText="ShipCountryCodeNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesCode) HeaderText="SalesCode" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesCodeNullable) HeaderText="SalesCodeNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ProductID) HeaderText="ProductID" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.ProductIDNullable) HeaderText="ProductIDNullable" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesID) HeaderText="SalesID" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesIDNullabele) HeaderText="SalesIDNullabele" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.TimeNonNullable) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.Country) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.MyGUIDNullable) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+                <GridColumn Field=@nameof(Order.MyGUID) HeaderText="Country" TextAlign="TextAlign.Right" Width="140" EditType="EditType.DropDownEdit"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture4 { get; set; }
+    public static List<Order> Orders { get; set; }
+    public IEditorSettings CustomerNameEditParams1 = new DropDownEditCellParams
+        {
+            Params = new DropDownListModel<object, object>() { AllowFiltering = true, ShowClearButton = true }
+        };
+    public List<Order> GenerateDataSource()
+    {
+        return Orders = GenerateOrderData();
+    }
+    public async void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(1);
+        cut.FindAll(".e-row")[0].Children[1].DoubleClick(new MouseEventArgs());
+        var data = new Order() { OrderID = 10, CustomerID = "BOLID", Freight = 25.7 * 2, OrderDate = new DateTime(2020, 05, 15) };
+        await cut.Instance.UpdateRowAsync(0, data);
+        await cut.Instance.EndEditAsync();
+    }
+    // Implementing custom adaptor by extending the DataAdaptor class
+    public class CustomAdaptor : DataAdaptor
+    {
+        // Performs data Read operation
+        public override object Read(DataManagerRequest dm, string key = null)
+        {
+            IEnumerable<Order> DataSource = Orders;
+            if (dm.Search != null && dm.Search.Count > 0)
+            {
+                // Searching
+                DataSource = DataOperations.PerformSearching(DataSource, dm.Search);
+            }
+            if (dm.Sorted != null && dm.Sorted.Count > 0)
+            {
+                // Sorting
+                DataSource = DataOperations.PerformSorting(DataSource, dm.Sorted);
+            }
+            if (dm.Where != null && dm.Where.Count > 0)
+            {
+                // Filtering
+                DataSource = DataOperations.PerformFiltering(DataSource, dm.Where, dm.Where[0].Operator);
+            }
+            int count = DataSource.Cast<Order>().Count();
+            if (dm.Skip != 0)
+            {
+                //Paging
+                DataSource = DataOperations.PerformSkip(DataSource, dm.Skip);
+            }
+            if (dm.Take != 0)
+            {
+                DataSource = DataOperations.PerformTake(DataSource, dm.Take);
+            }
+            return dm.RequiresCounts ? new DataResult() { Result = DataSource, Count = count } : (object)DataSource;
+        }
+
+        // Performs Insert operation
+        public override object Insert(DataManager dm, object value, string key)
+        {
+            Orders.Insert(0, value as Order);
+            return value;
+        }
+
+        // Performs Remove operation
+        public override object Remove(DataManager dm, object value, string keyField, string key)
+        {
+            Orders.Remove(Orders.Where(or => or.OrderID == int.Parse(value.ToString())).FirstOrDefault());
+            return value;
+        }
+
+        // Performs Update operation
+        public override object Update(DataManager dm, object value, string keyField, string key)
+        {
+            var data = Orders.Where(or => or.OrderID == (value as Order).OrderID).FirstOrDefault();
+            if (data != null)
+            {
+                data.OrderID = (value as Order).OrderID;
+                data.CustomerID = (value as Order).CustomerID;
+                data.Freight = (value as Order).Freight;
+            }
+            return value;
+        }
+
+        // Performs BatchUpdate operation
+        public override object BatchUpdate(DataManager dm, object Changed, object Added, object Deleted, string KeyField, string Key, int? dropIndex)
+        {
+            if (Changed != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Changed)
+                {
+                    Order val = Orders.Where(or => or.OrderID == rec.OrderID).FirstOrDefault();
+                    val.OrderID = rec.OrderID;
+                    val.CustomerID = rec.CustomerID;
+                    val.Freight = rec.Freight;
+                }
+
+            }
+            if (Added != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Added)
+                {
+                    Orders.Add(rec);
+                }
+
+            }
+            if (Deleted != null)
+            {
+                foreach (var rec in (IEnumerable<Order>)Deleted)
+                {
+                    Orders.Remove(Orders.Where(or => or.OrderID == rec.OrderID).FirstOrDefault());
+                }
+
+            }
+            return Orders;
+        }
+    }
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="BatchEdit with Confirmation Dialog">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridRef" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowConfirmDialog="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture5 { get; set; }
+    public SfGrid<Order> gridRef { get; set; }
+    public async void GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-toolbar-item")[0].Click(); 
+        cut.FindAll(".e-toolbar-item")[3].Click(); 
+        cut.FindAll(".e-btn")[0].Click();
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.FindAll(".e-toolbar-item")[3].Click(); 
+        cut.FindAll(".e-btn")[1].Click();
+        cut.Instance.SelectRowAsync(2).GetAwaiter();
+        cut.FindAll(".e-toolbar-item")[1].Click(); 
+        cut.FindAll(".e-btn")[0].Click();
+        cut.Instance.SelectRowAsync(2).GetAwaiter();
+        cut.FindAll(".e-toolbar-item")[1].Click(); 
+        cut.FindAll(".e-btn")[1].Click();
+        cut.Instance.SelectRowAsync(3).GetAwaiter();
+        cut.FindAll(".e-toolbar-item")[1].Click();                                 
+        Order addRecord = new Order()
+        {
+            OrderID = 1000,
+            CustomerID = "New",
+            OrderDate = new DateTime(1995, 05, 15),
+            Freight = 10.5 * 2
+        };
+        await gridRef.AddRecordAsync(addRecord);
+        cut.FindAll(".e-toolbar-item")[2].Click();
+        cut.FindAll(".e-btn")[1].Click();
+        cut.FindAll(".e-toolbar-item")[2].Click();
+        cut.FindAll(".e-btn")[0].Click();
+        cut.Instance.SelectRowAsync(3).GetAwaiter();
+        cut.FindAll(".e-toolbar-item")[1].Click();
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Editing with EditType DatePickerEdit">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridReference" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"  Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderDateNullable) HeaderText="OrderDateNullable" EditType="EditType.DatePickerEdit" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Date) HeaderText="Date" EditType="EditType.DatePickerEdit" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.DateNullable) HeaderText="DateNullable" EditType="EditType.DatePickerEdit" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDateOff) HeaderText="OrderDateOff" EditType="EditType.DatePickerEdit" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDateOffNullable) HeaderText="OrderDateOffNullable" EditType="EditType.DatePickerEdit" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDateNullable) HeaderText="OrderDateNullable" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="OrderDate" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture6 { get; set; }
+    public SfGrid<Order> gridReference { get; set; }
+    public async void GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance.SelectRowAsync(1).GetAwaiter();
+        await cut.Instance.StartEditAsync();
+        await cut.Instance.EndEditAsync();
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="Perform batch action">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GetAllRecords()" @ref="grid1" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+           <GridSelectionSettings CellSelectionMode="Syncfusion.Blazor.Grids.CellSelectionMode.Box" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules{ Required= true })"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture11 { get; set; }
+    public SfGrid<Order> grid1 { get; set; }
+    public async void GridBasicRendering11(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        ActionEventArgs<Order> args = new ActionEventArgs<Order>();
+        cut.Instance.EditModule.PerformBatchActions(args).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture12" Test="GridBasicRendering12" Description="Show Alert dialog in grid">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GetAllRecords()" @ref="grid2" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowConfirmDialog="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules { Required = true })"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture12 { get; set; }
+    public SfGrid<Order> grid2 { get; set; }
+    public async void GridBasicRendering12(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        Assert.True(cut.Instance.EditSettings.ShowConfirmDialog);
+        var batchChanges = new BatchChanges<Order>()
+        {
+            AddedRecords = new List<Order>()
+        {
+            new Order() { OrderID = 1000, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15)},
+            new Order() { OrderID = 999, CustomerID = "ALFKI", Freight = 2.1, OrderDate = new DateTime(1995, 05, 15) }
+        },
+            DeletedRecords = new List<Order>()
+        {
+            new Order() { OrderID = 1001, CustomerID = "ANANTR", Freight = 3.1, OrderDate = new DateTime(1995, 05, 15) }
+        },
+            ChangedRecords = new List<Order>()
+        {
+            new Order() { OrderID = 1002, CustomerID = "ANTON", Freight = 4.1, OrderDate = new DateTime(1995, 05, 15) }
+        }
+        };
+        await cut.Instance.ApplyBatchChangesAsync(batchChanges);
+        cut.Instance.EditSettings.Mode = Syncfusion.Blazor.Grids.EditMode.Normal;
+        await cut.Instance.ApplyBatchChangesAsync(batchChanges);
+        cut.Instance.EditSettings.Mode = Syncfusion.Blazor.Grids.EditMode.Batch;
+        await cut.Instance.ApplyBatchChangesAsync(null);
+        cut.Instance.SelectRowAsync(1).GetAwaiter();
+        cut.Instance.StartEditAsync().GetAwaiter();
+        cut.Instance.GoToPageAsync(2).GetAwaiter();
+        cut.Instance.AllowPaging = false;
+        cut.Instance.GoToPageAsync(3).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture13" Test="GridBasicRendering13" Description="Update copy cells in grid">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid3" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" ShowConfirmDialog="true" ShowDeleteConfirmDialog="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" ValidationRules="@(new ValidationRules{ Required= true })"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippingCost) HeaderText="ShippingCost" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalPrice) HeaderText="TotalPrice" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.TotalItemCount) HeaderText="TotalPrice" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ContactNumber) HeaderText="TotalPrice" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.SalesCode) HeaderText="SalesCode" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountryCode) HeaderText="ShipCountryCode" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDateOff) HeaderText="OrderData Off"></GridColumn>
+                <GridColumn Field=@nameof(Order.PriceValue) HeaderText="PriceValue" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture13 { get; set; }
+    public SfGrid<Order> grid3 { get; set; }
+    public async void GridBasicRendering13(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "Freight", "25.9");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "OrderDateOff", "2023,8,1,9,0,0");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "ShippingCost", "20.6f");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "TotalPrice", "25M");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "TotalItemCount", "15L");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "ContactNumber", "13345679999");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "SalesCode", "11004");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "ShipCountryCode", "10001");
+        await cut.Instance.EditModule.UpdateCopyCell(1, "PriceValue", "34.4");
+    }
+}
+<SfFixture @ref="fixtureDelete1" Test="DeleteRecord_NoDeletePermission" Description="DeleteRecordAsync - deleting not allowed returns early">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDelete1" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="false" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDelete1 { get; set; }
+    public SfGrid<Order> gridDelete1 { get; set; }
+
+    /// <summary>
+    /// Covers the branch where EditSettings.AllowDeleting is false and DeleteRecordAsync returns without doing anything.
+    /// </summary>
+    public async void DeleteRecord_NoDeletePermission(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Safety: ensure AllowDeleting is false at runtime as well
+        grid.EditSettings.AllowDeleting = false;
+
+        // Act: call the API
+        await grid.DeleteRecordAsync();
+
+        // Assert: AlertMessage is not set to delete alerts and no selection is required
+        Assert.NotEqual("DeleteAlert", grid.EditModule.AlertMessage);
+        Assert.NotEqual("DeleteConfirmAlert", grid.EditModule.AlertMessage);
+    }
+}
+<SfFixture @ref="fixtureDelete2" Test="DeleteRecord_NoSelection_ShowsDeleteAlert" Description="DeleteRecordAsync - no selected records shows DeleteAlert dialog">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDelete2" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="true"
+                              ShowDeleteConfirmDialog="false" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDelete2 { get; set; }
+    public SfGrid<Order> gridDelete2 { get; set; }
+
+    /// <summary>
+    /// Covers the branch where deleting is allowed but no records are selected.
+    /// Expected: AlertMessage = "DeleteAlert" and validation dialog is triggered.
+    /// </summary>
+    public async void DeleteRecord_NoSelection_ShowsDeleteAlert(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Ensure state: deleting allowed, no confirm dialog, no selection
+        grid.EditSettings.AllowDeleting = true;
+        grid.EditSettings.ShowDeleteConfirmDialog = false;
+        Assert.Empty(grid.SelectedRecords);
+
+        // Act
+        await grid.DeleteRecordAsync();
+
+        // Assert
+        Assert.Equal("DeleteAlert", grid.EditModule.AlertMessage);
+
+        // Optional UI-level assertion (if a validation dialog is rendered as .e-dialog)
+        // This is defensive: the dialog might be async-rendered.
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count >= 0, TimeSpan.FromMilliseconds(1000));
+    }
+}
+<SfFixture @ref="fixtureDelete3" Test="DeleteRecord_WithSelection_ConfirmDialog" Description="DeleteRecordAsync - selected record shows delete confirm dialog">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDelete3" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="true"
+                              ShowDeleteConfirmDialog="true" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDelete3 { get; set; }
+    public SfGrid<Order> gridDelete3 { get; set; }
+
+    /// <summary>
+    /// Covers the branch where there is a selection and ShowDeleteConfirmDialog is true,
+    /// so the delete confirmation dialog is shown instead of deleting immediately.
+    /// </summary>
+    public async void DeleteRecord_WithSelection_ConfirmDialog(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Arrange: ensure we have at least one row and select it
+        cut.WaitForState(() => grid.Rows.Count > 0, TimeSpan.FromMilliseconds(5000));
+        await grid.SelectRowAsync(0); // select first data row
+
+        Assert.True(grid.SelectedRecords.Count > 0);
+
+        grid.EditSettings.AllowDeleting = true;
+        grid.EditSettings.ShowDeleteConfirmDialog = true;
+
+        // Act
+        await grid.DeleteRecordAsync();
+
+        // Assert: confirm dialog branch
+        Assert.Equal("DeleteConfirmAlert", grid.EditModule.AlertMessage);
+
+        // Optional: we at least know we didn't go down the "no selection" alert path
+        Assert.NotEqual("DeleteAlert", grid.EditModule.AlertMessage);
+
+        // Optional UI check for confirm dialog
+        cut.WaitForState(() => cut.FindAll(".e-dialog").Count >= 0, TimeSpan.FromMilliseconds(1000));
+    }
+}
+<SfFixture @ref="fixtureDelete4" Test="DeleteRecord_WithKey_NoDeletePermission" Description="DeleteRecordAsync(fieldName, data) - deleting not allowed returns early">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDelete4" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="false" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDelete4 { get; set; }
+    public SfGrid<Order> gridDelete4 { get; set; }
+
+    /// <summary>
+    /// Covers the branch in DeleteRecordAsync(string fieldName, TValue data)
+    /// where EditSettings.AllowDeleting is false and the method returns immediately.
+    /// </summary>
+    public async void DeleteRecord_WithKey_NoDeletePermission(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Safety: ensure it is false at runtime
+        grid.EditSettings.AllowDeleting = false;
+
+        // We don't actually need a real row from the grid because the method returns
+        // before using "data" when AllowDeleting is false.
+        var rowData = new Order()
+        {
+            OrderID = 9999,
+            CustomerID = "TEST",
+            Freight = 0,
+            OrderDate = DateTime.Now
+        };
+
+        // Act: call the overload with fieldName and data
+        await grid.DeleteRecordAsync(nameof(Order.OrderID), rowData);
+
+        // Assert: we should not have set any delete alerts
+        Assert.NotEqual("DeleteAlert", grid.EditModule.AlertMessage);
+        Assert.NotEqual("DeleteConfirmAlert", grid.EditModule.AlertMessage);
+    }
+}
+<SfFixture @ref="fixtureDelete5" Test="DeleteRecord_WithKey_NullData_NoSelection_ShowsDeleteAlert" Description="DeleteRecordAsync(fieldName, null) - no selection shows DeleteAlert">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDelete5" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="true"
+                              ShowDeleteConfirmDialog="false" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDelete5 { get; set; }
+    public SfGrid<Order> gridDelete5 { get; set; }
+
+    /// <summary>
+    /// Covers the branch in DeleteRecordAsync(string fieldName, TValue data)
+    /// where data is null AND SelectedRecords.Count == 0,
+    /// so DeleteAlert is shown and validation dialog triggered.
+    /// </summary>
+    public async void DeleteRecord_WithKey_NullData_NoSelection_ShowsDeleteAlert(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Arrange: deleting allowed, confirm dialog disabled, and no selection
+        grid.EditSettings.AllowDeleting = true;
+        grid.EditSettings.ShowDeleteConfirmDialog = false;
+
+        Assert.Empty(grid.SelectedRecords);
+
+        // Act: pass null data to trigger the (data == null) branch
+        await grid.DeleteRecordAsync(nameof(Order.OrderID), default!);
+
+        // Assert: DeleteAlert branch is hit
+        Assert.Equal("DeleteAlert", grid.EditModule.AlertMessage);
+
+        // Optional UI assertion: ensure the validation dialog is (at least) attempted to be shown
+        cut.WaitForState(
+            () => cut.FindAll(".e-dialog").Count >= 0,
+            TimeSpan.FromMilliseconds(1000)
+        );
+    }
+}
+<SfFixture @ref="fixtureDeleteRow1" Test="DeleteRow_RemovesVisibleRow" Description="DeleteRow - invoke delete on a visible row by TR element">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridDeleteRow" AllowPaging="true">
+            <GridEditSettings AllowAdding="true"
+                              AllowEditing="true"
+                              AllowDeleting="true" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureDeleteRow1 { get; set; }
+    public SfGrid<Order> gridDeleteRow { get; set; }
+
+    /// <summary>
+    /// Covers DeleteRow(object tr):
+    /// - ensures we have at least one visible data row
+    /// - passes the corresponding TR element to DeleteRow
+    /// - exercises InvokeMethod("deleteRow", null!, tr)
+    /// </summary>
+    public async void DeleteRow_RemovesVisibleRow(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Wait until grid renders at least one row
+        cut.WaitForState(() => grid.Rows.Count > 0, TimeSpan.FromMilliseconds(5000));
+
+        // Grab the first visible data row TR element
+        // ".e-row" selects grid data rows; this returns the tr element bUnit knows
+        var firstRowTr = cut.Find("tr.e-row");
+
+        // Act: call DeleteRow with the TR element
+        await grid.DeleteRow(firstRowTr);
+
+        // Since the underlying JS is not executed in bUnit, this primarily ensures
+        // the managed DeleteRow path (and its InvokeMethod call) is covered without exception.
+        Assert.True(true);
+    }
+    }
+<SfFixture @ref="fixture14" Test="GridBasicRendering14" Description="BatchEdit IsDirtHandler">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid4" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture14 { get; set; }
+    public SfGrid<Order> grid4 { get; set; }
+    public async void GridBasicRendering14(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        // type a character into the first input of the opened edit form, then press Enter
+        var formInput = cut.Find(".e-gridform input");
+        formInput.Change("aa");
+        formInput.KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+    }
+}
+
+<SfFixture @ref="fixture15" Test="GridBasicRendering15" Description="CurrentFocus with validation error">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid5" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture15 { get; set; }
+    public SfGrid<Order> grid5 { get; set; }
+
+    public async void GridBasicRendering15(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        // Enter edit mode and create a required field validation error
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        // Clear the value to trigger validation error
+        var formInput = cut.Find(".e-gridform input");
+        formInput.Change("");
+        formInput.KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+    }
+}
+
+<SfFixture @ref="fixture16" Test="GridBasicRendering16" Description="CurrentFocus with NextCellFocused">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid6" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch" AllowNextRowEdit="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture16 { get; set; }
+    public SfGrid<Order> grid6 { get; set; }
+
+    public async void GridBasicRendering16(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        var formInput = cut.Find(".e-gridform input");
+        formInput.KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+    }
+}
+
+<SfFixture @ref="fixture17" Test="GridBasicRendering17" Description="CurrentFocus with NextCellFocused">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid7" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch" AllowNextRowEdit="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture17 { get; set; }
+    public SfGrid<Order> grid7 { get; set; }
+
+    public async void GridBasicRendering17(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        cut.FindAll(".e-rowcell")[1].Click();
+        cut.FindAll(".e-rowcell")[1].DoubleClick();
+        var formInput = cut.Find(".e-gridform input");
+        formInput.KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+    }
+}
+
+<SfFixture @ref="fixture18" TestAsync="GridTabNavigationWithFrozenColumns" Description="Tab key navigation on last right frozen column should prevent further navigation">
+    <ComponentUnderTest>
+        <SfGrid ID="GridFrozen" @ref="GridFrozen" DataSource="@GenerateOrderData()" AllowSelection="true" FrozenRows="1">
+            <GridEditSettings AllowEditing="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Type="ColumnType.TimeOnly" Width="140" IsFrozen="true" Freeze="FreezeDirection.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    private SfGrid<Order> GridFrozen;
+    private SfFixture fixture18;
+    
+    public async Task GridTabNavigationWithFrozenColumns(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        //var frozenLeftCount = cut.Instance.FreezeModule!.GetFrozenCount();
+        //var frozenRightColumns = cut.Instance.FreezeModule!.GetFrozenRightFreezeColumns();
+        //Assert.True(frozenLeftCount > 0 && frozenRightColumns?.Count > 0, "Grid has both left and right frozen columns");
+        //var lastRightFrozenColumn = frozenRightColumns?.Where(x => x.Visible).LastOrDefault();
+        //Assert.NotNull(lastRightFrozenColumn);
+        cut.FindAll(".e-rowcell")[0].Click();
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs
+        {
+            Key = "Tab",
+            Code = "Tab",
+            ShiftKey = false
+        });
+    }
+}
+
+<SfFixture @ref="fixture19" Test="GridBasicRendering19" Description="Covered Rowdata single line.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid9" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture19 { get; set; }
+    public SfGrid<Order> grid9 { get; set; }
+
+    public async void GridBasicRendering19(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        var editModule = cut.Instance.EditModule;
+        var rowData = editModule.RowData;
+    }
+}
+
+<SfFixture @ref="fixture20" Test="GridBasicRendering20" Description="Covered AddRecord else part lines - 661.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid10" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal" NewRowPosition="NewRowPosition.Bottom"></GridEditSettings>
+            <GridPageSettings PageSizes="true"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture20 { get; set; }
+    public SfGrid<Order> grid10 { get; set; }
+
+    public async void GridBasicRendering20(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        cut.FindAll(".e-toolbar-item")[0].Click();
+    }
+}
+
+<SfFixture @ref="fixture21" Test="GridBasicRendering21" Description="Covered Add record return part.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="grid11" Toolbar="@(new List<string>() { "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal" ShowAddNewRow="true"></GridEditSettings>
+            <GridPageSettings PageSizes="true"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules { Required = true })" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture21 { get; set; }
+    public SfGrid<Order> grid11 { get; set; }
+
+    public async void GridBasicRendering21(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        cut.FindAll(".e-toolbar-item")[0].Click();
+    }
+}

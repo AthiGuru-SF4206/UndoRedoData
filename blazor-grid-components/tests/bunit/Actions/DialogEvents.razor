@@ -1,0 +1,92 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Implementing the column menu events in the Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowFiltering=true AllowGrouping=true AllowSorting=true AllowPaging=true>
+            <GridFilterSettings Type="Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridEvents FilterDialogOpening="FilterDialogOpeningHandler" FilterDialogOpened="FilterDialogOpenedHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) DefaultValue=0 HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    private string[] MenuItems = new string[] { "Group", "Ungroup", "ColumnChooser", "Filter" };
+    private bool preventColumnMenuRendering { get; set; }
+    public List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        var columns = Grid.Columns;
+        Assert.True(columns[0].AllowFiltering);
+        Assert.True(columns[0].AllowEditing);
+        Assert.True(columns[0].AllowGrouping);
+        Assert.True(columns[0].AllowResizing);
+        Assert.True(columns[0].AllowReordering);
+        Assert.True(columns[0].AllowSorting);
+        Assert.True(columns[0].AllowSearching);
+        Assert.True(columns[0].Width == "120");
+        Assert.True(columns[0].HeaderText == "Order ID");
+        Assert.True(columns[0].Field == "OrderID");
+        Assert.True(columns[0].IsPrimaryKey);
+        Assert.True(columns[0].TextAlign == TextAlign.Right);
+        Assert.True(columns[0].Visible);
+        Assert.True(columns[0].Index == 0);
+        Assert.True(columns[0].DefaultValue.Equals(0));
+        Assert.True(columns[0].ShowColumnMenu);
+        Assert.True(columns[0].ShowInColumnChooser);
+        Assert.False(string.IsNullOrEmpty( columns[0].Uid));
+        Assert.True(string.IsNullOrEmpty(columns[0].HideAtMedia));
+        Assert.True(columns[0].Columns == null);
+        Assert.False(columns[0].AutoFit);
+        Assert.True(columns[0].DisableHtmlEncode);
+        Assert.False(columns[0].DisplayAsCheckBox);
+        Assert.True(columns[2].Format == "d");
+        Assert.True(columns[2].Type == ColumnType.Date);
+        
+
+    }
+
+    public async Task FilterDialogOpeningHandler(FilterDialogOpeningEventArgs args)
+    {
+        
+    }
+
+    public async Task FilterDialogOpenedHandler(FilterDialogOpenedEventArgs args)
+    {
+        
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 30).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

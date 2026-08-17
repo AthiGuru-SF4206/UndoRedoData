@@ -1,0 +1,79 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+@inherits EditorCellBase<T>
+
+@using Syncfusion.Blazor.Buttons
+
+@if (Column != null && Column.Field == "")
+{
+    <div class="e-checkbox-wrapper e-wrapper" role="checkbox" aria-checked="@((UpdateCheckState()).ToString().ToLower())">
+        <label for="@Parent?.ID">
+            <input class="e-field e-boolcell e-edit-checkselect e-control e-checkbox e-lib"
+            type="checkbox" value="" e-mappinguid="@Column.Uid" id="@Parent?.ID" name="">
+            <span class="e-icons e-frame @(UpdateCheckState() ? "e-check" : "")" data-sf-style="@GetCursorStyle()"></span>
+        </label>
+    </div>
+}
+else
+{
+    <SfCheckBox ID=@FieldName Label="@Label" Checked="@(Value != null ? (bool)Value : false)" ValueChange="ValueChange" Disabled="@(PreventAddForm ? true : !Enabled)" @attributes="@attributes" TChecked="bool"></SfCheckBox>
+}
+
+@code{
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    internal string Label => (Parent != null && Parent.EditSettings?.Mode == EditMode.Dialog) ? Column!.HeaderText! : "";
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Column != null && Column.EditorSettings is BooleanEditCellParams param && param.Params != null)
+        {
+            CheckBoxModel<bool> model = param.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.Label), model.Label },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.LabelPosition), model.LabelPosition },
+                { nameof(model.Indeterminate), model.Indeterminate },
+                { nameof(model.Disabled), model.Disabled }
+            };
+        }
+        var value = string.IsNullOrEmpty(Column?.Field) ? false : Parent?.PropHelper?.GetObject(Column!.Field!, RowData!);
+        Value = value != null ? (bool)value : false;
+    }
+
+    internal void ValueChange(Syncfusion.Blazor.Buttons.ChangeEventArgs<bool> args)
+    {
+        Value = args.Checked;
+        if (Parent != null && Parent.EditModule != null)
+        Parent.EditModule.SetValue<bool>(args.Checked, Column?.Field!);
+    }
+
+    private bool UpdateCheckState()
+    {
+        bool batchAddedRowSelected = Parent?.EditSettings?.Mode == EditMode.Batch && Parent?.EditModule?.EditedRow?.IsSelected == true;
+        bool checkStateForCheckBox = (Parent != null && Parent.SelectionModule != null && Parent.SelectionModule.HasCheckBoxColumn()) && Parent.EditModule?.EditedRow!.Data != null && (Parent.SelectionModule.IsDataInPersistedCollection(Parent.EditModule.EditedRow!.Data) && Parent.IsEdit)
+        || (Parent != null && Parent.EditModule!.IsAdd && Parent.SelectionModule != null 
+            && (Parent.SelectionModule.IsHeaderCheckboxChecked || batchAddedRowSelected)
+            && Parent.EditModule.EditedRow?.Action == EditAction.Added);
+        return checkStateForCheckBox;
+    }
+
+    private string GetCursorStyle()
+    {
+        string cursorStyle = string.Empty;
+        cursorStyle = Parent != null && Parent.SelectionModule != null && Parent.SelectionModule.HasCheckBoxColumn() 
+        && Parent.EditModule!.IsAdd && (Parent.SelectedRecords.Count == 0 || Parent.SelectedRecords.Count > 0 
+        && !Parent.SelectionModule.IsHeaderCheckboxChecked) ? "cursor: auto;" : "cursor: pointer;";
+        if (UpdateCheckState())
+        {
+            cursorStyle = "cursor: auto;";
+        }
+        return cursorStyle;
+    }
+}
+
+

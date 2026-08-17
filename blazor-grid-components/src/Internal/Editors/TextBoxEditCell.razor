@@ -1,0 +1,43 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+@inherits EditorCellBase<T>
+
+@using Syncfusion.Blazor.Inputs
+
+<SfTextBox InputAttributes="InputAttr" ID="@FieldName" Value="@(Value?.ToString())" ValueChanged="ValueChanged" ValueExpression="StringExp" 
+           Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+           Enabled="@(PreventAddForm ? false : Enabled)" ValueChange="ValueChange" @attributes="attributes">
+</SfTextBox>
+
+
+@code{
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Column != null && Column.EditorSettings is StringEditCellParams param && param.Params != null)
+        {
+            TextBoxModel model = param.Params;
+            attributes = new Dictionary<string, object>()
+            {
+                { nameof(model.CssClass), model.CssClass },
+                { nameof(model.EnableRtl), model.EnableRtl },
+                { nameof(model.Readonly), model.Readonly },
+                { nameof(model.ShowClearButton), model.ShowClearButton },
+                { nameof(model.Multiline), model.Multiline }
+            };
+        }
+        Value = Parent?.PropHelper?.GetObject(Column?.Field!, RowData!)?.ToString()!;
+    }
+
+    internal void ValueChange(Syncfusion.Blazor.Inputs.ChangedEventArgs args)
+    {
+        Value = args.Value;
+        if (Parent!.EditModule != null)
+        Parent.EditModule.SetValue<string>(args.Value, Column!.Field);
+
+}
+}
+

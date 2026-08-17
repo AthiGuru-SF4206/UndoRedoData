@@ -1,0 +1,124 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridUpdateRowValidation" Description="Ensure input fields are not disabled, and values are not cleared when ShowAddNewRow is enabled and Cancel is set to true in the RowUpdating event">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GetAllRecords()" AllowSelection="true" Toolbar="@(new List<string>(){ "Add","Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowAddNewRow="true" NewRowPosition="NewRowPosition.Bottom" Mode="Syncfusion.Blazor.Grids.EditMode.Normal"></GridEditSettings>
+            <GridEvents RowUpdating="RowUpdatingHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    public async Task GridUpdateRowValidation(Fixture fixture)
+    {
+        // Get the grid component
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Find the "Show Add New Row"
+        var addNewRow = cut.Find(".e-table .e-inline-edit");
+        Assert.NotNull(addNewRow);
+
+        // Find the rows of ShowAddNewRow
+        var row = addNewRow.QuerySelector("tr");
+        Assert.NotNull(row);
+
+        // Find all cells in the row
+        var cells = row.QuerySelectorAll("td");
+        Assert.NotEmpty(cells);
+
+        // Set and verify the numeric input value
+        var numericTextBox = cut.FindAll(".e-content")[0]
+                                .QuerySelectorAll(".e-showAddNewRow")[0]
+                                .QuerySelectorAll(".e-rowcell")[0]
+                                .QuerySelector("input"); // Target the input inside e-numerictextbox
+
+        Assert.NotNull(numericTextBox);
+
+        // Simulate user input by changing the value
+        numericTextBox.Change("1");
+
+        // Set and verify the text input value
+        var textBox = cut.FindAll(".e-content")[0]
+                         .QuerySelectorAll(".e-showAddNewRow")[0]
+                         .QuerySelectorAll(".e-rowcell")[1]
+                         .QuerySelector("input"); // Target the input inside e-textbox
+
+        Assert.NotNull(textBox);
+
+        // Simulate user input by changing the value
+        textBox.Change("Anand");
+
+        // Trigger the update after entering the data
+        await cut.Instance.EndEditAsync();
+
+
+        // Validate the presence of the disabled form
+        var disabledAddForm = cut.Find(".e-table .e-inline-edit .e-rowcell .e-control.e-input");
+        Assert.NotNull(disabledAddForm); // Ensure the element exists
+
+        // Validate that the disabledAddForm does not have the 'e-disabled' class
+        var classList = disabledAddForm.GetAttribute("class");
+        Assert.NotNull(classList);
+        Assert.DoesNotContain("e-disabled", classList, StringComparison.OrdinalIgnoreCase);
+
+        // Recheck the numeric value
+        var numericTextBoxCheck = cut.FindAll(".e-content")[0]
+                                     .QuerySelectorAll(".e-showAddNewRow")[0]
+                                     .QuerySelectorAll(".e-rowcell")[0]
+                                     .QuerySelector("input");
+
+        Assert.NotNull(numericTextBoxCheck);
+        Assert.Equal("1", numericTextBoxCheck.GetAttribute("value"));
+
+        // Recheck the text input value
+        var textBoxCheck = cut.FindAll(".e-content")[0]
+                              .QuerySelectorAll(".e-showAddNewRow")[0]
+                              .QuerySelectorAll(".e-rowcell")[1]
+                              .QuerySelector("input");
+
+        Assert.NotNull(textBoxCheck);
+        Assert.Equal("Anand", textBoxCheck.GetAttribute("value"));
+    }
+
+    public List<Order> GetAllRecords()
+    {
+        List<Order> data = new List<Order>();
+        int count = 1000;
+
+        for (int i = 0; i < 1; i++)
+        {
+            data.Add(new Order() { OrderID = count + 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new Order() { OrderID = count + 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new Order() { OrderID = count + 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new Order() { OrderID = count + 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new Order() { OrderID = count + 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        return data;
+    }
+
+    public void RowUpdatingHandler(RowUpdatingEventArgs<Order> args)
+    {
+        args.Cancel = true;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

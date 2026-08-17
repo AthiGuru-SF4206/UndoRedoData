@@ -1,0 +1,96 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Problem with updating GUID field values in grid.">
+	<ComponentUnderTest>
+		<SfGrid DataSource="@Orders" AllowPaging="true"
+				AllowSorting="true"
+				AllowFiltering="true"
+				AllowGrouping="true"
+				Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+			<GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="Syncfusion.Blazor.Grids.EditMode.Batch"></GridEditSettings>
+			<GridPageSettings PageSize="5"></GridPageSettings>
+			<GridColumns>
+				<GridColumn Field=@nameof(Order.GUID)
+							HeaderText="My GUID"
+							IsPrimaryKey="true"
+							TextAlign="TextAlign.Right"
+							Width="120">
+				</GridColumn>
+				<GridColumn Field="@nameof(Order.OrderID)"
+							HeaderText="Order ID"
+							TextAlign="TextAlign.Right"
+							Width="120">
+				</GridColumn>
+				<GridColumn Field=@nameof(Order.CustomerID)
+							HeaderText="Customer Name"
+							Width="150">
+				</GridColumn>
+				<GridColumn Field=@nameof(Order.OrderDate)
+							HeaderText=" Order Date"
+							TextAlign="TextAlign.Right"
+							Format="d"
+							Type="ColumnType.Date"
+							Width="130">
+				</GridColumn>
+				<GridColumn Field=@nameof(Order.Freight)
+							HeaderText="Freight"
+							Format="C2"
+							TextAlign="TextAlign.Right"
+							Width="120">
+				</GridColumn>
+				<GridColumn Field=@nameof(Order.MyGUID)
+							HeaderText="My GUID"
+							TextAlign="TextAlign.Right"
+							Width="120">
+				</GridColumn>
+			</GridColumns>
+		</SfGrid>
+	</ComponentUnderTest>
+</SfFixture>
+
+    @code {
+	SfFixture fixture { get; set; }
+
+	public List<Order> Orders { get; set; }
+
+    public class Order
+    {
+
+        public Guid? GUID { get; set; } = Guid.NewGuid();
+        public int? OrderID { get; set; }
+
+        public string CustomerID { get; set; }
+
+        public DateTime? OrderDate { get; set; }
+
+        public double? Freight { get; set; }
+
+        public Guid? MyGUID { get; set; } = Guid.NewGuid();
+    }		
+	
+	async void GridBasicRendering(Fixture fixture)
+    {
+        Orders = Enumerable.Range(1, 15).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })
+            [new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+		await cut.Instance.UpdateCellAsync(2, "MyGUID", "");
+		await cut.Instance.SaveCellAsync();
+		var BatchChanges = cut.Instance.GetBatchChangesAsync().Result.ChangedRecords[0].MyGUID;
+		Assert.True(BatchChanges == Guid.Empty, "When empty GUID value is given");
+		var value = "81a130d2-502f-4cf1-a376-63edeb000e9f";
+		await cut.Instance.UpdateCellAsync(2, "MyGUID", value);
+		await cut.Instance.SaveCellAsync();
+		var BatchChangesValid = cut.Instance.GetBatchChangesAsync().Result.ChangedRecords[0].MyGUID;
+		Assert.True(BatchChangesValid == new Guid(value), "When correct GUID value is given");
+    }
+}

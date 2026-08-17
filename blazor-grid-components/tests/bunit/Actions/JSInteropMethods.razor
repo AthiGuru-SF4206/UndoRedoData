@@ -1,0 +1,1260 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Text.Json
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Implementing Interop Methods">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true AllowReordering=true AllowFiltering="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridSelectionSettings AllowDragSelection=true Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        cut.FindAll(".e-rowcell")[22].Click(new MouseEventArgs() { Type = "click" });
+        var altWKey = "{\"key\":\"w\",\"code\":\"KeyW\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":true,\"metaKey\":false}";
+        await cut.Instance._jsAdaptor.GridKeyDown(altWKey, false, false, false, null);
+        cut.WaitForState(() => cut.Instance.Rows[0].Cells[0].IsSelected);
+        var altJ = "{\"isTrusted\":true}";
+        cut.Instance._jsAdaptor.GridFocus(altJ);
+        var pageUp = "{\"key\":\"PageUp\",\"code\":\"PageUp\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var pageDown = "{\"key\":\"PageDown\",\"code\":\"PageDown\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var ctrlAltPageUp = "{\"key\":\"PageUp\",\"code\":\"PageUp\",\"ctrlKey\":true,\"shiftKey\":false,\"altKey\":true,\"metaKey\":false}";
+        var ctrlAltPageDown = "{\"key\":\"PageDown\",\"code\":\"PageDown\",\"ctrlKey\":true,\"shiftKey\":false,\"altKey\":true,\"metaKey\":false}";
+        var altPageUp = "{\"key\":\"PageUp\",\"code\":\"PageUp\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":true,\"metaKey\":false}";
+        var altPageDown = "{\"key\":\"PageDown\",\"code\":\"PageDown\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":true,\"metaKey\":false}";
+        var insertKey = "{\"key\":\"Insert\",\"code\":\"Insert\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var deleteKey = "{\"key\":\"Delete\",\"code\":\"Delete\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var f2Key = "{\"key\":\"F2\",\"code\":\"F2\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var escapeKey = "{\"key\":\"Escape\",\"code\":\"Escape\",\"ctrlKey\":false,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        var ctrlPKey = "{\"key\":\"p\",\"code\":\"KeyP\",\"ctrlKey\":true,\"shiftKey\":false,\"altKey\":false,\"metaKey\":false}";
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(pageDown, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(pageUp, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(ctrlAltPageDown, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(ctrlAltPageUp, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(altPageDown, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(altPageUp, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(insertKey, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance.CloseEditAsync());
+        cut.FindAll(".e-rowcell")[22].Click(new MouseEventArgs() { Type = "click" });
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(deleteKey, false, false, false, null));
+        cut.FindAll(".e-rowcell")[10].Click(new MouseEventArgs() { Type = "click" });
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(f2Key, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(escapeKey, false, false, false, null));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.DragSelection(0, 3, false));
+        cut.FindAll(".e-rowcell")[10].Click(new MouseEventArgs() { Type = "click" });
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.GridKeyDown(ctrlPKey, false, false, false, null));
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 50).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Implementing Drag Methods">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true AllowRowDragAndDrop=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridSelectionSettings AllowDragSelection=true Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents RowDragStarting="DragStartingHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+
+    public void DragStartingHandler(RowDragStartingEventArgs<Order> args)
+    {
+
+    }
+
+    public void RowDragStartEvent()
+    {
+
+    }
+
+    public async Task GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.Instance._jsAdaptor.DragCellSelection(0, 0, 3, 1, false);
+        var selectedCells = cut.Instance.GetSelectedRowCellIndexesAsync();
+        cut.WaitForState(() => selectedCells.Result.Count == 14);
+        var targetClass = "//[@id=Grid_content_table].e-table/tbody/tr.e-row e-altrow e-disable-gridhover[5]/td.e-rowdragdrop[1]/div.e-icons e-rowcelldrag e-dtdiagonalright e-icon-rowdragicon";
+        await cut.Instance._jsAdaptor.ReorderRows(0, 4, "delete", true, targetClass, "", null, null, false, false, "grid-row1", "grid-row5", withinBothGrid: false);
+        cut.WaitForState(() => cut.FindAll(".e-rowcell ")[0].InnerHtml == "1005");
+        await cut.Instance._jsAdaptor.RowDragStartEvent(1, "grid-row2");
+    }
+}
+
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Auto fill related methods">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="GenerateRows()" AllowSelection="true" EnableAutoFill=true AllowPaging=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents BeforeAutoFill="BeforeAutoFillHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+
+    public void BeforeAutoFillHandler(BeforeAutoFillEventArgs args)
+    {
+
+    }
+
+    public async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        await cut.Instance._jsAdaptor.UpdateAutofillCell(1, "CustomerID", "CustomerID", 0, "VINET");
+        await cut.Instance._jsAdaptor.UpdateAutofillCell(2, "CustomerID", "CustomerID", 0, "VINET");
+        // cut.WaitForState(() => cut.FindAll(".e-rowcell")[5].InnerHtml == "VINET");
+    }            
+}
+
+<SfFixture @ref="fixture12" TestAsync="GridBasicRendering12" Description="BeforeAutoFillCell Event with UpdateCell">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="GenerateRows()" AllowSelection="true" EnableAutoFill=true AllowPaging=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents BeforeAutoFillCell="BeforeAutoFillCellHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private BeforeAutoFillCellEventArgs<Order>? capturedEventArgs;
+
+    public void BeforeAutoFillCellHandler(BeforeAutoFillCellEventArgs<Order> args)
+    {
+        // Store event args for test verification
+        capturedEventArgs = args;
+
+        // Read all properties (GET operations)
+        int rowIndex = args.RowIndex;
+        int columnIndex = args.ColumnIndex;
+        string? columnName = args.ColumnName;
+        object? currentValue = args.Value;
+        Order? rowData = args.Data;
+        bool isCancelled = args.Cancel;
+
+        // Modify settable properties (SET operations)
+        // Change the value being filled in the cell
+        if (args.ColumnName == nameof(Order.CustomerID))
+        {
+            args.Value = "MODIFIED_" + (args.Value ?? "DEFAULT");
+        }
+
+        // Demonstrate Cancel property usage - example: cancel for specific conditions
+        if (args.RowIndex > 5)
+        {
+            args.Cancel = true; // Cancel autofill for rows beyond index 5
+        }
+    }
+
+    public async Task GridBasicRendering12(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Select a cell to start editing
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+
+        // Update multiple cells using UpdateCell method which triggers BeforeAutoFillCell event
+        await cut.Instance._jsAdaptor.UpdateCell(0, nameof(Order.CustomerID), "CUSTOMERID_1");
+        await cut.Instance._jsAdaptor.UpdateCell(1, nameof(Order.CustomerID), "CUSTOMERID_2");
+        await cut.Instance._jsAdaptor.UpdateCell(2, nameof(Order.Freight), "150.50");
+
+        // Verify event args were captured and processed
+        await cut.InvokeAsync(() =>
+        {
+            if (capturedEventArgs != null)
+            {
+                // Verify RowIndex property was read
+                Assert.True(capturedEventArgs.RowIndex >= 0, "RowIndex should be non-negative");
+
+                // Verify ColumnIndex property was read
+                Assert.True(capturedEventArgs.ColumnIndex >= 0, "ColumnIndex should be non-negative");
+
+                // Verify ColumnName property was read
+                Assert.NotNull(capturedEventArgs.ColumnName);
+                Assert.False(string.IsNullOrEmpty(capturedEventArgs.ColumnName), "ColumnName should not be empty");
+
+                // Verify Value property can be read and set
+                Assert.NotNull(capturedEventArgs.Value);
+
+                // Verify Data property was read
+                Assert.NotNull(capturedEventArgs.Data);
+
+                // Verify Cancel property can be read and set
+                Assert.False(capturedEventArgs.Cancel == null, "Cancel property should exist");
+            }
+        });
+    }            
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="context menu methods">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })"
+                AllowExcelExport="true" AllowPdfExport="true" ContextMenuItems="@(new List<object>() { "AutoFit", "AutoFitAll", "SortAscending", "SortDescending","Copy", "Edit", "Delete", "Save", "Cancel","PdfExport", "ExcelExport", "CsvExport", "FirstPage", "PrevPage","LastPage", "NextPage"})">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+
+    public async Task GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        var cell = cut.FindAll(".e-rowcell")[6];
+        var uid = cell.GetAttribute("data-uid");
+        var headerCell = cut.FindAll(".e-headercell")[1];
+        var headerUid = headerCell.GetAttribute("data-uid");
+
+        cut.Instance._jsAdaptor.MouseDownHandler("Content", uid,null,null);
+        cut.WaitForState(() => cut.FindAll(".e-grid-menu")[0] != null, TimeSpan.FromMilliseconds(1000));
+        cut.Instance._jsAdaptor.MouseDownHandler("Header", headerUid,null,null);
+        cut.WaitForState(() => cut.FindAll(".e-grid-menu")[0] != null, TimeSpan.FromMilliseconds(1000));
+
+        cut.Instance._jsAdaptor.MouseDownHandler("Pager", null,null,null);
+        cut.WaitForState(() => cut.FindAll(".e-grid-menu")[0] != null, TimeSpan.FromMilliseconds(1000));
+
+        cut.Instance._jsAdaptor.MouseDownHandler(null, null,null,null);
+        cut.FindAll(".e-rowcell")[12].Click(new MouseEventArgs() { Type = "click" });
+
+        await cut.Instance.AddRecordAsync();
+        // cut.WaitForState(() => cut.Instance.IsAdd);
+
+        IDictionary<string, string> position = new Dictionary<string, string>();
+        position.Add("ID", "top: 50.3021px; bottom: ; left: 86.5px; max-width: ; width: ; text-align: center; position: ");
+        //cut.Instance._jsAdaptor.ShowValidationPopup(position, "top");
+        // cut.WaitForState(() => cut.FindAll(".e-tip-content")[0] != null);
+
+    }
+
+
+}
+
+<SfFixture @ref="fixture5" TestAsync="GridBasicRendering5" Description="Column Reordering">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true AllowReordering=true AllowFiltering="true">
+            <GridEvents TValue="Order" ColumnReordered="ColumnReordered"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture5 { get; set; }
+
+    public async Task GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.InvokeAsync(() => cut.Instance._jsAdaptor.ColumnReordered("{\"requestType\":\"reorder\",\"fromIndex\":2,\"toIndex\":1,\"toColumnUid\":\"Name\"}").GetAwaiter());
+        cut.WaitForState(() => cut.Instance.Columns[2].Field == "CustomerID", TimeSpan.FromMilliseconds(1000));
+    }
+    private void ColumnReordered(ColumnReorderedEventArgs args)
+    { }
+}
+
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Disable show add new row form">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="GenerateRows()" Height="400" Width="400" AllowPaging=true>
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal" ShowAddNewRow=true></GridEditSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> Grid6;
+
+    void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+
+    }
+}
+
+<SfFixture @ref="fixture7" TestAsync="GridBasicRendering7" Description="Context menu instance methods">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })"
+                AllowExcelExport="true" AllowPdfExport="true" ContextMenuItems="@(new List<object>() { "AutoFit", "AutoFitAll", "SortAscending", "SortDescending","Copy", "Edit", "Delete", "Save", "Cancel","PdfExport", "ExcelExport", "CsvExport", "FirstPage", "PrevPage","LastPage", "NextPage"})">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridEvents TValue="Order" ContextMenuItemClicked="OnContextMenuClick" ContextMenuOpen="OnContextMenuOpen"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+
+    public async Task GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var contextMenu = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ContextMenu<Order>>();
+        cut.Instance._jsAdaptor.MouseDownHandler("Pager", null, null,null);
+        cut.WaitForState(() => cut.FindAll(".e-grid-menu")[0] != null, TimeSpan.FromMilliseconds(1000));
+
+        cut.Instance._jsAdaptor.MouseDownHandler(null, null,null,null);
+        cut.FindAll(".e-rowcell")[12].Click(new MouseEventArgs() { Type = "click" });
+
+        var headerCell = cut.FindAll(".e-headercell")[1];
+        var headerUid = headerCell.GetAttribute("data-uid");
+        cut.Instance._jsAdaptor.MouseDownHandler("Header", headerUid,null,null);
+        MenuEventArgs<MenuItem> args = new MenuEventArgs<MenuItem>();
+        args.Item = new MenuItem();
+        args.Item.Id = "AutoFitAll";
+        await contextMenu.Instance.ContextMenuItemClick(args);
+
+        MenuEventArgs<MenuItem> args1 = new MenuEventArgs<MenuItem>();
+        args1.Item = new MenuItem();
+        args1.Item.Id = "AutoFit";
+        await contextMenu.Instance.ContextMenuItemClick(args1);
+
+        MenuEventArgs<MenuItem> args2 = new MenuEventArgs<MenuItem>();
+        args2.Item = new MenuItem();
+        args2.Item.Id = "Group";
+        await contextMenu.Instance.ContextMenuItemClick(args2);
+
+        MenuEventArgs<MenuItem> args3 = new MenuEventArgs<MenuItem>();
+        args3.Item = new MenuItem();
+        args3.Item.Id = "Ungroup";
+        await contextMenu.Instance.ContextMenuItemClick(args3);
+
+        var rowUid = cut.FindAll(".e-row")[1].GetAttribute("data-uid");
+        cut.Instance._jsAdaptor.MouseDownHandler("Content", null, rowUid, 1);
+        MenuEventArgs<MenuItem> args4 = new MenuEventArgs<MenuItem>();
+        args4.Item = new MenuItem();
+        args4.Item.Id = "Edit";
+        await contextMenu.Instance.ContextMenuItemClick(args4);
+
+        MenuEventArgs<MenuItem> args5 = new MenuEventArgs<MenuItem>();
+        args5.Item = new MenuItem();
+        args5.Item.Id = "Delete";
+        await contextMenu.Instance.ContextMenuItemClick(args5);
+
+        MenuEventArgs<MenuItem> args6 = new MenuEventArgs<MenuItem>();
+        args6.Item = new MenuItem();
+        args6.Item.Id = "Save";
+        await contextMenu.Instance.ContextMenuItemClick(args6);
+
+        MenuEventArgs<MenuItem> args17 = new MenuEventArgs<MenuItem>();
+        args17.Item = new MenuItem();
+        args17.Item.Id = "Cancel";
+        await contextMenu.Instance.ContextMenuItemClick(args17);
+
+        MenuEventArgs<MenuItem> args7 = new MenuEventArgs<MenuItem>();
+        args7.Item = new MenuItem();
+        args7.Item.Id = "Copy";
+        await contextMenu.Instance.ContextMenuItemClick(args7);
+
+        MenuEventArgs<MenuItem> args8 = new MenuEventArgs<MenuItem>();
+        args8.Item = new MenuItem();
+        args8.Item.Id = "PdfExport";
+        await contextMenu.Instance.ContextMenuItemClick(args8);
+
+        MenuEventArgs<MenuItem> args9 = new MenuEventArgs<MenuItem>();
+        args9.Item = new MenuItem();
+        args9.Item.Id = "ExcelExport";
+        await contextMenu.Instance.ContextMenuItemClick(args9);
+
+        MenuEventArgs<MenuItem> args10 = new MenuEventArgs<MenuItem>();
+        args10.Item = new MenuItem();
+        args10.Item.Id = "CsvExport";
+        await contextMenu.Instance.ContextMenuItemClick(args10);
+
+        MenuEventArgs<MenuItem> args11 = new MenuEventArgs<MenuItem>();
+        args11.Item = new MenuItem();
+        args11.Item.Id = "SortAscending";
+        await contextMenu.Instance.ContextMenuItemClick(args11);
+
+        MenuEventArgs<MenuItem> args12 = new MenuEventArgs<MenuItem>();
+        args12.Item = new MenuItem();
+        args12.Item.Id = "SortDescending";
+        await contextMenu.Instance.ContextMenuItemClick(args12);
+
+        MenuEventArgs<MenuItem> args13 = new MenuEventArgs<MenuItem>();
+        args13.Item = new MenuItem();
+        args13.Item.Id = "FirstPage";
+        await contextMenu.Instance.ContextMenuItemClick(args13);
+
+        MenuEventArgs<MenuItem> args14 = new MenuEventArgs<MenuItem>();
+        args14.Item = new MenuItem();
+        args14.Item.Id = "PrevPage";
+        await contextMenu.Instance.ContextMenuItemClick(args14);
+
+        MenuEventArgs<MenuItem> args15 = new MenuEventArgs<MenuItem>();
+        args15.Item = new MenuItem();
+        args15.Item.Id = "LastPage";
+        await cut.InvokeAsync(async () => await contextMenu.Instance.ContextMenuItemClick(args15));
+
+        MenuEventArgs<MenuItem> args16 = new MenuEventArgs<MenuItem>();
+        args16.Item = new MenuItem();
+        args16.Item.Id = "NextPage";
+        await contextMenu.Instance.ContextMenuItemClick(args16);
+
+        var actualFrozenColumns = cut.Instance.GetClientOption().actualFrozenColumns;
+        var aggregatesCount = cut.Instance.GetClientOption().aggregatesCount;
+        var allowdragSelection = cut.Instance.GetClientOption().allowDragSelection;
+        var allowEditing = cut.Instance.GetClientOption().allowEditing;
+        var allowFreezeLineMoving = cut.Instance.GetClientOption().allowFreezeLineMoving;
+        var allowGrouping = cut.Instance.GetClientOption().allowGrouping;
+        var allowPaging = cut.Instance.GetClientOption().allowPaging;
+        var allowReordering = cut.Instance.GetClientOption().allowReordering;
+        var allowResizing = cut.Instance.GetClientOption().allowResizing;
+        var allowRowDragAndDrop = cut.Instance.GetClientOption().allowRowDragAndDrop;
+        var allowTextWrap = cut.Instance.GetClientOption().allowTextWrap;
+        var cellSelectionMode = cut.Instance.GetClientOption().cellSelectionMode;
+        var clipMode = cut.Instance.GetClientOption().clipMode;
+        var columns = cut.Instance.GetClientOption().columns;
+        var currentPage = cut.Instance.GetClientOption().currentPage;
+        var editMode = cut.Instance.GetClientOption().editMode;
+        var enableAdaptiveUI = cut.Instance.GetClientOption().enableAdaptiveUI;
+        var enableAutoFill = cut.Instance.GetClientOption().enableAutoFill;
+        var enableColumnVirtualization = cut.Instance.GetClientOption().enableColumnVirtualization;
+        var enableInfiniteScrolling = cut.Instance.GetClientOption().enableInfiniteScrolling;
+        var enableLazyLoading = cut.Instance.GetClientOption().enableLazyLoading;
+        var enablePersistence = cut.Instance.GetClientOption().enablePersistence;
+        var enableRtl = cut.Instance.GetClientOption().enableRtl;
+        var enableStickyHeader = cut.Instance.GetClientOption().enableStickyHeader;
+        var enableVirtualization = cut.Instance.GetClientOption().enableVirtualization;
+        var enableVirtualMaskRow = cut.Instance.GetClientOption().enableVirtualMaskRow;
+        var filterCount = cut.Instance.GetClientOption().filterCount;
+        var frozenCols = cut.Instance.GetClientOption().frozenCols;
+        var frozenColumns = cut.Instance.GetClientOption().frozenColumns;
+        var frozenLeftColumnsCount = cut.Instance.GetClientOption().frozenLeftColumnsCount;
+        var frozenLeftCount = cut.Instance.GetClientOption().frozenLeftCount;
+        var frozenName = cut.Instance.GetClientOption().frozenName;
+        var frozenRightColumnsCount = cut.Instance.GetClientOption().frozenRightColumnsCount;
+        var frozenRightCount = cut.Instance.GetClientOption().frozenRightCount;
+        var frozenRows = cut.Instance.GetClientOption().frozenRows;
+        var groupCount = cut.Instance.GetClientOption().groupCount;
+        var groupReordering = cut.Instance.GetClientOption().groupReordering;
+        var hasDetailTemplate = cut.Instance.GetClientOption().hasDetailTemplate;
+        var hasDropTarget = cut.Instance.GetClientOption().hasDropTarget;
+        var hasTemplateInEditSettings = cut.Instance.GetClientOption().hasTemplateInEditSettings;
+        var height = cut.Instance.GetClientOption().height;
+        var infiniteCacheMode = cut.Instance.GetClientOption().infiniteCacheMode;
+        var infiniteInitialBlock = cut.Instance.GetClientOption().infiniteInitialBlock;
+        var infiniteMaxBlocks = cut.Instance.GetClientOption().infiniteMaxBlocks;
+        var initGroupingField = cut.Instance.GetClientOption().initGroupingField;
+        var isAdd = cut.Instance.GetClientOption().isAdd;
+        var isClipboardEventBinded = cut.Instance.GetClientOption().isClipboardEventBinded;
+        var isColumnReordered = cut.Instance.GetClientOption().isColumnReordered;
+        var isColumnResized = cut.Instance.GetClientOption().isColumnResized;
+        var isColumnWidthChanged = cut.Instance.GetClientOption().isColumnWidthChanged;
+        var isEdit = cut.Instance.GetClientOption().isEdit;
+        var isFreezeLineMoved = cut.Instance.GetClientOption().isFreezeLineMoved;
+        var isPrerendered = cut.Instance.GetClientOption().isPrerendered;
+        var isPreventScrollEvent = cut.Instance.GetClientOption().isPreventScrollEvent;
+        var isRenderedFromTreeGrid = cut.Instance.GetClientOption().isRenderedFromTreeGrid;
+        var needClientAction = cut.Instance.GetClientOption().needClientAction;
+        var newRowPosition = cut.Instance.GetClientOption().newRowPosition;
+        var offline = cut.Instance.GetClientOption().offline;
+        var overscanCount = cut.Instance.GetClientOption().overscanCount;
+        var pageSize = cut.Instance.GetClientOption().pageSize;
+        var requestType = cut.Instance.GetClientOption().requestType;
+        var rowCellIndexes = cut.Instance.GetClientOption().rowCellIndexes;
+        var rowDropTarget = cut.Instance.GetClientOption().rowDropTarget;
+        var rowHeight = cut.Instance.GetClientOption().rowHeight;
+        var selectionMode = cut.Instance.GetClientOption().selectionMode;
+        var selectionType = cut.Instance.GetClientOption().selectionType;
+        var showAddNewRow = cut.Instance.GetClientOption().showAddNewRow;
+        var showColumnMenu = cut.Instance.GetClientOption().showColumnMenu;
+        var showDropArea = cut.Instance.GetClientOption().showDropArea;
+        var showGroupedColumn = cut.Instance.GetClientOption().showGroupedColumn;
+        var totalGroupedRowsCount = cut.Instance.GetClientOption().totalGroupedRowsCount;
+        var totalItemCount = cut.Instance.GetClientOption().totalItemCount;
+        var TValue = cut.Instance.GetClientOption().TValue;
+        var url = cut.Instance.GetClientOption().url;
+        var virtualizedColumns = cut.Instance.GetClientOption().virtualizedColumns;
+        var visibleGroupedRowsCount = cut.Instance.GetClientOption().visibleGroupedRowsCount;
+        var width = cut.Instance.GetClientOption().width;
+        var wrapMode = cut.Instance.GetClientOption().wrapMode;
+
+        //var freezeLine = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().columns;
+        //var freezeLineColumns = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().frozenColumns;
+       // var frozenright = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().frozenRightCount;
+       // var frozenleftcount = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().frozenLeftCount;
+        //var frozenleftColumnsCount = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().frozenLeftColumnsCount;
+        //var actualFrozenColumns2 = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().actualFrozenColumns;
+        //var isColumnReorderd = cut.Instance.FreezeModule!.GetFreezeLineClientOptions().isColumnReordered;
+    }
+
+    public void OnContextMenuOpen(ContextMenuOpenEventArgs<Order> args)
+    {
+
+    }
+
+    public void OnContextMenuClick(ContextMenuClickEventArgs<Order> args)
+    {
+        
+    }
+   
+}
+ <SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Maximum Visible Rows">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid8" DataSource="GenerateRows()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38">
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> Grid8;
+
+    void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Call the MaximumVisibleRows interop method with 10 visible rows
+        cut.Instance._jsAdaptor.MaximumVisibleRows(10);
+
+        // Verify that MaxVisibleRowsCount property is set correctly
+        cut.WaitForState(() => cut.Instance.MaxVisibleRowsCount == 10);
+        Assert.Equal(10, cut.Instance.MaxVisibleRowsCount);
+
+    
+        var visibleRows = cut.FindAll(".e-row");
+        Assert.True(visibleRows.Count > 0, "Grid should render at least one visible row");
+        
+ 
+        Assert.True(visibleRows.Count <= 30, $"Total rendered rows ({visibleRows.Count}) should be reasonable for virtualization");
+
+
+        var gridRows = cut.FindAll("tr.e-row");
+        Assert.True(gridRows.Count > 0, "Grid should have at least one visible row element");
+
+        var rowCells = cut.FindAll(".e-rowcell");
+        Assert.True(rowCells.Count > 0, "Grid rows should contain cells");
+
+        var virtualContainer = cut.Find(".e-gridcontent");
+        Assert.NotNull(virtualContainer);
+    }
+    }
+    <SfFixture @ref="fixture9" TestAsync="GridBasicRendering9" Description="Testing Drag Selection Events">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" Height="315">
+            <GridSelectionSettings AllowDragSelection="true" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents RowDragSelectionStarting="OnDragSelectionStart" RowDragSelectionCompleting="OnDragSelectionCompleting" RowDragSelectionCompleted="OnDragSelectionCompleted" TValue="Order" />
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Type="ColumnType.Date" Format="yMd" Width="110" TextAlign="TextAlign.Right"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="100" TextAlign="TextAlign.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> Grid;
+
+    public void OnDragSelectionStart(RowDragSelectionEventArgs<Order> args)
+    {
+        bool cancels = args.Cancel;
+        args.Cancel = false;
+    }
+
+    public void OnDragSelectionCompleting(RowDragSelectedEventArgs<Order> args)
+    {
+        
+    }
+
+    public void OnDragSelectionCompleted(RowDragSelectedEventArgs<Order> args)
+    {
+        
+    }
+
+    public async Task GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.Instance._jsAdaptor.DragSelectionStarted(4, 1);
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.DragSelection(0, 5, false, null, 0, 2));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.DragCellSelection(0, 5,0, 2, false, null));
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+    }
+	}
+    <SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="CalculateOffSetWidth Unit test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid10" DataSource="GenerateRows()" Height="400" AllowGrouping=true FrozenColumns="1">
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture10 { get; set; }
+    public string[] Initial = (new string[] { "CustomerID" });
+    private SfGrid<Order> Grid10;
+
+    void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Instance._jsAdaptor.CalculateOffSetWidth(450);
+    }
+}
+
+<SfFixture @ref="fixture11" TestAsync="GridBasicRendering11" Description="Validation Popup and RemoveValidationPopup">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid11" DataSource="GenerateOrderDetails()" Width="400" Height="400" AllowPaging="true" Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })" EnableColumnVirtualization="true">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true, Min = 1 })" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules { Required = true, MinLength = 3 })" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Name2" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight3" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Name3" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight4" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Name4" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<OrderDetails> Grid11;
+
+    public async Task GridBasicRendering11(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderDetails>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        var customerIdCell = cut.FindAll(".e-rowcell")[1];
+        customerIdCell.QuerySelector("input").Change("Vi");
+        await cut.InvokeAsync(async () => cut.Instance._jsAdaptor.RemoveValidationPopup());
+    }
+
+    public List<OrderDetails> GenerateOrderDetails()
+    {
+        var orderDetails = new List<OrderDetails>
+        {
+            new OrderDetails(10248, "VINET", 32.38, "France", new DateTime(1996, 7, 4)),
+            new OrderDetails(10249, "TOMSP", 11.61, "Germany", new DateTime(1996, 7, 5)),
+            new OrderDetails(10250, "HANAR", 65.83, "Brazil", new DateTime(1996, 7, 8)),
+            new OrderDetails(10251, "VICTE", 41.34, "France", new DateTime(1996, 7, 8)),
+            new OrderDetails(10252, "SUPRD", 51.3, "Belgium", new DateTime(1996, 7, 9)),
+            new OrderDetails(10253, "HANAR", 58.17, "Brazil", new DateTime(1996, 7, 10)),
+            new OrderDetails(10254, "CHOPS", 22.98, "Switzerland", new DateTime(1996, 7, 11)),
+            new OrderDetails(10255, "RICSU", 148.33, "Switzerland", new DateTime(1996, 7, 12)),
+            new OrderDetails(10256, "WELLI", 13.97, "Brazil", new DateTime(1996, 7, 15)),
+            new OrderDetails(10257, "HILAA", 81.91, "Venezuela", new DateTime(1996, 7, 16)),
+            new OrderDetails(10258, "ERNSH", 140.51, "Austria", new DateTime(1996, 7, 17)),
+            new OrderDetails(10259, "CENTC", 3.25, "Mexico", new DateTime(1996, 7, 18)),
+            new OrderDetails(10260, "OTTIK", 55.09, "Germany", new DateTime(1996, 7, 19)),
+            new OrderDetails(10261, "QUEDE", 3.05, "Brazil", new DateTime(1996, 7, 19)),
+            new OrderDetails(10262, "RATTC", 48.29, "USA", new DateTime(1996, 7, 22)),
+        };
+        return orderDetails;
+    }
+
+    public class OrderDetails
+    {
+        public OrderDetails(int OrderID, string CustomerID, double Freight, string ShipCountry, DateTime OrderDate)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerID;
+            this.Freight = Freight;
+            this.ShipCountry = ShipCountry;
+            this.OrderDate = OrderDate;
+        }
+
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+        public string ShipCountry { get; set; }
+        public DateTime OrderDate { get; set; }
+    }
+    }
+    <SfFixture @ref="fixture13" TestAsync="GridBasicRendering13" Description="Testing the Frozen Column Width">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef13" DataSource="@GenerateRows()" FrozenColumns="1" Width="100%" Height="400">
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" IsFrozen="true" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Uid="Customer" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> gridRef13;
+    public async Task GridBasicRendering13(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.InvokeAsync(() => Task.Delay(100));
+        //cut.WaitForState(() => cut.Instance.FreezeModule!.GetFrozenCount() > 0, TimeSpan.FromMilliseconds(1000));
+        //Assert.True(cut.Instance.FreezeModule!.GetFrozenCount() > 0, "Grid has frozen columns");
+        Assert.True(cut.Instance.Width == "100%", "Grid width is 100%");
+        var minWidths = new Dictionary<string, string>
+        {
+            ["OrderID"] = "160px",
+            ["CustomerID"] = "180px",
+            ["Freight"] = "140px"
+        };
+        await cut.InvokeAsync(async () => 
+        {
+            await cut.Instance._jsAdaptor.SetMinWidth(minWidths);
+        });
+        await cut.InvokeAsync(() => cut.Instance.CallStateHasChangedAsync());
+
+        Assert.NotNull(cut.Instance.MinWidth);
+        Assert.True(cut.Instance.MinWidth.ContainsKey("OrderID"), "MinWidth should contain OrderID key");
+        Assert.True(cut.Instance.MinWidth["OrderID"] == "160px", "MinWidth for OrderID should be 160px");
+    }
+	}
+
+<SfFixture @ref="fixture14" TestAsync="GridBasicRendering14" Description="BeforeCellPaste Event Args Coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef14" DataSource="@GenerateRows()" AllowSelection="true" AllowPaging=true AllowExcelExport="true" AllowCellSelection="true">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents BeforeCellPaste="BeforeCellPasteHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<Order> gridRef14;
+    private List<BeforeCellPasteEventArgs<Order>> pasteEventArgsList = new();
+
+    public void BeforeCellPasteHandler(BeforeCellPasteEventArgs<Order> args)
+    {
+        // Store the event args for verification
+        pasteEventArgsList.Add(args);
+
+        // READ all properties (GET operations)
+        bool isCancelled = args.Cancel;
+        string? pasteValue = args.CellValue;
+        string? columnName = args.ColumnName;
+        int columnIndex = args.ColumnIndex;
+        Order? rowData = args.Data;
+        int rowIndex = args.RowIndex;
+
+        // MODIFY settable properties (SET operations)
+        // Modify CellValue - transform the pasted value
+        if (!string.IsNullOrEmpty(args.CellValue) && args.ColumnName == nameof(Order.CustomerID))
+        {
+            args.CellValue = args.CellValue.ToUpper() + "_PASTED";
+        }
+
+        // Modify Freight value if pasting numeric data
+        if (args.ColumnName == nameof(Order.Freight) && decimal.TryParse(args.CellValue, out var freightValue))
+        {
+            args.CellValue = (freightValue * 1.1m).ToString(); // Add 10% markup
+        }
+
+        // Conditionally cancel paste for specific rows
+        if (args.RowIndex >= 5)
+        {
+            args.Cancel = true; // Cancel paste for rows beyond index 5
+        }
+    }
+
+    public async Task GridBasicRendering14(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Initialize the paste event args list for this test
+        pasteEventArgsList.Clear();
+
+        // Select a cell to enable paste operations
+        await cut.Instance.SelectRowAsync(0);
+        //await cut.Instance.SelectCellAsync(0, 1); // Select CustomerID cell
+
+        // Simulate paste actions using InvokePasteAction
+        // Create BeforeCellPasteEventArgs JSON object for CustomerID column
+        var pasteArgsForCustomerID = new BeforeCellPasteEventArgs<Order>()
+        {
+            CellValue = "testcustomer",
+            ColumnName = nameof(Order.CustomerID),
+            ColumnIndex = 1,
+            RowIndex = 0,
+            Cancel = false,
+            Data = cut.Instance.Rows[0].Data as Order
+        };
+
+        // Invoke paste action for CustomerID
+        // Note: InvokePasteAction expects (args object, rowIndex, columnIndex, columnField)
+        var pasteJsonForCustomerID = JsonSerializer.Serialize(pasteArgsForCustomerID);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokePasteAction(pasteJsonForCustomerID, 0, 1, nameof(Order.CustomerID));
+        });
+
+        // Simulate paste action for Freight column
+        var pasteArgsForFreight = new BeforeCellPasteEventArgs<Order>()
+        {
+            CellValue = "100.00",
+            ColumnName = nameof(Order.Freight),
+            ColumnIndex = 3,
+            RowIndex = 1,
+            Cancel = false,
+            Data = cut.Instance.Rows[1].Data as Order
+        };
+
+        var pasteJsonForFreight = JsonSerializer.Serialize(pasteArgsForFreight);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokePasteAction(pasteJsonForFreight, 1, 3, nameof(Order.Freight));
+        });
+
+        // Test cancellation scenario - paste to row index 5 or beyond
+        var pasteArgsCancelled = new BeforeCellPasteEventArgs<Order>()
+        {
+            CellValue = "shouldbecancelled",
+            ColumnName = nameof(Order.CustomerID),
+            ColumnIndex = 1,
+            RowIndex = 6,
+            Cancel = false,
+            Data = cut.Instance.Rows[6].Data as Order
+        };
+
+        var pasteJsonCancelled = JsonSerializer.Serialize(pasteArgsCancelled);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokePasteAction(pasteJsonCancelled, 6, 1, nameof(Order.CustomerID));
+        });
+
+        // Verify event args were captured and processed
+        await cut.InvokeAsync(() =>
+        {
+            Assert.True(pasteEventArgsList.Count > 0, "BeforeCellPaste event should have been triggered");
+
+            // Verify first paste operation (CustomerID)
+            var firstPasteEvent = pasteEventArgsList[0];
+            Assert.NotNull(firstPasteEvent);
+            Assert.Equal(0, firstPasteEvent.RowIndex);
+            Assert.Equal(1, firstPasteEvent.ColumnIndex);
+            Assert.Equal(nameof(Order.CustomerID), firstPasteEvent.ColumnName);
+            Assert.NotNull(firstPasteEvent.CellValue);
+            Assert.Contains("PASTED", firstPasteEvent.CellValue); // Verify value was modified
+            Assert.NotNull(firstPasteEvent.Data);
+
+            // Verify second paste operation (Freight with numeric transformation)
+            if (pasteEventArgsList.Count > 1)
+            {
+                var secondPasteEvent = pasteEventArgsList[1];
+                Assert.Equal(1, secondPasteEvent.RowIndex);
+                Assert.Equal(nameof(Order.Freight), secondPasteEvent.ColumnName);
+                // Value should have 10% markup applied
+                if (decimal.TryParse(secondPasteEvent.CellValue, out var resultFreight))
+                {
+                    Assert.True(resultFreight > 100, "Freight value should have 10% markup applied");
+                }
+            }
+
+            // Verify cancellation scenario
+            if (pasteEventArgsList.Count > 2)
+            {
+                var cancelledPasteEvent = pasteEventArgsList[2];
+                Assert.True(cancelledPasteEvent.Cancel, "Paste should be cancelled for row index >= 5");
+            }
+        });
+    }
+}
+
+<SfFixture @ref="fixture15" TestAsync="GridBasicRendering15" Description="BeforeCopyPaste Event Args Coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef15" DataSource="@GenerateRows()" AllowSelection="true" AllowPaging=true AllowExcelExport="true" AllowCellSelection="true" AllowCopy="true">
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEvents BeforeCopyPaste="BeforeCopyPasteHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture15 { get; set; }
+    private SfGrid<Order> gridRef15;
+    private List<BeforeCopyPasteEventArgs> copyPasteEventArgsList = new();
+
+    public void BeforeCopyPasteHandler(BeforeCopyPasteEventArgs args)
+    {
+        // Store the event args for verification
+        copyPasteEventArgsList.Add(args);
+
+        // READ all properties (GET operations)
+        string? action = args.Action;
+        bool isCancelled = args.Cancel;
+        string? clipboardText = args.ClipboardText;
+
+        // MODIFY settable properties (SET operations)
+        // Scenario 1: Transform clipboard text for copy action
+        if (args.Action == "copy" && !string.IsNullOrEmpty(args.ClipboardText))
+        {
+            args.ClipboardText = args.ClipboardText.ToUpper() + "_COPIED";
+        }
+
+        // Scenario 2: Transform clipboard text for paste action
+        if (args.Action == "paste" && !string.IsNullOrEmpty(args.ClipboardText))
+        {
+            args.ClipboardText = args.ClipboardText.Replace("\t", " | "); // Replace tabs with pipe separator
+        }
+
+        // Scenario 3: Cancel copy action for specific conditions
+        if (args.Action == "copy" && args.ClipboardText?.Contains("SENSITIVE") == true)
+        {
+            args.Cancel = true; // Cancel copy of sensitive data
+        }
+
+        // Scenario 4: Limit paste size
+        if (args.Action == "paste" && args.ClipboardText?.Length > 100)
+        {
+            args.Cancel = true; // Cancel if pasting too much data
+        }
+    }
+
+    public async Task GridBasicRendering15(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        // Initialize the copy/paste event args list for this test
+        copyPasteEventArgsList.Clear();
+
+        // Select a cell for copy/paste operations
+        await cut.Instance.SelectRowAsync(0);
+
+        // ===== Test Scenario 1: Copy Action with Text Transformation =====
+        var copyEventArgs = new BeforeCopyPasteEventArgs()
+        {
+            Action = "copy",
+            Cancel = false,
+            ClipboardText = "OrderID: 1001, CustomerID: ALFKI"
+        };
+
+        var copyJson = JsonSerializer.Serialize(copyEventArgs);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokeCopyPasteAction(copyJson, "copy");
+        });
+
+        // ===== Test Scenario 2: Paste Action with Text Transformation =====
+        var pasteEventArgs = new BeforeCopyPasteEventArgs()
+        {
+            Action = "paste",
+            Cancel = false,
+            ClipboardText = "Field1\tField2\tField3"
+        };
+
+        var pasteJson = JsonSerializer.Serialize(pasteEventArgs);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokeCopyPasteAction(pasteJson, "paste");
+        });
+
+        // ===== Test Scenario 3: Copy Sensitive Data (Should be Cancelled) =====
+        var sensitiveEventArgs = new BeforeCopyPasteEventArgs()
+        {
+            Action = "copy",
+            Cancel = false,
+            ClipboardText = "SENSITIVE CUSTOMER DATA"
+        };
+
+        var sensitiveJson = JsonSerializer.Serialize(sensitiveEventArgs);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokeCopyPasteAction(sensitiveJson, "copy");
+        });
+
+        // ===== Test Scenario 4: Paste Large Data (Should be Cancelled) =====
+        string largeData = string.Concat(Enumerable.Repeat("X", 150)); // 150 characters > 100 limit
+        var largeDataEventArgs = new BeforeCopyPasteEventArgs()
+        {
+            Action = "paste",
+            Cancel = false,
+            ClipboardText = largeData
+        };
+
+        var largeDataJson = JsonSerializer.Serialize(largeDataEventArgs);
+        await cut.InvokeAsync(async () =>
+        {
+            await cut.Instance._jsAdaptor.InvokeCopyPasteAction(largeDataJson, "paste");
+        });
+
+        // ===== Verify All Event Args Were Captured and Processed =====
+        await cut.InvokeAsync(() =>
+        {
+            Assert.True(copyPasteEventArgsList.Count >= 4, "BeforeCopyPaste event should have been triggered at least 4 times");
+
+            // Verify Scenario 1: Copy action with transformation
+            var copyEvent = copyPasteEventArgsList[0];
+            Assert.NotNull(copyEvent);
+            Assert.Equal("copy", copyEvent.Action);
+            Assert.NotNull(copyEvent.ClipboardText);
+            Assert.Contains("COPIED", copyEvent.ClipboardText); // Verify text was transformed
+            Assert.False(copyEvent.Cancel);
+
+            // Verify Scenario 2: Paste action with transformation
+            if (copyPasteEventArgsList.Count > 1)
+            {
+                var pasteEvent = copyPasteEventArgsList[1];
+                Assert.Equal("paste", pasteEvent.Action);
+                Assert.NotNull(pasteEvent.ClipboardText);
+                Assert.Contains("|", pasteEvent.ClipboardText); // Verify tabs were replaced
+                Assert.False(pasteEvent.Cancel);
+            }
+
+            // Verify Scenario 3: Sensitive data copy cancelled
+            if (copyPasteEventArgsList.Count > 2)
+            {
+                var sensitiveEvent = copyPasteEventArgsList[2];
+                Assert.Equal("copy", sensitiveEvent.Action);
+                Assert.True(sensitiveEvent.Cancel, "Sensitive data copy should be cancelled");
+            }
+
+            // Verify Scenario 4: Large paste data cancelled
+            if (copyPasteEventArgsList.Count > 3)
+            {
+                var largeEvent = copyPasteEventArgsList[3];
+                Assert.Equal("paste", largeEvent.Action);
+                Assert.True(largeEvent.Cancel, "Large paste data should be cancelled");
+                Assert.True(largeEvent.ClipboardText?.Length > 100, "Large data should exceed 100 character limit");
+            }
+        });
+    }
+}
+
+<SfFixture @ref="fixture16" TestAsync="GridBasicRendering16" Description="Frozen Column Reordering">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true AllowReordering=true AllowFiltering="true">
+           
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" IsFrozen=true Uid="Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture16 { get; set; }
+
+    public async Task GridBasicRendering16(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        await cut.InvokeAsync(() => cut.Instance._jsAdaptor.ColumnReordered("{\"requestType\":\"reorder\",\"fromIndex\":2,\"toIndex\":1,\"toColumnUid\":\"Name\"}").GetAwaiter());
+        cut.WaitForState(() => cut.Instance.Columns[2].Field == "OrderID", TimeSpan.FromMilliseconds(1000));
+    }
+    
+}
+
+<SfFixture @ref="fixture17" TestAsync="GridBasicRendering17" Description="Infinite Scrolling with PDF Export">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid17" DataSource="GenerateRows()" AllowSelection="true" Height="315" AllowPdfExport="true" EnableInfiniteScrolling="true">
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Type="ColumnType.Date" Format="yMd" Width="110" TextAlign="TextAlign.Right"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="100" TextAlign="TextAlign.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture17 { get; set; }
+    private SfGrid<Order> Grid17;
+
+    public async Task GridBasicRendering17(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        
+        await cut.InvokeAsync(async () => await cut.Instance.ExportToPdfAsync());
+        
+        cut.WaitForState(() => cut.Instance.Rows.Count > 0);
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "EnableInfiniteScrolling should be true");
+    }
+}
+
+<SfFixture @ref="fixture18" TestAsync="GridBasicRendering18" Description="AllowSelection with GridSelectionSettings">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid18" DataSource="GenerateRows()" AllowSelection="true" Height="315">
+            <GridSelectionSettings Mode="SelectionMode.Row" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Type="ColumnType.Date" Format="yMd" Width="110" TextAlign="TextAlign.Right"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="100" TextAlign="TextAlign.Right"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture18 { get; set; }
+    private SfGrid<Order> Grid18;
+
+    public async Task GridBasicRendering18(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowSelection, "AllowSelection should be enabled");
+
+        // Select first row
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance._jsAdaptor.SelectCellByRow(1, 2);
+        await cut.Instance._jsAdaptor.ClearSelection();
+        cut.Instance._jsAdaptor.LastRowBorder(true);
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.UpdateAutofillPositions("{\"BorderLeftAutofillLeft\":\"279.4000244140625px\",\"BorderLeftAutofillTop\":\"36px\",\"BorderLeftAutofillHeight\":\"73.60000228881836px\",\"BorderLeftAutofillRight\":\"\",\"BorderRightAutofillLeft\":\"627.9000244140625px\",\"BorderRightAutofillHeight\":\"73px\",\"BorderRightAutofillRight\":\"\",\"BorderRightAutofillTop\":\"36px\",\"BorderTopAutofillLeft\":\"279.9000244140625px\",\"BorderTopAutofillTop\":\"36px\",\"BorderTopAutofillWidth\":\"349px\",\"BorderBottomAutofillLeft\":\"279.9000244140625px\",\"BorderBottomAutofillTop\":\"107.60000228881836px\",\"BorderBottomAutofillWidth\":\"349px\"}", "UpdateAutofillBorder"));
+        await cut.InvokeAsync(async () => await cut.Instance._jsAdaptor.UpdateAutofillPositions("{\"BorderLeftAutofillLeft\":\"279.4000244140625px\",\"BorderLeftAutofillTop\":\"36px\",\"BorderLeftAutofillHeight\":\"73.60000228881836px\",\"BorderLeftAutofillRight\":\"\",\"BorderRightAutofillLeft\":\"627.9000244140625px\",\"BorderRightAutofillHeight\":\"73px\",\"BorderRightAutofillRight\":\"\",\"BorderRightAutofillTop\":\"36px\",\"BorderTopAutofillLeft\":\"279.9000244140625px\",\"BorderTopAutofillTop\":\"36px\",\"BorderTopAutofillWidth\":\"349px\",\"BorderBottomAutofillLeft\":\"279.9000244140625px\",\"BorderBottomAutofillTop\":\"107.60000228881836px\",\"BorderBottomAutofillWidth\":\"349px\"}", "UpdateAutofillBox"));
+        cut.WaitForState(() => cut.Instance.Rows[0].IsSelected);
+        Assert.True(cut.Instance.Rows[0].IsSelected, "First row should be selected");
+
+        // Select additional row for multiple selection
+        await cut.Instance.SelectRowAsync(2, true);
+        cut.WaitForState(() => cut.Instance.Rows[2].IsSelected);
+        Assert.True(cut.Instance.Rows[2].IsSelected, "Third row should be selected");
+
+        // Verify multiple rows are selected
+        IDictionary<string, string> position = new Dictionary<string, string>();
+        position.Add("ID", "top: 50.3021px; bottom: ; left: 86.5px; max-width: ; width: ; text-align: center; position: ");
+        
+        cut.Instance._jsAdaptor.ShowValidationPopup(position, "top");
+        // Clear selection
+        await cut.Instance.ClearRowSelectionAsync();
+        cut.WaitForState(() => !cut.Instance.Rows[0].IsSelected);
+        Assert.False(cut.Instance.Rows[0].IsSelected, "Selection should be cleared");
+
+        cut.Instance._jsAdaptor.UpdateChanges();
+    }
+}

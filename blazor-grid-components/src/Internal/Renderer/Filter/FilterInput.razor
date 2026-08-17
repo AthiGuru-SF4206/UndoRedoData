@@ -1,0 +1,1463 @@
+@using Microsoft.AspNetCore.Components.Web;
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Calendars
+@using System.Timers;
+@using System.Text.RegularExpressions
+@using System.Globalization
+@using Syncfusion.Blazor.Internal;
+@using Syncfusion.Blazor.Data;
+@using Syncfusion.Blazor.Grids.Internal;
+
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+<td class="@GetClass(FilterInputParameters!.Column!)" data-sf-style="@GetStyles(FilterInputParameters.Column!)" e-mappinguid="@FilterInputParameters.Column?.Uid" role="gridcell">
+    <div class="@GetDivClass()">
+        @if (FilterInputParameters.Column != null && FilterInputParameters.Column.FilterTemplate != null && FilterInputParameters.Column.Visible)
+        {
+            var FilterObject = new PredicateModel() { Field = FilterInputParameters.FieldName!, Value = FilterInputParameters.FilterValue!, ActualValue = FilterInputParameters.ActualValue!, Uid = FilterInputParameters.Column.Uid, Predicate = FilterInputParameters.Predicate!, IgnoreAccent = FilterInputParameters.IgnoreAccent, MatchCase = FilterInputParameters.MatchCase };
+            @FilterInputParameters.Column.FilterTemplate(FilterObject);
+        }
+        else if (FilterInputParameters.CellType?.Equals("indent") != true && FilterInputParameters.CellType?.Equals("detailindent") != true && FilterInputParameters.CellType?.Equals("rowdrag") != true && !FilterInputParameters.IsCheckbox && FilterInputParameters.Column?.Visible == true)
+        {
+            @if (ShouldShowOperatorDropdown())
+            {
+  
+                <div class="e-enhanced-filter-input">
+                    @switch (FilterInputParameters.Column?.Type)
+                    {
+                        case ColumnType.String:
+                            
+                            <SfTextBox @ref="StringTextBoxComponent"
+                                       type="InputType.Search"
+                                       Width="100%"
+                                       id="@($"{FilterInputParameters.Column?.Field}_value")"
+                                       Value="@StringInputValue"
+                                       placeholder="@GetPlaceholder()"
+                                       @oninput="@((ChangeEventArgs e) => OnStringInputChanged(e))"
+                                       @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                       Enabled="@(GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type))"
+                                       aria-disabled="@(!GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type))"
+                                       role="searchbox"
+                                       aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                            </SfTextBox>
+                            break;
+
+                        case ColumnType.Integer:
+                        case ColumnType.Double:
+                        case ColumnType.Long:
+                        case ColumnType.Decimal:
+                            @if (Filter<TContent>.IsNumericInteger(FilterInputParameters.Column))
+                            {
+                                <SfNumericTextBox TValue="int?" @ref="NumericValueAsInt"
+                                                  ShowSpinButton="@(!_isDeviceMode)"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_numeric_int")"
+                                                  Value="@(FilterValue as int?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnNumericIntInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Step="1"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <NumericTextBoxEvents TValue="int?" ValueChange="@((Syncfusion.Blazor.Inputs.ChangeEventArgs<int?> e) => OnNumericValueChanged(e.Value))"></NumericTextBoxEvents>
+                                </SfNumericTextBox>
+                            }
+                            else if (Filter<TContent>.IsNumericLong(FilterInputParameters.Column))
+                            {
+                                <SfNumericTextBox TValue="long?" @ref="NumericValueAsLong"
+                                                  ShowSpinButton="@(!_isDeviceMode)"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_numeric_long")"
+                                                  Value="@(FilterValue as long?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnNumericLongInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Step="1"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <NumericTextBoxEvents TValue="long?" ValueChange="@((Syncfusion.Blazor.Inputs.ChangeEventArgs<long?> e) => OnNumericValueChangedLong(e.Value))"></NumericTextBoxEvents>
+                                </SfNumericTextBox>
+                            }
+                            else if (Filter<TContent>.IsNumericDecimal(FilterInputParameters.Column))
+                            {
+                                <SfNumericTextBox TValue="decimal?" @ref="NumericValueAsDecimal"
+                                                  ShowSpinButton="@(!_isDeviceMode)"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_numeric_decimal")"
+                                                  Value="@(FilterValue as decimal?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnNumericDecimalInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Step="@(0.01m)"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <NumericTextBoxEvents TValue="decimal?" ValueChange="@((Syncfusion.Blazor.Inputs.ChangeEventArgs<decimal?> e) => OnNumericValueChangedDecimal(e.Value))"></NumericTextBoxEvents>
+                                </SfNumericTextBox>
+                            }
+                            else
+                            {
+                                <SfNumericTextBox TValue="double?" @ref="NumericValueAsDouble"
+                                                  ShowSpinButton="@(!_isDeviceMode)"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_numeric_double")"
+                                                  Value="@(FilterValue as double?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnNumericDoubleInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Step="0.01"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <NumericTextBoxEvents TValue="double?" ValueChange="@((Syncfusion.Blazor.Inputs.ChangeEventArgs<double?> e) => OnNumericValueChangedDouble(e.Value))"></NumericTextBoxEvents>
+                                </SfNumericTextBox>
+                            }
+                            break;
+
+                        case ColumnType.Date:
+                        case ColumnType.DateOnly:
+                            @if (Filter<TContent>.IsDateOnlyColumn(FilterInputParameters.Column))
+                            {
+                                <SfDatePicker TValue="DateTime?" @ref="DatePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_date_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as DateTime?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnDateInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DatePickerEvents TValue="DateTime?" ValueChange="@OnDateValueChanged"></DatePickerEvents>
+                                </SfDatePicker>
+                            }
+                            else
+                            {
+                                <SfDatePicker TValue="DateTime?" @ref="DatePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_date_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as DateTime?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnDateInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DatePickerEvents TValue="DateTime?" ValueChange="@OnDateValueChanged"></DatePickerEvents>
+                                </SfDatePicker>
+                            }
+                            break;
+
+                        case ColumnType.DateTime:
+                            @if (Filter<TContent>.IsDateTimeColumn(FilterInputParameters.Column))
+                            {
+                                <SfDateTimePicker TValue="DateTime?" @ref="DateTimePickerComponent"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_datetime_{_invalidInputCalendarRefreshKey}")"
+                                                  Value="@(FilterValue as DateTime?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnDateTimeInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DateTimePickerEvents TValue="DateTime?" ValueChange="@OnDateTimeValueChanged"></DateTimePickerEvents>
+                                </SfDateTimePicker>
+                            }
+                            else
+                            {
+                                <SfDateTimePicker TValue="DateTime?" @ref="DateTimePickerComponent"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_datetime_{_invalidInputCalendarRefreshKey}")"
+                                                  Value="@(FilterValue as DateTime?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnDateTimeInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DateTimePickerEvents TValue="DateTime?" ValueChange="@OnDateTimeValueChanged"></DateTimePickerEvents>
+                                </SfDateTimePicker>
+                            }
+                            break;
+
+                        case ColumnType.TimeOnly:
+                            @if (Filter<TContent>.IsTimeOnlyColumn(FilterInputParameters.Column))
+                            {
+                                <SfTimePicker TValue="TimeOnly?" @ref="TimePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_time_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as TimeOnly?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnTimeInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <TimePickerEvents TValue="TimeOnly?" ValueChange="@OnTimeValueChanged"></TimePickerEvents>
+                                </SfTimePicker>
+                            }
+                            else
+                            {
+                                <SfTimePicker TValue="TimeOnly?" @ref="TimePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_time_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as TimeOnly?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnTimeInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <TimePickerEvents TValue="TimeOnly?" ValueChange="@OnTimeValueChanged"></TimePickerEvents>
+                                </SfTimePicker>
+                            }
+                            break;
+
+                        case ColumnType.Boolean:
+                            <SfDropDownList @ref="BooleanDropDown"
+                                            Width="100%"
+                                            @key="@($"{FilterInputParameters.Column?.Uid}_boolean")"
+                                            TValue="bool?"
+                                            TItem="BooleanOption"
+                                            DataSource="@BooleanOptions"
+                                            Value="@(FilterValue as bool?)"
+                                            ValueChanged="@OnBooleanValueChanged"
+                                            @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                            ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                            Placeholder="@GetPlaceholder()"
+                                            ShowClearButton="false"
+                                            aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                            </SfDropDownList>
+                            break;
+
+                        default:
+                            @if (Filter<TContent>.IsDateColumn(FilterInputParameters.Column))
+                            {
+                                <SfDatePicker TValue="DateTime?" @ref="DatePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_date_fallback_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as DateTime?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnDateInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DatePickerEvents TValue="DateTime?" ValueChange="@OnDateValueChanged"></DatePickerEvents>
+                                </SfDatePicker>
+                            }
+                            else if (Filter<TContent>.IsDateTimeColumn(FilterInputParameters.Column))
+                            {
+                                <SfDateTimePicker TValue="DateTime?" @ref="DateTimePickerComponent"
+                                                  Width="100%"
+                                                  @key="@($"{FilterInputParameters.Column?.Uid}_datetime_fallback_{_invalidInputCalendarRefreshKey}")"
+                                                  Value="@(FilterValue as DateTime?)"
+                                                  Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                                  @oninput="@((ChangeEventArgs e) => OnDateTimeInput(e))"
+                                                  @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                                  Format="@FilterInputParameters.Column?.Format"
+                                                  Placeholder="@GetPlaceholder()"
+                                                  ShowClearButton="false"
+                                                  ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                                  aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <DateTimePickerEvents TValue="DateTime?" ValueChange="@OnDateTimeValueChanged"></DateTimePickerEvents>
+                                </SfDateTimePicker>
+                            }
+                            else if (Filter<TContent>.IsTimeOnlyColumn(FilterInputParameters.Column))
+                            {
+                                <SfTimePicker TValue="TimeOnly?" @ref="TimePickerComponent"
+                                              Width="100%"
+                                              @key="@($"{FilterInputParameters.Column?.Uid}_time_fallback_{_invalidInputCalendarRefreshKey}")"
+                                              Value="@(FilterValue as TimeOnly?)"
+                                              Enabled="@GetInputEnabledState(CurrentOperator, FilterInputParameters.Column?.Type)"
+                                              @oninput="@((ChangeEventArgs e) => OnTimeInput(e))"
+                                              @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                              Format="@FilterInputParameters.Column?.Format"
+                                              Placeholder="@GetPlaceholder()"
+                                              ShowClearButton="false"
+                                              ID="@($"{FilterInputParameters.Column?.Field}_value")"
+                                              aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")">
+                                    <TimePickerEvents TValue="TimeOnly?" ValueChange="@OnTimeValueChanged"></TimePickerEvents>
+                                </SfTimePicker>
+                            }
+                            else
+                            {
+                                <SfTextBox type="InputType.Text"
+                                           class="e-control e-textbox e-lib e-input"
+                                           value="@FilteredValue"
+                                           @oninput="@((ChangeEventArgs e) => OnStringInputChanged(e))"
+                                           @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))"
+                                           placeholder="@GetPlaceholder()"
+                                           id="@($"{FilterInputParameters.Column?.Field}_value")"
+                                           aria-label="@($"Filter value for {FilterInputParameters.Column?.Field}")"></SfTextBox>
+                            }
+                            break;
+                    }
+                </div>
+                <div class="e-filter-icons-wrapper">
+                   
+                    <div class="@GetOperatorIconClass()"
+                         id="@($"filter_icon_{FilterInputParameters.Column?.Uid}")"
+                         @onmousedown="@OnIconMouseDown"
+                         @onclick="@OpenOperatorDropdown"
+                         @onclick:stopPropagation="true"
+                         @onkeydown="@((KeyboardEventArgs args) => OnIconKeyDown(args))"
+                         title="@(Parent?.Localizer?.GetText(GridLocaleKeys.FilterOperator) ?? "Filter Operator")"
+                         role="button"
+                         tabindex="0"
+                         aria-label="@GetOperatorIconAriaLabel()"></div>
+                    
+                    <span class="@GetClearIconClass()" 
+                          @onclick="@((MouseEventArgs e) => HasActiveFilter() ? OnClearIconClick(e, FilterInputParameters.Column!) : Task.CompletedTask)"
+                          @onkeydown="@((KeyboardEventArgs args) => HasActiveFilter() ? OnClearIconKeyDown(args, FilterInputParameters.Column!) : Task.CompletedTask)"
+                          title="@(Parent?.Localizer?.GetText(GridLocaleKeys.ClearFilter) ?? "Clear Filter")" 
+                          role="button"
+                          tabindex="@(HasActiveFilter() ? "0" : "-1")"
+                          aria-label="@($"Clear filter for {FilterInputParameters.Column?.Field}")"
+                          aria-disabled="@(!HasActiveFilter())"></span>
+                </div>
+                
+                <SfDropDownList @ref="OperatorDropDown"
+                                @key="@($"{FilterInputParameters.Column?.Uid}_operator")"
+                                TValue="string"
+                                TItem="OperatorItem"
+                                DataSource="@AvailableOperators"
+                                @bind-Value="@CurrentOperator"
+                                ID="@($"{FilterInputParameters.Column?.Field}_operator")"
+                                Placeholder=""
+                                CssClass="e-enhanced-operator-dropdown"
+                                PopupHeight="300px"
+                                PopupWidth="160px"
+                                TabIndex="@OperatorDropdownTabIndex">
+                    <DropDownListFieldSettings Text="Text" Value="Value"></DropDownListFieldSettings>
+                    <DropDownListEvents TValue="string" TItem="OperatorItem" ValueChange="@((Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, OperatorItem> e) => OnOperatorChanged(e))" Closed="@((Syncfusion.Blazor.DropDowns.ClosedEventArgs args) => OnOperatorDropdownClosed(args))"></DropDownListEvents>
+                </SfDropDownList>
+            }
+            else
+            {
+                if (FilterInputParameters.FilterValue != null && !string.IsNullOrEmpty(FilterInputParameters.FilterValue.ToString()) && (FilterInputParameters.Column?.Type == ColumnType.Date || FilterInputParameters.Column?.Type == ColumnType.DateTime) && FilterInputParameters.Column?.Format != null)
+                {
+                    if (FilterInputParameters.Column?.ValueType == typeof(DateTimeOffset?) || FilterInputParameters.Column?.ValueType == typeof(DateTimeOffset))
+                    {
+                        FilterInputParameters.FilterValue = FilterInputParameters.FilterValue is string ? FilterInputParameters.FilterValue : ((DateTimeOffset)FilterInputParameters.FilterValue).ToString(FilterInputParameters.Column.Format, System.Globalization.CultureInfo.CurrentCulture);
+                    }
+                    else if (FilterInputParameters.FilterValue?.GetType() == typeof(DateTime))
+                    {
+                        FilterInputParameters.FilterValue = ((DateTime)FilterInputParameters.FilterValue).ToString(FilterInputParameters.Column?.Format, System.Globalization.CultureInfo.CurrentCulture);
+                    }
+                }
+                if (FilterInputParameters.FilterValue != null && !string.IsNullOrEmpty(FilterInputParameters.FilterValue.ToString()) && FilterInputParameters.FilterValue.GetType().IsEnum)
+                {
+                    if (FilterInputParameters.FilterValue is Enum enumValue)
+                    {
+                        FilterInputParameters.FilterValue = MetadataExtension.GetDisplayName(enumValue);
+                    }
+                }
+                string? Val = FilterInputParameters.FilterValue == null || string.IsNullOrEmpty(FilterInputParameters.FilterValue.ToString()) ? null : FilterInputParameters.Column?.Format != null && (FilterInputParameters.Column?.Type == ColumnType.DateOnly) ? Filter<TContent>.ConvertToDesiredDateFormat(FilterInputParameters.FilterValue.ToString()!, FilterInputParameters.Column?.Format!, FilterInputParameters.Column!.Type, false) : FilterInputParameters.FilterValue.ToString();
+                <span class="e-input-group e-control-container e-control-wrapper @InputFocus">
+                    <input id="@($"{FilterInputParameters.Column?.Field}_filterBarcell")" @attributes="GetHtmlAttributes(Title!, FilterInputParameters.Column!)" autocomplete="on" type="search" class="e-control e-textbox e-lib e-input" @key="FilterInputParameters.Column?.Uid" value="@Val" @oninput="@((e) => UpdateValue(e))" @onkeydown="@((KeyboardEventArgs args) => KeyDownHandler(args, FilterInputParameters.Column!))" @onblur="@OnBlur" @onfocus="@OnFocus" name="@($"{FilterInputParameters.Column?.Field}_filterBarcell")" role="searchbox" aria-disabled=false tabindex=0 aria-label="@($"{FilterInputParameters.Column?.Field}_{Parent?.Localizer?.GetText(GridLocaleKeys.FilterBar)}")">
+                    @if (FilterInputParameters.Column?.FilterClearIcon == "e-clear-icon")
+                    {
+                        <span class="@FilterInputParameters.Column.FilterClearIcon" @onclick="@((e) => CancelIconClick(e, FilterInputParameters.Column))"
+                        title="@Parent?.Localizer?.GetText(GridLocaleKeys.ClearButton)" role="button"></span>
+                    }
+                    else
+                    {
+                        <span class="e-clear-icon e-clear-icon-hide" title="@Parent?.Localizer?.GetText(GridLocaleKeys.ClearButton)" role="button" />
+                    }
+                </span>
+            }
+        }
+    </div>
+    @if (FilterInputParameters.Column != null && FilterInputParameters.Column.EnableFrozenLineCursor)
+    {
+        string cursorClass = string.Empty;
+        if (FilterInputParameters.Column.EnableLeftFrozenLineCursor)
+        {
+            cursorClass = "e-frozen-cursor e-frozen-right-cursor e-frozen-default-cursor";
+        }
+        else if (FilterInputParameters.Column.EnableRightFrozenLineCursor)
+        {
+            cursorClass = "e-frozen-cursor e-frozen-left-cursor e-frozen-default-cursor";
+        }
+        if (FilterInputParameters.IsFrozen.HasValue && FilterInputParameters.IsFrozen == true)
+        {
+            cursorClass = FilterInputParameters.IsFrozenRight == true ? "e-frozen-cursor e-frozen-right-cursor" : "e-frozen-cursor e-frozen-left-cursor";
+        }
+        if (Parent != null && Parent.AllowResizing && FilterInputParameters.Column?.AllowResizing == true)
+        {
+            cursorClass = string.Concat(cursorClass, " e-frozen-resize-cursor");
+        }
+        <div class="@(cursorClass)"></div>
+    }
+</td>
+
+
+@code {
+    [Parameter]
+    public FilterInputParameters? FilterInputParameters { get; set; }
+
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+
+    private System.Timers.Timer? aTimer;
+
+    public string FilteredValue { get; set; } = string.Empty;
+
+    private GridColumn? FilteredColumn { get; set; }
+    public string? FilterOperator { get; set; }
+    public bool IsInputEventTriggered { get; set; }
+    private string? InputFocus { get; set; }
+    private string? Title { get; set; }
+    private object? FilterValue { get; set; }
+    private Syncfusion.Blazor.DropDowns.SfDropDownList<string, OperatorItem>? OperatorDropDown { get; set; }
+    private List<OperatorItem> AvailableOperators { get; set; } = new List<OperatorItem>();
+    private string CurrentOperator { get; set; } = string.Empty;
+    private bool IsOperatorDropdownOpen { get; set; } = false;
+    private bool _wasOpenOnMouseDown = false;
+    private int OperatorDropdownTabIndex { get; set; } = -1;
+
+    private Syncfusion.Blazor.Inputs.SfTextBox? StringTextBoxComponent { get; set; }
+    private Syncfusion.Blazor.Inputs.SfNumericTextBox<int?>? NumericValueAsInt { get; set; }
+    private Syncfusion.Blazor.Inputs.SfNumericTextBox<long?>? NumericValueAsLong { get; set; }
+    private Syncfusion.Blazor.Inputs.SfNumericTextBox<double?>? NumericValueAsDouble { get; set; }
+    private Syncfusion.Blazor.Inputs.SfNumericTextBox<decimal?>? NumericValueAsDecimal { get; set; }
+    private Syncfusion.Blazor.Calendars.SfDatePicker<DateTime?>? DatePickerComponent { get; set; }
+    private Syncfusion.Blazor.Calendars.SfDateTimePicker<DateTime?>? DateTimePickerComponent { get; set; }
+    private Syncfusion.Blazor.Calendars.SfTimePicker<TimeOnly?>? TimePickerComponent { get; set; }
+    private Syncfusion.Blazor.DropDowns.SfDropDownList<bool?, BooleanOption>? BooleanDropDown { get; set; }
+
+    private string StringInputValue { get; set; } = string.Empty;
+    private List<BooleanOption> BooleanOptions { get; set; } = new();
+    private bool _userInitiatedClear = false;
+    private bool _isDeviceMode = false;
+    private int _invalidInputCalendarRefreshKey = 0;
+
+
+    private bool ShouldShowOperatorDropdown()
+    {
+        if (Parent?.FilterSettings?.ShowFilterBarOperator != true)
+        {
+            return false;
+        }
+
+        return FilterInputParameters?.Column?.FilterSettings?.ShowFilterBarOperator ?? true;
+    }
+
+    private string GetDivClass()
+    {
+        bool isFiltertemplate = (FilterInputParameters != null && FilterInputParameters.Column != null && FilterInputParameters.Column.FilterTemplate != null && FilterInputParameters.Column.Visible);
+        return ShouldShowOperatorDropdown() && !isFiltertemplate
+            ? "e-filterdiv e-enhancement-filterbar" 
+            : "e-filterdiv e-fltrinputdiv";
+    }
+
+    private string GetOperatorIconClass()
+    {
+        return "e-icons e-filter";
+    }
+    private bool HasActiveFilter()
+    {
+        if (Filter<TContent>.IsNullOrEmptyOperator(CurrentOperator))
+        {
+            return true;
+        }
+
+        bool hasFilterValue = FilterValue != null;
+        bool hasFilteredValue = !string.IsNullOrEmpty(FilteredValue);
+
+        return hasFilterValue || hasFilteredValue;
+    }
+    private string GetOperatorIconAriaLabel()
+    {
+        if (HasActiveFilter())
+        {
+            return $"Filter operator for {FilterInputParameters?.Column?.Field}, currently filtered";
+        }
+        else
+        {
+            return $"Filter operator for {FilterInputParameters?.Column?.Field}";
+        }
+    }
+
+    private string GetClearIconClass()
+    {
+        if (HasActiveFilter())
+        {
+            return "e-icons e-filter-clear e-filter-clear-active";
+        }
+        else
+        {
+            return "e-icons e-filter-clear e-filter-clear-disabled";
+        }
+    }
+    private void UpdateFilterDisplayState()
+    {
+
+        FilterInputParameters!.Column!.FilterClearIcon = 
+            HasActiveFilter() ? "e-clear-icon" : string.Empty;
+
+
+    }
+
+    private bool IsTemporalColumn(GridColumn? column)
+    {
+        if (column == null) return false;
+        return column.Type == ColumnType.Date 
+            || column.Type == ColumnType.DateTime 
+            || column.Type == ColumnType.DateOnly 
+            || column.Type == ColumnType.TimeOnly;
+    }
+    private bool HasInvalidTemporalInput(GridColumn column, string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+
+        return column.Type switch
+        {
+            ColumnType.Date => !DateTime.TryParse(input, CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out _),
+            ColumnType.DateTime => !DateTime.TryParse(input, CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out _),
+            ColumnType.DateOnly => !DateOnly.TryParse(input, CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out _),
+            ColumnType.TimeOnly => !TimeOnly.TryParse(input, CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.None, out _),
+            _ => false
+        };
+    }
+
+    private async Task OnClearIconClick(MouseEventArgs e, GridColumn column)
+    {
+        if (column == null) return;
+
+        if (IsTemporalColumn(column) && HasInvalidTemporalInput(column, FilteredValue))
+        {
+            _invalidInputCalendarRefreshKey++;
+        }
+
+        FilteredValue = string.Empty;
+        FilterValue = null;
+        StringInputValue = string.Empty;
+        CurrentOperator = Filter<TContent>.GetDefaultOperator(column.Type);
+        column.FilterClearIcon = string.Empty;
+        StopTimer();   
+
+        if (Parent?.FilterModule != null)
+        {
+            Parent.FilterModule.FilteredValue = string.Empty;
+            await Parent.FilterModule.RemoveFilterColumnByField(column?.Field!, column?.Uid!);
+        }
+        await Parent!.InvokeMethod("sfBlazor.Grid.searchClear", new object[]
+        {
+            Parent.DataId, $"{column?.Field}_filterBarcell"
+        });
+        await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+    }
+
+
+    private async Task OnClearIconKeyDown(KeyboardEventArgs args, GridColumn column)
+    {
+        if (column == null) return;
+
+        if (args?.Key == "Enter" || args?.Key == " ")
+        {
+
+            await OnClearIconClick(new MouseEventArgs(), column);
+        }
+    }
+
+    private async void DisplayTimeEvent(object source, ElapsedEventArgs s)
+    {
+        aTimer!.Stop();
+        aTimer.Enabled = false;
+        StopTimer();
+
+        if (ShouldShowOperatorDropdown())
+            await ProcessFilter_Enhanced(this.FilterInputParameters!.Column!).ConfigureAwait(true);
+
+        else
+            await ProcessFilter(this.FilterInputParameters!.Column!);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync().ConfigureAwait(true);
+        Parent?.EventAggregator.Add("FilterBarComponentUpdate", FilterBarCompUpdate);
+        if (ShouldShowOperatorDropdown() &&  FilterInputParameters?.Column != null)
+        {
+            if (FilterInputParameters.Column.ValueType == null && Parent != null)
+            {
+                Parent.SetColumnValueType();
+            }
+
+            LoadOperators();
+            LoadFilterValue();
+            InitializeBooleanOptions();
+
+            await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+        }
+    }
+    private void FilterBarCompUpdate(object args)
+    {
+        FilterValue = null;
+        StringInputValue = string.Empty;
+        Parent?.ClearFilteringAsync().GetAwaiter();
+        StateHasChanged();
+    }
+    private async Task<bool> CheckDeviceMode()
+    {
+        try
+        {
+            if (Parent != null)
+            {
+
+                bool isDevice = await Parent.InvokeMethod<bool>("sfBlazor.Grid.getIsDeviceMode", false);
+                return isDevice;
+            }
+        }
+        catch
+        {
+            return false;
+
+        }
+
+        return false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync().ConfigureAwait(true);
+        if (ShouldShowOperatorDropdown() && 
+            FilterInputParameters?.Column != null 
+            )
+        {
+            LoadOperators();
+            InitializeBooleanOptions();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender).ConfigureAwait(true);
+        if (Parent != null && ShouldShowOperatorDropdown() && FilterInputParameters?.Column != null)
+        {
+            Parent.EventAggregator.Add("CloseOperatorDropdown", OnCloseOperatorDropdownEvent);
+        }
+
+        if (Parent?.FilterSettings?.ShowFilterBarOperator == true && !_isDeviceMode)
+        {
+            _isDeviceMode = await CheckDeviceMode().ConfigureAwait(true);
+            if (_isDeviceMode)
+            {
+                StateHasChanged();
+            }
+            
+        }
+    }
+    private async void OnCloseOperatorDropdownEvent(object args)
+    {
+        if (!IsOperatorDropdownOpen)
+        {
+            return;
+        }
+        if (OperatorDropDown != null)
+        {
+            await OperatorDropDown.HidePopupAsync().ConfigureAwait(true);
+        }
+    }
+
+    private void StopTimer()
+    {
+        if (aTimer != null)
+        {
+            aTimer.Stop();
+            aTimer.Dispose();
+        }
+    }
+
+    private void StartTimer(KeyboardEventArgs Args, GridColumn Column)
+    {
+        this.FilterInputParameters!.Column = Column;
+        aTimer = new System.Timers.Timer();
+        aTimer.Elapsed += new System.Timers.ElapsedEventHandler(DisplayTimeEvent!);
+        aTimer.Interval = Args.Key == "Enter" ? 1 : Parent!.FilterSettings!.ImmediateModeDelay;
+        aTimer.Start();
+    }
+
+    private void TriggerImmediateFilterIfNeeded()
+    {
+        if (Parent?.FilterSettings?.Mode == FilterBarMode.Immediate)
+        {
+            StopTimer();
+            StartTimer(new KeyboardEventArgs() { }, this.FilterInputParameters!.Column!);
+        }
+    }
+
+    private async Task KeyDownHandler(KeyboardEventArgs args, GridColumn column)
+    {
+        this.FilterInputParameters!.Column = column;
+        var keyCombination = args?.GetKeyCombination();
+        HashSet<string> navigationKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Tab",
+            "ShiftTab",
+        };
+        if (args?.Key == "Enter")
+        {
+            StopTimer();
+            StartTimer(args, this.FilterInputParameters.Column);
+        }
+        if (args?.Key == "Tab" || args?.Key == "Enter")
+        {
+            this.FilterInputParameters.Column.FilterClearIcon = !string.IsNullOrEmpty(this.FilterInputParameters.Column?.FilterClearIcon) ? string.Empty : this.FilterInputParameters.Column?.FilterClearIcon!;
+        }
+        if (args?.Key == "Escape")
+        {
+            this.FilterInputParameters.Column!.FilterClearIcon = string.Empty;
+            if (Parent?.FilterSettings?.ShowFilterBarOperator == true)
+            {
+                FilteredValue = string.Empty;
+                FilterValue = null;
+                StringInputValue = string.Empty;
+                FilterInputParameters.FilterValue = string.Empty;
+                FilteredColumn = null!;
+                if (Parent?.FilteredColumns != null && Parent.FilteredColumns.Count > 0)
+                {
+                    Parent.FilteredColumns.Clear();
+                }
+
+                await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+            }
+            else
+            {
+                Parent!.FilterModule!.FilteredValue = string.Empty;
+                FilterInputParameters.FilterValue = string.Empty;
+                FilteredColumn = null!;
+                if (Parent?.FilteredColumns != null && Parent.FilteredColumns.Count > 0)
+                {
+                    TriggerImmediateFilterIfNeeded();
+                    Parent.FilteredColumns.Clear();
+                }
+            }
+        }
+        else if (keyCombination != null && navigationKeys.Contains(keyCombination))
+        {
+            await Parent!.InvokeMethod("sfBlazor.Grid.focusFilterBar", new object[] { Parent.DataId, keyCombination! });
+        }
+    }
+
+    private async Task ProcessFilter(GridColumn column)
+    {
+        object? value = null;
+        if (FilteredColumn != null && !(FilteredColumn.Equals(column)))
+        {
+            Parent!.FilterModule!.FilteredValue = string.Empty;
+        }
+        await InvokeAsync(async () =>
+        {
+            IsInputEventTriggered = false;
+            if (!string.IsNullOrEmpty(Parent?.FilterModule?.FilteredValue))
+            {
+                string formattedFilterValue = column?.Format != null && (column?.Type == ColumnType.Date || column?.Type == ColumnType.DateTime || column?.Type == ColumnType.DateOnly) ? Filter<TContent>.ConvertToDesiredDateFormat(Parent.FilterModule.FilteredValue, column.Format, column.Type) : Parent.FilterModule.FilteredValue;
+                value = Parent.FilterModule!.GetActualFilterValue(column!, formattedFilterValue);
+                string operatorStr = !string.IsNullOrEmpty(Parent.FilterModule.FilterOperatorProperty) ? Parent.FilterModule.FilterOperatorProperty : FilterOperator!;
+                await Parent?.FilterModule?.FilterByColumn(column?.Field!, Filter<TContent>.GetOperator(operatorStr), value!, null!, Parent.FilterSettings!.EnableCaseSensitivity, Parent.FilterSettings.IgnoreAccent, null, null, column?.Uid, Parent.FilterModule.RawInputValue)!;
+                if (Parent.FilteredColumns != null && Parent.FilteredColumns.Count > 1 && Parent.FilterSettings?.Mode != FilterBarMode.Immediate)
+                {
+                    List<string>? filteredFiledName = Parent.FilteredColumns?.Select(item => item?.Field)?.ToList()!;
+                    List<string> filteredActualValues = await Parent.FilterModule.GetPreviousFilteredValues();
+                    await Parent.InvokeMethod("sfBlazor.Grid.updateFilterBarCell", new object[] { Parent.DataId, filteredFiledName, filteredActualValues });
+                }
+            }
+            else
+                await Parent?.FilterModule?.RemoveFilterColumnByField(column?.Field!, column?.Uid!)!;
+        });
+    }
+
+    private void UpdateValue(Microsoft.AspNetCore.Components.ChangeEventArgs Args)
+    {
+        IsInputEventTriggered = true;
+        Parent!.FilterModule!.FilteredValue = Args?.Value?.ToString()!;
+        FilteredColumn = FilterInputParameters!.Column!;
+        TriggerImmediateFilterIfNeeded();
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(Parent.FilterModule.FilteredValue) ? Parent.FilterModule.FilteredValue : "e-clear-icon";
+    }
+
+    private async Task CancelIconClick(MouseEventArgs e, GridColumn column)
+    {
+        FilterInputParameters!.Column!.FilterClearIcon = string.Empty;
+
+        if (Parent?.FilterModule != null){
+            Parent.FilterModule.FilteredValue = string.Empty;
+            await Parent.FilterModule.RemoveFilterColumnByField(column?.Field!, column?.Uid!);
+        }
+        await Parent!.InvokeMethod("sfBlazor.Grid.searchClear", new object[]
+        {
+            Parent.DataId,  $"{FilterInputParameters.Column?.Field}_filterBarcell"
+        });
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnBlur()
+    {
+        InputFocus = string.Empty;
+    }
+
+    private void OnFocus()
+    {
+        InputFocus = "e-input-focus";
+        if ((Parent!.Columns!.Any(column => !string.IsNullOrEmpty(column.FilterClearIcon)) && !string.IsNullOrEmpty(Parent?.FilterModule?.FilteredValue)) || !string.IsNullOrEmpty(FilterInputParameters!.FilterValue?.ToString()))
+        {
+            FilterInputParameters!.Column!.FilterClearIcon = "e-clear-icon";
+        }
+    }
+
+    private string GetClass(GridColumn column)
+    {
+        string className = "e-filterbarcell";
+        if (string.IsNullOrEmpty(column?.Field)) { return className; }
+        GridGroupSettings? _settings = Parent!.GroupSettings!;
+        if (_settings != null && Parent.AllowGrouping && !_settings.ShowGroupedColumn && _settings.Columns != null && _settings.Columns.Any(x => x == column?.Field))
+        {
+            className += " e-hide";
+        }
+        if (column?.EnableFrozenLineCursor == true)
+        {
+            className += " e-freezeline";
+        }
+        var classFrozenName = Parent.FreezeModule!.ApplyFrozenColumnsClass(column!);
+        className = string.Concat(className, classFrozenName);
+        return className;
+    }
+
+    private string GetStyles(GridColumn column)
+    {
+        if (column == null)
+            return string.Empty;
+        String StylesName = Parent!.FreezeModule!.ApplyFrozenColumnsStyles(column);
+        return StylesName;
+    }
+
+    private void LoadOperators()
+    {
+        if (FilterInputParameters?.Column == null) return;
+
+        var operators = Parent?.FilterModule?.GetOperatorsByColumnType(FilterInputParameters.Column.Type) ?? new List<OperatorItem>();
+
+        AvailableOperators = operators;
+        CurrentOperator = Filter<TContent>.GetDefaultOperator(FilterInputParameters.Column.Type);
+
+        var existingFilter = Parent?.FilterSettings?.Columns?
+            .FirstOrDefault(c => c.Uid == FilterInputParameters.Column.Uid);
+        if (existingFilter != null)
+        {
+            CurrentOperator = existingFilter.Operator.ToString().ToLower();
+        }
+    }
+
+    private void LoadFilterValue()
+    {
+        if (FilterInputParameters?.Column == null) return;
+
+        if (_userInitiatedClear)
+            return;
+
+        var existingFilter = Parent?.FilterSettings?.Columns?
+            .FirstOrDefault(c => c.Uid == FilterInputParameters.Column.Uid);
+
+        if (existingFilter != null)
+        {
+            var rawValue = existingFilter.ActualValue ?? existingFilter.Value;
+
+            if (rawValue != null && FilterInputParameters.Column.ValueType != null)
+            {
+                try { FilterValue = SfBaseUtils.ChangeType(rawValue, FilterInputParameters.Column.ValueType); }
+                catch { FilterValue = rawValue; }
+            }
+            else
+            {
+                FilterValue = rawValue;
+            }
+
+            FilteredValue = FilterValue?.ToString() ?? string.Empty;
+
+            if (FilterInputParameters.Column.Type == ColumnType.String && FilterValue != null)
+            {
+                StringInputValue = FilterValue.ToString() ?? string.Empty;
+                FilteredValue = StringInputValue;
+            }
+        }
+    }
+
+    private void InitializeBooleanOptions()
+    {
+        BooleanOptions = new List<BooleanOption>
+        {
+            new BooleanOption { Value = true, Text = Parent?.Localizer?.GetText(GridLocaleKeys.True) ?? "True" },
+            new BooleanOption { Value = false, Text = Parent?.Localizer?.GetText(GridLocaleKeys.False) ?? "False" }
+        };
+    }
+
+    private void OnIconMouseDown(MouseEventArgs args)
+    {
+        _wasOpenOnMouseDown = IsOperatorDropdownOpen;
+        // Stop any pending timer to prevent filter from being applied after the click
+        StopTimer();
+    }
+
+    private async Task OpenOperatorDropdown()
+    {
+        if (OperatorDropDown == null) return;
+
+        // Stop any pending timer to prevent filter from being applied
+        StopTimer();
+
+        if (_wasOpenOnMouseDown)
+        {
+            _wasOpenOnMouseDown = false;
+            await OperatorDropDown.HidePopupAsync().ConfigureAwait(true);
+        }
+        else
+        {
+            _wasOpenOnMouseDown = false;
+            IsOperatorDropdownOpen = true;
+            await OperatorDropDown.ShowPopupAsync().ConfigureAwait(true);
+            await OperatorDropDown.FocusAsync().ConfigureAwait(true);
+
+        }
+    }
+
+    private async Task OnIconKeyDown(KeyboardEventArgs args)
+    {
+        // Stop any pending timer to prevent filter from being applied after the interaction
+        StopTimer();
+
+        if (args?.Key == "Escape" && IsOperatorDropdownOpen && OperatorDropDown != null)
+        {
+            await OperatorDropDown.HidePopupAsync().ConfigureAwait(true);
+            await FocusValueInput().ConfigureAwait(true);
+        }
+
+        // Handle Alt+Down Arrow to toggle dropdown when filter icon has focus
+        if (args?.Key == "ArrowDown" && args.AltKey && OperatorDropDown != null)
+        {
+            if (IsOperatorDropdownOpen)
+            {
+                await OperatorDropDown.HidePopupAsync().ConfigureAwait(true);
+                await FocusValueInput().ConfigureAwait(true);
+                IsOperatorDropdownOpen = false;
+                OperatorDropdownTabIndex = -1;
+            }
+            else
+            {
+                IsOperatorDropdownOpen = true;
+                OperatorDropdownTabIndex = 0;
+                await OperatorDropDown.ShowPopupAsync().ConfigureAwait(true);
+                // Transfer focus from icon to dropdown so arrow keys navigate list items
+                await OperatorDropDown.FocusAsync().ConfigureAwait(true);
+            }
+        }
+    }
+
+    private async Task OnOperatorChanged(ChangeEventArgs<string, OperatorItem> e)
+    {
+        if (e.IsInteracted)
+        {
+            if (string.IsNullOrEmpty(CurrentOperator)) return;
+
+            CurrentOperator = CurrentOperator.ToLower();
+
+            IsOperatorDropdownOpen = false;
+            if (OperatorDropDown != null)
+            {
+                await OperatorDropDown.HidePopupAsync().ConfigureAwait(true);
+            }
+
+            _userInitiatedClear = false;
+
+            FilterValue = null;
+            FilteredValue = string.Empty;
+            StringInputValue = string.Empty;
+            FilterOperator = CurrentOperator;
+
+            
+            if (Parent?.FilterModule != null)
+            {
+                Parent.FilterModule.FilteredValue = string.Empty;
+
+            }
+
+            if (Filter<TContent>.IsNullOrEmptyOperator(CurrentOperator))
+            {
+                await ProcessFilter_Enhanced(FilterInputParameters!.Column!).ConfigureAwait(true);
+            }
+            await FocusValueInput().ConfigureAwait(true);
+            UpdateFilterDisplayState();
+            await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+        }
+    }
+
+    private async Task FocusValueInput()
+    {
+        try
+        {
+            if (Filter<TContent>.IsNullOrEmptyOperator(CurrentOperator))
+                return;
+
+            switch (FilterInputParameters?.Column?.Type)
+            {
+                case ColumnType.String:
+                    if (StringTextBoxComponent != null)
+                        await StringTextBoxComponent.FocusAsync().ConfigureAwait(true);
+                    break;
+
+                case ColumnType.Integer:
+                case ColumnType.Double:
+                case ColumnType.Long:
+                case ColumnType.Decimal:
+                    if (Filter<TContent>.IsNumericInteger(FilterInputParameters.Column) && NumericValueAsInt != null)
+                        await NumericValueAsInt.FocusAsync().ConfigureAwait(true);
+                    else if (Filter<TContent>.IsNumericLong(FilterInputParameters.Column) && NumericValueAsLong != null)
+                        await NumericValueAsLong.FocusAsync().ConfigureAwait(true);
+                    else if (NumericValueAsDouble != null)
+                        await NumericValueAsDouble.FocusAsync().ConfigureAwait(true);
+                    break;
+
+                case ColumnType.Date:
+                case ColumnType.DateOnly:
+                    if (DatePickerComponent != null)
+                        await DatePickerComponent.FocusAsync().ConfigureAwait(true);
+                    break;
+
+                case ColumnType.DateTime:
+                    if (DateTimePickerComponent != null)
+                        await DateTimePickerComponent.FocusAsync().ConfigureAwait(true);
+                    break;
+
+                case ColumnType.TimeOnly:
+                    if (TimePickerComponent != null)
+                        await TimePickerComponent.FocusAsync().ConfigureAwait(true);
+                    break;
+
+                case ColumnType.Boolean:
+                    if (BooleanDropDown != null)
+                        await BooleanDropDown.FocusAsync().ConfigureAwait(true);
+                    break;
+            }
+        }
+        catch { /* silently fail */ }
+    }
+
+    public async Task OnOperatorDropdownClosed(Syncfusion.Blazor.DropDowns.ClosedEventArgs args)
+    {
+        IsOperatorDropdownOpen = false;
+        OperatorDropdownTabIndex = -1;
+        await Parent!.InvokeMethod("sfBlazor.Grid.IsInputfocus", new object[] { });
+        if (OperatorDropDown != null)
+        {
+            OperatorDropDown.FocusOutAsync().ConfigureAwait(true).GetAwaiter();
+        }
+      
+        
+    }
+
+    private async Task OnStringInputChanged(ChangeEventArgs e)
+    {
+        IsInputEventTriggered = true;
+        StringInputValue = e?.Value?.ToString()!;
+        FilteredValue = StringInputValue;
+
+        if (!string.IsNullOrEmpty(StringInputValue))
+        {
+            _userInitiatedClear = false;
+        }
+
+        FilteredColumn = FilterInputParameters!.Column!;
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(FilteredValue) ? FilteredValue : "e-clear-icon";
+        TriggerImmediateFilterIfNeeded();
+        UpdateFilterDisplayState();
+    }
+
+    private void HandleNumericInput(ChangeEventArgs e, Func<string, (bool, object?)> parseFunc)
+    {
+        string stringValue = e?.Value?.ToString() ?? string.Empty;
+
+        IsInputEventTriggered = true;
+        FilteredValue = stringValue;
+
+        var (parsed, numericValue) = parseFunc(stringValue);
+        if (parsed)
+        {
+            FilterValue = numericValue;
+        }
+        else if (string.IsNullOrEmpty(stringValue))
+        {
+            FilterValue = null;
+        }
+
+        FilteredColumn = FilterInputParameters!.Column!;
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(FilteredValue) ? FilteredValue : "e-clear-icon";
+
+        TriggerImmediateFilterIfNeeded();
+    }
+
+    private void OnNumericIntInput(ChangeEventArgs e)
+    {
+        HandleNumericInput(e, (str) =>
+        {
+            if (int.TryParse(str, out int result))
+                return (true, result);
+            return (false, null);
+        });
+    }
+
+    private void OnNumericLongInput(ChangeEventArgs e)
+    {
+        HandleNumericInput(e, (str) =>
+        {
+            if (long.TryParse(str, out long result))
+                return (true, result);
+            return (false, null);
+        });
+    }
+
+    private void OnNumericDoubleInput(ChangeEventArgs e)
+    {
+        HandleNumericInput(e, (str) =>
+        {
+            if (double.TryParse(str, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double result))
+                return (true, result);
+            return (false, null);
+        });
+    }
+
+    private void OnNumericDecimalInput(ChangeEventArgs e)
+    {
+        HandleNumericInput(e, (str) =>
+        {
+            if (decimal.TryParse(str, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result))
+                return (true, result);
+            return (false, null);
+        });
+    }
+
+    private async Task HandleNumericValueChanged(object? value)
+    {
+        if (value != null)
+        {
+            _userInitiatedClear = false;
+        }
+
+        FilterValue = value;
+        FilteredValue = value != null ? value.ToString() ?? string.Empty : string.Empty;
+        FilteredColumn = FilterInputParameters!.Column!;
+        IsInputEventTriggered = true;
+        StopTimer();
+
+        TriggerImmediateFilterIfNeeded();
+        UpdateFilterDisplayState();
+    }
+
+    private async Task OnNumericValueChanged(int? value)
+    {
+        await HandleNumericValueChanged(value).ConfigureAwait(true);
+    }
+
+    private async Task OnNumericValueChangedLong(long? value)
+    {
+        await HandleNumericValueChanged(value).ConfigureAwait(true);
+    }
+
+    private async Task OnNumericValueChangedDouble(double? value)
+    {
+        await HandleNumericValueChanged(value).ConfigureAwait(true);
+    }
+
+    private async Task OnNumericValueChangedDecimal(decimal? value)
+    {
+        await HandleNumericValueChanged(value).ConfigureAwait(true);
+    }
+
+    private void OnDateInput(ChangeEventArgs e)
+    {
+        string stringValue = e?.Value?.ToString() ?? string.Empty;
+
+        IsInputEventTriggered = true;
+        FilteredValue = stringValue;
+
+        FilteredColumn = FilterInputParameters!.Column!;
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(FilteredValue) ? FilteredValue : "e-clear-icon";
+
+        TriggerImmediateFilterIfNeeded();
+    }
+
+    private async Task HandleTemporalValueChanged(object? value, string? formattedValueOverride = null)
+    {
+        FilterValue = value;
+        if (value != null)
+        {
+            _userInitiatedClear = false;
+
+            string formattedValue = formattedValueOverride ?? (!string.IsNullOrEmpty(FilterInputParameters?.Column?.Format)
+                ? DataUtil.GetFormattedValue(value, FilterInputParameters.Column?.Format!)
+                : value.ToString() ?? string.Empty);
+
+            FilteredValue = formattedValue;
+            FilteredColumn = FilterInputParameters!.Column!;
+            IsInputEventTriggered = true;
+            StopTimer();
+
+            TriggerImmediateFilterIfNeeded();
+            UpdateFilterDisplayState();
+        }
+        else
+        {
+            FilteredValue = string.Empty;
+            await ClearFilter().ConfigureAwait(true);
+        }
+    }
+
+    private void OnDateValueChanged(Syncfusion.Blazor.Calendars.ChangedEventArgs<DateTime?> e)
+    {
+        _ = HandleTemporalValueChanged(e.Value).ConfigureAwait(true);
+    }
+
+    private void OnDateTimeInput(ChangeEventArgs e)
+    {
+        string stringValue = e?.Value?.ToString() ?? string.Empty;
+
+        IsInputEventTriggered = true;
+        FilteredValue = stringValue;
+
+        FilteredColumn = FilterInputParameters!.Column!;
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(FilteredValue) ? FilteredValue : "e-clear-icon";
+
+        TriggerImmediateFilterIfNeeded();
+    }
+
+    private void OnDateTimeValueChanged(Syncfusion.Blazor.Calendars.ChangedEventArgs<DateTime?> e)
+    {
+        _ = HandleTemporalValueChanged(e.Value).ConfigureAwait(true);
+    }
+
+    private void OnTimeInput(ChangeEventArgs e)
+    {
+        string stringValue = e?.Value?.ToString() ?? string.Empty;
+
+        IsInputEventTriggered = true;
+        FilteredValue = stringValue;
+
+        FilteredColumn = FilterInputParameters!.Column!;
+        FilterInputParameters.Column!.FilterClearIcon = string.IsNullOrEmpty(FilteredValue) ? FilteredValue : "e-clear-icon";
+
+        TriggerImmediateFilterIfNeeded();
+    }
+
+    private void OnTimeValueChanged(Syncfusion.Blazor.Calendars.ChangeEventArgs<TimeOnly?> e)
+    {
+        _ = HandleTemporalValueChanged(e.Value).ConfigureAwait(true);
+    }
+
+    private async Task HandleDropdownValueChanged(object? value, Func<object, string> formatter)
+    {
+        FilterValue = value;
+        if (value != null)
+        {
+            _userInitiatedClear = false;
+
+            string formattedValue = formatter(value);
+
+            FilteredValue = formattedValue;
+            FilteredColumn = FilterInputParameters!.Column!;
+            IsInputEventTriggered = true;
+            StopTimer();
+
+            if (Parent?.FilterSettings?.Mode == FilterBarMode.Immediate)
+            {
+                TriggerImmediateFilterIfNeeded();
+            }
+            else if (Parent?.FilterSettings?.Mode == FilterBarMode.OnEnter)
+            {
+                await ProcessFilter_Enhanced(FilterInputParameters!.Column!).ConfigureAwait(true);
+            }
+
+            UpdateFilterDisplayState();
+        }
+        else
+        {
+            FilteredValue = string.Empty;
+            await ClearFilter().ConfigureAwait(true);
+        }
+    }
+
+    private async Task OnBooleanValueChanged(bool? value)
+    {
+        await HandleDropdownValueChanged(value, (val) => DataUtil.GetFormattedValue(val, FilterInputParameters?.Column?.Format!)).ConfigureAwait(true);
+    }
+
+    
+    private async Task ProcessFilter_Enhanced(GridColumn column)
+    {
+        object? value = null;
+        if (FilteredColumn != null && !(FilteredColumn.Equals(column)))
+        {
+            FilteredValue = string.Empty;
+        }
+
+        bool isNullEmptyOp = Filter<TContent>.IsNullOrEmptyOperator(CurrentOperator);
+
+        bool isNumericOrTyped = column?.Type == ColumnType.Integer
+                             || column?.Type == ColumnType.Double
+                             || column?.Type == ColumnType.Long
+                             || column?.Type == ColumnType.Decimal
+                             || column?.Type == ColumnType.Date
+                             || column?.Type == ColumnType.DateTime
+                             || column?.Type == ColumnType.DateOnly
+                             || column?.Type == ColumnType.TimeOnly
+                             || column?.Type == ColumnType.Boolean;
+
+        bool hasValue = isNullEmptyOp
+                     || !string.IsNullOrEmpty(FilteredValue)
+                     || (isNumericOrTyped && FilterValue != null);
+
+        await InvokeAsync(async () =>
+        {
+            if (hasValue)
+            {
+                if (!string.IsNullOrEmpty(CurrentOperator))
+                    FilterOperator = CurrentOperator;
+
+                if (isNullEmptyOp)
+                {
+                    value = null;
+                }
+                else if (isNumericOrTyped && FilterValue != null)
+                {
+                    value = FilterValue;
+                }
+                else
+                {
+                    string formattedFilterValue = column?.Format != null && (column?.Type == ColumnType.Date || column?.Type == ColumnType.DateTime || column?.Type == ColumnType.DateOnly) ? Filter<TContent>.ConvertToDesiredDateFormat(FilteredValue, column.Format, column.Type)! : FilteredValue;
+                    value = Parent!.FilterModule!.GetActualFilterValue(column!, formattedFilterValue);
+                }
+
+                if (!string.IsNullOrEmpty(CurrentOperator))
+                    FilterOperator = CurrentOperator;
+
+                await Parent?.FilterModule?.FilterByColumn(column?.Field!, Filter<TContent>.GetOperator(FilterOperator!), value!, null!, Parent.FilterSettings!.EnableCaseSensitivity, Parent.FilterSettings.IgnoreAccent, null, null, column?.Uid, Parent.FilterModule.RawInputValue)!;
+                if (Parent.FilteredColumns != null && Parent.FilteredColumns.Count > 1 && Parent.FilterSettings?.Mode != FilterBarMode.Immediate)
+                {
+                    List<string>? filteredFieldName = Parent.FilteredColumns?.Select(item => item?.Field)?.ToList()!;
+                    List<string> filteredActualValues = await Parent.FilterModule.GetPreviousFilteredValues();
+                    await Parent.InvokeMethod("sfBlazor.Grid.updateFilterBarCell", new object[] { Parent.DataId, filteredFieldName, filteredActualValues });
+                }
+            }
+            else
+                await Parent?.FilterModule?.RemoveFilterColumnByField(column?.Field!, column?.Uid!)!;
+        });
+    }
+
+    private async Task ClearFilter()
+    {
+        _userInitiatedClear = true;
+
+        FilteredValue = string.Empty;
+        FilterValue = null;
+        StringInputValue = string.Empty;
+        CurrentOperator = Filter<TContent>.GetDefaultOperator(FilterInputParameters?.Column?.Type);
+        StopTimer();
+
+        if (FilterInputParameters?.Column == null || Parent?.FilterModule == null)
+            return;
+
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                var clearTask = Parent.FilterModule.RemoveFilterColumnByField(
+                    FilterInputParameters.Column.Field ?? string.Empty,
+                    FilterInputParameters.Column.Uid ?? string.Empty
+                );
+
+                if (clearTask != null)
+                {
+                    await clearTask.ConfigureAwait(true);
+                }
+
+                if (Parent?.FilterSettings?.Columns != null)
+                {
+                    var existingFilter = Parent.FilterSettings.Columns
+                        .FirstOrDefault(c => c.Uid == FilterInputParameters.Column.Uid);
+
+                    if (existingFilter != null)
+                    {
+                        existingFilter.ActualValue = null;
+                        existingFilter.Value = null;
+                    }
+                }
+
+                await InvokeAsync(StateHasChanged).ConfigureAwait(true);
+            }).ConfigureAwait(true);
+        }
+        catch { /* silently fail */ }
+    }
+
+    
+
+
+
+    private Dictionary<string, object> GetHtmlAttributes(string Value, GridColumn Column)
+    {
+        Dictionary<string, object> Attributes = new Dictionary<string, object>();
+        Attributes.Add("title", Value);
+        if (!Column.AllowFiltering)
+            Attributes.Add("disabled", "disabled");
+        return Attributes;
+    }
+
+    private bool GetInputEnabledState(string? operatorValue, ColumnType? columnType)
+    {
+        if (Filter<TContent>.IsNullOrEmptyOperator(operatorValue))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    private string GetPlaceholder()
+    {
+        return FilterInputParameters?.Column?.Type switch
+        {
+            ColumnType.Date or ColumnType.DateTime or ColumnType.DateOnly => Parent?.Localizer?.GetText(GridLocaleKeys.ChooseDate) ?? string.Empty,
+            ColumnType.TimeOnly => Parent?.Localizer?.GetText(GridLocaleKeys.ChooseTime) ?? string.Empty,
+            ColumnType.Integer or ColumnType.Double or ColumnType.Long or ColumnType.Decimal => Parent?.Localizer?.GetText(GridLocaleKeys.EnterValue) ?? string.Empty,
+            ColumnType.Boolean => Parent?.Localizer?.GetText(GridLocaleKeys.EnterValue) ?? string.Empty,
+            _ => Parent?.Localizer?.GetText(GridLocaleKeys.EnterValue) ?? string.Empty
+        };
+    }
+}

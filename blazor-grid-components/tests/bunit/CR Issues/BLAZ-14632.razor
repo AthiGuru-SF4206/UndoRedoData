@@ -1,0 +1,45 @@
+@inherits GridTestBase
+
+    <SfFixture @ref="fixture" Test="ExportTest" Description="IsFrozen with Command column">
+        <ComponentUnderTest>
+            <SfGrid DataSource="@Orders" @ref="DefaultGrid" AllowSelection="false" EnableHover="false" Width="100%" Height="400">
+                <GridColumns>
+                    <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                    <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" IsFrozen="true" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Name" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship Address" Width="150"></GridColumn>
+                    <GridColumn HeaderText="Add Tagged" TextAlign="TextAlign.Center" Width="100px" IsFrozen="true">
+                        <GridCommandColumns>
+                            <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = " e-icons e-edit", CssClass="e-flat" })"></GridCommandColumn>
+                        </GridCommandColumns>
+                    </GridColumn>
+                </GridColumns>
+            </SfGrid>
+        </ComponentUnderTest>
+    </SfFixture>
+
+@code{
+    SfFixture fixture { get; set; }
+    public List<Order> Orders { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+
+    void ExportTest(Fixture fixture)
+    {
+        Orders = Enumerable.Range(1, 75).Select(x => new Order()
+        {
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            EmployeeID = x,
+            OrderDate = DateTime.Now.AddDays(-x),
+            ShipCountry = (new string[] { "USA", "UK", "JAPAN" })[new Random().Next(3)],
+            ShipCity = (new string[] { "New york", "London", "Hue" })[new Random().Next(3)],
+        }).ToList();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var td = cut.FindAll(".e-rowcell");
+        Assert.True("e-rowcell e-unboundcell e-leftfreeze e-freezeleftborder  e-centeralign " == td[1].GetAttribute("class"), "Class value for command column");
+
+    }
+}

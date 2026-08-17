@@ -1,0 +1,125 @@
+﻿@page "/"
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<!-- Control Panel -->
+<div style="padding: 20px; background-color: #f5f5f5; border-radius: 4px; margin-bottom: 20px;">
+    <h4 style="margin: 0 0 15px 0;">Undo/Redo Configuration</h4>
+
+    <!-- Toggle Undo/Redo Feature -->
+    @*     <div style="margin-bottom: 15px;">
+        <label style="font-weight: 500; margin-right: 10px;">Enable Undo/Redo:</label>
+        <SfButton @onclick="ToggleUndoRedo" CssClass="@(EnableUndoRedo ? "e-success" : "e-outline")">
+            @(EnableUndoRedo ? "ON" : "OFF")
+        </SfButton>
+    </div> *@
+
+    <!-- Dynamic Undo/Redo Limit -->
+    <div style="margin-bottom: 15px;">
+        <label style="font-weight: 500; margin-right: 10px;">Undo/Redo Limit:</label>
+        <input type="number" @bind="UndoRedoLimit" min="1" max="50" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100px;" />
+        <span style="margin-left: 10px; color: #666;">Actions: @UndoRedoLimit</span>
+    </div>
+    <!-- Keyboard Shortcuts Info -->
+    <div style="padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 2px; margin-bottom: 10px;">
+        <small><strong>⌨️ Keyboard Shortcuts:</strong> Ctrl+Z (Undo) | Ctrl+Y (Redo)</small>
+    </div>
+    <!-- Status Information -->
+    <div style="padding: 10px; background-color: #e8f4f8; border-left: 4px solid #0078d4; border-radius: 2px;">
+        <small><strong>Status:</strong> Undo/Redo is <strong>@(EnableUndoRedo ? "ENABLED" : "DISABLED")</strong> | Limit: <strong>@UndoRedoLimit</strong> actions</small>
+    </div>
+</div>
+
+<!-- Data Grid with Undo/Redo -->
+<SfGrid @ref="GridRef" DataSource="@OrderData" EnableAutoFill="false"
+        Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel", "Undo", "Redo" })"
+        Height="400">
+  @*   <GridSelectionSettings CellSelectionMode="CellSelectionMode.Box" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings> *@
+    <GridEditSettings AllowAdding="true"
+                      AllowEditing="true"
+                      AllowDeleting="true"
+                      Mode="EditMode.Batch"
+                      EnableUndoRedo="@EnableUndoRedo"
+                      UndoRedoLimit="@UndoRedoLimit">
+    </GridEditSettings>
+    <GridColumns>
+        <GridColumn Field=@nameof(OrderDetails.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true })" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.CustomerID) HeaderText="Customer" ValidationRules="@(new ValidationRules { Required = true, MinLength = 3 })" Width="120"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.OrderDate) HeaderText="Order Date" Type="ColumnType.Date" Format="MM/dd/yyyy" EditType="EditType.DatePickerEdit" Width="140"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" ValidationRules="@(new ValidationRules { Min = 0, Max = 5000 })" Width="120"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.Quantity) HeaderText="Quantity" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" ValidationRules="@(new ValidationRules { Required = true, Min = 1, Max = 100 })" Width="110"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.ShipCountry) HeaderText="Ship Country" Width="130"></GridColumn>
+        <GridColumn Field=@nameof(OrderDetails.Status) HeaderText="Status" EditType="EditType.DropDownEdit" Width="120"></GridColumn>
+    </GridColumns>
+</SfGrid>
+
+@code {
+    // State Management
+    private SfGrid<OrderDetails> GridRef;
+    private List<OrderDetails> OrderData { get; set; }
+    private bool EnableUndoRedo = true;
+    private int UndoRedoLimit = 10;
+
+    protected override void OnInitialized()
+    {
+        OrderData = OrderDetails.GetAllRecords();
+    }
+
+    // Toggle Undo/Redo Feature
+    private void ToggleUndoRedo()
+    {
+        EnableUndoRedo = !EnableUndoRedo;
+        GridRef.CallStateHasChanged();
+        StateHasChanged();
+    }
+
+    // Order Details Model
+    public class OrderDetails
+    {
+        public static List<OrderDetails> Order = new List<OrderDetails>();
+
+        public OrderDetails() { }
+
+        public OrderDetails(int OrderID, string CustomerID, DateTime OrderDate, double Freight, int Quantity, string ShipCountry, string Status)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerID;
+            this.OrderDate = OrderDate;
+            this.Freight = Freight;
+            this.Quantity = Quantity;
+            this.ShipCountry = ShipCountry;
+            this.Status = Status;
+        }
+
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public double Freight { get; set; }
+        public int Quantity { get; set; }
+        public string ShipCountry { get; set; }
+        public string Status { get; set; }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            if (Order.Count == 0)
+            {
+                Order.Add(new OrderDetails(10248, "VINET", new DateTime(2024, 07, 04), 32.38, 10, "France", "Pending"));
+                Order.Add(new OrderDetails(10249, "TOMSP", new DateTime(2024, 07, 05), 11.61, 15, "Germany", "Shipped"));
+                Order.Add(new OrderDetails(10250, "HANAR", new DateTime(2024, 07, 08), 65.83, 20, "Brazil", "Delivered"));
+                Order.Add(new OrderDetails(10251, "VICTE", new DateTime(2024, 07, 09), 41.34, 12, "France", "Pending"));
+                Order.Add(new OrderDetails(10252, "SUPRD", new DateTime(2024, 07, 10), 51.30, 8, "Belgium", "Shipped"));
+                Order.Add(new OrderDetails(10253, "HANAR", new DateTime(2024, 07, 11), 58.17, 18, "Brazil", "Delivered"));
+                Order.Add(new OrderDetails(10254, "CHOPS", new DateTime(2024, 07, 12), 22.98, 5, "Switzerland", "Pending"));
+                Order.Add(new OrderDetails(10255, "RICSU", new DateTime(2024, 07, 15), 148.33, 25, "Switzerland", "Shipped"));
+                Order.Add(new OrderDetails(10256, "WELLI", new DateTime(2024, 07, 16), 13.97, 7, "Brazil", "Delivered"));
+                Order.Add(new OrderDetails(10257, "HILAA", new DateTime(2024, 07, 17), 81.91, 30, "Venezuela", "Pending"));
+                Order.Add(new OrderDetails(10258, "ERNSH", new DateTime(2024, 07, 18), 140.51, 35, "Austria", "Shipped"));
+                Order.Add(new OrderDetails(10259, "CENTC", new DateTime(2024, 07, 19), 3.25, 2, "Mexico", "Delivered"));
+                Order.Add(new OrderDetails(10260, "OTTIK", new DateTime(2024, 07, 22), 55.09, 14, "Germany", "Pending"));
+                Order.Add(new OrderDetails(10261, "QUEDE", new DateTime(2024, 07, 23), 3.05, 1, "Brazil", "Shipped"));
+                Order.Add(new OrderDetails(10262, "RATTC", new DateTime(2024, 07, 24), 48.29, 11, "USA", "Delivered"));
+            }
+            return Order;
+        }
+    }
+}

@@ -1,0 +1,72 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Tests
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Complex group filter and clear filtering">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateData()" AllowFiltering="true" AllowGrouping="true" AllowPaging="true" Height="315">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridGroupSettings Columns="@InitialGroup"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeData.EmployeeID) HeaderText="EmployeeID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Name.FirstName" HeaderText="First Name" Width="150">
+                    <FilterTemplate>
+                        <Syncfusion.Blazor.Inputs.SfTextBox @bind-Value="@((context as PredicateModel<string>).Value)"></Syncfusion.Blazor.Inputs.SfTextBox>
+                    </FilterTemplate>
+                </GridColumn>
+                <GridColumn Field="Name.LastName" HeaderText="Last Name" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeData.Title) HeaderText="Title" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture { get; set; }
+    public List<EmployeeData> Employees { get; set; } = new List<EmployeeData>();
+
+    private string[] InitialGroup = new string[] { "Name.FirstName" };
+
+
+    async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeData>>();
+        var Grid = cut.Instance;
+        await Grid.FilterByColumnAsync("EmployeeID", "equal", null);
+        cut.WaitForState(() => Grid.CurrentViewData.Count() == 0);
+        Assert.True(!Grid.CurrentViewData.Any(), "Empty value filtered successfully");
+        await Grid.ClearFilteringAsync();
+        Assert.True(Grid.CurrentViewData.Any(), "Clear filtering works. So no exception was thrown");
+    }
+
+    public List<EmployeeData> GenerateData()
+    {
+        Employees = Enumerable.Range(1, 9).Select(x => new EmployeeData()
+        {
+            EmployeeID = x,
+            Name = new EmployeeName()
+            {
+                FirstName = (new string[] { "Nancy", "Andrew", "Janet", "Margaret", "Steven" })[new Random().Next(5)],
+                LastName = (new string[] { "Davolio", "Fuller", "Leverling", "Peacock", "Buchanan" })[new Random().Next(5)]
+            },
+            Title = (new string[] { "Sales Representative", "Vice President, Sales", "Sales Manager",
+                                              "Inside Sales Coordinator" })[new Random().Next(4)],
+        }).ToList();
+
+        return Employees;
+    }
+
+    public class EmployeeData
+    {
+        public int? EmployeeID { get; set; }
+        public EmployeeName Name { get; set; }
+        public string Title { get; set; }
+    }
+
+    public class EmployeeName
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+}

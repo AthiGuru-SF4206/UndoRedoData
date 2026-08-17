@@ -1,0 +1,58 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+
+<CascadingValue Value="@this">
+    @if (ChildContent != null)
+    {
+        @ChildContent(null!)
+    }
+</CascadingValue>
+
+@code
+{
+    #region Parameters
+
+    [Parameter]
+    public RenderFragment<object>? ChildContent { get; set; }
+
+    [Parameter]
+    public Func<Row<object>, Cell<object>, string>? CellSelector { get; set; }
+
+    #endregion
+
+    #region Cascading Parameters
+
+    [CascadingParameter]
+    public SfGrid<T>? Parent { get; set; }
+
+    #endregion
+
+    #region Private State (Optimization)
+
+    private Func<Row<object>, Cell<object>, string>? _lastAppliedSelector;
+
+    #endregion
+
+    #region Lifecycle / Wiring
+
+    protected override void OnParametersSet()
+    {
+        if (Parent?.CellService == null || CellSelector == null)
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(_lastAppliedSelector, CellSelector))
+        {
+            Parent.CellService.CellSelector = CellSelector;
+            _lastAppliedSelector = CellSelector;
+        }
+    }
+
+    #endregion
+
+    #region Render Policy
+    protected override bool ShouldRender() => false;
+
+    #endregion
+}

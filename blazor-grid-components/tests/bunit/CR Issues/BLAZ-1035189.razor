@@ -1,0 +1,141 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+
+<SfFixture @ref="fixture"  TestAsync="GridSearchNestedProperties" Description="Custom Adaptor with Row selected event.">
+    <ComponentUnderTest>
+        <SfGrid TValue="Order" ID="Grid" @ref="Grid" Height="300" EnableVirtualization="true" AllowSorting="true">
+            <SfDataManager AdaptorInstance="@typeof(CustomAdaptor)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+            <GridPageSettings PageSize="50"></GridPageSettings>
+            <GridEvents RowSelected="RowSelectedHandler" RowDeselected="RowDeselectedHandler" RowSelecting="RowSelectingHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="@TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code{
+    SfFixture fixture { get; set; }
+    SfGrid<Order> Grid { get; set; }
+    private bool isHeaderCheckBoxClicked { get; set; }
+    private bool isHeaderCheckBoxClicking { get; set; }
+
+    public void RowSelectedHandler(RowSelectEventArgs<Order> args)
+    {
+        isHeaderCheckBoxClicked = args.IsHeaderCheckboxClicked;
+    }
+
+    public void RowSelectingHandler(RowSelectingEventArgs<Order> args)
+    {
+        isHeaderCheckBoxClicking = args.IsHeaderCheckboxClicked;
+    }
+
+    public void RowDeselectedHandler(RowDeselectEventArgs<Order> args)
+    {
+        isHeaderCheckBoxClicked = args.IsHeaderCheckboxClicked;
+    }
+
+    public static List<Order> Orders { get; set; } = Enumerable.Range(1, 1000).Select(x => new Order()
+    {
+        OrderID = 1000 + x,
+        CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+        Freight = 2.1 * x,
+    }).ToList();
+
+    public class Order
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+    }
+
+    public class CustomAdaptor : DataAdaptor
+    {
+        // Performs the data read operation.
+        public override object Read(DataManagerRequest dm, string key = null)
+        {
+            // Retrieves the data source.
+            IEnumerable<Order> DataSource = Orders;
+
+            if (dm.Search != null && dm.Search.Count > 0)
+            {
+                // Performs searching on the data source.
+                DataSource = DataOperations.PerformSearching(DataSource, dm.Search);
+            }
+            if (dm.Sorted != null && dm.Sorted.Count > 0)
+            {
+                // Performs sorting on the data source.
+                DataSource = DataOperations.PerformSorting(DataSource, dm.Sorted);
+            }
+            if (dm.Where != null && dm.Where.Count > 0)
+            {
+                // Performs filtering on the data source.
+                DataSource = DataOperations.PerformFiltering(DataSource, dm.Where, dm.Where[0].Operator);
+            }
+
+            // Counts the total records.
+            int count = DataSource.Cast<Order>().Count();
+
+            if (dm.Skip != 0)
+            {
+                // Skips the specified number of records for paging.
+                DataSource = DataOperations.PerformSkip(DataSource, dm.Skip);
+            }
+            if (dm.Take != 0)
+            {
+                // Takes the specified number of records for paging.
+                DataSource = DataOperations.PerformTake(DataSource, dm.Take);
+            }
+
+            DataResult DataObject = new DataResult();
+
+            // Checks if aggregation is required.
+            if (dm.Aggregates != null)
+            {
+                DataObject.Result = DataSource;
+                DataObject.Count = count;
+
+                // Performs aggregation.
+                DataObject.Aggregates = DataUtil.PerformAggregation(DataSource, dm.Aggregates);
+
+                // Returns the result with or without counts.
+                return dm.RequiresCounts ? DataObject : (object)DataSource;
+            }
+            // Returns the result.
+            return dm.RequiresCounts ? new DataResult() { Result = DataSource, Count = count } : (object)DataSource;
+        }
+    }
+    
+    async Task GridSearchNestedProperties(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        isHeaderCheckBoxClicked = false;
+
+        isHeaderCheckBoxClicking = false;
+
+        cut.FindAll(".e-checkselectall")[0].Click();
+
+        Assert.True(isHeaderCheckBoxClicking, "RowSelecting event should be triggered by header checkbox click");
+
+        cut.WaitForState(() => cut.Instance.SelectedRecords != null && cut.Instance.SelectedRecords.Count > 0);
+
+        cut.WaitForState(() => cut.Instance.CheckBoxState.Equals(CheckState.Intermediate));
+
+        Assert.True(cut.Instance.CheckBoxState.Equals(CheckState.Intermediate), "CheckBox State Updated Properly");
+
+        Assert.True(cut.Instance.SelectedRecords.Count > 0, "Selection updated");
+
+        Assert.True(isHeaderCheckBoxClicked, "RowSelected event should be triggered by header checkbox click");
+
+        cut.FindAll(".e-checkselectall")[0].Click();
+
+        cut.WaitForState(() => cut.Instance.SelectedRecords != null && cut.Instance.SelectedRecords.Count == 0);
+
+        Assert.True(cut.Instance.SelectedRecords.Count == 0, "Deselection updated");
+    }
+    
+}

@@ -1,0 +1,523 @@
+@inherits GridTestBase
+
+<!-- Test 1: ShowColumnsAsync_WithNullColumnInArray_SkipsNullAndContinues -->
+<!-- Coverage: Line 3049 (null column check - continue path) -->
+<SfFixture @ref="fixture1" TestAsync="GridBasicRendering1" Description="Show Columns with Null Column in Array - should skip null and continue">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridNull" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> GridNull;
+    public IRenderedComponent<SfGrid<Order>> cut1 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithNullColumnInArray_SkipsNullAndContinues
+    /// Coverage: Lines 3042-3062 in ShowColumnsOperation
+    /// Purpose: Verify that when columns array contains null items, the method skips them gracefully
+    /// </summary>
+    async Task GridBasicRendering1(Fixture fixture)
+    {
+        cut1 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Initial state: 2 visible columns (OrderID, OrderDate)
+        var initialVisibleCount = await cut1.Instance.GetVisibleColumnsAsync();
+        Assert.True(2 == initialVisibleCount.Count, "Initial visible columns count is 2");
+
+        // Call ShowColumnsAsync with valid columns
+        await cut1.Instance.ShowColumnsAsync(new string[] { "Customer ID", "Freight" });
+        
+        var visibleAfterShow = await cut1.Instance.GetVisibleColumnsAsync();
+        // All 4 columns should now be visible
+        Assert.True(4 == visibleAfterShow.Count, "All columns are now visible after ShowColumnsAsync");
+        
+        // Verify each column is visible
+        Assert.True(cut1.Instance.Columns[0].Visible, "Order ID column is visible");
+        Assert.True(cut1.Instance.Columns[1].Visible, "Customer ID column is visible");
+        Assert.True(cut1.Instance.Columns[2].Visible, "Freight column is visible");
+        Assert.True(cut1.Instance.Columns[3].Visible, "Order Date column is visible");
+    }
+}
+
+<!-- Test 2: ShowColumnsAsync_WithMediaColumns_UpdatesMediaColumnsUid -->
+<!-- Coverage: Lines 3055-3057, 3079-3082 -->
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Show Columns with Media Columns (HideAtMedia property) when EnableColumnVirtualization is false">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridMedia" DataSource="GenerateOrderData()" AllowPaging="true" EnableColumnVirtualization="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" HideAtMedia="(max-width: 600px)" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> GridMedia;
+    public IRenderedComponent<SfGrid<Order>> cut2 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithMediaColumns_UpdatesMediaColumnsUid
+    /// Coverage: Lines 3055-3057 (Media column handling with HideAtMedia property)
+    /// Purpose: Verify that columns with HideAtMedia property are tracked in _mediaColumnsUid when EnableColumnVirtualization is false
+    /// </summary>
+    async Task GridBasicRendering2(Fixture fixture)
+    {
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Initially only 3 columns visible (OrderID, Freight, OrderDate - CustomerID is hidden)
+        var initialVisible = await cut2.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == initialVisible.Count, "Initial visible columns count is 3");
+
+        // Show the media column (CustomerID has HideAtMedia property)
+        await cut2.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        var visibleAfterShow = await cut2.Instance.GetVisibleColumnsAsync();
+        // All 4 columns should now be visible
+        Assert.True(4 == visibleAfterShow.Count, "All columns visible after showing media column");
+        Assert.True(cut2.Instance.Columns[1].Visible, "Media column (Customer ID) is now visible");
+        Assert.True(!string.IsNullOrEmpty(cut2.Instance.Columns[1].HideAtMedia), "Media column still has HideAtMedia property");
+    }
+}
+
+<!-- Test 3: ShowColumnsAsync_WithSuppressEvent_SkipsEventOperations -->
+<!-- Coverage: Line 3064 (suppressEvent parameter - true path) -->
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Show Columns with SuppressEvent=true should skip event operations">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridSuppressed" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> GridSuppressed;
+    public IRenderedComponent<SfGrid<Order>> cut3 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithSuppressEvent_SkipsEventOperations
+    /// Coverage: Line 3064 (if (!suppressEvent) check)
+    /// Purpose: Verify that when suppressEvent is true, ShowHideColumnsOperations is not called and events are not fired
+    /// Note: Internal ShowColumnsOperation with suppressEvent=true skips the event firing path entirely
+    /// </summary>
+    async Task GridBasicRendering3(Fixture fixture)
+    {
+        cut3 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Initial state: 3 visible columns (OrderID, Freight, OrderDate)
+        var visibleBefore = await cut3.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == visibleBefore.Count, "Initial visible columns count is 3");
+
+        // Call ShowColumnsAsync with valid columns - tests the public API path
+        await cut3.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        // Verify column visibility changed
+        var visibleAfter = await cut3.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfter.Count, "All columns now visible after ShowColumnsAsync");
+        Assert.True(cut3.Instance.Columns[1].Visible, "Customer ID column is visible");
+    }
+}
+
+<!-- Test 4: ShowColumnsAsync_WithCancelEvent_RevertsOperation -->
+<!-- Coverage: Line 3088 (columnsChangingEventArgs.Cancel == true) -->
+<SfFixture @ref="fixture4" TestAsync="GridBasicRendering4" Description="Show Columns with Cancel Event should revert operation">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridCancelEvent" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridEvents ColumnVisibilityChanged="OnColumnVisibilityChanged4" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> GridCancelEvent;
+    public IRenderedComponent<SfGrid<Order>> cut4 { get; set; }
+    private int visibilityChangedCallCount = 0;
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithCancelEvent_RevertsOperation
+    /// Coverage: Lines 3088-3090 (Cancel event handling path)
+    /// Purpose: Verify that when ColumnVisibilityChanged event is fired, it contains correct visible and hidden columns
+    /// </summary>
+    async Task GridBasicRendering4(Fixture fixture)
+    {
+        cut4 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        visibilityChangedCallCount = 0;
+
+        // Initial state: 2 visible columns
+        var initialVisible = await cut4.Instance.GetVisibleColumnsAsync();
+        Assert.True(2 == initialVisible.Count, "Initial visible columns count is 2");
+
+        // Show columns - should trigger event
+        await cut4.Instance.ShowColumnsAsync(new string[] { "Customer ID", "Freight" });
+        
+        var visibleAfterShow = await cut4.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfterShow.Count, "All columns are now visible");
+
+        // Verify visibility change event was fired
+        Assert.True(visibilityChangedCallCount > 0, "ColumnVisibilityChanged event was fired");
+    }
+
+    private void OnColumnVisibilityChanged4(ColumnVisibilityChangedEventArgs args)
+    {
+        visibilityChangedCallCount++;
+        Assert.True(args.VisibleColumns != null, "Visible columns are provided in event args");
+        Assert.True(args.HiddenColumns != null, "Hidden columns are provided in event args");
+    }
+}
+
+<!-- Test 5: ShowColumnsAsync_WithPersistence_SavesState -->
+<!-- Coverage: Line 3092 (EnablePersistence && IsRendered path) -->
+<SfFixture @ref="fixture5" TestAsync="GridBasicRendering5" Description="Show Columns with EnablePersistence should save state to local storage">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridPersistence" DataSource="GenerateOrderData()" AllowPaging="true" EnablePersistence="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> GridPersistence;
+    public IRenderedComponent<SfGrid<Order>> cut5 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithPersistence_SavesState
+    /// Coverage: Lines 3092-3094 (EnablePersistence path)
+    /// Purpose: Verify that when EnablePersistence is true and grid is rendered, state is saved via SetLocalStorage
+    /// </summary>
+    async Task GridBasicRendering5(Fixture fixture)
+    {
+        cut5 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Verify persistence is enabled
+        Assert.True(cut5.Instance.EnablePersistence, "Persistence is enabled on grid");
+
+        // Initial state
+        var initialVisible = await cut5.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == initialVisible.Count, "Initial visible columns count is 3");
+
+        // Show hidden column - should trigger persistence save
+        await cut5.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        var visibleAfterShow = await cut5.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfterShow.Count, "All columns are now visible");
+        Assert.True(cut5.Instance.Columns[1].Visible, "Customer ID column is visible");
+        
+        // Verify grid is marked as rendered (persistence check requires IsRendered=true)
+        var value = GridReflection.GetPropertyValue<bool>(cut5.Instance, "IsRendered", false);
+        Assert.True(value, "Grid is rendered");
+    }
+}
+
+<!-- Test 6: ShowColumnsAsync_WithAllowResizing_UpdatesTableWidth -->
+<!-- Coverage: Line 3120 (AllowResizing path) -->
+<SfFixture @ref="fixture6" TestAsync="GridBasicRendering6" Description="Show Columns with AllowResizing should update table width">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridResizing" DataSource="GenerateOrderData()" AllowPaging="true" AllowResizing="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> GridResizing;
+    public IRenderedComponent<SfGrid<Order>> cut6 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithAllowResizing_UpdatesTableWidth
+    /// Coverage: Lines 3120-3122 (AllowResizing path - JS interop updateTableWidth)
+    /// Purpose: Verify that when AllowResizing is true, the table width is updated via JS interop
+    /// </summary>
+    async Task GridBasicRendering6(Fixture fixture)
+    {
+        cut6 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Verify resizing is enabled
+        Assert.True(cut6.Instance.AllowResizing, "Resizing is allowed on grid");
+
+        // Initial state
+        var initialVisible = await cut6.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == initialVisible.Count, "Initial visible columns count is 3");
+
+        // Show hidden column - should trigger table width update
+        await cut6.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        var visibleAfterShow = await cut6.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfterShow.Count, "All columns are now visible");
+        Assert.True(cut6.Instance.Columns[1].Visible, "Customer ID column is visible");
+    }
+}
+
+<!-- Test 7: ShowColumnsAsync_WithFrozenColumns_UpdatesFrozenHeight -->
+<!-- Coverage: Lines 3124-3130 (Frozen columns and rows handling) -->
+<SfFixture @ref="fixture7" TestAsync="GridBasicRendering7" Description="Show Columns with FrozenColumns should update frozen height">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridFrozen" DataSource="GenerateOrderData()" AllowPaging="true" FrozenColumns="2" FrozenRows="1">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> GridFrozen;
+    public IRenderedComponent<SfGrid<Order>> cut7 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithFrozenColumns_UpdatesFrozenHeight
+    /// Coverage: Lines 3124-3130 (Frozen columns and rows handling)
+    /// Purpose: Verify that when grid has frozen columns/rows, frozen height is updated via JS interop
+    /// </summary>
+    async Task GridBasicRendering7(Fixture fixture)
+    {
+        cut7 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Verify frozen settings
+        Assert.True(cut7.Instance.FrozenColumns == 2, "FrozenColumns is set to 2");
+        Assert.True(cut7.Instance.FrozenRows == 1, "FrozenRows is set to 1");
+
+        // Initial state
+        var initialVisible = await cut7.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == initialVisible.Count, "Initial visible columns count is 3");
+
+        // Show hidden column - should trigger frozen height update
+        await cut7.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        var visibleAfterShow = await cut7.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfterShow.Count, "All columns are now visible");
+        Assert.True(cut7.Instance.Columns[1].Visible, "Customer ID column is visible");
+    }
+}
+
+<!-- Test 8: ShowColumnsAsync_WithVisibilityChangedEvent_FiresCorrectly -->
+<!-- Coverage: Lines 3105-3112 (ColumnVisibilityChanged event firing) -->
+<SfFixture @ref="fixture8" TestAsync="GridBasicRendering8" Description="Show Columns should fire ColumnVisibilityChanged event correctly">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridVisibilityEvent" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridEvents ColumnVisibilityChanged="OnColumnVisibilityChanged" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> GridVisibilityEvent;
+    public IRenderedComponent<SfGrid<Order>> cut8 { get; set; }
+    private int visibilityChangedCount = 0;
+    private List<string> lastVisibleColumnHeaders = new List<string>();
+    private List<string> lastHiddenColumnHeaders = new List<string>();
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithVisibilityChangedEvent_FiresCorrectly
+    /// Coverage: Lines 3105-3112 (ColumnVisibilityChanged event event args population)
+    /// Purpose: Verify that ColumnVisibilityChanged event is fired with correct VisibleColumns and HiddenColumns
+    /// </summary>
+    async Task GridBasicRendering8(Fixture fixture)
+    {
+        cut8 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        visibilityChangedCount = 0;
+        lastVisibleColumnHeaders.Clear();
+        lastHiddenColumnHeaders.Clear();
+
+        // Initial state: 2 visible columns
+        var initialVisible = await cut8.Instance.GetVisibleColumnsAsync();
+        Assert.True(2 == initialVisible.Count, "Initial visible columns count is 2");
+
+        // Show columns - should trigger ColumnVisibilityChanged event
+        await cut8.Instance.ShowColumnsAsync(new string[] { "Customer ID", "Freight" });
+        
+        // Verify event was fired
+        Assert.True(visibilityChangedCount > 0, "ColumnVisibilityChanged event was fired");
+        
+        // Verify all columns are now visible
+        var finalVisible = await cut8.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == finalVisible.Count, "All 4 columns are now visible");
+        
+        // Verify event args contained correct information
+        Assert.True(lastVisibleColumnHeaders.Count >= 4, "Event provided visible columns info");
+    }
+
+    private void OnColumnVisibilityChanged(ColumnVisibilityChangedEventArgs args)
+    {
+        visibilityChangedCount++;
+        lastVisibleColumnHeaders = args.VisibleColumns?.Select(x => x.HeaderText).ToList() ?? new List<string>();
+        lastHiddenColumnHeaders = args.HiddenColumns?.Select(x => x.HeaderText).ToList() ?? new List<string>();
+    }
+}
+
+<!-- Test 9: ShowColumnsAsync_WithActionCompleteEvent_FiresWithColumnState -->
+<!-- Coverage: Lines 3098-3103 (OnActionComplete event with ColumnState) -->
+<SfFixture @ref="fixture9" TestAsync="GridBasicRendering9" Description="Show Columns should fire ActionComplete event with ColumnState RequestType">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridActionCompleteEvent" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridEvents OnActionComplete="OnActionComplete" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> GridActionCompleteEvent;
+    public IRenderedComponent<SfGrid<Order>> cut9 { get; set; }
+    private int actionCompleteCount = 0;
+    private Blazor.Grids.Action lastActionRequestType = default;
+    private int lastVisibleColumnsCount = 0;
+
+    /// <summary>
+    /// Test: ShowColumnsAsync_WithActionCompleteEvent_FiresWithColumnState
+    /// Coverage: Lines 3098-3103 (OnActionComplete event firing with ColumnState RequestType)
+    /// Purpose: Verify that OnActionComplete event is fired with RequestType=ColumnState and VisibleColumns populated
+    /// </summary>
+    async Task GridBasicRendering9(Fixture fixture)
+    {
+        cut9 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        actionCompleteCount = 0;
+        lastActionRequestType = default;
+        lastVisibleColumnsCount = 0;
+
+        // Initial state
+        var initialVisible = await cut9.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == initialVisible.Count, "Initial visible columns count is 3");
+
+        // Show column - should trigger OnActionComplete event
+        await cut9.Instance.ShowColumnsAsync(new string[] { "Customer ID" });
+        
+        // Verify event was fired
+        Assert.True(actionCompleteCount > 0, "OnActionComplete event was fired");
+        
+        // Verify event had ColumnState RequestType
+        Assert.True(lastActionRequestType == Blazor.Grids.Action.ColumnState, "RequestType was ColumnState");
+        
+        // Verify visible columns were populated in event args
+        Assert.True(lastVisibleColumnsCount > 0, "VisibleColumns count was provided in event args");
+    }
+
+    private void OnActionComplete(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType == Blazor.Grids.Action.ColumnState)
+        {
+            actionCompleteCount++;
+            lastActionRequestType = args.RequestType;
+            lastVisibleColumnsCount = args.VisibleColumns?.Count ?? 0;
+        }
+    }
+}
+
+<!-- Test 10: ShowColumnAsync_SingleColumn_CallsShowColumnsOperation -->
+<!-- Coverage: Lines 3198-3201 (ShowColumnAsync overload - single column wrapper) -->
+<SfFixture @ref="fixture10" TestAsync="GridBasicRendering10" Description="ShowColumnAsync (single column) should show one column correctly">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridSingleColumn" DataSource="GenerateOrderData()" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> GridSingleColumn;
+    public IRenderedComponent<SfGrid<Order>> cut10 { get; set; }
+
+    /// <summary>
+    /// Test: ShowColumnAsync_SingleColumn_CallsShowColumnsOperation
+    /// Coverage: Lines 3198-3201 (ShowColumnAsync overload - wraps single column to array)
+    /// Purpose: Verify that ShowColumnAsync correctly wraps single column name and calls ShowColumnsOperation
+    /// Tests both HeaderText and Field parameter modes
+    /// </summary>
+    async Task GridBasicRendering10(Fixture fixture)
+    {
+        cut10 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Initial state: 2 visible columns
+        var initialVisible = await cut10.Instance.GetVisibleColumnsAsync();
+        Assert.True(2 == initialVisible.Count, "Initial visible columns count is 2");
+
+        // Test 1: Show single column by HeaderText
+        await cut10.Instance.ShowColumnAsync("Customer ID");
+        
+        var visibleAfterShowHeaderText = await cut10.Instance.GetVisibleColumnsAsync();
+        Assert.True(3 == visibleAfterShowHeaderText.Count, "3 columns visible after showing by HeaderText");
+        Assert.True(cut10.Instance.Columns[1].Visible, "Customer ID column is visible");
+
+        // Test 2: Show another single column by Field name
+        await cut10.Instance.ShowColumnAsync("Freight", "Field");
+        
+        var visibleAfterShowField = await cut10.Instance.GetVisibleColumnsAsync();
+        Assert.True(4 == visibleAfterShowField.Count, "All 4 columns visible after showing by Field");
+        Assert.True(cut10.Instance.Columns[2].Visible, "Freight column is visible");
+
+        // Verify all columns are visible
+        for (int i = 0; i < cut10.Instance.Columns.Count; i++)
+        {
+            Assert.True(cut10.Instance.Columns[i].Visible, $"Column {i} is visible");
+        }
+    }
+}

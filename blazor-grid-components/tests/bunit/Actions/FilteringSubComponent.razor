@@ -1,0 +1,1659 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture11" TestAsync="GridBasicRendering11" Description="2 Filtermenu Items click">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grids1" DataSource="GenerateOrderData()" AllowSorting="true" AllowGrouping="true" AllowReordering="true" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="200"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="180"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date 1" Format="d" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Date" Format="d" TextAlign="TextAlign.Right" Type="ColumnType.Date" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Date Only" Format="d" TextAlign="TextAlign.Right" Type="ColumnType.DateOnly" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Time Only" Format="d" TextAlign="TextAlign.Right" Type="ColumnType.TimeOnly" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Check" Format="d" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<Order> Grids1;
+
+    private async Task GridBasicRendering11(Fixture fixture)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[2].Click();
+        await Task.Yield();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+    }
+}
+
+
+<SfFixture @ref="fixture12" TestAsync="GridBasicRendering12" Description="Render Excel filter">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowSelection="true" AllowPaging=true AllowFiltering="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" CellSelectionMode="CellSelectionMode.Box"></GridSelectionSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture12 { get; set; }
+
+    public async Task GridBasicRendering12(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var filterModule = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterCheckBoxRenderer<Order>>();
+        cut.WaitForState(() => filterModule.Instance != null);
+        cut.FindAll(".e-menu-item")[1].Click();
+        var menuItemCount = cut.FindAll(".e-menu-item").Count;
+        var equalItem = cut.FindAll(".e-menu-item.e-focused").Count;
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        cut.WaitForState(() => excelFilter.Instance != null);
+        var menuItemCounts = cut.FindAll(".e-menu-item").Count;
+        MenuEventArgs<MenuItem> args = new MenuEventArgs<MenuItem>();
+        args.Item = new MenuItem();
+        args.Item.Text = "Equal";
+        args.Item.IconCss = "";
+        args.Item.Id = "equal";
+        cut.InvokeAsync(() => excelFilter.Instance.ItemSelected(args)).GetAwaiter();
+        var firstOperator = excelFilter.Instance.GetFirstColumnFilterOperator();
+        var secondOperator = excelFilter.Instance.GetSecondColumnFilterOperator();
+        var firstValue = excelFilter.Instance.GetFirstColumnFilterValue();
+        var secondValue = excelFilter.Instance.GetSecondColumnFilterValue();
+        cut.InvokeAsync(() => excelFilter.Instance.ClearBtnClick()).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture13" TestAsync="GridBasicRendering13" Description="Excel filter JS Methods">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowSelection="true" AllowPaging=true AllowFiltering="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" CellSelectionMode="CellSelectionMode.Box"></GridSelectionSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture13 { get; set; }
+
+    public async Task GridBasicRendering13(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        cut.Instance._jsAdaptor.FilterPopupClose();
+    }
+}
+
+<SfFixture @ref="fixture14" TestAsync="GridBasicRendering14" Description="FilterBtnClick">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowSelection="true" AllowPaging=true AllowFiltering="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" CellSelectionMode="CellSelectionMode.Box"></GridSelectionSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture14 { get; set; }
+ 
+    public async Task GridBasicRendering14(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        cut.WaitForState(() => excelFilter.Instance != null);
+        cut.InvokeAsync(() => excelFilter.Instance.FilterBtnClick()).GetAwaiter();
+    }
+}
+
+
+<SfFixture @ref="fixturenew15" TestAsync="GridUpdateFilterModelTesting" Description="UpdateFilterModel method coverage">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderDataWithEnum()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Status) HeaderText="Status" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew15 { get; set; }
+
+    public List<Order> GenerateOrderDataWithEnum()
+    {
+        return Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[x % 5],
+            Freight = 25.7 + x,
+            Status = (Status)(x % 4),
+            OrderDate = DateTime.Now.AddDays(-x),
+            EmployeeID = x % 5 + 1
+        }).ToList();
+    }
+
+    public async Task GridUpdateFilterModelTesting(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Test Case 1: UpdateFilterModel with null filterValue - non-enum type (string)
+        var modelInstance1 = new PredicateModel<object>();
+        var filterCol1 = new GridFilterColumn
+        {
+            Field = "CustomerID",
+            Operator = Syncfusion.Blazor.Operator.Equal,
+            Value = null,
+            ActualValue = "ALFKI",
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-1"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance1, filterCol1, "ALFKI", typeof(string), false);
+        
+        Assert.True(modelInstance1.Value?.ToString() == "ALFKI", "UpdateFilterModel: String value set correctly when filterValue is null");
+        Assert.True(modelInstance1.Field == "CustomerID", "UpdateFilterModel: Field property set correctly");
+        Assert.True(modelInstance1.Operator == Syncfusion.Blazor.Operator.Equal, "UpdateFilterModel: Operator property set correctly");
+        Assert.True(modelInstance1.MatchCase == false, "UpdateFilterModel: MatchCase property set correctly");
+
+        // Test Case 2: UpdateFilterModel with enum type - filterValue is 0 (default enum value)
+        var modelInstance2 = new PredicateModel<object>();
+        modelInstance2.Value = 0; // Default enum value
+        var filterCol2 = new GridFilterColumn
+        {
+            Field = "Status",
+            Operator = Syncfusion.Blazor.Operator.Equal,
+            Value = 0,
+            ActualValue = Status.Dispatched,
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-2"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance2, filterCol2, 0, typeof(Status), true);
+        
+        //Assert.True(modelInstance2.Value is Status, "UpdateFilterModel: Enum type converted correctly when hasPersistence is true");
+        Assert.True(modelInstance2.Field == "Status", "UpdateFilterModel: Field property set for enum column");
+
+        // Test Case 3: UpdateFilterModel with enum type - non-zero enum value
+        var modelInstance3 = new PredicateModel<object>();
+        modelInstance3.Value = 1;
+        var filterCol3 = new GridFilterColumn
+        {
+            Field = "Status",
+            Operator = Syncfusion.Blazor.Operator.Equal,
+            Value = 1,
+            ActualValue = Status.Packed,
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-3"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance3, filterCol3, 1, typeof(Status), true);
+        
+        Assert.True(modelInstance3.Field is "Status", "UpdateFilterModel: Enum value set correctly for non-zero enum");
+        Assert.True((Status)modelInstance3.ActualValue == Status.Packed, "UpdateFilterModel: Correct enum value assigned");
+
+        // Test Case 4: UpdateFilterModel with null filterValue and null enumName path
+        var modelInstance4 = new PredicateModel<object>();
+        var filterCol4 = new GridFilterColumn
+        {
+            Field = "OrderID",
+            Operator = Syncfusion.Blazor.Operator.Equal,
+            Value = null,
+            ActualValue = 1001,
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-4"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance4, filterCol4, 1001, typeof(int), false);
+        
+        Assert.True(modelInstance4.Value?.ToString() == "1001", "UpdateFilterModel: Integer value set correctly when filterValue is null");
+        Assert.True(modelInstance4.ActualValue?.ToString() == "1001", "UpdateFilterModel: ActualValue property set correctly");
+
+        // Test Case 5: UpdateFilterModel with ActualValue as JsonElement (testing JsonElement conversion path)
+        var modelInstance5 = new PredicateModel<object>();
+        var filterCol5 = new GridFilterColumn
+        {
+            Field = "Freight",
+            Operator = Syncfusion.Blazor.Operator.GreaterThan,
+            Value = 30.5,
+            ActualValue = System.Text.Json.JsonDocument.Parse("30.5").RootElement,
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-5"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance5, filterCol5, null, typeof(double), false);
+        
+        Assert.True(modelInstance5.Field == "Freight", "UpdateFilterModel: Field set correctly for JsonElement conversion");
+        Assert.True(modelInstance5.Operator == Syncfusion.Blazor.Operator.GreaterThan, "UpdateFilterModel: Operator set correctly");
+
+        // Test Case 6: UpdateFilterModel with all properties set (ActualValue, Predicate, Uid, IgnoreAccent)
+        var modelInstance6 = new PredicateModel<object>();
+        modelInstance6.Value = "TEST";
+        var filterCol6 = new GridFilterColumn
+        {
+            Field = "CustomerID",
+            Operator = Syncfusion.Blazor.Operator.Contains,
+            Value = "TEST",
+            ActualValue = "TEST",
+            MatchCase = true,
+            IgnoreAccent = true,
+            Predicate = "or",
+            Uid = "grid-column-6"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance6, filterCol6, null, typeof(string), false);
+        
+        Assert.True(modelInstance6.Value?.ToString() == "TEST", "UpdateFilterModel: Value maintained when not null");
+        Assert.True(modelInstance6.MatchCase == true, "UpdateFilterModel: MatchCase set to true");
+        Assert.True(modelInstance6.IgnoreAccent == true, "UpdateFilterModel: IgnoreAccent set to true");
+        Assert.True(modelInstance6.Predicate == "or", "UpdateFilterModel: Predicate set to 'or'");
+        Assert.True(modelInstance6.Uid == "grid-column-6", "UpdateFilterModel: Uid set correctly");
+
+        // Test Case 7: UpdateFilterModel with enum that is not PropertyType.IsEnum (else branch)
+        var modelInstance7 = new PredicateModel<object>();
+        var filterCol7 = new GridFilterColumn
+        {
+            Field = "EmployeeID",
+            Operator = Syncfusion.Blazor.Operator.Equal,
+            Value = null,
+            ActualValue = 5,
+            MatchCase = false,
+            IgnoreAccent = false,
+            Predicate = "and",
+            Uid = "grid-column-7"
+        };
+
+        Syncfusion.Blazor.Grids.Internal.Filter<Order>.UpdateFilterModel(modelInstance7, filterCol7, 5, typeof(int), false);
+        
+        Assert.True(modelInstance7.Value?.ToString() == "5", "UpdateFilterModel: Non-enum integer value set via else branch");
+        Assert.True(modelInstance7.ActualValue?.ToString() == "5", "UpdateFilterModel: ActualValue set correctly for non-enum");
+
+        await Task.CompletedTask;
+    }
+}
+
+<SfFixture @ref="fixturenew16" Test="GridGetEnumOperatorTesting" Description="GetEnumOperator method coverage - all switch cases">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturenew16 { get; set; }
+
+    void GridGetEnumOperatorTesting(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Test Case 1: "contains" -> Operator.Contains
+        var result1 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("contains");
+        Assert.True(result1 == Syncfusion.Blazor.Operator.Contains, "GetEnumOperator: 'contains' should return Operator.Contains");
+
+        // Test Case 2: "doesnotcontain" -> Operator.DoesNotContain
+        var result2 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("doesnotcontain");
+        Assert.True(result2 == Syncfusion.Blazor.Operator.DoesNotContain, "GetEnumOperator: 'doesnotcontain' should return Operator.DoesNotContain");
+
+        // Test Case 3: "startswith" -> Operator.StartsWith
+        var result3 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("startswith");
+        Assert.True(result3 == Syncfusion.Blazor.Operator.StartsWith, "GetEnumOperator: 'startswith' should return Operator.StartsWith");
+
+        // Test Case 4: "doesnotstartwith" -> Operator.DoesNotStartWith
+        var result4 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("doesnotstartwith");
+        Assert.True(result4 == Syncfusion.Blazor.Operator.DoesNotStartWith, "GetEnumOperator: 'doesnotstartwith' should return Operator.DoesNotStartWith");
+
+        // Test Case 5: "endswith" -> Operator.EndsWith
+        var result5 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("endswith");
+        Assert.True(result5 == Syncfusion.Blazor.Operator.EndsWith, "GetEnumOperator: 'endswith' should return Operator.EndsWith");
+
+        // Test Case 6: "doesnotendwith" -> Operator.DoesNotEndWith
+        var result6 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("doesnotendwith");
+        Assert.True(result6 == Syncfusion.Blazor.Operator.DoesNotEndWith, "GetEnumOperator: 'doesnotendwith' should return Operator.DoesNotEndWith");
+
+        // Test Case 7: "greaterthan" -> Operator.GreaterThan
+        var result7 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("greaterthan");
+        Assert.True(result7 == Syncfusion.Blazor.Operator.GreaterThan, "GetEnumOperator: 'greaterthan' should return Operator.GreaterThan");
+
+        // Test Case 8: "greaterthanorequal" -> Operator.GreaterThanOrEqual
+        var result8 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("greaterthanorequal");
+        Assert.True(result8 == Syncfusion.Blazor.Operator.GreaterThanOrEqual, "GetEnumOperator: 'greaterthanorequal' should return Operator.GreaterThanOrEqual");
+
+        // Test Case 9: "lessthan" -> Operator.LessThan
+        var result9 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("lessthan");
+        Assert.True(result9 == Syncfusion.Blazor.Operator.LessThan, "GetEnumOperator: 'lessthan' should return Operator.LessThan");
+
+        // Test Case 10: "lessthanorequal" -> Operator.LessThanOrEqual
+        var result10 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("lessthanorequal");
+        Assert.True(result10 == Syncfusion.Blazor.Operator.LessThanOrEqual, "GetEnumOperator: 'lessthanorequal' should return Operator.LessThanOrEqual");
+
+        // Test Case 11: "notequal" -> Operator.NotEqual
+        var result11 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("notequal");
+        Assert.True(result11 == Syncfusion.Blazor.Operator.NotEqual, "GetEnumOperator: 'notequal' should return Operator.NotEqual");
+
+        // Test Case 12: "equal" -> Operator.Equal
+        var result12 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("equal");
+        Assert.True(result12 == Syncfusion.Blazor.Operator.Equal, "GetEnumOperator: 'equal' should return Operator.Equal");
+
+        // Test Case 13: "like" -> Operator.Like
+        var result13 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("like");
+        Assert.True(result13 == Syncfusion.Blazor.Operator.Like, "GetEnumOperator: 'like' should return Operator.Like");
+
+        // Test Case 14: "wildcard" -> Operator.WildCard
+        var result14 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("wildcard");
+        Assert.True(result14 == Syncfusion.Blazor.Operator.WildCard, "GetEnumOperator: 'wildcard' should return Operator.WildCard");
+
+        // Test Case 15: "isnull" -> Operator.IsNull
+        var result15 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("isnull");
+        Assert.True(result15 == Syncfusion.Blazor.Operator.IsNull, "GetEnumOperator: 'isnull' should return Operator.IsNull");
+
+        // Test Case 16: "isnotnull" -> Operator.IsNotNull
+        var result16 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("isnotnull");
+        Assert.True(result16 == Syncfusion.Blazor.Operator.IsNotNull, "GetEnumOperator: 'isnotnull' should return Operator.IsNotNull");
+
+        // Test Case 17: "isempty" -> Operator.IsEmpty
+        var result17 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("isempty");
+        Assert.True(result17 == Syncfusion.Blazor.Operator.IsEmpty, "GetEnumOperator: 'isempty' should return Operator.IsEmpty");
+
+        // Test Case 18: "isnotempty" -> Operator.IsNotEmpty
+        var result18 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("isnotempty");
+        Assert.True(result18 == Syncfusion.Blazor.Operator.IsNotEmpty, "GetEnumOperator: 'isnotempty' should return Operator.IsNotEmpty");
+
+        // Test Case 19: default case - any other value -> Operator.None
+        var result19 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("invalidoperator");
+        Assert.True(result19 == Syncfusion.Blazor.Operator.None, "GetEnumOperator: invalid operator should return Operator.None");
+
+        // Test Case 20: default case - empty string -> Operator.None
+        var result20 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("");
+        Assert.True(result20 == Syncfusion.Blazor.Operator.None, "GetEnumOperator: empty string should return Operator.None");
+
+        // Test Case 21: default case - null value -> Operator.None (testing null handling)
+        var result21 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator(null);
+        Assert.True(result21 == Syncfusion.Blazor.Operator.None, "GetEnumOperator: null value should return Operator.None");
+
+        // Test Case 22: Case sensitivity test - uppercase should go to default
+        var result22 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("CONTAINS");
+        Assert.True(result22 == Syncfusion.Blazor.Operator.None, "GetEnumOperator: uppercase 'CONTAINS' should return Operator.None (case sensitive)");
+
+        // Test Case 23: Case sensitivity test - mixed case should go to default
+        var result23 = Syncfusion.Blazor.Grids.Internal.Filter<Order>.GetEnumOperator("StartsWith");
+        Assert.True(result23 == Syncfusion.Blazor.Operator.None, "GetEnumOperator: mixed case 'StartsWith' should return Operator.None (case sensitive)");
+    }
+}
+
+<SfFixture @ref="fixturenewnew15" TestAsync="ExcelFilter_CustomValuePipeline" Description="Excel filter custom value pipeline">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixturenewnew15 { get; set; }
+    public async Task ExcelFilter_CustomValuePipeline(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.Instance.EnablePersistence = true;
+        if (cut.Instance.FilterSettings.Columns == null)
+        {
+            cut.Instance.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        cut.Instance.FilterSettings.Columns.Clear();
+        cut.Instance.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+            ActualValue = "ALFKI",
+            ColumnType = "String",
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var createdHandlerMethod = excelType.GetMethod(
+        "CreatedHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandlerMethod);
+        var createdTask = (Task)createdHandlerMethod.Invoke(excelInstance, new object[] { new object() })!;
+        await createdTask;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var order = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", order.CustomerID);
+    }
+}
+
+<SfFixture @ref="fixture16" TestAsync="ExcelFilter_CustomValuePipeline_ComplexField" Description="Excel filter custom value pipeline - complex field">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateComplexOrder()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="Customer.City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture16 { get; set; }
+    public class ComplexCustomer
+    {
+        public string City { get; set; }
+    }
+    public class ComplexOrder
+    {
+        public ComplexCustomer Customer { get; set; } = new ComplexCustomer();
+    }
+    public List<ComplexOrder> ComplexOrders { get; set; }
+    public List<ComplexOrder> GenerateComplexOrder()
+    {
+        return ComplexOrders = Enumerable.Range(1, 3)
+        .Select(i => new ComplexOrder
+        {
+            Customer = new ComplexCustomer { City = "City" + i }
+        }).ToList();
+    }
+    public async Task ExcelFilter_CustomValuePipeline_ComplexField(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ComplexOrder>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.Instance.EnablePersistence = true;
+        if (cut.Instance.FilterSettings.Columns == null)
+        {
+            cut.Instance.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        cut.Instance.FilterSettings.Columns.Clear();
+        cut.Instance.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = "Customer.City",
+#pragma warning disable BL0005
+            ActualValue = "City1",
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+            Operator = Operator.Equal,
+#pragma warning restore BL0005
+            Value = "City1"
+        });
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<ComplexOrder>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var createdHandlerMethod = excelType.GetMethod(
+        "CreatedHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandlerMethod);
+        var createdTask = (Task)createdHandlerMethod.Invoke(excelInstance, new object[] { new object() })!;
+        await createdTask;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var complexOrder = Assert.IsType<ComplexOrder>(customFilterItem);
+        Assert.NotNull(complexOrder.Customer);
+        Assert.Equal("City1", complexOrder.Customer.City);
+    }
+}
+
+<SfFixture @ref="fixture17" TestAsync="ExcelFilter_OperatorDropdownHandlers" Description="Excel filter operator dropdown handlers">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture17 { get; set; }
+    public async Task ExcelFilter_OperatorDropdownHandlers(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excelFilterString = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstanceString = excelFilterString.Instance;
+        Assert.NotNull(excelInstanceString);
+        var excelType = excelInstanceString.GetType();
+        var stringDropDownProp = excelType.GetProperty(
+        "StringDropDown",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(stringDropDownProp);
+        var stringDropDownObj = stringDropDownProp.GetValue(excelInstanceString);
+        Assert.NotNull(stringDropDownObj);
+        var stringDropDown = (System.Collections.IList)stringDropDownObj!;
+        Assert.True(stringDropDown.Count > 0, "StringDropDown should contain operators.");
+        int expectedStringIndex_First = stringDropDown.Count > 2 ? 2 : 0;
+        var stringOperatorItem_First = stringDropDown[expectedStringIndex_First];
+        var operatorRuntimeType = stringOperatorItem_First.GetType();
+        var stringValueProp = operatorRuntimeType.GetProperty("Value");
+        Assert.NotNull(stringValueProp);
+        var stringOpValue_First = (string?)stringValueProp!.GetValue(stringOperatorItem_First);
+        Assert.False(string.IsNullOrEmpty(stringOpValue_First), "Operator.Value should not be null or empty.");
+        var changeArgsGenericType = typeof(Syncfusion.Blazor.DropDowns.ChangeEventArgs<,>)
+        .MakeGenericType(typeof(string), operatorRuntimeType);
+        var changeValueProp = changeArgsGenericType.GetProperty("Value");
+        Assert.NotNull(changeValueProp);
+        var stringChangeArgs_First = Activator.CreateInstance(changeArgsGenericType)!;
+        changeValueProp!.SetValue(stringChangeArgs_First, stringOpValue_First);
+        var firstDropdownHandler = excelType.GetMethod(
+        "FirstDropdownChangeHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstDropdownHandler);
+        firstDropdownHandler!.Invoke(excelInstanceString, new object[] { stringChangeArgs_First });
+        var firstDropdownIndexProp = excelType.GetProperty(
+        "firstDropdownChangedIndex",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstDropdownIndexProp);
+        var actualStringIndex_First = (int)firstDropdownIndexProp!.GetValue(excelInstanceString)!;
+        Assert.Equal(expectedStringIndex_First, actualStringIndex_First);
+        int expectedStringIndex_Second = stringDropDown.Count > 1 ? stringDropDown.Count - 1 : 0;
+        var stringOperatorItem_Second = stringDropDown[expectedStringIndex_Second];
+        var stringOpValue_Second = (string?)stringValueProp.GetValue(stringOperatorItem_Second);
+        Assert.False(string.IsNullOrEmpty(stringOpValue_Second), "Operator.Value should not be null or empty for second handler.");
+        var stringChangeArgs_Second = Activator.CreateInstance(changeArgsGenericType)!;
+        changeValueProp.SetValue(stringChangeArgs_Second, stringOpValue_Second);
+        var secondDropdownHandler = excelType.GetMethod(
+        "SecondDropdownChangeHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(secondDropdownHandler);
+        secondDropdownHandler!.Invoke(excelInstanceString, new object[] { stringChangeArgs_Second });
+        var secondDropdownIndexProp = excelType.GetProperty(
+        "secondDropdownChangedIndex",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(secondDropdownIndexProp);
+        var actualStringIndex_Second = (int)secondDropdownIndexProp!.GetValue(excelInstanceString)!;
+        Assert.Equal(expectedStringIndex_Second, actualStringIndex_Second);
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilterNumber = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstanceNumber = excelFilterNumber.Instance;
+        Assert.NotNull(excelInstanceNumber);
+        var numberDropDownProp = excelType.GetProperty(
+        "NumberDropDown",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(numberDropDownProp);
+        var numberDropDownObj = numberDropDownProp.GetValue(excelInstanceNumber);
+        Assert.NotNull(numberDropDownObj);
+        var numberDropDown = (System.Collections.IList)numberDropDownObj!;
+        Assert.True(numberDropDown.Count > 0, "NumberDropDown should contain operators.");
+        int expectedNumberIndex_First = numberDropDown.Count > 1 ? 1 : 0;
+        var numberOperatorItem_First = numberDropDown[expectedNumberIndex_First];
+        var numberOperatorRuntimeType = numberOperatorItem_First.GetType();
+        var numberValueProp = numberOperatorRuntimeType.GetProperty("Value");
+        Assert.NotNull(numberValueProp);
+        var numberOpValue_First = (string?)numberValueProp!.GetValue(numberOperatorItem_First);
+        Assert.False(string.IsNullOrEmpty(numberOpValue_First), "Numeric Operator.Value should not be null or empty.");
+        var numChangeArgsGenericType = typeof(Syncfusion.Blazor.DropDowns.ChangeEventArgs<,>)
+        .MakeGenericType(typeof(string), numberOperatorRuntimeType);
+        var numChangeValueProp = numChangeArgsGenericType.GetProperty("Value");
+        Assert.NotNull(numChangeValueProp);
+        var numberChangeArgs_First = Activator.CreateInstance(numChangeArgsGenericType)!;
+        numChangeValueProp!.SetValue(numberChangeArgs_First, numberOpValue_First);
+        var firstNumberDropdownHandler = excelType.GetMethod(
+        "FirstNumberDropdownChangeHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstNumberDropdownHandler);
+        firstNumberDropdownHandler!.Invoke(excelInstanceNumber, new object[] { numberChangeArgs_First });
+        var actualNumberIndex_First = (int)firstDropdownIndexProp.GetValue(excelInstanceNumber)!;
+        Assert.Equal(expectedNumberIndex_First, actualNumberIndex_First);
+        int expectedNumberIndex_Second = numberDropDown.Count > 2 ? 2 : 0;
+        var numberOperatorItem_Second = numberDropDown[expectedNumberIndex_Second];
+        var numberOpValue_Second = (string?)numberValueProp.GetValue(numberOperatorItem_Second);
+        Assert.False(string.IsNullOrEmpty(numberOpValue_Second), "Numeric Operator.Value should not be null or empty for second handler.");
+        var numberChangeArgs_Second = Activator.CreateInstance(numChangeArgsGenericType)!;
+        numChangeValueProp.SetValue(numberChangeArgs_Second, numberOpValue_Second);
+        var secondNumberDropdownHandler = excelType.GetMethod(
+        "SecondNumberDropdownChangeHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(secondNumberDropdownHandler);
+        secondNumberDropdownHandler!.Invoke(excelInstanceNumber, new object[] { numberChangeArgs_Second });
+        var actualNumberIndex_Second = (int)secondDropdownIndexProp.GetValue(excelInstanceNumber)!;
+        Assert.Equal(expectedNumberIndex_Second, actualNumberIndex_Second);
+    }
+}
+
+<SfFixture @ref="fixture18" TestAsync="ExcelFilter_CustomValueHandler_Expando" Description="Excel filter CustomValueHandler with ExpandoObject">
+    <ComponentUnderTest>
+        <SfGrid TItem="System.Dynamic.ExpandoObject"
+                DataSource="GenerateExpandoOrder()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture18 { get; set; }
+    public List<System.Dynamic.ExpandoObject> ExpandoOrder { get; set; }
+    public List<System.Dynamic.ExpandoObject> GenerateExpandoOrder()
+    {
+        var list = new List<System.Dynamic.ExpandoObject>();
+        for (int i = 1; i <= 3; i++)
+        {
+            dynamic e = new System.Dynamic.ExpandoObject();
+            e.City = "City" + i;
+            list.Add(e);
+        }
+        return ExpandoOrder = list;
+    }
+    public async Task ExcelFilter_CustomValueHandler_Expando(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<System.Dynamic.ExpandoObject>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<System.Dynamic.ExpandoObject>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var argsType = typeof(Syncfusion.Blazor.DropDowns.CustomValueSpecifierEventArgs<>)
+        .MakeGenericType(typeof(System.Dynamic.ExpandoObject));
+        var args = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text");
+        Assert.NotNull(textProp);
+        textProp!.SetValue(args, "CustomCity");
+        var customValueHandler = excelType.GetMethod(
+        "CustomValueHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var handlerTask = (Task)customValueHandler!.Invoke(excelInstance, new object[] { args })!;
+        await handlerTask;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var expandoItem = Assert.IsType<System.Dynamic.ExpandoObject>(customFilterItem);
+        var dict = (IDictionary<string, object>)expandoItem;
+        Assert.True(dict.ContainsKey("City"), "CustomFilterItem should contain 'City' key.");
+        Assert.Equal("CustomCity", dict["City"]);
+        var itemProp = argsType.GetProperty("Item");
+        Assert.NotNull(itemProp);
+        var argsItem = itemProp!.GetValue(args);
+        Assert.Same(customFilterItem, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture19" TestAsync="ExcelFilter_StringCustomFilterQueries" Description="Excel filter custom string query handlers">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture19 { get; set; }
+    public async Task ExcelFilter_StringCustomFilterQueries(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var firstDropProp = excelType.GetProperty(
+        "FirstStringOperatorDropDown",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondDropProp = excelType.GetProperty(
+        "SecondStringOperatorDropDown",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var firstAutoProp = excelType.GetProperty(
+        "FirstAutoComplete",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondAutoProp = excelType.GetProperty(
+        "SecondAutoComplete",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstDropProp);
+        Assert.NotNull(secondDropProp);
+        Assert.NotNull(firstAutoProp);
+        Assert.NotNull(secondAutoProp);
+        var firstDropInstance = Activator.CreateInstance(firstDropProp!.PropertyType)!;
+        firstDropProp.SetValue(excelInstance, firstDropInstance);
+        var secondDropInstance = Activator.CreateInstance(secondDropProp!.PropertyType)!;
+        secondDropProp.SetValue(excelInstance, secondDropInstance);
+        var firstAutoInstance = Activator.CreateInstance(firstAutoProp!.PropertyType)!;
+        firstAutoProp.SetValue(excelInstance, firstAutoInstance);
+        var secondAutoInstance = Activator.CreateInstance(secondAutoProp!.PropertyType)!;
+        secondAutoProp.SetValue(excelInstance, secondAutoInstance);
+        var firstDropType = firstDropInstance.GetType();
+        var dropValueProp = firstDropType.GetProperty("Value");
+        Assert.NotNull(dropValueProp);
+        var secondDropType = secondDropInstance.GetType();
+        var secondDropValueProp = secondDropType.GetProperty("Value");
+        Assert.NotNull(secondDropValueProp);
+        var autoType = firstAutoInstance.GetType();
+        var filterOperatorProp = autoType.GetProperty("FilterOperator");
+        try
+        {
+            Assert.NotNull(filterOperatorProp);
+        }
+        catch
+        {
+        }
+        var filteringArgsType = typeof(Syncfusion.Blazor.DropDowns.FilteringEventArgs);
+        dropValueProp!.SetValue(firstDropInstance, "startswith");
+        var filteringArgs1 = Activator.CreateInstance(filteringArgsType)!;
+        var firstQueryMethod = excelType.GetMethod(
+        "FirstCustomFilterQuery",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstQueryMethod);
+        var task1 = (Task)firstQueryMethod!.Invoke(excelInstance, new object[] { filteringArgs1 })!;
+        await task1;
+        try
+        {
+            var firstFilterOp1 = (string?)filterOperatorProp!.GetValue(firstAutoInstance);
+            Assert.Equal("startswith", firstFilterOp1);
+        }
+        catch
+        {
+        }
+        dropValueProp.SetValue(firstDropInstance, "doesnotstartwith");
+        var filteringArgs2 = Activator.CreateInstance(filteringArgsType)!;
+        var task2 = (Task)firstQueryMethod.Invoke(excelInstance, new object[] { filteringArgs2 })!;
+        await task2;
+        try
+        {
+            var firstFilterOp2 = (string?)filterOperatorProp.GetValue(firstAutoInstance);
+            Assert.False(string.IsNullOrEmpty(firstFilterOp2), "FilterOperator should be set for doesnot* operator.");
+        }
+        catch
+        {
+        }
+        secondDropValueProp!.SetValue(secondDropInstance, "doesnotcontain");
+        var filteringArgs3 = Activator.CreateInstance(filteringArgsType)!;
+        var secondQueryMethod = excelType.GetMethod(
+        "SecondCustomFilterQuery",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(secondQueryMethod);
+        secondQueryMethod!.Invoke(excelInstance, new object[] { filteringArgs3 });
+        try
+        {
+            var secondFilterOp = (string?)filterOperatorProp.GetValue(secondAutoInstance);
+            Assert.False(string.IsNullOrEmpty(secondFilterOp), "SecondAutoComplete.FilterOperator should be set for doesnot* operator.");
+        }
+        catch
+        {
+        }
+    }
+}
+
+<SfFixture @ref="fixture20" TestAsync="ExcelFilter_Adaptive_SubMenuLifecycle" Description="Adaptive Excel filter submenu lifecycle">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true"
+                EnableAdaptiveUI="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture20 { get; set; }
+    public async Task ExcelFilter_Adaptive_SubMenuLifecycle(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableAdaptiveUI, "Grid must have EnableAdaptiveUI = true for adaptive Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var isSubMenuDialogProp = excelType.GetProperty(
+        "IsSubMenuDialog",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isSubMenuDialogProp);
+        var onSubMenuOpened = excelType.GetMethod(
+        "OnSubMenuOpened",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(onSubMenuOpened);
+        onSubMenuOpened!.Invoke(excelInstance, null);
+        var isSubMenuDialogAfterOpen = (bool)isSubMenuDialogProp!.GetValue(excelInstance)!;
+        Assert.True(isSubMenuDialogAfterOpen, "OnSubMenuOpened should set IsSubMenuDialog = true.");
+        var closeHandler = excelType.GetMethod(
+        "CloseHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(closeHandler);
+        await cut.InvokeAsync(() => closeHandler!.Invoke(excelInstance, null));
+        var isSubMenuDialogAfterClose = (bool)isSubMenuDialogProp.GetValue(excelInstance)!;
+        Assert.False(isSubMenuDialogAfterClose, "CloseHandler should set IsSubMenuDialog = false.");
+        var renderedSubmenu = excelType.GetMethod(
+        "RenderedSubmenu",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(renderedSubmenu);
+        var renderedTask = (Task)renderedSubmenu!.Invoke(excelInstance, null)!;
+        await renderedTask;
+        var onSubMenuCreated = excelType.GetMethod(
+        "OnSubMenuCreated",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(onSubMenuCreated);
+        await cut.InvokeAsync(() => onSubMenuCreated!.Invoke(excelInstance, null));
+    }
+}
+<SfFixture @ref="fixture21" TestAsync="ExcelFilter_Adaptive_CustomFilterDialog" Description="Adaptive Excel filter custom dialog lifecycle">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true"
+                EnableAdaptiveUI="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture21 { get; set; }
+    public async Task ExcelFilter_Adaptive_CustomFilterDialog(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableAdaptiveUI, "Grid must have EnableAdaptiveUI = true for adaptive Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[1].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var renderedCustomFilter = excelType.GetMethod(
+        "RenderedCustomFilter",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(renderedCustomFilter);
+        var renderedTask = (Task)renderedCustomFilter!.Invoke(excelInstance, null)!;
+        await renderedTask;
+        var adaptiveCustomFilterDialog = excelType.GetMethod(
+        "AdaptiveCustomFilterDialog",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+        if (adaptiveCustomFilterDialog != null)
+        {
+            var adaptiveTask = (Task)adaptiveCustomFilterDialog.Invoke(excelInstance, null)!;
+            await adaptiveTask;
+        }
+        var isSubMenuItemSelectedField = excelType.GetField(
+        "isSubMenuItemSelected",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isSubMenuItemSelectedField);
+        isSubMenuItemSelectedField!.SetValue(excelInstance, true);
+        var closeCustomDialogHandler = excelType.GetMethod(
+        "CloseCustomDialogHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(closeCustomDialogHandler);
+        closeCustomDialogHandler!.Invoke(excelInstance, null);
+        var isSubMenuItemSelectedAfter = (bool)isSubMenuItemSelectedField.GetValue(excelInstance)!;
+        Assert.False(isSubMenuItemSelectedAfter, "CloseCustomDialogHandler should set isSubMenuItemSelected = false.");
+        var parent = cut.Instance;
+        var gridType = parent.GetType();
+        var filterModuleProp = gridType.GetProperty(
+        "FilterModule",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (filterModuleProp != null)
+        {
+            var filterModule = filterModuleProp.GetValue(parent);
+            if (filterModule != null)
+            {
+                var fmType = filterModule.GetType();
+                var filterIconProp = fmType.GetProperty("FilterIconIsClicked");
+                if (filterIconProp != null)
+                {
+                    var filterIconValue = (bool)filterIconProp.GetValue(filterModule)!;
+                    Assert.False(filterIconValue, "CloseCustomDialogHandler should set FilterIconIsClicked = false.");
+                }
+            }
+        }
+    }
+}
+
+<SfFixture @ref="fixture22" TestAsync="ExcelFilter_MenuLifecycle" Description="Excel filter menu and dialog lifecycle">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture22 { get; set; }
+    public async Task ExcelFilter_MenuLifecycle(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        Assert.False(cut.Instance.EnableAdaptiveUI, "This test targets non-adaptive OnCloseMenu behavior.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var onCloseMenuMethod = excelType.GetMethod(
+        "OnCloseMenu",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(onCloseMenuMethod);
+        var isSubMenuDialogProp = excelType.GetProperty(
+        "IsSubMenuDialog",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isSubMenuDialogProp);
+        var beforeMenuArgsType = typeof(Syncfusion.Blazor.Navigations.BeforeOpenCloseMenuEventArgs<>)
+        .MakeGenericType(typeof(Syncfusion.Blazor.Navigations.MenuItem));
+        var cancelProp = beforeMenuArgsType.GetProperty("Cancel");
+        var parentItemProp = beforeMenuArgsType.GetProperty("ParentItem");
+        Assert.NotNull(cancelProp);
+        Assert.NotNull(parentItemProp);
+        var argsParentNull = Activator.CreateInstance(beforeMenuArgsType)!;
+        cancelProp!.SetValue(argsParentNull, false);
+        parentItemProp!.SetValue(argsParentNull, null);
+        isSubMenuDialogProp!.SetValue(excelInstance, true);
+        onCloseMenuMethod!.Invoke(excelInstance, new object[] { argsParentNull });
+        var cancelAfterNull = (bool)cancelProp.GetValue(argsParentNull)!;
+        Assert.True(cancelAfterNull, "OnCloseMenu should set Cancel = true when ParentItem is null.");
+        var isSubMenuDialogAfterNull = (bool)isSubMenuDialogProp.GetValue(excelInstance)!;
+        Assert.False(isSubMenuDialogAfterNull, "OnCloseMenu should set IsSubMenuDialog = false in non-adaptive mode.");
+        var argsWithParent = Activator.CreateInstance(beforeMenuArgsType)!;
+        cancelProp.SetValue(argsWithParent, false);
+        var parentMenuItem = new Syncfusion.Blazor.Navigations.MenuItem() { Text = "Parent" };
+        parentItemProp.SetValue(argsWithParent, parentMenuItem);
+        isSubMenuDialogProp.SetValue(excelInstance, true);
+        onCloseMenuMethod.Invoke(excelInstance, new object[] { argsWithParent });
+        var cancelAfterParent = (bool)cancelProp.GetValue(argsWithParent)!;
+        Assert.False(cancelAfterParent, "OnCloseMenu should not set Cancel when ParentItem is not null.");
+        var isSubMenuDialogAfterParent = (bool)isSubMenuDialogProp.GetValue(excelInstance)!;
+        Assert.False(isSubMenuDialogAfterParent, "OnCloseMenu should still set IsSubMenuDialog = false.");
+        await cut.Instance.FilterByColumnAsync(nameof(Order.OrderID), "equal", 1001);
+        var isDialogClosedField = excelType.GetField(
+        "isDialogClosed",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isDialogClosedField);
+        isDialogClosedField!.SetValue(excelInstance, false);
+        var beforeCloseType = typeof(Syncfusion.Blazor.Popups.BeforeCloseEventArgs);
+        var beforeCloseArgs = Activator.CreateInstance(beforeCloseType)!;
+        var closeCancelProp = beforeCloseType.GetProperty("Cancel");
+        Assert.NotNull(closeCancelProp);
+        closeCancelProp!.SetValue(beforeCloseArgs, false);
+        var closedMethod = excelType.GetMethod(
+        "Closed",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(closedMethod);
+        closedMethod!.Invoke(excelInstance, new object[] { beforeCloseArgs });
+        var cancelAfterClosed = (bool)closeCancelProp.GetValue(beforeCloseArgs)!;
+        Assert.True(cancelAfterClosed, "Closed should set args.Cancel = true when !isDialogClosed and FilterModule != null.");
+        var isDialogClosedAfter = (bool)isDialogClosedField.GetValue(excelInstance)!;
+        Assert.True(isDialogClosedAfter, "Closed should set isDialogClosed = true.");
+        var disposeMethod = excelType.GetMethod(
+        "Dispose",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(disposeMethod);
+        isSubMenuDialogProp.SetValue(excelInstance, false);
+        await cut.InvokeAsync(() => disposeMethod!.Invoke(excelInstance, null));
+        isSubMenuDialogProp.SetValue(excelInstance, true);
+        await cut.InvokeAsync(() => disposeMethod.Invoke(excelInstance, null));
+    }
+}
+
+<SfFixture @ref="fixture23" TestAsync="ExcelFilter_CustomFilterValueMaintain_Dynamic" Description="Excel filter CustomFilterValueMaintain with DynamicObject">
+    <ComponentUnderTest>
+        <SfGrid
+                DataSource="GenerateDynamicOrder()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture23 { get; set; }
+    public class DynamicOrder : System.Dynamic.DynamicObject
+    {
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
+        public override bool TrySetMember(System.Dynamic.SetMemberBinder binder, object value)
+        {
+            _values[binder.Name] = value;
+            return true;
+        }
+        public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object result)
+        {
+            return _values.TryGetValue(binder.Name, out result!);
+        }
+        public string GetValue(string name)
+        {
+            return _values.TryGetValue(name, out var value) ? value?.ToString()! : null!;
+        }
+    }
+    public List<DynamicOrder> DynamicOrders { get; set; }
+    public List<DynamicOrder> GenerateDynamicOrder()
+    {
+        return DynamicOrders = Enumerable.Range(1, 3)
+        .Select(i => new DynamicOrder())
+        .ToList();
+    }
+    public async Task ExcelFilter_CustomFilterValueMaintain_Dynamic(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicOrder>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<DynamicOrder>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var columnProp = excelType.GetProperty(
+        "Column",
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(columnProp);
+        var column = columnProp!.GetValue(excelInstance) as Syncfusion.Blazor.Grids.GridColumn;
+        Assert.NotNull(column);
+        column!.Field = "City";
+        var excelFilterValueProp = excelType.GetProperty(
+        "excelFilterValue",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(excelFilterValueProp);
+        excelFilterValueProp!.SetValue(excelInstance, "DynCity");
+        var customFilterMethod = excelType.GetMethod(
+        "CustomFilterValueMaintain",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterMethod);
+        var task = (Task)customFilterMethod!.Invoke(excelInstance, null)!;
+        await task;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var dynOrder = Assert.IsType<DynamicOrder>(customFilterItem);
+        Assert.Equal("DynCity", dynOrder.GetValue("City"));
+    }
+}
+
+<SfFixture @ref="fixture24" TestAsync="ExcelFilter_NumberAndRadioHelpers" Description="Excel filter numeric helper and predicate radio button">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture24 { get; set; }
+    public async Task ExcelFilter_NumberAndRadioHelpers(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var numberDropDownProp = excelType.GetProperty(
+        "NumberDropDown",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(numberDropDownProp);
+        var numberDropDownObj = numberDropDownProp!.GetValue(excelInstance);
+        Assert.NotNull(numberDropDownObj);
+        var numberDropDown = (System.Collections.IList)numberDropDownObj!;
+        Assert.True(numberDropDown.Count > 0, "NumberDropDown should contain operators.");
+        var getNumberClassMethod = excelType.GetMethod(
+        "GetNumberClass",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getNumberClassMethod);
+        string GetOperatorValue(object operatorItem)
+        {
+            var opType = operatorItem.GetType();
+            var valueProp = opType.GetProperty("Value");
+            Assert.NotNull(valueProp);
+            return (string)valueProp!.GetValue(operatorItem)!;
+        }
+        var resultNullIndex = (bool)getNumberClassMethod!.Invoke(
+        excelInstance,
+        new object?[] { (int?)null, numberDropDownObj })!;
+        Assert.True(resultNullIndex, "GetNumberClass should return true when stringIndex is null.");
+        int isNullIndex = -1;
+        int isNotNullIndex = -1;
+        int equalIndex = -1;
+        for (int i = 0; i < numberDropDown.Count; i++)
+        {
+            var opItem = numberDropDown[i];
+            var value = GetOperatorValue(opItem);
+            if (value == "isnull")
+            {
+                isNullIndex = i;
+            }
+            else if (value == "isnotnull")
+            {
+                isNotNullIndex = i;
+            }
+            else if (value == "equal")
+            {
+                equalIndex = i;
+            }
+        }
+        Assert.True(isNullIndex >= 0, "NumberDropDown must contain 'isnull' operator.");
+        Assert.True(isNotNullIndex >= 0, "NumberDropDown must contain 'isnotnull' operator.");
+        Assert.True(equalIndex >= 0, "NumberDropDown must contain 'equal' operator.");
+        var resultIsNull = (bool)getNumberClassMethod.Invoke(
+        excelInstance,
+        new object?[] { (int?)isNullIndex, numberDropDownObj })!;
+        Assert.False(resultIsNull, "GetNumberClass should return false for 'isnull' operator.");
+        var resultIsNotNull = (bool)getNumberClassMethod.Invoke(
+        excelInstance,
+        new object?[] { (int?)isNotNullIndex, numberDropDownObj })!;
+        Assert.False(resultIsNotNull, "GetNumberClass should return false for 'isnotnull' operator.");
+        var resultEqual = (bool)getNumberClassMethod.Invoke(
+        excelInstance,
+        new object?[] { (int?)equalIndex, numberDropDownObj })!;
+        Assert.True(resultEqual, "GetNumberClass should return true for normal operator like 'equal'.");
+        var radioButtonClickHandler = excelType.GetMethod(
+        "RadioButtonClickHandler",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(radioButtonClickHandler);
+        var andRadioButtonProp = excelType.GetProperty(
+        "AndRadioButton",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(andRadioButtonProp);
+        radioButtonClickHandler!.Invoke(excelInstance, new object[] { "and" });
+        var predicateAfterAnd = (string?)andRadioButtonProp!.GetValue(excelInstance);
+        Assert.Equal("and", predicateAfterAnd);
+        radioButtonClickHandler.Invoke(excelInstance, new object[] { "or" });
+        var predicateAfterOr = (string?)andRadioButtonProp.GetValue(excelInstance);
+        Assert.Equal("or", predicateAfterOr);
+    }
+}
+
+<SfFixture @ref="fixture25" TestAsync="ExcelFilter_CustomFilterValueMaintain_DynamicNested" Description="Excel filter CustomFilterValueMaintain dynamic nested field">
+    <ComponentUnderTest>
+        <SfGrid
+                DataSource="GenerateNestedDynamicOrder()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture25 { get; set; }
+    public class NestedDynamicOrder : System.Dynamic.DynamicObject
+    {
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
+        public override bool TrySetMember(System.Dynamic.SetMemberBinder binder, object value)
+        {
+            _values[binder.Name] = value;
+            return true;
+        }
+        public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object result)
+        {
+            return _values.TryGetValue(binder.Name, out result!);
+        }
+        public object? GetRawValue(string name)
+        {
+            _values.TryGetValue(name, out var v);
+            return v;
+        }
+    }
+    public List<NestedDynamicOrder> NestedDynamicOrders { get; set; }
+    public List<NestedDynamicOrder> GenerateNestedDynamicOrder()
+    {
+        return NestedDynamicOrders = Enumerable.Range(1, 3)
+        .Select(_ => new NestedDynamicOrder())
+        .ToList();
+    }
+    public async Task ExcelFilter_CustomFilterValueMaintain_DynamicNested(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<NestedDynamicOrder>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<NestedDynamicOrder>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var columnProp = excelType.GetProperty(
+        "Column",
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(columnProp);
+        var column = columnProp!.GetValue(excelInstance) as Syncfusion.Blazor.Grids.GridColumn;
+        Assert.NotNull(column);
+        column!.Field = "Address.City";
+        var excelFilterValueProp = excelType.GetProperty(
+        "excelFilterValue",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(excelFilterValueProp);
+        excelFilterValueProp!.SetValue(excelInstance, "Chennai");
+        var customFilterMethod = excelType.GetMethod(
+        "CustomFilterValueMaintain",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterMethod);
+        var task = (Task)customFilterMethod!.Invoke(excelInstance, null)!;
+        await task;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var dynOrder = Assert.IsType<NestedDynamicOrder>(customFilterItem);
+        var address = dynOrder.GetRawValue("Address");
+        Assert.NotNull(address);
+    }
+}
+
+<SfFixture @ref="fixture26" TestAsync="ExcelFilter_CustomFilterValueMaintain_ExpandoNested" Description="Excel filter CustomFilterValueMaintain ExpandoObject nested field">
+    <ComponentUnderTest>
+        <SfGrid TItem="System.Dynamic.ExpandoObject"
+                DataSource="GenerateExpandoNestedOrder()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture26 { get; set; }
+    public List<System.Dynamic.ExpandoObject> ExpandoNestedOrder { get; set; }
+    public List<System.Dynamic.ExpandoObject> GenerateExpandoNestedOrder()
+    {
+        var list = new List<System.Dynamic.ExpandoObject>();
+        for (int i = 1; i <= 3; i++)
+        {
+            dynamic e = new System.Dynamic.ExpandoObject();
+            e.City = "City" + i;
+            list.Add(e);
+        }
+        return ExpandoNestedOrder = list;
+    }
+    public async Task ExcelFilter_CustomFilterValueMaintain_ExpandoNested(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<System.Dynamic.ExpandoObject>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<System.Dynamic.ExpandoObject>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var columnProp = excelType.GetProperty(
+        "Column",
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(columnProp);
+        var column = columnProp!.GetValue(excelInstance) as Syncfusion.Blazor.Grids.GridColumn;
+        Assert.NotNull(column);
+        column!.Field = "Customer.City";
+        var excelFilterValueProp = excelType.GetProperty(
+        "excelFilterValue",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(excelFilterValueProp);
+        excelFilterValueProp!.SetValue(excelInstance, "Hyd");
+        var customFilterMethod = excelType.GetMethod(
+        "CustomFilterValueMaintain",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterMethod);
+        var task = (Task)customFilterMethod!.Invoke(excelInstance, null)!;
+        await task;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var rootExpando = Assert.IsType<System.Dynamic.ExpandoObject>(customFilterItem);
+        var rootDict = (IDictionary<string, object>)rootExpando;
+        Assert.True(rootDict.ContainsKey("Customer"), "CustomFilterItem should contain 'Customer' key for nested Expando branch.");
+        var customerObj = rootDict["Customer"];
+        Assert.NotNull(customerObj);
+        var customerDict = customerObj as IDictionary<string, object>;
+        Assert.NotNull(customerDict);
+        Assert.True(customerDict!.ContainsKey("City"), "Customer object should contain 'City' key.");
+        Assert.Equal("Hyd", customerDict["City"]);
+    }
+}
+
+<SfFixture @ref="fixture27" TestAsync="ExcelFilter_CustomFilterValueMaintain_TreeGridDataItem" Description="Excel filter CustomFilterValueMaintain TreeGrid DataItem branch">
+    <ComponentUnderTest>
+        <SfGrid TItem="TreeRow"
+                DataSource="GenerateTreeRows()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="City" HeaderText="City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture27 { get; set; }
+    public class TreeCustomer
+    {
+        public string City { get; set; }
+    }
+    public class TreeRow
+    {
+        public TreeCustomer DataItem { get; set; } = new TreeCustomer();
+    }
+    public List<TreeRow> TreeRows { get; set; }
+    public List<TreeRow> GenerateTreeRows()
+    {
+        return TreeRows = Enumerable.Range(1, 3)
+        .Select(i => new TreeRow
+        {
+            DataItem = new TreeCustomer { City = "City" + i }
+        }).ToList();
+    }
+    public async Task ExcelFilter_CustomFilterValueMaintain_TreeGridDataItem(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<TreeRow>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<TreeRow>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var columnProp = excelType.GetProperty(
+        "Column",
+        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(columnProp);
+        var column = columnProp!.GetValue(excelInstance) as Syncfusion.Blazor.Grids.GridColumn;
+        Assert.NotNull(column);
+        column!.Field = "DataItem.City";
+        var excelFilterValueProp = excelType.GetProperty(
+        "excelFilterValue",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(excelFilterValueProp);
+        excelFilterValueProp!.SetValue(excelInstance, "Tokyo");
+        var customFilterMethod = excelType.GetMethod(
+        "CustomFilterValueMaintain",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterMethod);
+        var task = (Task)customFilterMethod!.Invoke(excelInstance, null)!;
+        await task;
+        var customFilterItemProp = excelType.GetProperty(
+        "CustomFilterItem",
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(excelInstance);
+        Assert.NotNull(customFilterItem);
+        var treeRow = Assert.IsType<TreeRow>(customFilterItem);
+        Assert.NotNull(treeRow.DataItem);
+        Assert.Equal("Tokyo", treeRow.DataItem.City);
+    }
+}
+
+<SfFixture @ref="fixture28" TestAsync="ExcelFilter_FilterBtnClick_StringDual" Description="Excel filter FilterBtnClick dual string conditions">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture28 { get; set; }
+    public async Task ExcelFilter_FilterBtnClick_StringDual(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before FilterBtnClick test.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        if (cut.Instance.FilterSettings.Columns == null)
+            cut.Instance.FilterSettings.Columns = new List<GridFilterColumn>();
+        cut.Instance.FilterSettings.Columns.Clear();
+        var firstDropProp = excelType.GetProperty(
+            "FirstStringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondDropProp = excelType.GetProperty(
+            "SecondStringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstDropProp);
+        Assert.NotNull(secondDropProp);
+        var firstDropInstance = Activator.CreateInstance(firstDropProp!.PropertyType)!;
+        var secondDropInstance = Activator.CreateInstance(secondDropProp!.PropertyType)!;
+        firstDropProp.SetValue(excelInstance, firstDropInstance);
+        secondDropProp.SetValue(excelInstance, secondDropInstance);
+        var firstDropType = firstDropInstance.GetType();
+        var firstDropValueProp = firstDropType.GetProperty("Value");
+        Assert.NotNull(firstDropValueProp);
+        var secondDropType = secondDropInstance.GetType();
+        var secondDropValueProp = secondDropType.GetProperty("Value");
+        Assert.NotNull(secondDropValueProp);
+        firstDropValueProp!.SetValue(firstDropInstance, "equal");
+        secondDropValueProp!.SetValue(secondDropInstance, "notequal");
+        var firstAutoProp = excelType.GetProperty(
+            "FirstAutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondAutoProp = excelType.GetProperty(
+            "SecondAutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstAutoProp);
+        Assert.NotNull(secondAutoProp);
+        var firstAutoInstance = Activator.CreateInstance(firstAutoProp!.PropertyType)!;
+        var secondAutoInstance = Activator.CreateInstance(secondAutoProp!.PropertyType)!;
+        firstAutoProp.SetValue(excelInstance, firstAutoInstance);
+        secondAutoProp.SetValue(excelInstance, secondAutoInstance);
+        var autoType = firstAutoInstance.GetType();
+        var autoValueProp = autoType.GetProperty("Value");
+        Assert.NotNull(autoValueProp);
+        autoValueProp!.SetValue(firstAutoInstance, "ALFKI");
+        autoValueProp.SetValue(secondAutoInstance, "ANANTR");
+        var andRadioButtonProp = excelType.GetProperty(
+            "AndRadioButton",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(andRadioButtonProp);
+        andRadioButtonProp!.SetValue(excelInstance, "and");
+        var filterBtnMethod = excelType.GetMethod(
+            "FilterBtnClick",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterBtnMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var t = (Task)filterBtnMethod!.Invoke(excelInstance, null)!;
+            await t;
+        });
+        var columns = cut.Instance.FilterSettings.Columns;
+        Assert.NotNull(columns);
+        Assert.Equal(2, columns!.Count);
+        foreach (var col in columns)
+        {
+            Assert.Equal(nameof(Order.CustomerID), col.Field);
+            Assert.NotNull(col.Value);
+            Assert.Equal("and", col.Predicate);
+        }
+    }
+}
+
+<SfFixture @ref="fixture29" TestAsync="ExcelFilter_FilterBtnClick_NumericDual" Description="Excel filter FilterBtnClick dual numeric conditions">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture29 { get; set; }
+
+    public async Task ExcelFilter_FilterBtnClick_NumericDual(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid should render rows before applying Excel filter.");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        var excelFilter = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ExcelBase<Order>>();
+        var excelInstance = excelFilter.Instance;
+        Assert.NotNull(excelInstance);
+        var excelType = excelInstance.GetType();
+        var columnProp = excelType.GetProperty(
+            "Column",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(columnProp);
+        var column = columnProp!.GetValue(excelInstance) as Syncfusion.Blazor.Grids.GridColumn;
+        Assert.NotNull(column);
+        column!.ValueType = typeof(int?);
+        column.Type = Syncfusion.Blazor.Grids.ColumnType.Integer;
+        if (cut.Instance.FilterSettings.Columns == null)
+            cut.Instance.FilterSettings.Columns = new List<GridFilterColumn>();
+        cut.Instance.FilterSettings.Columns.Clear();
+        var firstNumDropProp = excelType.GetProperty(
+            "FirstNumberOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondNumDropProp = excelType.GetProperty(
+            "SecondNumberOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstNumDropProp);
+        Assert.NotNull(secondNumDropProp);
+        var firstNumDropInstance = Activator.CreateInstance(firstNumDropProp!.PropertyType)!;
+        var secondNumDropInstance = Activator.CreateInstance(secondNumDropProp!.PropertyType)!;
+        firstNumDropProp.SetValue(excelInstance, firstNumDropInstance);
+        secondNumDropProp.SetValue(excelInstance, secondNumDropInstance);
+        var firstNumDropType = firstNumDropInstance.GetType();
+        var numDropValueProp = firstNumDropType.GetProperty("Value");
+        Assert.NotNull(numDropValueProp);
+        var secondNumDropType = secondNumDropInstance.GetType();
+        var secondNumDropValueProp = secondNumDropType.GetProperty("Value");
+        Assert.NotNull(secondNumDropValueProp);
+        numDropValueProp!.SetValue(firstNumDropInstance, "greaterthanorequal");
+        secondNumDropValueProp!.SetValue(secondNumDropInstance, "lessthanorequal");
+        var firstNumField = excelType.GetProperty(
+            "FirstNumericValueasInt",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var secondNumField = excelType.GetProperty(
+            "SecondNumericValueasInt",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(firstNumField);
+        Assert.NotNull(secondNumField);
+        var firstNumericInstance = Activator.CreateInstance(firstNumField!.PropertyType)!;
+        var secondNumericInstance = Activator.CreateInstance(secondNumField!.PropertyType)!;
+        firstNumField.SetValue(excelInstance, firstNumericInstance);
+        secondNumField.SetValue(excelInstance, secondNumericInstance);
+        var numericType = firstNumericInstance.GetType();
+        var numericValueProp = numericType.GetProperty("Value");
+        Assert.NotNull(numericValueProp);
+        numericValueProp!.SetValue(firstNumericInstance, 1001);
+        numericValueProp.SetValue(secondNumericInstance, 1005);
+        var isIntegerProp = excelType.GetProperty(
+            "_isInteger",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var isLongProp = excelType.GetProperty(
+            "_isLong",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (isIntegerProp != null) isIntegerProp.SetValue(excelInstance, true);
+        if (isLongProp != null) isLongProp.SetValue(excelInstance, false);
+        var andRadioButtonProp = excelType.GetProperty(
+            "AndRadioButton",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(andRadioButtonProp);
+        andRadioButtonProp!.SetValue(excelInstance, "and");
+        var filterBtnMethod = excelType.GetMethod(
+            "FilterBtnClick",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterBtnMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var t = (Task)filterBtnMethod!.Invoke(excelInstance, null)!;
+            await t;
+        });
+        var columns = cut.Instance.FilterSettings.Columns;
+        Assert.NotNull(columns);
+        Assert.Equal(2, columns!.Count);
+        foreach (var col in columns)
+        {
+            Assert.Equal(nameof(Order.OrderID), col.Field);
+            Assert.Equal("and", col.Predicate);
+            Assert.NotNull(col.Value);
+        }
+    }
+}

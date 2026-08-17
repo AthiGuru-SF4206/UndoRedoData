@@ -1,0 +1,83 @@
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="ExportTest" Description="Aggregate with export thrown exception">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="DefaultGrid" AllowExcelExport="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport" })" AllowPdfExport="true" DataSource="@GenerateOrderData()" AllowPaging="true">
+            <GridEvents  ExportComplete="ExportComplete" OnToolbarClick="ToolbarClickHandler" TValue="Order"></GridEvents>
+            <GridPageSettings PageSize="8"></GridPageSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Sum" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Visible="true" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+@code{
+    SfFixture fixture { get; set; }
+    public bool IsExport { get; set; }
+
+    private SfGrid<Order> DefaultGrid;
+
+    void ExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        IsExport = false;
+        cut.FindAll("button")[0].Click();
+        cut.WaitForState(() => IsExport);
+        Assert.True(IsExport, "Exported successfully");
+        IsExport = false;
+        cut.FindAll("button")[0].Click();
+        cut.WaitForState(() => IsExport);
+        Assert.True(IsExport, "Exported successfully");
+
+    }
+
+    internal void ExportComplete(object args)
+    {
+
+        IsExport = true;
+    }
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_excelexport") //Id is combination of Grid's ID and itemname
+        {
+            ExcelExportProperties ExportProperties = new ExcelExportProperties();
+            List<GridColumn> ExportColumns = new List<GridColumn>();
+            ExportColumns.Add(new GridColumn() { Field = "CustomerID", HeaderText = "CustomerID", Width = "100" });
+            ExportProperties.Columns = ExportColumns;
+            await this.DefaultGrid.ExportToExcelAsync(ExportProperties);
+        }
+        if (args.Item.Id == "Grid_pdfexport")  //Id is combination of Grid's ID and itemname
+        {
+            PdfExportProperties ExportProperties = new PdfExportProperties();
+            List<GridColumn> ExportColumns = new List<GridColumn>();
+            ExportColumns.Add(new GridColumn() { Field = "CustomerID", HeaderText = "CustomerID", Width = "100" });
+            ExportProperties.Columns = ExportColumns;
+            
+            await this.DefaultGrid.ExportToPdfAsync(ExportProperties);
+           
+        }
+    }
+}

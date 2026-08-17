@@ -1,0 +1,361 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Text.Json
+
+<SfFixture @ref="fixture" TestAsync="UpdateCellDataTypeCoverageTest" Description="UpdateCopyCell - Comprehensive Data Type Coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="GridRef" DataSource="GenerateTestData()" AllowSelection="true" AllowPaging=true  Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })" AllowExcelExport="true" AllowPdfExport="true">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridColumns>
+                <!-- Primary Key -->
+                <GridColumn Field=@nameof(TestDataModel.ID) HeaderText="ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="80"></GridColumn>
+                
+                <!-- String Type -->
+                <GridColumn Field=@nameof(TestDataModel.StringField) HeaderText="String Field" Uid="StringField" Width="120"></GridColumn>
+                
+                <!-- Nullable and Non-Nullable Boolean -->
+                <GridColumn Field=@nameof(TestDataModel.BoolField) HeaderText="Bool Field" Uid="BoolField" Type="ColumnType.Boolean" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableBoolField) HeaderText="Nullable Bool" Uid="NullableBoolField" Type="ColumnType.Boolean" Width="120"></GridColumn>
+                
+                <!-- Integer Types -->
+                <GridColumn Field=@nameof(TestDataModel.IntField) HeaderText="Int Field" Uid="IntField" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableIntField) HeaderText="Nullable Int" Uid="NullableIntField" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.LongField) HeaderText="Long Field" Uid="LongField" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableLongField) HeaderText="Nullable Long" Uid="NullableLongField" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                
+                <!-- Decimal/Double Types -->
+                <GridColumn Field=@nameof(TestDataModel.DoubleField) HeaderText="Double Field" Uid="DoubleField" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                
+                <!-- DateTime Types -->
+                <GridColumn Field=@nameof(TestDataModel.DateTimeField) HeaderText="DateTime" Uid="DateTimeField" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableDateTimeField) HeaderText="Nullable DateTime" Uid="NullableDateTimeField" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                
+                <!-- DateTimeOffset Types -->
+                <GridColumn Field=@nameof(TestDataModel.DateTimeOffsetField) HeaderText="DateTimeOffset" Uid="DateTimeOffsetField" Format="d" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableDateTimeOffsetField) HeaderText="Nullable DateTimeOffset" Uid="NullableDateTimeOffsetField" Format="d" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                
+                <!-- DateOnly and TimeOnly Types -->
+                <GridColumn Field=@nameof(TestDataModel.DateOnlyField) HeaderText="DateOnly" Uid="DateOnlyField" Format="d" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableDateOnlyField) HeaderText="Nullable DateOnly" Uid="NullableDateOnlyField" Format="d" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.TimeOnlyField) HeaderText="TimeOnly" Uid="TimeOnlyField" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableTimeOnlyField) HeaderText="Nullable TimeOnly" Uid="NullableTimeOnlyField" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                
+                <!-- GUID Types -->
+                <GridColumn Field=@nameof(TestDataModel.GuidField) HeaderText="GUID" Uid="GuidField" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(TestDataModel.NullableGuidField) HeaderText="Nullable GUID" Uid="NullableGuidField" Width="160"></GridColumn>
+                
+                <!-- Character Type -->
+                <GridColumn Field=@nameof(TestDataModel.CharField) HeaderText="Char" Uid="CharField" TextAlign="TextAlign.Center" Width="80"></GridColumn>
+                
+                <!-- Enum Type -->
+                <GridColumn Field=@nameof(TestDataModel.EnumField) HeaderText="Status" Uid="EnumField" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<TestDataModel> GridRef;
+
+    public async Task UpdateCellDataTypeCoverageTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<TestDataModel>>();
+
+        await cut.Instance.ExportToCsvAsync();
+
+        await cut.Instance.ExportToExcelAsync();
+
+        await cut.Instance.ExportToPdfAsync();
+        // ==================== STRING TYPE ====================
+        await cut.Instance._jsAdaptor.UpdateCell(0, "StringField", "UpdatedString");
+
+        // ==================== BOOLEAN TYPES ====================
+        // Non-nullable bool: true
+        await cut.Instance._jsAdaptor.UpdateCell(0, "BoolField", "true");
+
+        // Non-nullable bool: false
+        await cut.Instance._jsAdaptor.UpdateCell(0, "BoolField", "false");
+
+        // Nullable bool: true
+        await cut.Instance._jsAdaptor.UpdateCell(0, "NullableBoolField", "true");
+
+        // Nullable bool: false
+        await cut.Instance._jsAdaptor.UpdateCell(0, "NullableBoolField", "false");
+
+        // ==================== INTEGER TYPES ====================
+        // Non-nullable int
+        await cut.Instance._jsAdaptor.UpdateCell(1, "IntField", "42");
+
+        // Nullable int
+        await cut.Instance._jsAdaptor.UpdateCell(1, "NullableIntField", "100");
+
+        // ==================== LONG TYPES ====================
+        // Non-nullable long
+        await cut.Instance._jsAdaptor.UpdateCell(2, "LongField", "9223372036854775");
+
+        // Nullable long
+        await cut.Instance._jsAdaptor.UpdateCell(2, "NullableLongField", "1234567890");
+
+        // ==================== DOUBLE TYPE ====================
+        await cut.Instance._jsAdaptor.UpdateCell(0, "DoubleField", "150.50");
+
+        // ==================== DATETIME TYPES ====================
+        // Non-nullable DateTime with format
+        var dateTimeString = DateTime.Now.AddDays(5).ToString("G");
+        await cut.Instance._jsAdaptor.UpdateCell(3, "DateTimeField", dateTimeString);
+
+        // Nullable DateTime
+        var nullableDateTimeString = DateTime.Now.AddDays(10).ToString("G");
+        await cut.Instance._jsAdaptor.UpdateCell(3, "NullableDateTimeField", nullableDateTimeString);
+
+        // ==================== DATETIMEOFFSET TYPES ====================
+        // Non-nullable DateTimeOffset
+        var dateTimeOffsetString = DateTimeOffset.Now.AddDays(2).ToString("G");
+        await cut.Instance._jsAdaptor.UpdateCell(4, "DateTimeOffsetField", dateTimeOffsetString);
+
+        // Nullable DateTimeOffset
+        var nullableDateTimeOffsetString = DateTimeOffset.Now.AddDays(3).ToString("G");
+        await cut.Instance._jsAdaptor.UpdateCell(4, "NullableDateTimeOffsetField", nullableDateTimeOffsetString);
+
+        // ==================== DATEONLY TYPES ====================
+        // Non-nullable DateOnly
+        var dateOnlyString = DateOnly.FromDateTime(DateTime.Now.AddDays(7));
+        await cut.Instance._jsAdaptor.UpdateCell(5, "DateOnlyField", dateOnlyString.ToString("d"));
+
+        // Nullable DateOnly
+        var nullableDateOnlyString = DateOnly.FromDateTime(DateTime.Now.AddDays(8));
+        await cut.Instance._jsAdaptor.UpdateCell(5, "NullableDateOnlyField", nullableDateOnlyString.ToString("d"));
+
+        // ==================== TIMEONLY TYPES ====================
+        // Non-nullable TimeOnly
+        var timeOnlyString = TimeOnly.FromDateTime(DateTime.Now.AddHours(2));
+        await cut.Instance._jsAdaptor.UpdateCell(0, "TimeOnlyField", timeOnlyString.ToString("HH:mm:ss"));
+
+        // Nullable TimeOnly
+        var nullableTimeOnlyString = TimeOnly.FromDateTime(DateTime.Now.AddHours(3));
+        await cut.Instance._jsAdaptor.UpdateCell(0, "NullableTimeOnlyField", nullableTimeOnlyString.ToString("HH:mm:ss"));
+
+        // ==================== GUID TYPES ====================
+        var testGuid = Guid.NewGuid();
+        await cut.Instance._jsAdaptor.UpdateCell(1, "GuidField", testGuid.ToString());
+
+        // Nullable Guid
+        var testNullableGuid = Guid.NewGuid();
+        await cut.Instance._jsAdaptor.UpdateCell(1, "NullableGuidField", testNullableGuid.ToString());
+
+        // ==================== CHARACTER TYPE ====================
+        await cut.Instance._jsAdaptor.UpdateCell(2, "CharField", "X");
+
+        // ==================== ENUM TYPE ====================
+        // Enum: Active
+        await cut.Instance._jsAdaptor.UpdateCell(3, "EnumField", "Active");
+
+        // Enum: Inactive
+        await cut.Instance._jsAdaptor.UpdateCell(3, "EnumField", "Inactive");
+
+        // Enum: Pending
+        await cut.Instance._jsAdaptor.UpdateCell(3, "EnumField", "Pending");
+
+        // ==================== EDGE CASES ====================
+        // Test invalid conversions are handled gracefully
+        await cut.Instance._jsAdaptor.UpdateCell(1, "IntField", "notanumber");
+        
+        // Test empty/null values
+        await cut.Instance._jsAdaptor.UpdateCell(0, "NullableIntField", "");
+    }
+
+    public List<TestDataModel> GenerateTestData()
+    {
+        return new List<TestDataModel>
+        {
+            new TestDataModel
+            {
+                ID = 1,
+                StringField = "TestString1",
+                BoolField = true,
+                NullableBoolField = true,
+                IntField = 10,
+                NullableIntField = 20,
+                LongField = 100L,
+                NullableLongField = 200L,
+                DoubleField = 10.50,
+                DateTimeField = DateTime.Now,
+                NullableDateTimeField = DateTime.Now.AddDays(1),
+                DateTimeOffsetField = DateTimeOffset.Now,
+                NullableDateTimeOffsetField = DateTimeOffset.Now.AddDays(1),
+                DateOnlyField = DateOnly.FromDateTime(DateTime.Now),
+                NullableDateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                TimeOnlyField = TimeOnly.FromDateTime(DateTime.Now),
+                NullableTimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
+                GuidField = Guid.NewGuid(),
+                NullableGuidField = Guid.NewGuid(),
+                CharField = 'A',
+                EnumField = StatusEnum.Active
+            },
+            new TestDataModel
+            {
+                ID = 2,
+                StringField = "TestString2",
+                BoolField = false,
+                NullableBoolField = false,
+                IntField = 30,
+                NullableIntField = 40,
+                LongField = 300L,
+                NullableLongField = 400L,
+                DoubleField = 20.75,
+                DateTimeField = DateTime.Now.AddDays(2),
+                NullableDateTimeField = DateTime.Now.AddDays(3),
+                DateTimeOffsetField = DateTimeOffset.Now.AddDays(2),
+                NullableDateTimeOffsetField = DateTimeOffset.Now.AddDays(3),
+                DateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+                NullableDateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(3)),
+                TimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(2)),
+                NullableTimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(3)),
+                GuidField = Guid.NewGuid(),
+                NullableGuidField = Guid.NewGuid(),
+                CharField = 'B',
+                EnumField = StatusEnum.Inactive
+            },
+            new TestDataModel
+            {
+                ID = 3,
+                StringField = "TestString3",
+                BoolField = true,
+                NullableBoolField = null,
+                IntField = 50,
+                NullableIntField = null,
+                LongField = 500L,
+                NullableLongField = null,
+                DoubleField = 30.25,
+                DateTimeField = DateTime.Now.AddDays(4),
+                NullableDateTimeField = null,
+                DateTimeOffsetField = DateTimeOffset.Now.AddDays(4),
+                NullableDateTimeOffsetField = null,
+                DateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(4)),
+                NullableDateOnlyField = null,
+                TimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(4)),
+                NullableTimeOnlyField = null,
+                GuidField = Guid.NewGuid(),
+                NullableGuidField = null,
+                CharField = 'C',
+                EnumField = StatusEnum.Pending
+            },
+            new TestDataModel
+            {
+                ID = 4,
+                StringField = "TestString4",
+                BoolField = false,
+                NullableBoolField = true,
+                IntField = 60,
+                NullableIntField = 70,
+                LongField = 600L,
+                NullableLongField = 700L,
+                DoubleField = 40.99,
+                DateTimeField = DateTime.Now.AddDays(5),
+                NullableDateTimeField = DateTime.Now.AddDays(6),
+                DateTimeOffsetField = DateTimeOffset.Now.AddDays(5),
+                NullableDateTimeOffsetField = DateTimeOffset.Now.AddDays(6),
+                DateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(5)),
+                NullableDateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(6)),
+                TimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(5)),
+                NullableTimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(6)),
+                GuidField = Guid.NewGuid(),
+                NullableGuidField = Guid.NewGuid(),
+                CharField = 'D',
+                EnumField = StatusEnum.Active
+            },
+            new TestDataModel
+            {
+                ID = 5,
+                StringField = "TestString5",
+                BoolField = true,
+                NullableBoolField = false,
+                IntField = 80,
+                NullableIntField = 90,
+                LongField = 800L,
+                NullableLongField = 900L,
+                DoubleField = 50.50,
+                DateTimeField = DateTime.Now.AddDays(7),
+                NullableDateTimeField = DateTime.Now.AddDays(8),
+                DateTimeOffsetField = DateTimeOffset.Now.AddDays(7),
+                NullableDateTimeOffsetField = DateTimeOffset.Now.AddDays(8),
+                DateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(7)),
+                NullableDateOnlyField = DateOnly.FromDateTime(DateTime.Now.AddDays(8)),
+                TimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(7)),
+                NullableTimeOnlyField = TimeOnly.FromDateTime(DateTime.Now.AddHours(8)),
+                GuidField = Guid.NewGuid(),
+                NullableGuidField = Guid.NewGuid(),
+                CharField = 'E',
+                EnumField = StatusEnum.Pending
+            }
+        };
+    }
+
+    // ==================== MODEL CLASSES ====================
+    
+    /// <summary>
+    /// Comprehensive test model covering all data types supported by UpdateCopyCell
+    /// </summary>
+    public class TestDataModel
+    {
+        // Primary Key
+        public int ID { get; set; }
+
+        // String Type
+        public string StringField { get; set; }
+
+        // Boolean Types
+        public bool BoolField { get; set; }
+        public bool? NullableBoolField { get; set; }
+
+        // Integer Types
+        public int IntField { get; set; }
+        public int? NullableIntField { get; set; }
+
+        // Long Types
+        public long LongField { get; set; }
+        public long? NullableLongField { get; set; }
+
+        // Double Type (Numeric)
+        public double DoubleField { get; set; }
+
+        // DateTime Types
+        public DateTime DateTimeField { get; set; }
+        public DateTime? NullableDateTimeField { get; set; }
+
+        // DateTimeOffset Types
+        public DateTimeOffset DateTimeOffsetField { get; set; }
+        public DateTimeOffset? NullableDateTimeOffsetField { get; set; }
+
+        // DateOnly Types (NET 6.0+)
+        public DateOnly DateOnlyField { get; set; }
+        public DateOnly? NullableDateOnlyField { get; set; }
+
+        // TimeOnly Types (NET 6.0+)
+        public TimeOnly TimeOnlyField { get; set; }
+        public TimeOnly? NullableTimeOnlyField { get; set; }
+
+        // GUID Types
+        public Guid GuidField { get; set; }
+        public Guid? NullableGuidField { get; set; }
+
+        // Character Type
+        public char CharField { get; set; }
+
+        // Enum Type
+        public StatusEnum EnumField { get; set; }
+    }
+
+    /// <summary>
+    /// Enum for testing enum field updates
+    /// </summary>
+    public enum StatusEnum
+    {
+        Active = 0,
+        Inactive = 1,
+        Pending = 2
+    }
+}

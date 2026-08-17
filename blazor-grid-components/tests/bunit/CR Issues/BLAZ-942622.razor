@@ -1,0 +1,95 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+@* It covers both BLAZ-942622 and BLAZ-946587 *@
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Public methods">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" EnableInfiniteScrolling="true" ShowColumnChooser="true" AllowSorting="true" AllowMultiSorting="true" AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update", "Search", "ExcelExport", "PdfExport", "ColumnChooser" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Batch"></GridEditSettings>
+            <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Both"></GridSelectionSettings>
+            <GridFilterSettings Type="Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) Uid="col" HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+    private bool preventCurrentAction { get; set; }
+    private bool preventStartEdit { get; set; }
+    public List<Syncfusion.Blazor.Grids.SortColumn> sortColumns = new List<Syncfusion.Blazor.Grids.SortColumn>();
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 5, "All the records are rendered.");
+
+        // Before performing filtering
+
+        var FilteredRecords = cut.Instance.GetFilteredRecordsAsync().Result;
+        List<Order> FilteredData = (List<Order>)FilteredRecords;
+
+        Assert.True(FilteredData.Count == 5, "Returns Total record count");
+
+        var StrictFilteredRecords = cut.Instance.GetFilteredRecordsAsync(true).Result;
+        
+        List<Order> StrictFilteredData = (List<Order>)StrictFilteredRecords;
+        Assert.True(StrictFilteredData.Count == 0, "Returns Filtered record count");
+
+        // After performing filtering
+
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ALFKI");
+
+        await Task.Yield();
+
+        var FilteredRecords1 = cut.Instance.GetFilteredRecordsAsync().Result;
+        List<Order> FilteredData1 = (List<Order>)FilteredRecords1;
+
+        Assert.True(FilteredData1.Count == 1, "Returns Filtered record count");
+
+        var StrictFilteredRecords1 = cut.Instance.GetFilteredRecordsAsync(true).Result;
+
+        List<Order> StrictFilteredData1 = (List<Order>)StrictFilteredRecords1;
+        Assert.True(StrictFilteredData1.Count == 1, "Returns Filtered record count");
+
+        //Casting the filtered data to other type
+
+        var filtereddataValue = cut.Instance.GetFilteredRecordsAsync(true).Result;
+        IEnumerable<Order> ConvertedFiltereddata = (IEnumerable<Order>)filtereddataValue;
+        Assert.True(ConvertedFiltereddata.Count() == 1, "Returns Filtered record count");
+
+       
+
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return new List<Order>
+        {
+            new Order() { OrderID = 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 },
+            new Order() { OrderID = 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 26.8 },
+            new Order() { OrderID = 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 27.9 },
+            new Order() { OrderID = 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 28.6 },
+            new Order() { OrderID = 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 29.1 },
+        };
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

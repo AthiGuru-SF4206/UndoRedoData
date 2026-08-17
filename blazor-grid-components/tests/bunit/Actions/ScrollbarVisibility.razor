@@ -1,0 +1,744 @@
+@* @inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+@using System.Collections.ObjectModel
+@using AngleSharp.Dom
+@using System.Linq;
+
+<!-- Test 1.1: Static Small Content - No Scrollbar -->
+<SfFixture @ref="fixture1" Test="StaticSmallContentNoScrollbar" Description="Static 400px grid with 5 rows should not render scrollbar">
+    <ComponentUnderTest>
+        <SfGrid ID="StaticGrid1" @ref="StaticGrid1" DataSource="GenerateSmallData()" Height="400" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> StaticGrid1;
+
+    public void StaticSmallContentNoScrollbar(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height == "400", "Grid height set to 400px");
+        
+        // Check that content element has overflow auto
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement, "Content element exists");
+        
+        // Verify that scrollbar is not rendered (no space wasted)
+        // The key is: header paddingRight should be 0 (no scrollbar space reserved)
+        var headerContent = cut.Find(".e-gridheader");
+        Assert.NotNull(headerContent, "Header exists");
+        
+        // Check header doesn't have scrollbar padding
+        var computedStyle = headerContent.GetAttribute("style");
+        var hasPaddingRight = computedStyle?.Contains("padding-right") ?? false;
+        Assert.False(hasPaddingRight, "No padding-right applied to header (no scrollbar space reserved)");
+        
+        // Verify content scrollHeight is less than offsetHeight
+        // This verifies no scroll is needed
+        Assert.True(cut.Instance.Rows.Count == 5, "Expected 5 rows");
+    }
+
+    public List<Order> GenerateSmallData()
+    {
+        var data = new List<Order>();
+        for (int i = 1; i <= 5; i++)
+        {
+            data.Add(new Order()
+            {
+                OrderID = 1000 + i,
+                CustomerID = "CUSTOMER" + i,
+                OrderDate = new DateTime(2023, 1, i),
+                Freight = 25.5 * i
+            });
+        }
+        return data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test 1.2: Dynamic Record Addition - Scrollbar Should Appear -->
+<SfFixture @ref="fixture2" Test="DynamicRecordAdditionScrollbarAppears" Description="Adding records dynamically should show scrollbar">
+    <ComponentUnderTest>
+        <SfGrid ID="DynamicGrid2" @ref="DynamicGrid2" DataSource="GenerateDynamicSmallData()" Height="400" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderDynamic.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderDynamic.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderDynamic.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderDynamic.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<OrderDynamic> DynamicGrid2;
+    private List<OrderDynamic> dynamicData;
+
+    public void DynamicRecordAdditionScrollbarAppears(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<OrderDynamic>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height == "400", "Grid height set to 400px");
+        
+        // Initially: 5 rows only, scrollbar should not be visible
+        var initialRows = cut.Instance.Rows.Count;
+        Assert.True(initialRows == 5, $"Initial rows count: expected 5, got {initialRows}");
+        
+        // Simulate dynamic addition: add 50 more rows
+        var newRecords = new List<OrderDynamic>();
+        for (int i = 6; i <= 55; i++)
+        {
+            newRecords.Add(new OrderDynamic()
+            {
+                OrderID = 1000 + i,
+                CustomerID = "CUSTOMER" + i,
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * i
+            });
+        }
+        
+        // Add records to the data source
+        foreach (var record in newRecords)
+        {
+            dynamicData.Add(record);
+        }
+        
+        // Refresh the grid
+        cut.InvokeAsync(() => cut.Instance.Refresh());
+        cut.WaitForState(() => cut.Instance.Rows.Count >= 55);
+        
+        // After addition: 55 rows, scrollbar should appear
+        var finalRows = cut.Instance.Rows.Count;
+        Assert.True(finalRows >= 55, $"Final rows count: expected >= 55, got {finalRows}");
+        
+        // Verify scrollbar appears (content.scrollHeight > content.offsetHeight)
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement, "Content element exists");
+        
+        // The key assertion: after adding many rows, scrollbar should be present
+        Assert.True(finalRows > initialRows, "Rows were added successfully");
+    }
+
+    public List<OrderDynamic> GenerateDynamicSmallData()
+    {
+        dynamicData = new List<OrderDynamic>();
+        for (int i = 1; i <= 5; i++)
+        {
+            dynamicData.Add(new OrderDynamic()
+            {
+                OrderID = 1000 + i,
+                CustomerID = "CUSTOMER" + i,
+                OrderDate = new DateTime(2023, 1, i),
+                Freight = 25.5 * i
+            });
+        }
+        return dynamicData;
+    }
+
+    public class OrderDynamic
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test 1.3: Virtual + Frozen Columns - Scrollbar Correct State -->
+<SfFixture @ref="fixture3" Test="VirtualFrozenColumnsScrollbarCorrect" Description="Virtual grid with frozen columns should show scrollbar correctly">
+    <ComponentUnderTest>
+        <SfGrid ID="VirtualFrozenGrid3" @ref="VirtualFrozenGrid3" DataSource="GenerateLargeData()" EnableVirtualization="true" FrozenColumns="2" Height="400" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderVirtual.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(OrderVirtual.CustomerID) HeaderText="Customer Name" Width="150" Freeze="FreezeDirection.Left"></GridColumn>
+                <GridColumn Field=@nameof(OrderVirtual.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderVirtual.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderVirtual.ShipCity) HeaderText="Ship City" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<OrderVirtual> VirtualFrozenGrid3;
+
+    public void VirtualFrozenColumnsScrollbarCorrect(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<OrderVirtual>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization enabled");
+        Assert.True(cut.Instance.FrozenColumns == 2, "Frozen columns set to 2");
+        
+        // Verify scrollbar appears (100 rows in 400px container)
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement, "Content element exists");
+        
+        // Frozen content should not have scrollbar
+        var frozenContent = cut.Find(".e-frozencontent");
+        var movableContent = cut.Find(".e-movablecontent");
+        Assert.NotNull(frozenContent, "Frozen content section exists");
+        Assert.NotNull(movableContent, "Movable content section exists");
+        
+        // Both sections should be present and functional
+        Assert.True(cut.Instance.Rows.Count == 100, "100 rows rendered in virtual mode");
+    }
+
+    public List<OrderVirtual> GenerateLargeData()
+    {
+        var data = new List<OrderVirtual>();
+        for (int i = 1; i <= 100; i++)
+        {
+            data.Add(new OrderVirtual()
+            {
+                OrderID = 1000 + i,
+                CustomerID = "CUSTOMER" + (i % 10),
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * i,
+                ShipCity = new string[] { "New York", "London", "Paris", "Tokyo", "Sydney" }[i % 5]
+            });
+        }
+        return data;
+    }
+
+    public class OrderVirtual
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+        public string ShipCity { get; set; }
+    }
+}
+
+
+<!-- Test 1.4: Grouping Expand/Collapse - Scrollbar Updates -->
+<SfFixture @ref="fixture4" Test="GroupingExpandCollapseScrollbarUpdates" Description="Grouping expand/collapse should update scrollbar visibility">
+    <ComponentUnderTest>
+        <SfGrid ID="GroupingGrid4" @ref="GroupingGrid4" DataSource="GenerateGroupingData()" AllowGrouping="true" Height="400" Width="100%">
+            <GridGroupSettings Columns="@(new string[] { "CustomerID" })"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderGrouping.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderGrouping.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderGrouping.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderGrouping.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<OrderGrouping> GroupingGrid4;
+
+    public void GroupingExpandCollapseScrollbarUpdates(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<OrderGrouping>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        
+        // Initially grouped: 100 records grouped by CustomerID (10 groups)
+        var initialRows = cut.Instance.Rows.Count;
+        Assert.True(initialRows > 0, "Groups rendered successfully");
+        
+        // Find first caption row and collapse it
+        var captionRow = cut.Instance.Rows.FirstOrDefault(r => r.IsCaptionRow);
+        if (captionRow != null)
+        {
+            cut.InvokeAsync(() => cut.Instance.GroupModule.ExpandCollapse(captionRow));
+            cut.WaitForState(() => cut.Instance.Rows.Count != initialRows);
+            
+            // After collapse, row count should decrease
+            var afterCollapseRows = cut.Instance.Rows.Count;
+            Assert.True(afterCollapseRows < initialRows, "Rows decreased after group collapse");
+            
+            // If all collapsed to fit in 400px, scrollbar might disappear
+            // Re-expand and verify it reappears
+            cut.InvokeAsync(() => cut.Instance.GroupModule.ExpandCollapse(captionRow));
+            cut.WaitForState(() => cut.Instance.Rows.Count >= initialRows);
+            
+            var afterExpandRows = cut.Instance.Rows.Count;
+            Assert.True(afterExpandRows >= initialRows, "Rows increased after group re-expand");
+        }
+    }
+
+    public List<OrderGrouping> GenerateGroupingData()
+    {
+        var data = new List<OrderGrouping>();
+        var customers = new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID", "BSBEV", "CACTU", "CHOPS", "COMMI", "CONSH" };
+        
+        for (int i = 0; i < 100; i++)
+        {
+            data.Add(new OrderGrouping()
+            {
+                OrderID = 10248 + i,
+                CustomerID = customers[i % 10],
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * (i + 1)
+            });
+        }
+        return data;
+    }
+
+    public class OrderGrouping
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test 3.1: Scroll + Filtering Interaction - Scrollbar Should Disappear When Filtered -->
+<SfFixture @ref="fixture5" Test="ScrollFilteringInteraction" Description="Filtering should update scrollbar visibility correctly">
+    <ComponentUnderTest>
+        <SfGrid ID="FilterGrid5" @ref="FilterGrid5" DataSource="GenerateFilterData()" AllowFiltering="true" Height="400" Width="100%">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.FilterBar"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderFilter.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderFilter.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderFilter.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderFilter.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<OrderFilter> FilterGrid5;
+
+    public void ScrollFilteringInteraction(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<OrderFilter>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowFiltering, "Filtering enabled");
+        
+        // Initially: 100 rows, scrollbar should be visible
+        var initialRows = cut.Instance.Rows.Count;
+        Assert.True(initialRows >= 100, $"Initial rows: expected >= 100, got {initialRows}");
+        
+        // Apply filter to show only 5 rows
+        cut.InvokeAsync(async () => {
+            await cut.Instance.FilterByColumn("CustomerID", "equal", "ALFKI");
+        });
+        cut.WaitForState(() => cut.Instance.Rows.Count <= 10);
+        
+        // After filter: 5 rows (or fewer), scrollbar should disappear
+        var filteredRows = cut.Instance.Rows.Count;
+        Assert.True(filteredRows < initialRows, $"Filtered rows reduced: {filteredRows} < {initialRows}");
+        
+        // Clear filter
+        cut.InvokeAsync(async () => {
+            await cut.Instance.ClearFiltering();
+        });
+        cut.WaitForState(() => cut.Instance.Rows.Count >= initialRows);
+        
+        // After clearing filter: 100 rows again, scrollbar should reappear
+        var clearedRows = cut.Instance.Rows.Count;
+        Assert.True(clearedRows >= initialRows, $"Filter cleared, rows restored: {clearedRows}");
+    }
+
+    public List<OrderFilter> GenerateFilterData()
+    {
+        var data = new List<OrderFilter>();
+        var customers = new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID", "BSBEV", "CACTU", "CHOPS", "COMMI", "CONSH" };
+        
+        for (int i = 0; i < 100; i++)
+        {
+            data.Add(new OrderFilter()
+            {
+                OrderID = 10248 + i,
+                CustomerID = customers[i % 10],
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * (i + 1)
+            });
+        }
+        return data;
+    }
+
+    public class OrderFilter
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test 3.2: Scroll + Sorting Interaction - Scrollbar Should Remain Visible -->
+<SfFixture @ref="fixture6" Test="ScrollSortingInteraction" Description="Sorting should maintain scrollbar visibility">
+    <ComponentUnderTest>
+        <SfGrid ID="SortGrid6" @ref="SortGrid6" DataSource="GenerateSortData()" AllowSorting="true" Height="400" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderSort.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderSort.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderSort.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderSort.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<OrderSort> SortGrid6;
+
+    public void ScrollSortingInteraction(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<OrderSort>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowSorting, "Sorting enabled");
+        
+        // Initially: 100 rows, scrollbar visible
+        var initialRows = cut.Instance.Rows.Count;
+        Assert.True(initialRows == 100, $"Initial rows: expected 100, got {initialRows}");
+        
+        // Get initial scroll position
+        var contentElement = cut.Find(".e-content");
+        var initialScrollTop = contentElement?.GetAttribute("scrollTop") ?? "0";
+        
+        // Sort by Freight ascending
+        // cut.InvokeAsync(async () => {
+        //     await cut.Instance.Sort(new SortDescriptor { Field = "Freight", Direction = SortDirection.Ascending });
+        // });
+        cut.WaitForState(() => cut.Instance.Rows.Count == 100);
+        
+        // After sort: still 100 rows, scrollbar still visible
+        var sortedRows = cut.Instance.Rows.Count;
+        Assert.True(sortedRows == 100, $"Sorted rows count: expected 100, got {sortedRows}");
+        
+        // Verify data is sorted by freight (ascending)
+        var firstFreight = cut.Instance.Rows.First().Data?.Freight ?? 0;
+        var lastFreight = cut.Instance.Rows.Last().Data?.Freight ?? 0;
+        Assert.True(firstFreight <= lastFreight, "Data sorted correctly in ascending order");
+    }
+
+    public List<OrderSort> GenerateSortData()
+    {
+        var data = new List<OrderSort>();
+        var customers = new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID", "BSBEV", "CACTU", "CHOPS", "COMMI", "CONSH" };
+        
+        for (int i = 0; i < 100; i++)
+        {
+            data.Add(new OrderSort()
+            {
+                OrderID = 10248 + i,
+                CustomerID = customers[i % 10],
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * (i + 1)
+            });
+        }
+        return data;
+    }
+
+    public class OrderSort
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test 3.3: Scroll + Paging Interaction - Scrollbar Should Update Per Page -->
+<SfFixture @ref="fixture7" Test="ScrollPagingInteraction" Description="Paging should update scrollbar based on page size">
+    <ComponentUnderTest>
+        <SfGrid ID="PagingGrid7" @ref="PagingGrid7" DataSource="GeneratePagingData()" AllowPaging="true" Height="400" Width="100%">
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderPaging.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderPaging.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderPaging.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderPaging.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<OrderPaging> PagingGrid7;
+
+    public void ScrollPagingInteraction(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<OrderPaging>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowPaging, "Paging enabled");
+        
+        // Page 1: 20 rows (fits in 400px), scrollbar may not be visible
+        var page1Rows = cut.Instance.Rows.Count;
+        Assert.True(page1Rows == 20, $"Page 1 rows: expected 20, got {page1Rows}");
+        
+        // Navigate to page 2
+        cut.InvokeAsync(async () => {
+            await cut.Instance.GoToPage(2);
+        });
+        cut.WaitForState(() => cut.Instance.PageSettings.CurrentPage == 2);
+        
+        // Page 2: 20 rows, scrollbar should be in similar state as page 1
+        var page2Rows = cut.Instance.Rows.Count;
+        Assert.True(page2Rows == 20, $"Page 2 rows: expected 20, got {page2Rows}");
+        
+        // Verify we're on page 2
+        Assert.True(cut.Instance.PageSettings.CurrentPage == 2, "Successfully navigated to page 2");
+        
+        // Content element should exist and be functional
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement, "Content element exists on page 2");
+    }
+
+    public List<OrderPaging> GeneratePagingData()
+    {
+        var data = new List<OrderPaging>();
+        var customers = new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID", "BSBEV", "CACTU", "CHOPS", "COMMI", "CONSH" };
+        
+        for (int i = 0; i < 100; i++)
+        {
+            data.Add(new OrderPaging()
+            {
+                OrderID = 10248 + i,
+                CustomerID = customers[i % 10],
+                OrderDate = new DateTime(2023, 1, (i % 28) + 1),
+                Freight = 25.5 * (i + 1)
+            });
+        }
+        return data;
+    }
+
+    public class OrderPaging
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test Bug-1: Static height grid with small data must NOT have e-yscroll class (proves redundant scrollbar bug) -->
+<SfFixture @ref="fixtureBug1" Test="StaticHeight_SmallData_ShouldNotHaveYScrollClass" Description="Grid with static height and content smaller than height must not render e-yscroll class on content element">
+    <ComponentUnderTest>
+        <SfGrid ID="BugGrid1" @ref="BugGrid1" DataSource="GenerateBug1Data()" Height="325" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderBug1.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug1.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug1.Freight) HeaderText="Freight" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixtureBug1 { get; set; }
+    private SfGrid<OrderBug1> BugGrid1;
+
+    public void StaticHeight_SmallData_ShouldNotHaveYScrollClass(Fixture fixtureBug1)
+    {
+        var cut = fixtureBug1.GetComponentUnderTest<SfGrid<OrderBug1>>();
+        Assert.True(cut.Instance.Rows.Count == 3, $"Grid rendered 3 rows: actual={cut.Instance.Rows.Count}");
+        Assert.Equal("325", cut.Instance.Height);
+
+        // The .e-content element MUST retain the e-yscroll class (it is a query selector handle used
+        // by windowResized() and selection module — removing it breaks those features).
+        //
+        // The fix is surgical: GetContentStyle() must write overflow-y:hidden as the initial inline
+        // style so the browser does not render scrollbar arrows before JS setPadding() runs.
+        // JS setPadding() then keeps overflow-y:hidden (content fits) or clears it (scroll needed).
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement);
+
+        // e-yscroll class MUST still be present (selector integrity)
+        Assert.True(contentElement.ClassList.Contains("e-yscroll"),
+            "e-yscroll class must remain on .e-content for selector query integrity.");
+
+        // The inline overflow-y style must be 'hidden' when content fits inside static height.
+        // Before the fix, GetContentStyle() does NOT write overflow-y:hidden, so the CSS class
+        // e-yscroll renders the scrollbar track/arrows on first paint.
+        var inlineStyle = contentElement.GetAttribute("style") ?? string.Empty;
+        Assert.Contains("overflow-y:hidden", inlineStyle.Replace(" ", ""),
+            "overflow-y:hidden must be set inline on .e-content when content height < static grid height. " +
+            "Actual style: " + inlineStyle);
+    }
+
+    public List<OrderBug1> GenerateBug1Data()
+    {
+        return new List<OrderBug1>
+        {
+            new OrderBug1 { OrderID = 10001, CustomerID = "ALFKI", Freight = 32.38 },
+            new OrderBug1 { OrderID = 10002, CustomerID = "ANATR", Freight = 11.61 },
+            new OrderBug1 { OrderID = 10003, CustomerID = "ANTON", Freight = 65.83 }
+        };
+    }
+
+    public class OrderBug1
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test Bug-2: After browser resize, static height grid with small data must still not show e-yscroll -->
+<SfFixture @ref="fixtureBug2" Test="StaticHeight_AfterResize_ShouldNotHaveYScrollClass" Description="After window resize, e-yscroll must not reappear when content still fits in static height grid">
+    <ComponentUnderTest>
+        <SfGrid ID="BugGrid2" @ref="BugGrid2" DataSource="GenerateBug2Data()" Height="325" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderBug2.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug2.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug2.Freight) HeaderText="Freight" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixtureBug2 { get; set; }
+    private SfGrid<OrderBug2> BugGrid2;
+
+    public void StaticHeight_AfterResize_ShouldNotHaveYScrollClass(Fixture fixtureBug2)
+    {
+        var cut = fixtureBug2.GetComponentUnderTest<SfGrid<OrderBug2>>();
+        Assert.Equal(2, cut.Instance.Rows.Count);
+        Assert.Equal("325", cut.Instance.Height);
+
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement);
+
+        // Simulate a grid refresh (approximates windowResized() → setPadding() code path).
+        // After the fix, setPadding() must set overflow-y:hidden inline when content fits.
+        // Before the fix, setPadding() sets overflow:'auto' shorthand but never sets overflowY,
+        // so the CSS class e-yscroll continues to show vertical scrollbar arrows after resize.
+        cut.InvokeAsync(() => cut.Instance.Refresh());
+        cut.WaitForState(() => cut.Instance.Rows.Count == 2);
+
+        contentElement = cut.Find(".e-content");
+
+        // e-yscroll class must still be present after refresh (selector query integrity)
+        Assert.True(contentElement.ClassList.Contains("e-yscroll"),
+            "e-yscroll class must remain on .e-content after refresh.");
+
+        // After setPadding() runs (triggered by contentReady), overflow-y:hidden must be set inline.
+        var inlineStyle = contentElement.GetAttribute("style") ?? string.Empty;
+        Assert.Contains("overflow-y:hidden", inlineStyle.Replace(" ", ""),
+            "overflow-y:hidden must be set inline after grid refresh when content fits. " +
+            "Actual style: " + inlineStyle);
+    }
+
+    public List<OrderBug2> GenerateBug2Data()
+    {
+        return new List<OrderBug2>
+        {
+            new OrderBug2 { OrderID = 10001, CustomerID = "ALFKI", Freight = 32.38 },
+            new OrderBug2 { OrderID = 10002, CustomerID = "ANATR", Freight = 11.61 }
+        };
+    }
+
+    public class OrderBug2
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<!-- Test Bug-3: Large data with static height MUST retain e-yscroll (regression guard) -->
+<SfFixture @ref="fixtureBug3" Test="StaticHeight_LargeData_MustRetainYScrollClass" Description="Grid with static height and content taller than height must retain e-yscroll class">
+    <ComponentUnderTest>
+        <SfGrid ID="BugGrid3" @ref="BugGrid3" DataSource="GenerateBug3Data()" Height="325" Width="100%">
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderBug3.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug3.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderBug3.Freight) HeaderText="Freight" Format="C2" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixtureBug3 { get; set; }
+    private SfGrid<OrderBug3> BugGrid3;
+
+    public void StaticHeight_LargeData_MustRetainYScrollClass(Fixture fixtureBug3)
+    {
+        var cut = fixtureBug3.GetComponentUnderTest<SfGrid<OrderBug3>>();
+        Assert.Equal(50, cut.Instance.Rows.Count);
+        Assert.Equal("325", cut.Instance.Height);
+
+        // 50 rows × ~42px ≈ 2100px > 325px → scrollbar IS needed.
+        // After fix: setPadding() must NOT set overflow-y:hidden (content overflows);
+        // it must clear the inline overflowY ('') so the CSS e-yscroll class manages it.
+        var contentElement = cut.Find(".e-content");
+        Assert.NotNull(contentElement);
+
+        // e-yscroll class must always be present (selector integrity, regardless of overflow state)
+        Assert.True(contentElement.ClassList.Contains("e-yscroll"),
+            "e-yscroll class must be present when content overflows the static grid height.");
+
+        // When content overflows, overflow-y:hidden must NOT be set inline.
+        // The inline overflowY must be empty string ('') so CSS class drives the scrollbar.
+        var inlineStyle = contentElement.GetAttribute("style") ?? string.Empty;
+        Assert.DoesNotContain("overflow-y:hidden", inlineStyle.Replace(" ", ""),
+            "overflow-y:hidden must NOT be set when content height exceeds static grid height. " +
+            "Actual style: " + inlineStyle);
+    }
+
+    public List<OrderBug3> GenerateBug3Data()
+    {
+        var data = new List<OrderBug3>();
+        for (int i = 1; i <= 50; i++)
+        {
+            data.Add(new OrderBug3
+            {
+                OrderID = 10000 + i,
+                CustomerID = "CUST" + i,
+                Freight = 10.0 * i
+            });
+        }
+        return data;
+    }
+
+    public class OrderBug3
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+ *@

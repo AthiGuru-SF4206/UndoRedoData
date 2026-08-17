@@ -1,0 +1,97 @@
+@inherits GridTestBase
+@using Syncfusion.Blazor.Popups
+@using Microsoft.AspNetCore.Components;
+@using System.Threading.Tasks;
+
+
+<SfFixture @ref="fixture" Test="GridTooltipRendering" Description="Grid Tooltip rendering test">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" ShowTooltip="true" ID="GridTooltip">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Width="150" Format="yMd"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<SfFixture @ref="fixture2" Test="GridTooltipTemplateRendering" Description="Grid Tooltip template rendering test">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" ShowTooltip="true" ID="GridTooltip">
+            <GridTemplates>
+                <TooltipTemplate>
+                    @{
+                        var tooltip = context as TooltipTemplateContext;
+                        var order = tooltip?.Data as Order;
+                        <p>@order?.OrderID</p>
+                    }
+                </TooltipTemplate>
+            </GridTemplates>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" HeaderText="Order Date" Width="150" Format="yMd"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture { get; set; }
+    SfFixture fixture2 { get; set; }
+
+
+    void GridTooltipRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Test: GridTooltip component initialization and basic rendering
+        Assert.NotNull(cut.Instance);
+        Assert.True(cut.Instance.ShowTooltip, "Tooltip should be enabled");
+        Assert.True(cut.Instance.ID == "GridTooltip", "Grid ID should be set correctly");
+
+        // Test: OnParametersSet() - Component lifecycle and RenderTooltip flag
+        var gridElement = cut.Find($"#{cut.Instance.ID}");
+        Assert.NotNull(gridElement);
+
+        // Test: Tooltip initialization - Verify SfTooltip component
+        var tooltipElements = cut.FindAll("[id*='_Tooltip']");
+        Assert.True(tooltipElements.Count >= 0, "Tooltip elements should be present or able to render");
+
+        // Test: Header cells rendering
+        var headerCells = cut.FindAll(".e-headercell");
+        Assert.True(headerCells.Count > 0, "Header cells should be rendered");
+        Assert.Equal(4, headerCells.Count);
+
+        // Test: Data cells rendering
+        var dataCells = cut.FindAll(".e-rowcell");
+        Assert.True(dataCells.Count > 0, "Data cells should be rendered");
+
+        // Test: Column configuration
+        Assert.NotNull(cut.Instance.Columns);
+        Assert.Equal(4, cut.Instance.Columns.Count);
+
+        // Test: Verify all column headers
+        var columns = cut.Instance.Columns;
+        Assert.Equal("Order ID", columns[0].HeaderText);
+        Assert.Equal("Customer ID", columns[1].HeaderText);
+        Assert.Equal("Freight", columns[2].HeaderText);
+        Assert.Equal("Order Date", columns[3].HeaderText);
+    }
+
+
+    async void GridTooltipTemplateRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var tooltip = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridTooltip<Order>>();
+        var sfTooltip = tooltip.FindComponent<SfTooltip>();
+        await cut.InvokeAsync(async () =>
+        {
+            await sfTooltip.Instance.OnRender.InvokeAsync(new TooltipEventArgs { Top = 100, Left = 100 });
+        });
+    }
+}

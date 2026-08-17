@@ -1,0 +1,37 @@
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="FilterKeyTest" Description="FilterValue persistence in another column">
+    <ComponentUnderTest>
+        <SfGrid @ref=Grid DataSource="@OrderData" AllowFiltering="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    public List<Order> OrderData = new List<Order>
+{
+    new Order() { OrderID = 10248, CustomerID = "VINET", EmployeeID = 4 },
+    new Order() { OrderID = 10249, CustomerID = "TOMSP", EmployeeID = 5 },
+    new Order() { OrderID = 10250, CustomerID = "HANAR", EmployeeID = 6 }
+};
+
+    void FilterKeyTest(Fixture fixture)
+    {
+        var col1 = "OrderID";
+        var col2 = "CustomerID";
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        cut.Find($"[id ={col1}_filterBarcell]").Input("10248");
+        cut.Find($"[id ={col2}_filterBarcell]").KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+        cut.WaitForState(() => Grid.FilterSettings.Columns == null, TimeSpan.FromSeconds(2));
+        Assert.True(Grid.FilterSettings.Columns == null);
+    }
+}

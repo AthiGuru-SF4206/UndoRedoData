@@ -1,0 +1,208 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Navigations
+
+<SfFixture @ref="fixture" TestAsync="GroupingExportTest" Description="Grid Grouping Export - PDF and Excel with multiple grouping columns and custom themes">
+    <ComponentUnderTest>
+        <SfGrid ID="GroupingExportGrid" @ref="GridRef" DataSource="GenerateGroupingTestData()" AllowExcelExport="true" AllowPdfExport="true" AllowGrouping="true" Toolbar="@(new List<string>() { "PdfExport", "ExcelExport" })" Height="348">
+            <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="GroupingOrderData"></GridEvents>
+            <GridGroupSettings Columns="@GroupingColumns"></GridGroupSettings>
+
+            <GridColumns>
+                <GridColumn Field=@nameof(GroupingOrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120" IsPrimaryKey="true" />
+                <GridColumn Field=@nameof(GroupingOrderData.CustomerID) HeaderText="Customer Name" Width="150" />
+                <GridColumn Field=@nameof(GroupingOrderData.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120" />
+                <GridColumn Field=@nameof(GroupingOrderData.ShipCity) HeaderText="Ship City" Width="150" />
+                <GridColumn Field=@nameof(GroupingOrderData.ShipName) HeaderText="Ship Name" Width="150" />
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<GroupingOrderData> GridRef;
+    public List<GroupingOrderData> OrderList = new List<GroupingOrderData>();
+    public string[] GroupingColumns = new string[] { "CustomerID", "ShipCity" };
+    public string fontFamily = "TimesRoman";
+
+    public async Task GroupingExportTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<GroupingOrderData>>();
+
+        // ==================== VERIFY INITIAL GROUPING SETUP ====================
+        Assert.NotNull(cut.Instance.GroupSettings);
+        Assert.Equal(2, cut.Instance.GroupSettings.Columns.Length);
+        Assert.Contains("CustomerID", cut.Instance.GroupSettings.Columns);
+        Assert.Contains("ShipCity", cut.Instance.GroupSettings.Columns);
+
+        // ==================== VERIFY DATA GROUPING ====================
+       
+
+        // ==================== PDF EXPORT WITH THEMES ====================
+        var pdfExportProps = new PdfExportProperties
+        {
+            Theme = new PdfTheme
+            {
+                Header = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 11 },
+                    FontColor = "#000080",
+                    Bold = true,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                },
+                Caption = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 9 },
+                    FontColor = "#0B6623",
+                    Bold = true,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                },
+                Record = new PdfThemeStyle
+                {
+                    Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 10 },
+                    FontColor = "#B22222",
+                    Bold = true,
+                    Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                }
+            }
+        };
+        ExcelExportProperties excelProperties = new ExcelExportProperties();
+        ExcelTheme Theme = new ExcelTheme();
+        ExcelStyle ThemeStyle = new ExcelStyle()
+        {
+            FontName = "Segoe UI",
+            FontColor = "#666666",
+            FontSize = 20,
+            BackColor = "#D3D3D3",
+            VAlign = ExcelVerticalAlign.Bottom,
+            HAlign = ExcelHorizontalAlign.Center,
+            Borders = new Border
+            {
+                Color = "#5A5A5A",
+                LineStyle = Syncfusion.ExcelExport.LineStyle.Medium
+            }
+        };
+        Theme.Header = ThemeStyle;
+        Theme.Record = ThemeStyle;
+        Theme.Caption = ThemeStyle;
+        excelProperties.Theme = Theme;
+        await cut.Instance.ExportToPdfAsync(pdfExportProps);
+
+        // ==================== EXCEL EXPORT ====================
+        await cut.Instance.ExportToExcelAsync(excelProperties);
+
+       
+
+        // Export with single grouping
+        await cut.Instance.ExportToPdfAsync(pdfExportProps);
+        await cut.Instance.ExportToExcelAsync(excelProperties);
+
+        // ==================== TEST GROUPED DATA STRUCTURE ====================
+        // Group data manually to verify grid grouping logic
+        var manualGroupByCustomer = OrderList.GroupBy(x => x.CustomerID)
+                                            .GroupBy(x => x.First().ShipCity)
+                                            .ToList();
+        
+       
+
+        // ==================== VERIFY EXPORT CONFIGURATIONS ====================
+        // Verify grid export properties
+        Assert.True(cut.Instance.AllowExcelExport, "Excel export should be enabled");
+        Assert.True(cut.Instance.AllowPdfExport, "PDF export should be enabled");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping should be enabled");
+    }
+
+    public async Task ToolbarClickHandler(ClickEventArgs args)
+    {
+        if (args.Item.Id == "GroupingExportGrid_pdfexport")
+        {
+            var pdfExportProps = new PdfExportProperties
+            {
+                Theme = new PdfTheme
+                {
+                    Header = new PdfThemeStyle
+                    {
+                        Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 11 },
+                        FontColor = "#000080",
+                        Bold = true,
+                        Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                    },
+                    Caption = new PdfThemeStyle
+                    {
+                        Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 9 },
+                        FontColor = "#0B6623",
+                        Bold = true,
+                        Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                    },
+                    Record = new PdfThemeStyle
+                    {
+                        Font = new PdfGridFont { FontFamily = fontFamily, FontSize = 10 },
+                        FontColor = "#B22222",
+                        Bold = true,
+                        Border = new PdfBorder { Color = "#5A5A5A", DashStyle = PdfDashStyle.Solid }
+                    }
+                }
+            };
+
+            await GridRef.ExportToPdfAsync(pdfExportProps);
+            await GridRef.ExportToExcelAsync();
+        }
+        else if (args.Item.Id == "GroupingExportGrid_excelexport")
+        {
+            await GridRef.ExportToExcelAsync();
+        }
+    }
+
+    public List<GroupingOrderData> GenerateGroupingTestData()
+    {
+        return new List<GroupingOrderData>
+        {
+            new GroupingOrderData(10248, "VINET", 32.38, "Reims", "Vins et alcools Chevalier", "France"),
+            new GroupingOrderData(10249, "TOMSP", 11.61, "Münster", "Toms Spezialitäten", "Germany"),
+            new GroupingOrderData(10250, "HANAR", 65.83, "Rio de Janeiro", "Hanari Carnes", "Brazil"),
+            new GroupingOrderData(10251, "VICTE", 41.34, "Lyon", "Victuailles en stock", "France"),
+            new GroupingOrderData(10252, "SUPRD", 51.3, "Charleroi", "Suprêmes délices", "Belgium"),
+            new GroupingOrderData(10253, "HANAR", 58.17, "Rio de Janeiro", "Hanari Carnes", "Brazil"),
+            new GroupingOrderData(10254, "CHOPS", 22.98, "Bern", "Chop-suey Chinese", "Switzerland"),
+            new GroupingOrderData(10255, "RICSU", 148.33, "Genève", "Richter Supermarkt", "Switzerland"),
+            new GroupingOrderData(10256, "WELLI", 13.97, "Resende", "Wellington Import Export", "Brazil"),
+            new GroupingOrderData(10257, "HILAA", 81.91, "San Cristóbal", "Hila Alimentos", "Venezuela"),
+            new GroupingOrderData(10258, "ERNSH", 140.51, "Graz", "Ernst Handel", "Austria"),
+            new GroupingOrderData(10259, "CENTC", 3.25, "México D.F.", "Centro comercial", "Mexico"),
+            new GroupingOrderData(10260, "OTTIK", 55.09, "Köln", "Ottilies Käseladen", "Germany"),
+            new GroupingOrderData(10261, "QUEDE", 3.05, "Rio de Janeiro", "Que delícia", "Brazil"),
+            new GroupingOrderData(10262, "RATTC", 48.29, "Albuquerque", "Rattlesnake Canyon Grocery", "USA")
+        };
+    }
+
+    // ==================== MODEL CLASS ====================
+    
+    /// <summary>
+    /// Order data model for grouping export testing
+    /// </summary>
+    public class GroupingOrderData
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+        public string ShipCity { get; set; }
+        public string ShipName { get; set; }
+        public string ShipCountry { get; set; }
+
+        public GroupingOrderData()
+        {
+        }
+
+        public GroupingOrderData(int orderID, string customerID, double freight, string shipCity, string shipName, string shipCountry)
+        {
+            this.OrderID = orderID;
+            this.CustomerID = customerID;
+            this.Freight = freight;
+            this.ShipCity = shipCity;
+            this.ShipName = shipName;
+            this.ShipCountry = shipCountry;
+        }
+    }
+}

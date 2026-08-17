@@ -1,0 +1,46 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="ColumnsPropertyTest" Description="Frozen Rendering With Columns property">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@OrderData" Columns="Cols" EnablePersistence="true">
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    List<GridColumn> Cols = new List<GridColumn>() {
+        new GridColumn(){Field = "OrderID", Width = "200", IsFrozen=true },
+        new GridColumn(){Field = "CustomerID", Width = "200" },
+        new GridColumn(){Field = "EmployeeID", Width = "200" },
+        };
+    public List<Order> OrderData = new List<Order>
+{
+    new Order() { OrderID = 10248, CustomerID = "VINET", EmployeeID = 4 },
+    new Order() { OrderID = 10249, CustomerID = "TOMSP", EmployeeID = 5 },
+    new Order() { OrderID = 10250, CustomerID = "HANAR", EmployeeID = 6 }
+};
+
+    void ColumnsPropertyTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        var headerCellCount = cut.FindAll(".e-headercell").Count();
+        var frozenHeaderCellCount = cut.FindAll(".e-headercell.e-leftfreeze").Count();
+        var movableHeaderCellCount = headerCellCount - frozenHeaderCellCount;
+
+        Assert.True(frozenHeaderCellCount == 1, "frozen header table rendering check");
+        Assert.True(movableHeaderCellCount == 2, "Movable header table rendering check");
+
+        var rowCellCount = cut.FindAll(".e-rowcell").Count();
+        var frozenRowCellCount = cut.FindAll(".e-rowcell.e-leftfreeze").Count();
+        var movableRowCellCount = rowCellCount - frozenRowCellCount;
+
+        Assert.True(frozenRowCellCount == 3, "frozen content table rendering check");
+        Assert.True(movableRowCellCount == 6, "Movable content table rendering check");
+
+        //Assert.True(cut.Instance.FreezeModule!.GetFrozenCount() == 1, "frozen count check");
+    }
+
+}

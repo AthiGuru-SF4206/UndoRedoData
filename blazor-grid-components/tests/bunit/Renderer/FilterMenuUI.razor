@@ -1,0 +1,32 @@
+﻿@inherits GridTestBase
+
+
+
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Menu Filteing UI rendering test">
+
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateOrderData()" AllowFiltering="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu" ></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" AllowFiltering="false" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.FindAll(".e-icon-filter").Count() < cut.Instance.Columns.Count, "filter icon render based on column visibility");
+
+        cut.Find(".e-filtermenudiv").Click();
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        Assert.True(cut.FindAll(".e-filter-popup").Count > 0, "filter dialog opened");
+    }
+}

@@ -1,0 +1,16 @@
+﻿@using Syncfusion.Blazor
+@namespace Syncfusion.Blazor.Tests.Grids.MediaQuery
+
+<SfMediaQuery MediaBreakpoints="@mediaBreakPoint"></SfMediaQuery>
+
+@code {
+    private List<MediaBreakpoint> mediaBreakPoint = new List<MediaBreakpoint>();
+    protected override void OnInitialized()
+    {
+        mediaBreakPoint = new List<MediaBreakpoint>() { 
+            new MediaBreakpoint() { Breakpoint = "CustomSmall", MediaQuery = "(max-width: 600px)" },
+            new MediaBreakpoint() { Breakpoint = "CustomLarge", MediaQuery = "(min-width: 600px)" }
+        };
+        base.OnInitialized();
+    }
+}

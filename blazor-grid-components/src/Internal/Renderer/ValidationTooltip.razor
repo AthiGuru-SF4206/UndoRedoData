@@ -1,0 +1,105 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam T
+@implements IDisposable
+
+@foreach (var Column in Columns!)
+{
+    if (!Column.Visible || (Parent != null && Parent.EditSettings!.Mode == EditMode.Batch && Parent.EditModule!.OriginalCell?.Column?.Field != Column?.Field))
+        continue;
+    var display = "none";
+    var Position = "";
+    var Message = "";
+    var Field = Column?.Field;
+    bool isComplexColumn = Field?.Contains(".") == true;
+    var complexField = Edit<T>.GetComplexName(Field!);
+    bool ValidationForBottomPos = (Parent != null && Parent.EditModule!.IsLastRow) ||
+        (Parent != null && Parent.EditSettings!.NewRowPosition == NewRowPosition.Bottom && Parent?.EditModule != null &&  Parent.EditModule.IsAdd);
+    var arrowTop = "none";
+    var arrowBottom = "none";
+    if (Parent?.EditModule != null && Parent.EditModule.ArrowPosition == "top")
+    {
+        arrowTop = "block";
+    }
+    else if (Parent?.EditModule != null && Parent.EditModule.ArrowPosition == "bottom")
+    {
+        arrowBottom = "block";
+    }
+    if (Parent?.EditModule != null && Parent.EditModule.ErrorResult.Any(x => x.FieldName == Field) || (isComplexColumn && Parent?.EditModule != null && Parent.EditModule.ErrorResult.Any(x => Field!.Contains(x.FieldName ?? ""))))
+    {
+        string? editModuleKeyCode = Parent.EditModule.KeyCode;
+        if (Parent.EditModule.position.ContainsKey(Column?.Uid!))
+        {
+            display = "";
+            Position = Parent.EditModule.position[Column?.Uid!].ToString();
+        }
+        else if (Parent.EditSettings!.Mode != EditMode.Batch && !(Parent.EditSettings.Mode == EditMode.Normal && Parent.Rows?.Count == 1 &&
+            Parent.EditModule.IsAdd && Parent.TotalItemCount == 0 && (editModuleKeyCode == "Enter" || editModuleKeyCode == "Tab" || editModuleKeyCode == "NumpadEnter")))
+        {
+            return;
+        }
+        Message = Parent.EditModule.ErrorResult.Find(x => Field!.Contains(x.FieldName ?? ""))?.Message;
+    }
+    <div class="@GetClassName(Column!)" id="@($"{complexField}_Error")" e-mappinguid="@($"{Column?.Uid}_Error")" data-sf-style="@($"{Position} display: {display}")">
+        <div class="e-tip-content">
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <label class="e-error" for="@complexField" id="@($"{complexField}-info")">
+                    @Message
+                </label>
+            }
+        </div>
+        <div class="e-arrow-tip e-tip-bottom" data-sf-style="display: @arrowBottom">
+            <div class="e-arrow-tip-outer e-tip-bottom"></div>
+            <div class="e-arrow-tip-inner e-tip-bottom"></div>
+        </div>
+        <div class="e-arrow-tip e-tip-top" data-sf-style="display: @arrowTop">
+            <div class="e-arrow-tip-outer e-tip-top "></div>
+            <div class="e-arrow-tip-inner e-tip-top"></div>
+        </div>
+    </div>
+}
+
+
+@code{
+
+    #region Parameters
+    
+    [Parameter]
+
+    public List<GridColumn>? Columns { get; set; }
+
+    [CascadingParameter]
+
+    public SfGrid<T>? Parent { get; set; }
+    
+    #endregion
+    
+    #region LifeCycle Methods
+    protected override void OnInitialized()
+        => Parent?.EventAggregator.Add("ShowValidationMessage", InvokeStateChange);
+
+        
+    void IDisposable.Dispose()
+        => Parent?.EventAggregator.Remove("ShowValidationMessage", InvokeStateChange);
+    #endregion
+    
+    #region Event Handlers
+    public virtual void InvokeStateChange(object args)
+    {
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region Helper Methods
+    private string GetClassName(GridColumn column)
+    {
+        string baseClass = "e-tooltip-wrap e-lib e-control e-popup e-griderror";
+        if (Parent != null && Parent.FreezeModule!.GetFrozenCount() > 0 && ((column?.IsFrozen == false && Parent.FrozenColumns == 0) || (Parent.FrozenColumns > 0 && column?.Index > (Parent.FrozenColumns - 1))))
+        {
+            baseClass = $"{baseClass} e-unfreeze";
+        }
+        return baseClass;
+    }
+    #endregion
+}

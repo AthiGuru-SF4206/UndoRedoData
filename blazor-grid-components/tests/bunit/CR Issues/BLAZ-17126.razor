@@ -1,0 +1,59 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+
+<SfFixture @ref="fixture" Test="CustomColumn" Description="Header text Align property">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateRecord()" TValue="Order" AllowPaging="true" Height="315">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <ReadOnlyGridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></ReadOnlyGridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public SfGrid<Order>
+    DefaultGrid;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    async void CustomColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Columns[1].HeaderTextAlign.Equals(Syncfusion.Blazor.Grids.TextAlign.Right));
+        var CheckBoxRenderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridHeaderCell<Order>>();
+        var result = CheckBoxRenderer.Instance.GetHeaderTextAlign(cut.Instance.Columns[1]);
+        Assert.True(result.Equals("Right"));
+    }
+
+    public List<Order> Orders { get; set; }
+
+    SfGrid<Order> Grid { get; set; }
+
+    List<Order> SelectedRecords { get; set; }
+
+    public List<Order> GenerateRecord()
+    {
+        return Orders = Enumerable.Range(1, 2).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+
+}
+

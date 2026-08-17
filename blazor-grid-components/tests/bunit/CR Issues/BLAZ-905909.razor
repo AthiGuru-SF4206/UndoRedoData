@@ -1,0 +1,68 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Lazy load grouping with height 100%">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" DataSource="GenerateRows()" Height="100%" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial3" EnableLazyLoading=true></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<OrderData> Grid;
+    public List<OrderData> GridData { get; set; }
+    private string[] Initial3 = (new string[] { "OrderID" });
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        Assert.True(cut.Instance.Height == "100%", "Height is 100%");
+        var rowsInGrid = cut.FindAll("tr");
+        var firstCell = rowsInGrid[1].QuerySelectorAll("td")[0];
+        Assert.True(firstCell.ClassList.Contains("e-recordpluscollapse"), "First cell is collapsed");
+        firstCell.Click();
+        var afterRowsInGrid = cut.FindAll("tr");
+        Assert.True(afterRowsInGrid[1].QuerySelectorAll("td")[0].ClassList.Contains("e-recordplusexpand"), "First cell is expanded");
+    }
+
+    public List<OrderData> GenerateRows()
+    {
+        List<OrderData> data = new List<OrderData>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderData() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(15, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(14, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(13, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(12, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(11, 01, 18), Freight = 2.7 * 2 });
+            count += 5;
+        }
+        GridData = data;
+        return data;
+    }
+
+    public class OrderData
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

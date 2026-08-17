@@ -1,0 +1,116 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Flat grid with filter checkbox type">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateCheckBoxData()" AllowPaging="true" AllowGrouping="true">
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(OrdersDetails.Freight) Type="AggregateType.Sum" Format="C2">
+                            <GroupCaptionTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(OrdersDetails.MyTimeSpan) Type="AggregateType.Custom">
+
+                            @* Note: We need the sum of timespans per Group here GetWeightedAggregate-function isn't the solution here'! *@
+                            @* The following code is not working and causes an error *@
+                            <GroupCaptionTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    var b = 7;
+                                    <div>
+                                        <p>Custom Aggregate: @GetWeightedAggregate()   </p>
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                            @* End of code not working *@
+
+
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    var a = 5;
+                                    <div>
+                                        <p>Custom Aggregate: @GetWeightedAggregate()   </p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrdersDetails.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules { Required = true, Number = true })" TextAlign="@TextAlign.Center" HeaderTextAlign="@TextAlign.Center" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(OrdersDetails.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules { Required = true })" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrdersDetails.Freight) HeaderText="Freight" Format="C2" Width="140" TextAlign="@TextAlign.Right" ValidationRules="@(new ValidationRules { Required = true, Range = new object[] { 1, 1000 } })" HeaderTextAlign="@TextAlign.Right"></GridColumn>
+                <GridColumn Field=@nameof(OrdersDetails.OrderDate) HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" Type="ColumnType.Date" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(OrdersDetails.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrdersDetails.MyTimeSpan) HeaderText="My TimeSpan" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+
+    public List<Order> Orders { get; set; }
+    SfFixture fixture { get; set; }
+
+    public List<OrdersDetails> GridData { get; set; }
+
+    public string GetWeightedAggregate()
+    {
+        var totalSpan = new TimeSpan(GridData.Sum(r => r.MyTimeSpan.Ticks));
+        return totalSpan.ToString();
+
+    }
+
+
+    public List<OrdersDetails> GenerateCheckBoxData()
+    {
+        return GridData = Enumerable.Range(1, 7).Select(x => new OrdersDetails()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+            MyTimeSpan = new TimeSpan(14, x, 0)
+        }).ToList();
+    }
+
+    public class OrdersDetails
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+        public string ShipCountry { get; set; }
+        public TimeSpan MyTimeSpan { get; set; }
+    }
+
+    async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrdersDetails>>();
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        cut.WaitForState(() => cut.FindAll(".e-summarycell.e-templatecell") != null);
+        Assert.True(0 < cut.FindAll(".e-summarycell.e-templatecell").Count());
+    }
+}

@@ -1,0 +1,85 @@
+@page "/undoredo-toolbar"
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+<div style="margin-bottom: 20px;">
+    <h2>Grid with Undo/Redo Toolbar Buttons</h2>
+    <p>Click the Undo and Redo buttons in the toolbar to undo/redo batch editing operations.</p>
+</div>
+
+<SfGrid @ref="GridRef" DataSource="@orderData" AllowPaging="true" Toolbar="@ToolbarItems">
+    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Batch"></GridEditSettings>
+    <GridPageSettings PageSize="12"></GridPageSettings>
+    <GridColumns>
+        <GridColumn Field="@nameof(OrderDetails.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.CustomerID)" HeaderText="Customer ID" Width="100"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.ShipCity)" HeaderText="Ship City" Width="100"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.ShipName)" HeaderText="Ship Name" Width="120"></GridColumn>
+        <GridColumn Field="@nameof(OrderDetails.Freight)" HeaderText="Freight" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+    </GridColumns>
+</SfGrid>
+
+<div style="margin-top: 20px;">
+    <h3>Instructions:</h3>
+    <ul>
+        <li>Click <strong>Add</strong> to add a new row</li>
+        <li>Click on cells to edit them directly (Batch mode)</li>
+        <li>Click <strong>Undo</strong> button to undo the last operation</li>
+        <li>Click <strong>Redo</strong> button to redo the undone operation</li>
+        <li>Use keyboard shortcuts: <strong>Ctrl+Z</strong> for Undo, <strong>Ctrl+Y</strong> for Redo</li>
+    </ul>
+</div>
+
+@code {
+    private SfGrid<OrderDetails>? GridRef;
+    private List<OrderDetails> orderData = new();
+    private List<object> ToolbarItems = new List<object>() { "Add", "Edit", "Delete", "Update", "Cancel", "Undo", "Redo" };
+
+    protected override void OnInitialized()
+    {
+        orderData = OrderDetails.GetAllRecords();
+    }
+
+    public class OrderDetails
+    {
+        public int OrderID { get; set; }
+        public string? CustomerID { get; set; }
+        public string? ShipCity { get; set; }
+        public string? ShipName { get; set; }
+        public double Freight { get; set; }
+
+        public OrderDetails() { }
+
+        public OrderDetails(int orderID, string customerID, string shipCity, string shipName, double freight)
+        {
+            OrderID = orderID;
+            CustomerID = customerID;
+            ShipCity = shipCity;
+            ShipName = shipName;
+            Freight = freight;
+        }
+
+        public static List<OrderDetails> GetAllRecords()
+        {
+            return new List<OrderDetails>
+            {
+                new OrderDetails(10248, "VINET", "Reims", "Vins et alcools Chevalier", 32.38),
+                new OrderDetails(10249, "TOMSP", "Münster", "Toms Spezialitäten", 11.61),
+                new OrderDetails(10250, "HANAR", "Rio de Janeiro", "Hanari Carnes", 65.83),
+                new OrderDetails(10251, "VICTE", "Lyon", "Victuailles en stock", 41.34),
+                new OrderDetails(10252, "SUPRD", "Charleroi", "Suprêmes délices", 51.30),
+                new OrderDetails(10253, "HANAR", "Rio de Janeiro", "Hanari Carnes", 58.17),
+                new OrderDetails(10254, "CHOPS", "Bern", "Chop-suey Chinese", 22.98),
+                new OrderDetails(10255, "RICSU", "Genève", "Richter Supermarkt", 148.33),
+                new OrderDetails(10256, "WELLI", "Resende", "Wellington Importadora", 13.97),
+                new OrderDetails(10257, "HILAA", "San Cristóbal", "HILARION-Abastos", 81.91),
+                new OrderDetails(10258, "ERNSH", "Graz", "Ernst Handel", 140.51),
+                new OrderDetails(10259, "CENTC", "México D.F.", "Centro comercial Moctezuma", 3.25),
+                new OrderDetails(10260, "OTTIK", "Köln", "Ottilies Käseladen", 55.09),
+                new OrderDetails(10261, "QUEDE", "Rio de Janeiro", "Que Delícia", 3.05),
+                new OrderDetails(10262, "RATTC", "Albuquerque", "Rattlesnake Canyon Grocery", 48.29)
+            };
+        }
+    }
+}

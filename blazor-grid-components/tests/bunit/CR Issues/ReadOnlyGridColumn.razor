@@ -1,0 +1,19 @@
+﻿
+ 
+@using Syncfusion.Blazor.Grids
+ 
+@inherits GridColumn
+ 
+<CascadingValue Value="@this">
+    @ChildContent
+</CascadingValue>
+ 
+@code{
+ 
+    protected override void OnInitialized()
+    {
+        this.AllowEditing = false;
+        this.HeaderTextAlign = TextAlign.Right;
+@**@        @*this.TextAlign = TextAlign.Right;*@
+    }
+}

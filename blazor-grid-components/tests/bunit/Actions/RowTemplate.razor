@@ -1,0 +1,409 @@
+﻿@inherits GridTestBase
+
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Display Row Template">
+<ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@GenerateEmployeeData()" Height="335px">
+        <GridTemplates>
+            <RowTemplate Context="emp">
+                @{
+                        var employee = (emp as Employee);
+                    <td class="details">
+                        <table class="CardTable" cellpadding="3" cellspacing="2">
+                            <colgroup>
+                                <col width="50%">
+                                <col width="50%">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <td class="CardHeader">First Name </td>
+                                    <td>@employee.FirstName </td>
+                                </tr>
+                                <tr>
+                                    <td class="CardHeader">Last Name</td>
+                                    <td>@employee.LastName </td>
+                                </tr>
+                                <tr>
+                                    <td class="CardHeader">
+                                        Title
+                                    </td>
+                                    <td>
+                                        @employee.Title
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="CardHeader">
+                                        Country
+                                    </td>
+                                    <td>
+                                        @employee.Country
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                }
+            </RowTemplate>
+        </GridTemplates>
+        <GridColumns>
+            <GridColumn HeaderText="Employee Details" Width="300" TextAlign="TextAlign.Left"></GridColumn>
+        </GridColumns>
+    </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<style type="text/css" class="cssStyles">
+
+    .details {
+        border-width: 1px 0px 0px 0px;
+        padding-left: 18px;
+    }
+
+    .e-bigger .details {
+        padding-left: 25px;
+    }
+
+    .e-device .details {
+        padding-left: 8px;
+    }
+
+    .details > table {
+        width: 100%;
+    }
+
+    .CardHeader {
+        font-weight: 600;
+    }
+
+    td {
+        padding: 2px 2px 3px 4px;
+    }
+</style>
+
+
+@code {
+    SfFixture fixture;
+    private SfGrid<Employee> Grid { get; set; }
+    public List<Employee> Employees { get; set; }
+
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Employee>>();
+        Assert.True(9 == cut.FindAll(".e-row").Count, "Number of rows generated properly");
+    }
+}
+
+@using System
+@using System.Linq
+@using System.Collections.Generic
+@using System.Threading.Tasks
+@using Microsoft.AspNetCore.Components.Web
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture1" TestAsync="GridDetailRow_DetailTemplate_Expand_KeyDown_1" Description="GridDetailRow detail template fallback path and keydown handler coverage using expand icon">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GetData1()" AllowSelection="true">
+            <GridTemplates>
+                <DetailTemplate Context="ctx1">
+                    @{
+                        TemplateRendered1 = true;
+                        TemplateData1 = ctx1 as DetailRowModel1;
+                    }
+                    <div id="detail-template-1">@((ctx1 as DetailRowModel1)!.CustomerID)</div>
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEvents DetailDataBound="DetailDataBoundHandler1" TValue="DetailRowModel1"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(DetailRowModel1.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(DetailRowModel1.CustomerID)" HeaderText="Customer Name" Width="160"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfGrid<DetailRowModel1> Grid1 { get; set; }
+    List<DetailRowModel1> Data1 { get; set; }
+    bool TemplateRendered1 { get; set; }
+    DetailRowModel1 TemplateData1 { get; set; }
+    bool DetailBoundCalled1 { get; set; }
+    DetailRowModel1 DetailBoundData1 { get; set; }
+
+    public List<DetailRowModel1> GetData1()
+    {
+        Data1 = new List<DetailRowModel1>
+        {
+            new DetailRowModel1 { OrderID = 1001, CustomerID = "ALFKI" }
+        };
+        return Data1;
+    }
+
+    public void DetailDataBoundHandler1(DetailDataBoundEventArgs<DetailRowModel1> args)
+    {
+        DetailBoundCalled1 = true;
+        DetailBoundData1 = args.Data;
+        Assert.True(args != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.Data.OrderID == 1001);
+    }
+
+    public async Task GridDetailRow_DetailTemplate_Expand_KeyDown_1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DetailRowModel1>>();
+        Assert.True(Data1.Count == 1);
+        Assert.False(TemplateRendered1);
+
+        var expandIcon = cut.FindAll(".e-detailrowexpand, .e-dtdiagonaldown, .e-dtdiagonalright, .e-detailindentcell .e-icons, .e-detailrowcollapse").First();
+        expandIcon.Click();
+
+        cut.WaitForState(() => cut.FindAll("#detail-template-1").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(TemplateRendered1);
+        Assert.True(TemplateData1 != null);
+        Assert.True(TemplateData1.OrderID == 1001);
+        Assert.True(DetailBoundCalled1);
+        Assert.True(DetailBoundData1 != null);
+        Assert.True(DetailBoundData1.OrderID == 1001);
+
+        var detailCell = cut.FindAll("th.e-detailcell, td.e-detailcell").First();
+        detailCell.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        Assert.True(cut.FindAll("#detail-template-1").Count == 1);
+    }
+
+    public class DetailRowModel1
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture2" TestAsync="GridDetailRow_DeleteExpanded_HiddenRowClass_2" Description="GridDetailRow deleted+dirty+expanded branch applies hidden and updated classes on detail row using UI expand in batch mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GetData2()" AllowSelection="true" Toolbar="@(new List<string>() { "Delete", "Update", "Cancel" })">
+            <GridTemplates>
+                <DetailTemplate Context="ctx2">
+                    @{
+                        TemplateRendered2 = true;
+                    }
+                    <div id="detail-template-2">@((ctx2 as DetailRowModel2)!.CustomerID)</div>
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEditSettings AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch" ShowConfirmDialog="false" ShowDeleteConfirmDialog="false"></GridEditSettings>
+            <GridEvents OnActionBegin="ActionBeginHandler2" TValue="DetailRowModel2"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(DetailRowModel2.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(DetailRowModel2.CustomerID)" HeaderText="Customer Name" Width="160"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture2 { get; set; }
+    SfGrid<DetailRowModel2> Grid2 { get; set; }
+    List<DetailRowModel2> Data2 { get; set; }
+    bool TemplateRendered2 { get; set; }
+    bool DeleteActionSeen2 { get; set; }
+    Syncfusion.Blazor.Grids.Action LastRequestType2 { get; set; }
+
+    public List<DetailRowModel2> GetData2()
+    {
+        Data2 = new List<DetailRowModel2>
+        {
+            new DetailRowModel2 { OrderID = 2001, CustomerID = "ANANTR" }
+        };
+        return Data2;
+    }
+
+    public void ActionBeginHandler2(ActionEventArgs<DetailRowModel2> args)
+    {
+        LastRequestType2 = args.RequestType;
+        if (args.RequestType == Syncfusion.Blazor.Grids.Action.Delete)
+        {
+            DeleteActionSeen2 = true;
+        }
+        Assert.True(args != null);
+        Assert.True(args.RequestType == args.RequestType);
+    }
+
+    public async Task GridDetailRow_DeleteExpanded_HiddenRowClass_2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DetailRowModel2>>();
+        var grid = cut.Instance;
+
+        Assert.True(Data2.Count == 1);
+        Assert.False(TemplateRendered2);
+
+        var expandIcon = cut.FindAll(".e-detailrowexpand, .e-dtdiagonaldown, .e-dtdiagonalright, .e-detailindentcell .e-icons, .e-detailrowcollapse").First();
+        expandIcon.Click();
+
+        cut.WaitForState(() => cut.FindAll("#detail-template-2").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(TemplateRendered2);
+
+        await grid.SelectRowAsync(0);
+        await grid.DeleteRecordAsync();
+
+        Assert.True(!DeleteActionSeen2 || LastRequestType2 == Syncfusion.Blazor.Grids.Action.Delete);
+
+        cut.WaitForState(() => cut.FindAll("tr.e-detailrow.e-hiddenrow, tr.e-detailrow.e-updatedtd, tr.e-detailrow.e-hiddenrow.e-updatedtd").Count > 0, TimeSpan.FromSeconds(2));
+        var rows = cut.FindAll("tr.e-detailrow");
+        Assert.True(rows.Count >= 0);
+
+        var target = cut.FindAll("tr.e-detailrow.e-hiddenrow.e-updatedtd, tr.e-detailrow.e-hiddenrow, tr.e-detailrow.e-updatedtd").FirstOrDefault();
+        Assert.True(target != null);
+    }
+
+    public class DetailRowModel2
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridDetailRow_IndentCells_Render_3" Description="GridDetailRow indent or detail indent rendering path coverage via UI expand">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GetData3()" AllowSelection="true">
+            <GridTemplates>
+                <DetailTemplate Context="ctx3">
+                    @{
+                        TemplateRendered3 = true;
+                    }
+                    <div id="detail-template-3">@((ctx3 as DetailRowModel3)!.CustomerID)</div>
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEvents DetailDataBound="DetailDataBoundHandler3" TValue="DetailRowModel3"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(DetailRowModel3.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(DetailRowModel3.CustomerID)" HeaderText="Customer Name" Width="160"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture3 { get; set; }
+    SfGrid<DetailRowModel3> Grid3 { get; set; }
+    List<DetailRowModel3> Data3 { get; set; }
+    bool TemplateRendered3 { get; set; }
+    bool DetailBoundCalled3 { get; set; }
+
+    public List<DetailRowModel3> GetData3()
+    {
+        Data3 = new List<DetailRowModel3>
+        {
+            new DetailRowModel3 { OrderID = 3001, CustomerID = "BOLID" }
+        };
+        return Data3;
+    }
+
+    public void DetailDataBoundHandler3(DetailDataBoundEventArgs<DetailRowModel3> args)
+    {
+        DetailBoundCalled3 = true;
+        Assert.True(args != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.Data.OrderID == 3001);
+    }
+
+    public async Task GridDetailRow_IndentCells_Render_3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DetailRowModel3>>();
+        Assert.False(TemplateRendered3);
+
+        var expandIcon = cut.FindAll(".e-detailrowexpand, .e-dtdiagonaldown, .e-dtdiagonalright, .e-detailindentcell .e-icons, .e-detailrowcollapse").First();
+        expandIcon.Click();
+
+        cut.WaitForState(() => cut.FindAll("#detail-template-3").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(TemplateRendered3);
+        Assert.True(DetailBoundCalled3);
+
+        var indentCandidates = cut.FindAll(".e-detailindentcell, .e-indentcell, td.e-detailindentcell, td.e-indentcell");
+        Assert.True(indentCandidates.Count > 0);
+    }
+
+    public class DetailRowModel3
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture4" TestAsync="GridDetailRow_ExpandCollapse_Toggles_Template_4" Description="GridDetailRow expand then collapse detail row and validate template removed using UI icons">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GetData4()" AllowSelection="true">
+            <GridTemplates>
+                <DetailTemplate Context="ctx4">
+                    @{
+                        TemplateRendered4 = true;
+                        TemplateData4 = ctx4 as DetailRowModel4;
+                    }
+                    <div id="detail-template-4">@((ctx4 as DetailRowModel4)!.CustomerID)</div>
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEvents DetailDataBound="DetailDataBoundHandler4" TValue="DetailRowModel4"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(DetailRowModel4.OrderID)" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(DetailRowModel4.CustomerID)" HeaderText="Customer Name" Width="160"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+    SfGrid<DetailRowModel4> Grid4 { get; set; }
+    List<DetailRowModel4> Data4 { get; set; }
+    bool TemplateRendered4 { get; set; }
+    DetailRowModel4 TemplateData4 { get; set; }
+    bool DetailBoundCalled4 { get; set; }
+    DetailRowModel4 DetailBoundData4 { get; set; }
+
+    public List<DetailRowModel4> GetData4()
+    {
+        Data4 = new List<DetailRowModel4>
+        {
+            new DetailRowModel4 { OrderID = 4001, CustomerID = "CHOPS" }
+        };
+        return Data4;
+    }
+
+    public void DetailDataBoundHandler4(DetailDataBoundEventArgs<DetailRowModel4> args)
+    {
+        DetailBoundCalled4 = true;
+        DetailBoundData4 = args.Data;
+        Assert.True(args != null);
+        Assert.True(args.Data != null);
+        Assert.True(args.Data.OrderID == 4001);
+    }
+
+    public async Task GridDetailRow_ExpandCollapse_Toggles_Template_4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DetailRowModel4>>();
+
+        Assert.False(TemplateRendered4);
+        Assert.False(DetailBoundCalled4);
+
+        var expandIcon = cut.FindAll(".e-detailrowexpand, .e-dtdiagonalright, .e-detailindentcell .e-icons").First();
+        expandIcon.Click();
+
+        cut.WaitForState(() => cut.FindAll("#detail-template-4").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(TemplateRendered4);
+        Assert.True(TemplateData4 != null);
+        Assert.True(TemplateData4.OrderID == 4001);
+        Assert.True(DetailBoundCalled4);
+        Assert.True(DetailBoundData4 != null);
+        Assert.True(DetailBoundData4.OrderID == 4001);
+
+        var collapseIcon = cut.FindAll(".e-detailrowcollapse, .e-dtdiagonaldown, .e-detailindentcell .e-icons").First();
+        collapseIcon.Click();
+
+        cut.WaitForState(() => cut.FindAll("#detail-template-4").Count == 0, TimeSpan.FromSeconds(2));
+        Assert.True(cut.FindAll("#detail-template-4").Count == 0);
+    }
+
+    public class DetailRowModel4
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+    }
+}

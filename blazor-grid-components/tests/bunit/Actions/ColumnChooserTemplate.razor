@@ -1,0 +1,314 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Grids;
+@using System.Dynamic
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="ColumnChooser with AdaptiveUI">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" AllowPaging="true" DataSource="@GenerateOrderData()" ShowColumnChooser="true" Toolbar="@ToolbarItems">
+            <GridColumnChooserSettings>
+                <Template>
+                    @{
+                        var ContextData = context as ColumnChooserTemplateContext;
+                        <CustomComponent @key="ContextData.Columns.Count" ColumnContext="ContextData"></CustomComponent>
+                    }
+                </Template>
+                <FooterTemplate>
+
+                </FooterTemplate>
+            </GridColumnChooserSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer ID" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText="Order Date" Visible="false" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) Visible="false" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.EmployeeID) Visible="false" HeaderText="Employee ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.FirstName) Visible="false" HeaderText="First Name" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.LastName) HeaderText="Last Name" Visible="false" Format="d" Type="ColumnType.Date" Width="130"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.Title) HeaderText="Title" Visible="false" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.HireDate) HeaderText="Hire Date" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+
+<style>
+    #Grid.e-grid .e-ccdlg .e-dlg-content {
+        margin-top: 0px;
+    }
+
+    .e-list-item.e-level-1.e-checklist.e-focused {
+        background-color: none;
+    }
+
+    #Grid_ccdlg .e-content {
+        overflow-y: unset;
+    }
+</style>
+
+@code
+{
+    SfFixture fixture { get; set; }
+
+    public string[] ToolbarItems9 = new string[] { "ColumnChooser" };
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        cut.FindAll(".e-columnchooser-btn")[0].Click(new MouseEventArgs());
+        var ColumnChooserInstance = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ColumnChooser<OrderData>>();
+        Assert.True(ColumnChooserInstance != null);
+        
+
+
+    }
+    public SfGrid<OrderData> Grid { get; set; }
+    public string[] ToolbarItems = new string[] { "ColumnChooser" };
+    public List<OrderData> Orders { get; set; }
+    protected List<OrderData> GenerateOrderData()
+    {
+        return Orders = OrderData.GetAllRecords();
+    }
+
+    public class OrderData
+    {
+        public static List<OrderData> Orders = new List<OrderData>();
+        public OrderData()
+        {
+
+        }
+        public OrderData(int? OrderID, string CustomerID, double Freight, DateTime OrderDate, int? EmployeeID, string FirstName, string LastName, string Title, DateTime? HireDate)
+        {
+            this.OrderID = OrderID;
+            this.CustomerID = CustomerID;
+            this.Freight = Freight;
+            this.OrderDate = OrderDate;
+            this.EmployeeID = EmployeeID;
+            this.FirstName = FirstName;
+            this.LastName = LastName;
+            this.Title = Title;
+            this.HireDate = HireDate;
+        }
+        public static List<OrderData> GetAllRecords()
+        {
+            if (Orders.Count() == 0)
+            {
+                int code = 10247;
+                int EmployeeID = 0;
+                for (int i = 1; i < 5; i++)
+                {
+                    Orders.Add(new OrderData(code + 1, "ALFKI", 33.33, new DateTime(1996, 07, 07), EmployeeID + 1, "Nancy", "Davolio", "Sales Representative", new DateTime(1992, 05, 01)));
+                    Orders.Add(new OrderData(code + 2, "ANANTR", 89.76, new DateTime(1996, 07, 12), EmployeeID + 2, "Andrew", "Fuller", "Vice President, Sales", new DateTime(1992, 08, 14)));
+                    Orders.Add(new OrderData(code + 3, "ANTON", 78.67, new DateTime(1996, 07, 13), EmployeeID + 3, "Janet", "Leverling", "Sales Manager", new DateTime(1993, 05, 03)));
+                    Orders.Add(new OrderData(code + 4, "BLONP", 55.65, new DateTime(1996, 07, 14), EmployeeID + 4, "Margaret", "Peacock", "Inside Sales Coordinator", new DateTime(1963, 08, 30)));
+                    Orders.Add(new OrderData(code + 5, "BOLID", 65.65, new DateTime(1996, 07, 15), EmployeeID + 5, "Steven", "Buchanan", "Sales Manager", new DateTime(1973, 08, 25)));
+                    code += 5;
+                    EmployeeID += 5;
+                }
+            }
+            return Orders;
+        }
+
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+        public int? EmployeeID { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Title { get; set; }
+        public DateTime? HireDate { get; set; }
+
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Editing with ExpandoObject">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRefs" DataSource="@GenerateOrderData9()" TValue="ExpandoObject" Toolbar="@(new List<string>() {  "Add", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID.Name" HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText=" Order Date" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field="ShipCountry.Country" HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field="Verified" HeaderText="Active" DisplayAsCheckBox="true" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture9 { get; set; }
+    public SfGrid<ExpandoObject> gridRefs { get; set; }
+    public List<ExpandoObject> Orderrs { get; set; } = new List<ExpandoObject>();
+
+    public List<ExpandoObject> GenerateOrderData9()
+    {
+        Orderrs = Enumerable.Range(1, 75).Select((x) =>
+        {
+            dynamic d = new ExpandoObject();
+            dynamic customerName = new ExpandoObject();
+            dynamic countryName = new ExpandoObject();
+            d.OrderID = 1000 + x;
+            customerName.Name = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)];
+            d.CustomerID = customerName;
+            d.Freight = (new double[] { 2, 1, 4, 5, 3 })[new Random().Next(5)] * x;
+            d.OrderDate = (new DateTime[] { new DateTime(2010, 11, 5), new DateTime(2018, 10, 3), new DateTime(1995, 9, 9), new DateTime(2012, 8, 2), new DateTime(2015, 4, 11) })[new Random().Next(5)];
+            countryName.Country = (new string[] { "USA", "UK" })[new Random().Next(2)];
+            d.ShipCountry = countryName;
+            d.Verified = (new bool[] { true, false })[new Random().Next(2)];
+
+            return d;
+        }).Cast<ExpandoObject>().ToList<ExpandoObject>();
+
+        return Orderrs;
+
+    }
+
+    public async void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+
+    }
+}
+
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="ColumnChooserItem Group Covered">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" AllowPaging="true" DataSource="@GenerateOrderData()" ShowColumnChooser="true" Toolbar="@ToolbarItems10">
+            <GridColumnChooserSettings>
+                <Template>
+                    @{
+                        var ContextData = context as ColumnChooserTemplateContext;
+                        
+                    }
+                    @if (ShouldRenderGroup("Employee Details", ContextData.Columns))
+                    {
+                        <GridColumnChooserItemGroup Title="Employee Details">
+                            @foreach (var column in GetGroupColumns("Employee Details", ContextData.Columns))
+                            {
+                                <GridColumnChooserItem Column="column"></GridColumnChooserItem>
+                            }
+                        </GridColumnChooserItemGroup>
+                    }
+                </Template>
+            </GridColumnChooserSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer ID" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText="Order Date" Visible="false" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) Visible="false" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.EmployeeID) Visible="false" HeaderText="Employee ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.FirstName) Visible="false" HeaderText="First Name" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.LastName) HeaderText="Last Name" Visible="false" Format="d" Type="ColumnType.Date" Width="130"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.Title) HeaderText="Title" Visible="false" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.HireDate) HeaderText="Hire Date" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    IDictionary<string, string[]> groups = new Dictionary<string, string[]>() { { "Employee Details", new string[] { "FirstName", "LastName" } } };
+    public string[] ToolbarItems10 = new string[] { "ColumnChooser" };
+
+    private GridColumn GetColumn(string field, List<GridColumn> columns)
+    {
+        GridColumn column = null;
+        if (columns.Any(x => { column = x; return x.Field == field; }))
+        {
+            return column;
+        }
+        return null;
+    }
+
+    private bool ShouldRenderGroup(string title, List<GridColumn> columns)
+    {
+        return groups[title].Any(x => columns.Any(y => y.Field == x));
+    }
+    private List<GridColumn> GetGroupColumns(string title, List<GridColumn> columns)
+    {
+        return columns.Where(x => groups[title].Contains(x.Field)).ToList();
+    }
+    void GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        cut.FindAll(".e-columnchooser-btn").First().Click(new MouseEventArgs());
+        cut.FindAll(".e-choosercheck")[0].Click(new MouseEventArgs());
+
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="ColumnChooserItem Group Covered with SelectAll Div">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid" @ref="Grid" AllowPaging="true" DataSource="@GenerateOrderData()" ShowColumnChooser="true" Toolbar="@ToolbarItems11">
+            <GridColumnChooserSettings>
+                <Template>
+                    @{
+                        var ContextData = context as ColumnChooserTemplateContext;
+                        
+                    }
+                    @if (ShouldRenderGroup1("Employee Details", ContextData.Columns))
+                    {
+                        <GridColumnChooserItemGroup Title="Employee Details">
+                            @foreach (var column in GetGroupColumns1("Employee Details", ContextData.Columns))
+                            {
+                                <GridColumnChooserItem Column="column" IsSelectAll="true"></GridColumnChooserItem>
+                            }
+                        </GridColumnChooserItemGroup>
+                    }
+                </Template>
+            </GridColumnChooserSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.CustomerID) HeaderText="Customer ID" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.OrderDate) HeaderText="Order Date" Visible="false" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.Freight) Visible="false" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData.EmployeeID) Visible="false" HeaderText="Employee ID" TextAlign="TextAlign.Right" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.FirstName) Visible="false" HeaderText="First Name" Width="150"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.LastName) HeaderText="Last Name" Visible="false" Format="d" Type="ColumnType.Date" Width="130"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.Title) HeaderText="Title" Visible="false" Width="120"> </GridColumn>
+                <GridColumn Field=@nameof(OrderData.HireDate) HeaderText="Hire Date" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+    IDictionary<string, string[]> groups1 = new Dictionary<string, string[]>() { { "Employee Details", new string[] { "FirstName", "LastName" } } };
+    public string[] ToolbarItems11 = new string[] { "ColumnChooser" };
+
+    private GridColumn GetColumn1(string field, List<GridColumn> columns)
+    {
+        GridColumn column = null;
+        if (columns.Any(x => { column = x; return x.Field == field; }))
+        {
+            return column;
+        }
+        return null;
+    }
+
+    private bool ShouldRenderGroup1(string title, List<GridColumn> columns)
+    {
+        return groups1[title].Any(x => columns.Any(y => y.Field == x));
+    }
+    private List<GridColumn> GetGroupColumns1(string title, List<GridColumn> columns)
+    {
+        return columns.Where(x => groups1[title].Contains(x.Field)).ToList();
+    }
+    void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<OrderData>>();
+        cut.FindAll(".e-columnchooser-btn").First().Click(new MouseEventArgs());
+        cut.FindAll(".e-choosercheck")[0].Click(new MouseEventArgs());
+
+    }
+}

@@ -1,0 +1,49 @@
+﻿@inherits GridTestBase
+@using System.Dynamic
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Exception is thrown when searching with empty column values in an ExpandoObject.">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowPaging="true" AllowFiltering="true" Toolbar="@ToolbarItems">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="CustomerID" HeaderText="Customer Name" Width="120"></GridColumn>
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="OrderDate" HeaderText=" Order Date" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field="ShipCountry" HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field="Verified" HeaderText="Active" DisplayAsCheckBox="true" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    SfGrid<ExpandoObject> Grid { get; set; }
+    public List<ExpandoObject> Orders { get; set; } = new List<ExpandoObject>();
+    private List<string> ToolbarItems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel", "Search" };
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ExpandoObject>>();
+        await cut.Instance.SearchAsync("1001");
+        var RecordsCount = cut.Instance.CurrentViewData.Count();
+        Assert.True(1 == RecordsCount, "Searching is working properly.");
+    }
+
+    public List<ExpandoObject> GenerateRows()
+    {
+        Orders = Enumerable.Range(1, 75).Select((x) =>
+        {
+            dynamic d = new ExpandoObject();
+            d.OrderID = 1000 + x;
+            d.CustomerID = x % 2 == 0 ? "ALFKI" : x % 5 == 0 ? "ANANTR" : x % 11 == 0 ? "ANTON" : "BOLID";
+            d.Freight = null;
+            d.OrderDate = x % 2 == 0 ? new DateTime(2010, 11, 5) : x % 5 == 0 ? new DateTime(2018, 10, 3) : x % 11 == 0 ? new DateTime(1995, 9, 9) : new DateTime(2012, 8, 2);
+            d.ShipCountry = x % 3 == 0 ? "USA" : x % 2 == 0 ? "UK" : "USA";
+            d.Verified = x % 3 == 0 ? true : false;
+            return d;
+        }).Cast<ExpandoObject>().ToList<ExpandoObject>();
+        return Orders;
+    }
+}

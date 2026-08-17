@@ -1,0 +1,70 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TValue
+@typeparam TItem
+
+@using System
+@using System.Linq.Expressions
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Data
+
+@if (Model!.isDataManager)
+{
+    <SfDropDownList ID="@Model.Column!.Field" TValue="TValue" TItem="TItem" EnableVirtualization="true" Value="@((TValue)Model.Value!)" Enabled="@Model.Enabled" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@Model.PlaceHolder" FloatLabelType="@Model.FloatLabelType" ValueChanged="@ValueChanged" @attributes="Model.Attributes"
+    ValueExpression=@((Expression<Func<TValue>>)Model.ValueExpression!)>
+        <DropDownListFieldSettings Value="@(Model.Column.ForeignKeyField ?? Model.Column.Field)" Text="@Model.Column.ForeignKeyValue"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TItem" ValueChange="ValueChange" TValue="TValue"></DropDownListEvents>
+        <SfDataManager @attributes="Model.DataManagerAttributes">
+            @Model.Column.DataManager?.ChildContent
+        </SfDataManager>
+    </SfDropDownList>
+}
+else
+{
+    <SfDropDownList ID="@id" TValue="TValue" TItem="object" Value="@_value" EnableVirtualization="true" Enabled="@Model.Enabled" EnableRtl="@Parent!.EnableRtl" ValueChanged="@ValueChanged"
+                Placeholder="@Model.PlaceHolder" FloatLabelType="@Model.FloatLabelType" DataSource="@Model.DropData" @attributes="Model.Attributes"
+    ValueExpression=@((Expression<Func<TValue>>)Model.ValueExpression!)>
+        <DropDownListFieldSettings Value="@(Model.Column!.ForeignKeyField ?? Model.Column.Field)" Text="@Model.Column.ForeignKeyValue"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="object" ValueChange="ValueChange" TValue="TValue"></DropDownListEvents>
+    </SfDropDownList>
+}
+
+@code
+{
+    [CascadingParameter]
+    public IGrid? Parent { get; set; }
+
+    [Parameter]
+    public EditorDropDownModel? Model { get; set; }
+
+    [Parameter]
+    public GridForeignKeyColumnParameters? ForeignKeyColumnParameters { get; set; }
+
+    private TValue _value => Model!.Value != null ? (TValue)Model.Value : default(TValue)!;
+
+    private string id => (ForeignKeyColumnParameters!.IsColumnUidRequired && ForeignKeyColumnParameters.DuplicateForeignkeyField!.Equals(Model!.Column!.Field)) ? Model.Column.Uid : Model!.Column!.Field;
+
+    internal void ValueChange<T, TData>(ChangeEventArgs<T, TData> args)
+    {
+        Model!.Value = args.Value!;
+        Parent!.SetValue<T>((T)Model?.Value!, Model?.Column?.Field!);
+        var columnData = Model?.Column?.ColumnData as IEnumerable<object>;
+        string? fieldName = Model?.Column?.Field;
+        if (columnData != null && fieldName != null && !columnData.Any(column => DataUtil.GetObject(fieldName, column)?.ToString() == args?.Value?.ToString()))
+        {
+            var addColumnData = columnData.ToList();
+            addColumnData.Insert(0, args.ItemData!);
+            if (Model?.Column != null)
+            {
+                Model.Column.ColumnData = addColumnData;
+            }
+        }
+    }
+
+    internal void ValueChanged<TVal>(TVal newValue)
+    {
+        Model!.Value = newValue!;
+        Parent!.SetValue<TVal>(newValue, Model?.Column?.Field!);
+    }
+}
+

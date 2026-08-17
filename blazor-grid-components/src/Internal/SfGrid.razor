@@ -1,0 +1,183 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Syncfusion.Blazor.Grids.Internal
+@using Syncfusion.Blazor.Internal
+@using Syncfusion.Blazor.Spinner
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Navigations.Internal
+
+@typeparam TValue
+@inherits SfDataBoundComponent
+@namespace Syncfusion.Blazor.Grids
+
+@{
+    SyncfusionService.ComponentCount += SyncfusionService.ComponentCount >= 0 && SyncfusionService.ComponentCount <= SyncfusionBlazorService.MAXCOMPCOUNT ? 1 : 0;
+}
+
+<CspStyleSourceProvider></CspStyleSourceProvider> 
+@if (!SyncfusionService.IsModuleInitComponentInitialized)
+{
+    SyncfusionService.IsModuleInitComponentInitialized = true;
+    <ModuleInitComponent></ModuleInitComponent>
+}
+
+<LicenseContextProvider Context="@gridLicenseContext">
+</LicenseContextProvider>
+
+<div id="@ID" @ref="_element" tabindex="-1" class="@GetClass()" data-sf-style="@GetStyle()" @attributes="_cachedAttributes"
+     @onkeydown:stopPropagation="true" role="@(IsRenderedFromTreeGrid? "treegrid" : "grid")">
+    <CascadingValue Value="@this">
+
+        @ChildContent
+
+        @if (!ID!.Contains("_sfprint"))
+        {
+            <SfSpinner @ref="SpinnerRef" ></SfSpinner>
+        }
+
+        <Preloader TContent="TValue" Data="CurrentViewData"></Preloader>
+
+        @if (AllowGrouping && GroupSettings!.ShowDropArea)
+        {
+            <GroupDropArea T="TValue"></GroupDropArea>
+        }
+
+        @if (EditSettings!.AllowAdding || EditSettings.AllowEditing || EditSettings.AllowDeleting)
+        {
+            <ValidationDialog T="TValue"></ValidationDialog>
+        }
+
+        @if (_isLoaded && (Toolbar != null || (((IGrid)this).GridTemplates?.ToolbarTemplate != null) || (EnableAdaptiveUI && RowRenderingMode == RowDirection.Vertical 
+            && (AllowSorting || (AllowFiltering && !FilterSettings!.Type.Equals(FilterType.FilterBar))))))
+        {
+            <GridToolbar T="TValue" Data="@CurrentViewData"></GridToolbar>
+        }
+
+        <div class="e-gridheader">
+            <div class="e-headercontent" >
+                @if (_isLoaded)
+                {
+                    if (EnableColumnVirtualization)
+                    {
+                        var virtualHeaderParameter = new GridVirtualHeaderParameters()
+                        {
+                            Columns = Columns,
+                            Data = CurrentViewData,
+                            TranslateX = VirtualScrollModule!.TranslateX,
+                            VirtualTableWidth = VirtualScrollModule.GetVTableWidth(),
+                            StartColumnIndex = VirtualScrollModule.StartColumnIndex,
+                            EndColumnIndex = VirtualScrollModule.EndColumnIndex
+                        };
+                        <GridVirtualHeader THeader="TValue" VirtualHeaderParameters=virtualHeaderParameter></GridVirtualHeader>
+                    }
+                    else
+                    {
+                        var headerParameter = new GridHeaderParameters()
+                        {
+                            Data = CurrentViewData,
+                            Columns = Columns,
+                            Id = string.Empty
+                        };
+                        <GridHeader TContent="TValue" HeaderParameters=headerParameter></GridHeader>
+                    }
+                }
+            </div>
+        </div>
+        @if (FrozenRows > 0)
+        {
+            <div class="e-frozenrow-border"></div>
+        }
+        <div class="@GetContentClass()">
+            <div class="@GetContentClassName()" data-sf-style="@GetContentStyle()" @onclick="@EditModule!.HandleContentClickEdit">
+                @if (_isLoaded)
+                {
+                    if (!EnableVirtualization && !EnableColumnVirtualization)
+                    {
+                        var contentParameter = new GridContentParameters()
+                        {
+                            Data = CurrentViewData,
+                            IsHeader = false
+                        };
+                        <GridContent TContent="TValue" ContentParameters="contentParameter"></GridContent>
+                    }
+                    else if (EnableVirtualization || EnableColumnVirtualization)
+                    {
+                        var virtualContentParameter = new GridVirtualContentParameters()
+                        {
+                            Data = CurrentViewData,
+                            QueriedData = VirtualScrollModule!.QueriedCurrentViewData,
+                            RowStartIndex = VirtualScrollModule.RowStartIndex,
+                            RowEndIndex = VirtualScrollModule.RowEndIndex,
+                            RowQueryStartIndex = VirtualScrollModule.RowQueryStartIndex,
+                            RowQueryEndIndex = VirtualScrollModule.RowQueryEndIndex,
+                            StartColumnIndex = VirtualScrollModule.StartColumnIndex,
+                            EndColumnIndex = VirtualScrollModule.EndColumnIndex,
+                            TranslateX = VirtualScrollModule.TranslateX,
+                            VirtualTableWidth = VirtualScrollModule.GetVTableWidth(),
+                            NextRowToNavigate = VirtualScrollModule.NextRowToNavigate
+                        };
+                        <GridVirtualContent TContent="TValue" VirtualContentParameter=virtualContentParameter></GridVirtualContent>
+                    }
+                }
+            </div>
+            @if (FreezeModule!.GetFrozenCount() != 0 && EnableColumnVirtualization)
+            {
+                <div class="e-movablescrollbar">
+                        <div class="e-movablechild"></div>
+                </div>
+            }
+        </div>
+        @if (Aggregates?.Count > 0)
+        {
+            <RefreshAggregate TValue="TValue"></RefreshAggregate>
+        }
+        @if (_isLoaded && AllowPaging)
+        {
+            DataReadyArgs<TValue> eventArgs = new DataReadyArgs<TValue>() { Count = TotalItemCount };
+            EventAggregator.Trigger("GetPageCount", eventArgs);
+            int pageSize = PageSettings!.PageSize == 0 ? 12 : PageSettings.PageSize;
+            if(PagerRef != null) 
+            {
+                PagerRef.EnableRtl = EnableRtl;
+                PagerRef.isRenderedFromGrid = true;
+                PagerRef.IsRenderedFromTreeGrid = IsRenderedFromTreeGrid;
+            }
+            <SfPager @ref="PagerRef" PageChanged="PageValueChanged" PageSizeChanged="DropDownChanged" CssClass="e-gridpager" Template="@PageSettings.Template" TotalItemsCount="eventArgs.Count" CurrentPage="PageSettings.CurrentPage"  PageSize="@pageSize"
+                  ShowAllInPageSizes="@_isShowAll"  PageSizes="@_pagerDropdownData"  NumericItemsCount="PageSettings.PageCount">
+           </SfPager>
+        }
+        @if (ShowColumnChooser || (ShowColumnMenu && EnableAdaptiveUI))
+        {
+            <ColumnChooser TContent="TValue"></ColumnChooser>
+        }
+        @if (ShowColumnMenu)
+        {
+            <ColumnMenu TContent="TValue"></ColumnMenu>
+        }
+        @if (ContextMenuItems != null && CurrentViewData != null)
+        {
+            <ContextMenu TContent="@TValue"></ContextMenu>
+        }
+        @if (EditSettings.Mode == EditMode.Dialog)
+        {
+            <DialogEdit TCell="TValue"></DialogEdit>
+        }
+        @if ((AllowFiltering && !FilterSettings!.Type.Equals(FilterType.FilterBar)) || ((AllowSorting || AllowPdfExport || AllowExcelExport || ShowColumnChooser) && EnableAdaptiveUI))
+        { 
+            <FilterType TContent="TValue"></FilterType>
+        }
+        @if (((AllowFiltering && !FilterSettings!.Type.Equals(FilterType.FilterBar)) || AllowSorting) && EnableAdaptiveUI) { 
+        
+            <AdaptiveDialogRenderer TContent="TValue"></AdaptiveDialogRenderer>
+        }
+        @if (ShowTooltip)
+        {
+            <GridTooltip TValue="TValue"></GridTooltip>
+        }
+    </CascadingValue>
+</div>
+
+@if (IsPrinting)
+{
+    <PrintLayout Parent="this"></PrintLayout>
+}
+

@@ -1,0 +1,932 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Testing the Columns in Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateOrderData()">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // to check all the columns are rendered.
+        Assert.True(4 == Grid.Columns.Count);
+        // to check all the rows are rendered.
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Rows are rendered in the columns");
+
+        // to check all the columns are rendered using the width
+        Assert.True("110".Equals(Grid.Columns[0].Width), "1st column rendered properly");
+        Assert.True("120".Equals(Grid.Columns[1].Width), "2nd column rendered properly");
+        Assert.True("130".Equals(Grid.Columns[2].Width), "3rd column rendered properly");
+        Assert.True("100".Equals(Grid.Columns[3].Width), "4th column rendered properly");
+
+        // check wheather the columns are rendered using the Header text
+        Assert.True("Order ID".Equals(Grid.Columns[0].HeaderText), "1st column rendered properly");
+        Assert.True("Customer ID".Equals(Grid.Columns[1].HeaderText), "2nd column rendered properly");
+        Assert.True("Order Date".Equals(Grid.Columns[2].HeaderText), "3rd column rendered properly");
+        Assert.True("Freight".Equals(Grid.Columns[3].HeaderText), "4th column rendered properly");
+
+    }
+}
+
+
+
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Testing the columns that are auto generated">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GenerateOrderData()">
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> Grid1;
+
+    void GridBasicRendering1(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Assert.True("12".Equals(Grid1.Columns.Count), "Columns have been rendered");
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Rows are rendered in the columns");
+    }
+}
+
+
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Show Hide column for frozon Rows and Columns  Using Button Click with initially CustomerID column as false">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" FrozenColumns="2" FrozenRows="2" AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150" Visible="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide2" CssClass="e-primary" Content="ShowHide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+    public string[] HideItems2 = new string[] { "OrderDate", "Freight" };
+    public string[] HideHeaderItems2 = new string[] { "Order Date", "Customer ID" };
+    public string[] ShowItem2 = new string[] { "OrderDate" };
+    public string[] ShowHeaderItems2 = new string[] { "Order Date", "Customer ID", "Order ID" };
+
+    public IRenderedComponent<SfGrid<Order>> cut2 { get; set; }
+    void GridBasicRendering2(Fixture fixture)
+    {
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(3 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(1 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after clicking ShowHide button ");
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+        //cut2.Instance.FreezeModule!.GetFreezeLineClientOptions();
+    }
+
+    async void show_hide2()
+    {
+        // Hide columns by its Header text
+        await this.DefaultGrid2.HideColumnsAsync(HideHeaderItems2);
+        Assert.True(1 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Hide method");
+        //Assert.True(3 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Header text
+        await this.DefaultGrid2.ShowColumnsAsync(ShowHeaderItems2);
+        Assert.True(4 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Header Columns generated after calling Show method ");
+        //Assert.True(0 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Show method");
+
+        // Hide columns by its Field
+        await this.DefaultGrid2.HideColumnsAsync(HideItems2, "field");
+        Assert.True(2 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Hide method ");
+        //Assert.True(2 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Hide method");
+
+        //Show columns by its Field
+        await this.DefaultGrid2.ShowColumnsAsync(ShowItem2, "field");
+        Assert.True(3 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling Show method ");
+        //Assert.True(1 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after after calling Show method");
+
+        //Hide Column by SetVisible function
+        this.DefaultGrid2.GetColumnsAsync().Result[0].SetVisibility(false);
+        Assert.True(2 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(2 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+        //Show Column by SetVisible function
+        this.DefaultGrid2.GetColumnsAsync().Result[0].SetVisibility(true);
+        this.DefaultGrid2.GetColumnsAsync().Result[2].SetVisibility(true);
+        Assert.True(4 == cut2.Instance.GetVisibleColumnsAsync().Result.Count, "Number of Columns generated after calling SetVisible method ");
+        //Assert.True(0 == cut2.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM after calling SetVisible method ");
+
+    }
+    }
+	<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Testing with the command column.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid3" DataSource="GenerateOrderData()">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn HeaderText="Manage Records" Width="150">
+                    <GridCommandColumns>
+                        <GridCommandColumn Type="CommandButtonType.Edit" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-edit", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Delete" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-delete", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Save" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-update", CssClass = "e-flat" })"></GridCommandColumn>
+                        <GridCommandColumn Type="CommandButtonType.Cancel" ButtonOption="@(new CommandButtonOptions() { IconCss = "e-icons e-cancel-icon", CssClass = "e-flat" })"></GridCommandColumn>
+                    </GridCommandColumns>
+                </GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+
+    void GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Click the Command Column'cell
+        cut.FindAll(".e-row")[0].Children[4].Click(new MouseEventArgs());
+        cut.FindAll(".e-row")[1].Children[4].Focus();
+        cut.FindAll(".e-row")[1].Children[4].Blur();
+        cut.FindAll(".e-row")[2].Children[4].KeyDown(new KeyboardEventArgs() { Key = "Enter" });
+
+    }
+ }
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Testing with the ColumnMenu.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid4" DataSource="GenerateOrderData()" AllowGrouping="true" ColumnMenuItems=@MenuItems AllowSorting="true" AllowFiltering="true" ShowColumnMenu="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridGroupSettings ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" TextAlign="TextAlign.Center" ShowColumnMenu="false"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> DefaultGrid4;
+    public string[] MenuItems = new string[] { "Group", "Ungroup", "ColumnChooser", "Filter", "SortAscending", "SortDescending", "AutoFit", "AutoFitAll" };
+    void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-columnmenu")[0].Click(new MouseEventArgs());
+        cut.FindAll(".e-contextmenu")[0].Children[2].Click(new MouseEventArgs());
+        cut.FindAll(".e-contextmenu")[0].Children[6].Click(new MouseEventArgs());
+
+        cut.FindAll(".e-headercell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", AltKey=true });
+    }
+}
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="ColumnMenu with AdaptiveUI.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid5" DataSource="GenerateOrderData()" EnableAdaptiveUI="true" AllowGrouping="true" ColumnMenuItems=@MenuItemsList AllowSorting="true" AllowFiltering="true" ShowColumnMenu="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings>
+            <GridGroupSettings ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="50"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150" TextAlign="TextAlign.Center" ShowColumnMenu="false"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" TextAlign="TextAlign.Center" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> DefaultGrid5;
+    public string[] MenuItemsList = new string[] { "Group", "Ungroup", "ColumnChooser", "Filter", "SortAscending", "SortDescending", "AutoFit", "AutoFitAll" };
+    void GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-columnmenu")[0].Click(new MouseEventArgs());
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Freeze line move with events">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef6" DataSource="@GenerateOrderData()" AllowSelection="true" ShowColumnChooser="true" AllowFreezeLineMoving="true" Toolbar=@ToolbarItems6 Width="900" Height="400" AllowPaging="true">
+            <GridEvents FreezeLineMoving="FreezeLineMoving" FreezeLineMoved="FreezeLineMoved" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" HideAtMedia="(min-width: 500px)" IsFrozen="true" Freeze="FreezeDirection.Left" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Uid="Customer" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Uid="Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Uid="Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Uid="Verify" IsFrozen="true" Freeze="FreezeDirection.Right" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture6 { get; set; }
+    public SfGrid<Order> gridRef6 { get; set; }
+    public string[] ToolbarItems6 = new string[] { "ColumnChooser" };
+    public async void GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance._jsAdaptor.SelectRow(2, false, 1);
+        await cut.Instance._jsAdaptor.SelectRow(2, true, 1);
+        await cut.Instance._jsAdaptor.InvokeFreezeLineMoving("{\"fromIndex\":0}");
+        await cut.Instance._jsAdaptor.InvokeFreezeLineMoved("{\"frozenColumnsUidCollection\":[\"Customer\"],\"freezeDirection\":\"Left\",\"freezeLineMovingDirection\":\"Right\",\"isFrozen\":true,\"fromIndex\":0,\"toIndex\":1,\"frozenColumnsCount\":0,\"hasGridStructureChanges\":false}");
+        //cut.WaitForState(() => cut.Instance.FreezeModule!.GetFreezeLeftCount() > 1, TimeSpan.FromMilliseconds(1000));
+        //Assert.True(cut.Instance.FreezeModule!.GetFreezeLeftCount() > 1, "FreezeLine moved");
+
+    }
+
+    public void FreezeLineMoved(FreezeLineMovedEventArgs args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void FreezeLineMoving(FreezeLineMovingEventArgs args)
+    {
+        // Here, you can customize your code.
+    }
+}
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Freeze line move without events">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef8" DataSource="@GenerateOrderData()" AllowFiltering="true" AllowFreezeLineMoving="true" Width="900" Height="400" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsFrozen="true" Freeze="FreezeDirection.Left" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120">
+                    <FilterTemplate>
+                        <SfNumericTextBox TValue="int?" ShowSpinButton="false" @bind-Value="@((context as PredicateModel<int?>).Value)"></SfNumericTextBox>
+                    </FilterTemplate>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Uid="Customer" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Uid="Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Uid="Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Uid="Verify" IsFrozen="true" Freeze="FreezeDirection.Right" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture8 { get; set; }
+    public SfGrid<Order> gridRef8 { get; set; }
+    public async void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance._jsAdaptor.InvokeFreezeLineMoving("{\"fromIndex\":0}");
+        await cut.Instance._jsAdaptor.InvokeFreezeLineMoved("{\"frozenColumnsUidCollection\":[\"Customer\"],\"freezeDirection\":\"Left\",\"freezeLineMovingDirection\":\"Left\",\"isFrozen\":false,\"fromIndex\":1,\"toIndex\":0,\"frozenColumnsCount\":1,\"hasGridStructureChanges\":false}");
+        cut.FindAll(".e-filtermenudiv")[0].Click();
+        cut.Instance._jsAdaptor.FilterPopupClose();
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="AutoFill Past action">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef7" EnableAutoFill="true" DataSource="@GenerateOrderData()" Toolbar="@(new List<string>() { "Add", "Update","Cancel" })" AllowResizing="true" AllowReordering="true" Width="900" Height="400">
+            <GridSelectionSettings CellSelectionMode="CellSelectionMode.Box" Mode="SelectionMode.Cell" Type="Syncfusion.Blazor.Grids.SelectionType.Multiple"></GridSelectionSettings>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridEvents BeforeCopyPaste="BeforeCopyPaste" BeforeCellPaste="BeforeCellpaste" BeforeAutoFill="BeforeAutoFill" OnResizeStart="OnResizeStartHanlder" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" HideAtMedia="(min-width: 700px)" IsFrozen="true" Freeze="FreezeDirection.Left" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Uid="Customer" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                @* <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Uid="Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Uid="Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Uid="Verify" IsFrozen="true" Freeze="FreezeDirection.Right" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn> *@
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture7 { get; set; }
+    public SfGrid<Order> gridRef7 { get; set; }
+    public async void GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance._jsAdaptor.SetMediaColumnVisibility("{\"mediaColVisibility\":{\"ID\":true}}");
+        cut.Instance._jsAdaptor.ColumnWidthChanged("{\"index\":1,\"width\":\"171\",\"columnUid\":\"Customer\"}");
+        await cut.Instance._jsAdaptor.ResizeStarted("{\"columnUid\":\"Customer\",\"columnList\":[]}");
+        await cut.Instance._jsAdaptor.UpdateAutofillPositions("{\"BorderLeftAutofillLeft\":\"279.4000244140625px\",\"BorderLeftAutofillTop\":\"36px\",\"BorderLeftAutofillHeight\":\"73.60000228881836px\",\"BorderLeftAutofillRight\":\"\",\"BorderRightAutofillLeft\":\"627.9000244140625px\",\"BorderRightAutofillHeight\":\"73px\",\"BorderRightAutofillRight\":\"\",\"BorderRightAutofillTop\":\"36px\",\"BorderTopAutofillLeft\":\"279.9000244140625px\",\"BorderTopAutofillTop\":\"36px\",\"BorderTopAutofillWidth\":\"349px\",\"BorderBottomAutofillLeft\":\"279.9000244140625px\",\"BorderBottomAutofillTop\":\"107.60000228881836px\",\"BorderBottomAutofillWidth\":\"349px\"}", "UpdateAutofillPosition");
+        await cut.Instance._jsAdaptor.UpdateAutofillPositions("{\"Right\":\"\",\"Width\":\"350.5px\",\"BorderWidth\":\"2px\",\"Left\":\"279.6000061035156px\",\"Height\":\"74.60000228881836px\",\"Top\":\"36px\"}", "UpdateAutofillBorder");
+        await cut.Instance._jsAdaptor.UpdateAutofillPositions("{\"Left\":\"625.1000061035156px\",\"Right\":\"\",\"Top\":\"104.60000228881836px\"}", "UpdateAutofillBox");
+        await cut.Instance._jsAdaptor.InvokeCopyPasteAction("{\"clipboardText\":\"ANTON\"}", "Copy");
+        await cut.Instance._jsAdaptor.InvokePasteAction("{\"cellValue\":\"ANTON\"}", 3, 1, "CustomerID");
+        await cut.Instance._jsAdaptor.UpdateAutofillCell(1, "CustomerID", "CustomerID", 0, "ALFKI");
+        await cut.Instance._jsAdaptor.SelectCellByRow(1, 2);
+        await cut.Instance._jsAdaptor.ClearSelection();
+        await cut.Instance._jsAdaptor.UpdateCell(2, "CustomerID", "ALFKI");
+        cut.Instance._jsAdaptor.UpdateChanges();
+        cut.Instance._jsAdaptor.LastRowBorder(true);
+        string[] Columns = { "ID", "Customer" };
+        cut.Instance.ReorderModule.ReorderColumns(Columns, "Date");
+
+
+    }
+
+    public void BeforeCopyPaste(BeforeCopyPasteEventArgs args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void BeforeAutoFill(BeforeAutoFillEventArgs args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void BeforeCellpaste(BeforeCellPasteEventArgs<Order> args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void OnResizeStartHanlder(ResizeArgs args)
+    {
+        // Here, you can customize your code.
+    }
+}
+
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Freeze line virtualization">
+    <ComponentUnderTest>
+        <SfGrid @ref="gridRef9" DataSource="@GenerateOrderData()" EnableVirtualization="true" EnableColumnVirtualization="true" FrozenColumns="1" AllowFreezeLineMoving="true" Width="900" Height="400" AllowPaging="true">
+            <GridPageSettings PageCount="5"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Uid="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" Uid="Customer" Width="100"> </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Uid="Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Uid="Freight" Format="C2" TextAlign="TextAlign.Right" EditType="EditType.NumericEdit" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderTime) HeaderText="Order Time" Uid="Time" Type="ColumnType.TimeOnly" EditType="EditType.TimePickerEdit" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Uid="Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Uid="Verify" EditType="EditType.BooleanEdit" TextAlign="TextAlign.Center" DisplayAsCheckBox="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+
+    SfFixture fixture9 { get; set; }
+    public SfGrid<Order> gridRef9 { get; set; }
+    public async void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        await cut.Instance._jsAdaptor.InvokeFreezeLineMoved("{\"frozenColumnsUidCollection\":[\"Customer\"],\"freezeDirection\":\"Left\",\"freezeLineMovingDirection\":\"Right\",\"isFrozen\":true,\"fromIndex\":0,\"toIndex\":1,\"frozenColumnsCount\":1,\"hasGridStructureChanges\":false}");
+        await cut.Instance._jsAdaptor.SetPageSizeAndCIndex("{\"pageSize\":18,\"startColumnIndex\":0,\"endColumnIndex\":10,\"VTableWidth\":\"0\"}");
+        cut.Instance._jsAdaptor.SetColumnIndexes(1, 3);
+
+    }
+}
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="Fixed column rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="@GenerateOrderData()" AllowPaging="true" AllowFiltering="true" AllowGrouping="true" AllowReordering="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true})" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" ValidationRules="@(new ValidationRules{ Required=true})" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Width="130" Type="ColumnType.Date"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Type="ColumnType.Long" Width="120px"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="ShipCountry" FixedColumn=true Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture10 { get; set; }
+    SfGrid<Order> grid;
+    public void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Rows rendered in grid");
+        Assert.True(cut.Instance.IsFixedColumnPresent(), "Lock column enabled in grid");
+        Assert.True(cut.Find(".e-headercontent").GetElementsByClassName("e-headercell").Count() > 0);
+        var header = cut.Find(".e-headercontent").GetElementsByClassName("e-headercell")[0];
+        Assert.True(!header.ClassList.Contains("e-mousepointer"), "mouse pointer is disabled for fixed column");
+        var normalHeader = cut.Find(".e-headercontent").GetElementsByClassName("e-headercell")[1];
+        Assert.True(normalHeader.ClassList.Contains("e-mousepointer"), "mouse pointer is enabled for un fixed column");
+        Assert.True(header.QuerySelector(".e-headercelldiv").TextContent == "ShipCountry", "First column in UI is locked column");
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="Lock column with stacked header rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid11" DataSource="@GenerateOrderData()" Height="273px"  Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update", "ColumnChooser", "Search", "PdfExport", "ExcelExport" })">
+            <GridEditSettings AllowEditing=true AllowAdding=true AllowDeleting=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey=true TextAlign="TextAlign.Right" Width="80"></GridColumn>
+                <GridColumn HeaderText="Order Details" DisableHtmlEncode="false">
+                    <GridColumns>
+                        <GridColumn Field=@nameof(Order.OrderDate) Width="100" HeaderText="Order Date1" Format="d"></GridColumn>
+                        <GridColumn Field=@nameof(Order.Freight) Width="90" HeaderText="Freight($)1" Format="C2"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn HeaderText="Ship Details" DisableHtmlEncode="false" EnableSanitization="false">
+                    <GridColumns>
+                        <GridColumn Field=@nameof(Order.ShipCity) Width="90" FixedColumn=true HeaderText="Ship City1"></GridColumn>
+                        <GridColumn Field=@nameof(Order.ShipCountry) Width="100" HeaderText="Ship Country1"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" FixedColumn=true Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture11 { get; set; }
+    SfGrid<Order> grid11;
+    public void GridBasicRendering11(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Rows rendered in grid");
+        Assert.True(cut.Instance.IsFixedColumnPresent(), "Lock column enabled in grid");
+        Assert.True(cut.Find(".e-headercontent").GetElementsByClassName("e-headercell").Count() > 0);
+        var header = cut.Find(".e-headercontent").GetElementsByClassName("e-headercell");
+        Assert.True(header[0].TextContent == "Ship Details", "Parent in first position");
+        Assert.True(header[6].TextContent == "Ship City1", "Child locked in proper order");
+        Assert.True(header[1].TextContent == "Employee ID", "Normal column locked in proper order");
+        Assert.True(header[4].TextContent == "Ship Details", "Unlocked parent column");
+    }
+}
+
+<SfFixture @ref="fixture12" Test="GridBasicRendering12" Description="Testing the Columns via Columns Propertyin Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid12" Columns="ColumnsProp" DataSource="GenerateOrderData()" />
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<Order> Grid12;
+
+    public List<GridColumn> ColumnsProp = new()
+    {
+        new GridColumn() 
+        { 
+            Field = nameof(Order.OrderID), 
+            Width = "110", 
+            HeaderText = "Order ID"
+        },
+        new GridColumn() 
+        { 
+            Field = nameof(Order.CustomerID), 
+            Width = "120", 
+            HeaderText = "Customer ID" 
+        },
+        new GridColumn() 
+        { 
+            Field = nameof(Order.OrderDate), 
+            Width = "130", 
+            HeaderText = "Order Date"
+        },
+        new GridColumn() 
+        { 
+            Field = nameof(Order.Freight), 
+            Width = "100", 
+            HeaderText = "Freight", 
+            Format = "C2"
+        }
+    };
+
+    void GridBasicRendering12(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        // to check all the columns are rendered.
+        Assert.True(4 == Grid12.Columns.Count);
+        // to check all the rows are rendered.
+        Assert.True(20 == cut.FindAll(".e-row").Count, "Rows are rendered in the grid");
+    }
+}
+
+<SfFixture @ref="fixture13" Test="GridBasicRendering13" Description="Testing columns with auto width mixed with static widths">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid13" DataSource="GenerateOrderData()" AllowGrouping Width="700px" AllowResizing>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" IsFrozen="true" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="auto" HeaderText="Order Date" MinWidth="100"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> Grid13;
+
+    void GridBasicRendering13(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Check all columns are rendered
+        Assert.True(4 == Grid13.Columns.Count, "4 columns should be rendered");
+        // Check all rows are rendered
+        Assert.True(20 == cut.FindAll(".e-row").Count, "20 rows should be rendered");
+
+        // Verify column widths: mix of static and auto
+        Assert.True("110".Equals(Grid13.Columns[0].Width), "1st column width should be 110");
+        Assert.True("120".Equals(Grid13.Columns[1].Width), "2nd column width should be 120");
+        Assert.True("auto".Equals(Grid13.Columns[2].Width), "3rd column width should be auto");
+        Assert.True("100".Equals(Grid13.Columns[3].Width), "4th column width should be 100");
+
+        // Verify column headers
+        Assert.True("Order ID".Equals(Grid13.Columns[0].HeaderText), "1st column header correct");
+        Assert.True("Customer ID".Equals(Grid13.Columns[1].HeaderText), "2nd column header correct");
+        Assert.True("Order Date".Equals(Grid13.Columns[2].HeaderText), "3rd column header correct");
+        Assert.True("Freight".Equals(Grid13.Columns[3].HeaderText), "4th column header correct");
+
+        // Verify MinWidth is set for auto width column
+        Assert.True("100".Equals(Grid13.Columns[2].MinWidth), "MinWidth should be set for auto column");
+
+        // Verify grid width is set
+        Assert.True("700px".Equals(Grid13.Width), "Grid width should be 700px");
+
+        var widthController = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.WidthController<Order>>();
+        widthController.Instance.IsFrozen = true;
+        cut.Instance.GroupColumnAsync("OrderID").GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture14" Test="GridBasicRendering14" Description="Testing frozen columns with auto width mixed with static widths">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid14" DataSource="GenerateOrderData()" Width="200px" FrozenColumns="1" AllowResizing="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn HeaderText=" Order Details">
+                    <GridColumns>
+                        <GridColumn Field="@nameof(Order.OrderDate)" Width="auto" HeaderText="Order Date" MinWidth="100"></GridColumn>
+                        <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<Order> Grid14;
+
+    void GridBasicRendering14(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Check all columns are rendered
+        Assert.True(3 == Grid14.Columns.Count, "4 columns should be rendered");
+        // Check all rows are rendered
+        Assert.True(20 == cut.FindAll(".e-row").Count, "20 rows should be rendered");
+        
+        // Verify column widths: mix of static and auto
+        Assert.True("110".Equals(Grid14.Columns[0].Width), "1st column width should be 110");
+        Assert.True("120".Equals(Grid14.Columns[1].Width), "2nd column width should be 120");
+        Assert.True("200".Equals(Grid14.Columns[2].Width), "3rd column width should be auto");
+        Assert.True("auto".Equals(Grid14.Columns[2].Columns[0].Width), "child column width should be auto");
+        Assert.True("100".Equals(Grid14.Columns[2].Columns[1].Width), "child column width should be 100");
+        
+        // Verify column headers
+        Assert.True("Order ID".Equals(Grid14.Columns[0].HeaderText), "1st column header correct");
+        Assert.True("Customer ID".Equals(Grid14.Columns[1].HeaderText), "2nd column header correct");
+        Assert.True("Order Date".Equals(Grid14.Columns[2].Columns[0].HeaderText), "child column header correct");
+        Assert.True("Freight".Equals(Grid14.Columns[2].Columns[1].HeaderText), "child column header correct");
+        
+        // Verify MinWidth is set for auto width column
+        Assert.True("100".Equals(Grid14.Columns[2].Columns[0].MinWidth), "MinWidth should be set for auto column");
+        
+        // Verify grid width is set
+        Assert.True("200px".Equals(Grid14.Width), "Grid width should be 700px");
+    }
+}
+<SfFixture @ref="fixture15" Test="GridBasicRendering15" Description="Testing MinWidth and MaxWidth constraints on columns">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid15" DataSource="GenerateOrderData()" AllowResizing="true" Height="400px" Width="800px">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="50" HeaderText="Order ID" MinWidth="100"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="200" HeaderText="Order Date" MaxWidth="80"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture15 { get; set; }
+    private SfGrid<Order> Grid15;
+
+    void GridBasicRendering15(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        // Verify all columns are rendered
+        Assert.True(4 == Grid15.Columns.Count, "4 columns should be rendered");
+        // Verify all rows are rendered
+        Assert.True(20 == cut.FindAll(".e-row").Count, "20 rows should be rendered");
+        
+        // Test Branch 1: MinWidth constraint (width < MinWidth)
+        // Column 1: Width="50" but MinWidth="100"
+        // Expected: GetWidth should return MinWidth because 50 < 100
+        Assert.True("50".Equals(Grid15.Columns[0].Width), "1st column width property is 50");
+        Assert.True("100".Equals(Grid15.Columns[0].MinWidth), "1st column MinWidth property is 100");
+        Assert.True(50 < 100, "Width is less than MinWidth, should trigger MinWidth branch");
+        
+        // Verify column header
+        Assert.True("Order ID".Equals(Grid15.Columns[0].HeaderText), "1st column header correct");
+        
+        // Test Branch 2: MaxWidth constraint (width > MaxWidth)
+        // Column 3: Width="200" but MaxWidth="80"
+        // Expected: GetWidth should return MaxWidth because 200 > 80
+        Assert.True("200".Equals(Grid15.Columns[2].Width), "3rd column width property is 200");
+        Assert.True("80".Equals(Grid15.Columns[2].MaxWidth), "3rd column MaxWidth property is 80");
+        Assert.True(200 > 80, "Width is greater than MaxWidth, should trigger MaxWidth branch");
+        
+        // Verify column header
+        Assert.True("Order Date".Equals(Grid15.Columns[2].HeaderText), "3rd column header correct");
+        
+        // Verify regular columns without constraints work fine
+        Assert.True("120".Equals(Grid15.Columns[1].Width), "2nd column width is 120 (no constraints)");
+        Assert.True("100".Equals(Grid15.Columns[3].Width), "4th column width is 100 (no constraints)");
+        
+        // Verify grid configuration
+        Assert.True("800px".Equals(Grid15.Width), "Grid width should be 800px");
+        Assert.True("400px".Equals(Grid15.Height), "Grid height should be 400px");
+    }
+}
+
+<SfFixture @ref="fixture16" Test="GridBasicRendering16" Description="Testing the Columns with GridLines-Horizontal">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid16" DataSource="GenerateOrderData()" GridLines="GridLine.Horizontal">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture16 { get; set; }
+    private SfGrid<Order> Grid16;
+
+    void GridBasicRendering16(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+<SfFixture @ref="fixture17" Test="GridBasicRendering17" Description="Testing the Columns with GridLines-Vertical">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid17" DataSource="GenerateOrderData()" GridLines="GridLine.Vertical">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture17 { get; set; }
+    private SfGrid<Order> Grid17;
+
+    void GridBasicRendering17(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+
+<SfFixture @ref="fixture18" Test="GridBasicRendering18" Description="Testing the Columns with GridLines-None">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid18" DataSource="GenerateOrderData()" GridLines="GridLine.None">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture18 { get; set; }
+    private SfGrid<Order> Grid18;
+
+    void GridBasicRendering18(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+
+<SfFixture @ref="fixture19" Test="GridBasicRendering19" Description="Testing the Columns with GridLines-Both">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid19" DataSource="GenerateOrderData()" GridLines="GridLine.Both">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture19 { get; set; }
+    private SfGrid<Order> Grid19;
+
+    void GridBasicRendering19(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+
+<SfFixture @ref="fixture20" Test="GridBasicRendering20" Description="Testing the Columns with GridLines-Horizontal">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid20" DataSource="GenerateOrderData()" GridLines="GridLine.Horizontal">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture20 { get; set; }
+    private SfGrid<Order> Grid20;
+
+    void GridBasicRendering20(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+    }
+}
+
+<SfFixture @ref="fixture21" Test="GridBasicRendering21" Description="Testing the Columns with EnableRTL Mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid21" DataSource="GenerateOrderData()" EnableRtl="true">
+
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture21 { get; set; }
+    private SfGrid<Order> Grid21;
+
+    void GridBasicRendering21(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableRtl == true, "EnableRtl property should be true");
+    }
+}
+
+<SfFixture @ref="fixture22" Test="GridBasicRendering22" Description="Tooltip temlate context">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid22" DataSource="GenerateOrderData()" ShowTooltip="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID">
+                    <GridTemplates>
+                        <TooltipTemplate>
+                            @{
+                                var tooltip = context as TooltipTemplateContext;
+                            }
+                            </ToolTipTemplate>
+                    </GridTemplates>
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture22 { get; set; }
+    private SfGrid<Order> Grid22;
+
+    void GridBasicRendering22(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.ShowTooltip == true, "ShowTooltip property should be true");
+        var tooltip = new TooltipTemplateContext
+        {
+            Value = "Test Tooltip",
+            Column = cut.Instance.Columns[0],
+            ColumnIndex = 0,
+            RowIndex = 0,
+            Data = "Test Data"
+        };
+        string v = tooltip.Value;
+        string c = tooltip.Column.HeaderText;
+        int ci = tooltip.ColumnIndex;
+        int ri = tooltip.RowIndex;
+        object d = tooltip.Data;
+    }
+}
+
+<SfFixture @ref="fixture23" Test="GridBasicRendering23" Description="Covered missed args in QueryCellInfoHandler">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid23" DataSource="GenerateOrderData()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture23 { get; set; }
+    private SfGrid<Order> Grid23;
+
+    void GridBasicRendering23(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+       var query = new CellDOM
+        {
+           ID = "cell1",
+           DomUUID = "uuid1",
+           XPath = "/html/body/div[1]/div[2]/div[1]/table/tbody/tr[1]/td[1]",
+           ElementID = "cell1",
+           JsRuntime = null
+        };
+        string id = query.ID;
+        string uuid = query.DomUUID;
+        string xpath = query.XPath;
+        string elementId = query.ElementID;
+        object jsRuntime = query.JsRuntime;
+    }
+
+   
+}

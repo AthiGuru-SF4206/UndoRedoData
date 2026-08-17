@@ -1,0 +1,696 @@
+﻿@inherits GridTestBase
+
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Row virtualization one page of rows rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid1" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" ShowColumnChooser>
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> Grid1;
+
+    void GridBasicRendering1(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page records rendered properly");
+        var selectedRowNavigation = cut.Instance.VirtualScrollModule.SelectedRowNavigation;
+        var isHeaderNavigated = cut.Instance.VirtualScrollModule.IsHeaderNavigated;
+        var currentRowIndex = cut.Instance.VirtualScrollModule.CurrentRowIndex;
+        var preNavigatedIndex = cut.Instance.VirtualScrollModule.PreNavigatedIndex;
+        var isObservable = cut.Instance.VirtualScrollModule.IsObservable;
+        var shiftSelectionCellIndexes = cut.Instance.VirtualScrollModule.ShiftSelectionCellIndexes;
+        //For only Tree Grid rendering the QueryArgs class is used, so added dummy code to increase the code coverage for QueryArgs class
+        var testQuery = new Query();
+        int startIndex = 10;
+        int endIndex = 50;
+        var queryArgs = new QueryArgs(testQuery, startIndex, endIndex);
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Row virtualization with editing row">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> Grid2;
+
+    async void GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page records rendered properly");
+        Assert.True(cut.Instance.EditSettings.Mode == EditMode.Normal);
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.Instance.IsEdit, TimeSpan.FromMilliseconds(1000));
+        await cut.Instance.EndEditAsync();
+
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.WaitForState(() => cut.Instance.EditModule.IsAdd, TimeSpan.FromMilliseconds(1000));
+    }
+}
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Row virtualization with overscan count">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" OverscanCount="5" RowHeight="38"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> Grid3;
+
+    void GridBasicRendering3(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == (cut.Instance.PageSettings.PageSize + cut.Instance.OverscanCount + cut.Instance.OverscanCount), "Grid one page records plus overscan count rows rendered properly");
+        var indexes = cut.Instance.VirtualScrollModule.CurrentIndexes(0, 40);
+        var EndIndex = cut.Instance.TotalItemCount;
+        var StartIndex = EndIndex - cut.Instance.PageSettings.PageSize;
+        cut.Instance.VirtualScrollModule.GenerateQueryAndSetQueryIndex(new Query(), false, false, StartIndex, EndIndex).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Column Virtualization rendering and scrolling cases">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" EnableColumnVirtualization=true RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCountry)" Width="100" HeaderText="ShipCountrye"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="100" HeaderText="ShipCity"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="100" HeaderText="EmployeeID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Width="100" HeaderText="Verified"></GridColumn>
+                <GridColumn Field="@nameof(Order.PriceValue)" Width="100" HeaderText="PriceValue"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> Grid4;
+
+    async void GridBasicRendering4(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        Assert.True(cut.Instance.VirtualScrollModule.VirtualizedColumns.Count > 0, "Column virtualization rendered properly");
+        var widthController = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.WidthController<Order>>();
+        widthController.Instance.IsFrozen = false;
+        await cut.InvokeAsync(() =>
+        {
+            widthController.Instance.ColumnWidthStateChange(null);
+        });
+        
+        var virtualArgs = "{\"requestType\":\"virtualscroll\",\"selectedRowNavigation\":-1,\"selectedCellNavigation\":-1,\"startColumnIndex\":1,\"endColumnIndex\":5,\"axis\":\"X\",\"VTablewidth\":\"700\",\"translateX\":150,\"translateY\":0}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs, scrollTop: 0).GetAwaiter();
+        //Scrolling horizontally
+        var virtualContentComponent = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridVirtualContent<Order>>();
+        await cut.InvokeAsync(() =>
+        {
+            virtualContentComponent.Instance.VirtualComponentUpdate(
+                new { Axis = "X" }
+            );
+        });
+    }
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Column Virtualization frozen rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid5" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" FrozenColumns=1 EnableColumnVirtualization=true RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCountry)" Width="100" HeaderText="ShipCountrye"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="100" HeaderText="ShipCity"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="100" HeaderText="EmployeeID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Width="100" HeaderText="Verified"></GridColumn>
+                <GridColumn Field="@nameof(Order.PriceValue)" Width="100" HeaderText="PriceValue"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> Grid5;
+
+    void GridBasicRendering5(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        Assert.True(cut.Instance.VirtualScrollModule.VirtualizedColumns.Count > 0, "Column virtualization rendered properly");
+        Assert.True(cut.FindAll(".e-leftfreeze").Count > 0, "Frozen column rendered properly");
+        var frozenCachedRowObject = cut.Instance.VirtualScrollModule.FrozenCachedRowObject;
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Column Virtualization column level freeze rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" EnableColumnVirtualization=true RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsFrozen=true Freeze="FreezeDirection.Left" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" IsFrozen=true Freeze="FreezeDirection.Right" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCountry)" Width="100" HeaderText="ShipCountrye"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="100" HeaderText="ShipCity"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="100" HeaderText="EmployeeID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Width="100" HeaderText="Verified"></GridColumn>
+                <GridColumn Field="@nameof(Order.PriceValue)" Width="100" HeaderText="PriceValue"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> Grid6;
+
+    async void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        Assert.True(cut.Instance.VirtualScrollModule.VirtualizedColumns.Count > 0, "Column virtualization rendered properly");
+        Assert.True(cut.FindAll(".e-leftfreeze").Count > 0, "Frozen column rendered properly");
+        var isSelAllChangedByRowClick = cut.Instance.VirtualScrollModule.IsSelAllChangedByRowClick;
+        var isSelectAllWithFilter = cut.Instance.VirtualScrollModule.IsSelectAllWithFilter;
+        var virtualHeaderComponent = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.GridVirtualHeader<Order>>();
+        virtualHeaderComponent.Instance.SetFrozenAndMovableColumns();
+        await cut.InvokeAsync(() =>
+        {
+            virtualHeaderComponent.Instance.VirtualHeaderComponentUpdate(null);
+        });
+    }
+}
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="Virtualization + Grouping selection range test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="GenerateOrderData()" Height="400" Width="600" EnableVirtualization="true" RowHeight="38" AllowSelection="true" AllowGrouping="true">
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" />
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> Grid7;
+
+    async void GridBasicRendering7(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization must be enabled");
+        await Grid7.GroupColumnAsync("CustomerID");
+        await Grid7.ExpandAllGroupAsync();
+        Assert.True(20 == cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count(), "Expand State");
+        var rows = cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count();
+        var visibleTrs = cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])")
+                          .Where(tr => tr.QuerySelectorAll("td").Length > 0).ToList();
+
+        // if virtualization didn't render the row we need, bring it into view via SelectRowAsync
+        if (visibleTrs.Count <= 4)
+        {
+            await cut.Instance.SelectRowAsync(4); // forces virtualization to render that row
+            cut.WaitForState(() => cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])").Count() > 4);
+            visibleTrs = cut.Find(".e-gridcontent").QuerySelectorAll("tr:not([style*='display: none'])")
+                          .Where(tr => tr.QuerySelectorAll("td").Length > 0).ToList();
+        }
+        visibleTrs[1].QuerySelectorAll("td")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = false, CtrlKey = false });
+        visibleTrs[4].QuerySelectorAll("td")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = true, CtrlKey = false });
+        Assert.True(cut.Instance.SelectedRowIndexes.Count >= 4, "Range selection should include rows 1..4");
+
+       
+    }
+}
+
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Virtualization + Grouping + Control click and deselect same row by Control click">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid8" DataSource="GenerateOrderData()" Height="400" Width="600" EnableVirtualization="true" RowHeight="38" AllowSelection="true" AllowGrouping="true">
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" />
+            <GridEvents RowDeselecting="RowDeselectingHandler" RowDeselected="RowDeselectHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="@GroupColumn" CssClass="e-primary" Content="Group"></SfButton>
+    </Fragment>
+</SfFixture>
+
+@code {
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> Grid8;
+
+    public void RowDeselectingHandler(RowDeselectEventArgs<Order> Args)
+    {
+       
+    }
+
+    public void RowDeselectHandler(RowDeselectEventArgs<Order> Args)
+    {
+
+        
+    }
+    async void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid has rows");
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization must be enabled");
+        var btnFragment = fixture.GetFragment<SfButton>();
+        btnFragment.FindAll(".e-btn").ElementAt(0).Click();
+        await Grid8.ExpandAllGroupAsync();
+        cut.FindAll(".e-rowcell")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = false, CtrlKey = true });
+        cut.FindAll(".e-rowcell")[1].Click(new MouseEventArgs() { Type = "click", ShiftKey = false, CtrlKey = true });
+    }
+
+    private async Task GroupColumn(MouseEventArgs _)
+    {
+        await Grid8.GroupColumnAsync("CustomerID");
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Column Virtualization Tabbing">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid9" DataSource="GetVirtualData()" Height="400" Width="400" EnableColumnVirtualization=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCountry)" Width="100" HeaderText="ShipCountrye"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="100" HeaderText="ShipCity"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="100" HeaderText="EmployeeID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Width="100" HeaderText="Verified"></GridColumn>
+                <GridColumn Field="@nameof(Order.PriceValue)" Width="100" HeaderText="PriceValue"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> Grid9;
+
+    void GridBasicRendering9(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        cut.FindAll(".e-rowcell")[0].Click();
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+    }
+}
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="Column Virtualization Hide columns using API">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid10" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" ShowColumnChooser EnableColumnVirtualization=true RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCountry)" Width="100" HeaderText="ShipCountrye"></GridColumn>
+                <GridColumn Field="@nameof(Order.ShipCity)" Width="100" HeaderText="ShipCity"></GridColumn>
+                <GridColumn Field="@nameof(Order.EmployeeID)" Width="100" HeaderText="EmployeeID"></GridColumn>
+                <GridColumn Field="@nameof(Order.Verified)" Width="100" HeaderText="Verified"></GridColumn>
+                <GridColumn Field="@nameof(Order.PriceValue)" Width="100" HeaderText="PriceValue"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> Grid10;
+
+    async void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        Assert.True(cut.Instance.VirtualScrollModule.VirtualizedColumns.Count > 0, "Column virtualization rendered properly");
+        cut.Instance.HideColumnAsync("Customer ID").GetAwaiter();
+        cut.WaitForState(() => cut.Instance.Columns[1].Visible == false, TimeSpan.FromMilliseconds(1000));
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="Row virtualization Edit mode bottom save code cover">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid11" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" OverscanCount="5">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" NewRowPosition="NewRowPosition.Bottom"></GridEditSettings>
+            <GridPageSettings PageSize="12"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<Order> Grid11;
+
+    void GridBasicRendering11(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        var EndIndex = cut.Instance.TotalItemCount;
+        var StartIndex = EndIndex - cut.Instance.PageSettings.PageSize;
+        cut.Instance.AddRecordAsync().GetAwaiter();
+        cut.Instance.VirtualScrollModule.RowStartIndex = StartIndex;
+        cut.Instance.VirtualScrollModule.RowEndIndex = EndIndex + 1;
+        cut.Instance.VirtualScrollModule.GenerateQueryAndSetQueryIndex(new Query(), false, false, StartIndex, EndIndex, true).GetAwaiter();
+        var isEditFormAtBottom = cut.Instance.VirtualScrollModule.IsBottomAddForm(EndIndex);
+        Assert.True(isEditFormAtBottom, "Add form should be at bottom when NewRowPosition is set to Bottom");
+    }
+}
+
+<SfFixture @ref="fixture12" Test="GridBasicRendering12" Description="Column Virtualization horizontal cell navigation">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid12" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" EnableColumnVirtualization=true >
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                    <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                    <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShipAddress) HeaderText="Ship Address" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.ShippedDate) HeaderText="Shipped Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                    <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Type="ColumnType.Boolean" Width="150"></GridColumn>
+                </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<Order> Grid12;
+
+    async void GridBasicRendering12(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        var lastKeyCombination = new KeyboardEventArgs() { Key = "Tab", ShiftKey = true, CtrlKey = false, AltKey = false, Code = "Tab", Repeat = true, Type = "keydown"};
+        await cut.Instance.VirtualScrollModule.HandleHorizontalCellNavigationAsync(lastKeyCombination, 3, 3);
+        //Shift + Tab from column index 3 should navigate to column index 2
+        var lastKeyCombination2 = new KeyboardEventArgs() { Key = "Tab", ShiftKey = false, CtrlKey = false, AltKey = false, Code = "Tab", Repeat = true, Type = "keydown" };
+        await cut.Instance.VirtualScrollModule.HandleHorizontalCellNavigationAsync(lastKeyCombination2, 3, 3);
+    }
+}
+
+<SfFixture @ref="fixture13" Test="GridBasicRendering13" Description="Column Virtualization next row navigation">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid13" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" EnableColumnVirtualization=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipAddress) HeaderText="Ship Address" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippedDate) HeaderText="Shipped Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Type="ColumnType.Boolean" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> Grid13;
+
+    async void GridBasicRendering13(Fixture fixture13)
+    {
+        var cut = fixture13.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        var lastKeyCombination = new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey = true, CtrlKey = false, AltKey = false, Code = "ArrowDown", Repeat = true, Type = "keydown" };
+        var nextRowToNavigate = await cut.Instance.VirtualScrollModule.HandleNextRowNavigationAsync(16, lastKeyCombination, 0);
+
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        await cut.Instance.VirtualScrollModule.ScrollToEditedRowAsync(new List<Internal.ValidationResult>());
+    }
+}
+
+<SfFixture @ref="fixture14" Test="GridBasicRendering14" Description="Column Virtualization next with pager focusing">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid14" DataSource="GetVirtualData()" Height="400" Width="400" AllowPaging="true" EnableColumnVirtualization=true
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipAddress) HeaderText="Ship Address" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShippedDate) HeaderText="Shipped Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Verified) HeaderText="Verified" Type="ColumnType.Boolean" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture14 { get; set; }
+    private SfGrid<Order> Grid14;
+
+    async void GridBasicRendering14(Fixture fixture14)
+    {
+        var cut = fixture14.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.AllowPaging);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.EnableColumnVirtualization);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page rows rendered properly");
+        await cut.Instance.VirtualScrollModule.HandlePagerFocusAsync();
+        cut.Instance.VirtualScrollModule.IsHeaderNavigated = true;
+        cut.Instance.VirtualScrollModule.SelectedCellNavigation = 0;
+        cut.Instance.FocusModule.LastKeyCombination = new KeyboardEventArgs() { Key = "Tab", ShiftKey = false, CtrlKey = false, AltKey = false, Code = "Tab", Repeat = true, Type = "keydown" };
+        await cut.Instance.VirtualScrollModule.HandleColumnVirtualKeyBoard();
+    }
+}
+
+<SfFixture @ref="fixture15" Test="GridBasicRendering15" Description="Row virtualization with overscan count with initial grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid15" DataSource="GetVirtualData()" AllowRowDragAndDrop Height="400" Width="400" AllowGrouping EnableVirtualization="true" OverscanCount="5" RowHeight="38"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+            <GridGroupSettings Columns="@Initial"/>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" IsPrimaryKey=true HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture15 { get; set; }
+    private SfGrid<Order> Grid15;
+    public string[] Initial = new string[] { "OrderID" };
+    void GridBasicRendering15(Fixture fixture15)
+    {
+        var cut = fixture15.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == (cut.Instance.PageSettings.PageSize + cut.Instance.OverscanCount + cut.Instance.OverscanCount), "Grid one page records plus overscan count rows rendered properly");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping is enabled in overscan grid");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Initial grouping is applied in grid");
+        cut.Instance.VirtualScrollModule.AdjustVirtualIndexesForReordering(new Blazor.Grids.Internal.GridVirtualContentParameters());
+        cut.Instance.VirtualScrollModule.HandlePostRenderOperationsAsync(cut.Instance.VirtualScrollModule.RowEndIndex).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture16" TestAsync="HandleVirtualScrollKeyDown" Description="HandleVirtualScrollKeyDown with cell keydown interaction">
+    <ComponentUnderTest>
+        <SfGrid ID="InfiniteScroll16" @ref="InfiniteScroll16" DataSource="GenerateRows16()" EnableVirtualization="true" Height="400" RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderSimple1.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple1.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple1.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderSimple1.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+@code
+{
+    SfFixture fixture16 { get; set; }
+    private SfGrid<OrderSimple1> InfiniteScroll16;
+    public List<OrderSimple1> GridDataSimple1 { get; set; }
+
+    public async Task HandleVirtualScrollKeyDown(Fixture fixture16)
+    {
+        var cut = fixture16.GetComponentUnderTest<SfGrid<OrderSimple1>>();
+        
+        // Assert: Grid rendered successfully
+        Assert.True(cut.Instance.EnableVirtualization, "Virtualization enabled");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height set successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        
+        // Assert: Initial data loaded
+        cut.Instance.AddRecordAsync().GetAwaiter();
+        Assert.True(cut.Instance.CurrentViewData.Count() > 0, "Initial view data loaded successfully");
+        cut.Instance.VirtualScrollModule.RowStartIndex = 5;
+        cut.Instance.VirtualScrollModule.CurrentRowIndex = 5;
+        Assert.True(cut.Instance.VirtualScrollModule.RowStartIndex != 0, "RowStartIndex increased after scroll");
+        Assert.True(cut.Instance.VirtualScrollModule.CurrentRowIndex == cut.Instance.VirtualScrollModule.RowStartIndex, "CurrentRowIndex equals RowStartIndex");
+
+        var cell2 = cut.FindAll(".e-rowcell")[0];
+        var keyboardArgs = new KeyboardEventArgs
+        {
+            Key = "ArrowUp",
+            Code = "ArrowUp",
+            Type = "keydown",
+            Repeat = false
+        };
+        await cell2.KeyDownAsync(keyboardArgs);
+        
+        // Simulate cell keydown interaction
+        var cell1 = cut.FindAll(".e-rowcell")[0];
+        await cell1.KeyDownAsync(new KeyboardEventArgs() { Key = "ArrowDown" });
+
+        cut.Instance.AddRecordAsync().GetAwaiter();
+        Assert.True(cut.Instance.CurrentViewData.Count() > 0, "Initial view data loaded successfully");
+
+        var cell = cut.FindAll(".e-rowcell")[0];
+        await cell.KeyDownAsync(new KeyboardEventArgs() { Key = "ArrowUp" });
+        // Assert: Cell interaction successful
+        Assert.True(cut.Instance.Rows.Count > 0, "Cell keydown interaction successful");
+    }
+
+    public List<OrderSimple1> GenerateRows16()
+    {
+        List<OrderSimple1> data = new List<OrderSimple1>();
+        int count = 1000;
+
+        for (int i = 0; i < 500; i++)
+        {
+            data.Add(new OrderSimple1() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderSimple1() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderSimple1() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderSimple1() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderSimple1() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridDataSimple1 = data;
+        return data;
+    }
+
+    public class OrderSimple1
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

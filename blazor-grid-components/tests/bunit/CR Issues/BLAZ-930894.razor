@@ -1,0 +1,83 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="RowSelecting and RowSelected event triggering selection mode is cell">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@GetAllRecords()">
+            <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell"></GridSelectionSettings>
+            <GridEvents RowSelected="RowSelectedHandler" RowSelecting="RowSelectingHandler" TValue="BusinessObject"></GridEvents>
+            <GridEditSettings AllowEditing="true" AllowAdding="true" Mode="Syncfusion.Blazor.Grids.EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="TaskId" HeaderText="Task ID" Width="80" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right" IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field="TaskName" HeaderText="Task Name" Width="220"></GridColumn>
+                <GridColumn Field="Duration" HeaderText="Duration" Width="100" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Right"></GridColumn>
+                <GridColumn Field="Progress" HeaderText="Progress" Width="100" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Left"></GridColumn>
+                <GridColumn Field="Priority" HeaderText="Priority" Width="80"></GridColumn>
+                <GridColumn Field="Approved" HeaderText="Approved" Type="Syncfusion.Blazor.Grids.ColumnType.Boolean" Width="100" DisplayAsCheckBox="true" TextAlign="Syncfusion.Blazor.Grids.TextAlign.Center"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfGrid<BusinessObject> Grid;
+    SfFixture fixture { get; set; }
+    private bool isRowSelectingTriggered = false;
+    private bool isRowSelectedTriggered = false;
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BusinessObject>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        var firstRowClassList = cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[0].ClassList;
+        Assert.DoesNotContain("e-editedrow", firstRowClassList);
+        Assert.DoesNotContain("e-batchrow", firstRowClassList);
+        cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[0].QuerySelectorAll("td")[1].DoubleClick();
+        var editedRowClassList = cut.FindAll(".e-content")[0].QuerySelectorAll("tr")[0].ClassList;
+        Assert.Contains("e-editedrow", editedRowClassList);
+        Assert.Contains("e-batchrow", editedRowClassList);
+        // Assert that RowSelecting and RowSelected events were triggered
+        Assert.True(!isRowSelectingTriggered, "RowSelecting event was not triggered");
+        Assert.True(!isRowSelectedTriggered, "RowSelected event was not triggered");
+    }
+    public List<BusinessObject> GetAllRecords()
+    {
+        List<BusinessObject> data = new List<BusinessObject>();
+        int count = 1000;
+
+        for (int i = 0; i < 1; i++)
+        {
+            data.Add(new BusinessObject() { TaskId = 1, TaskName = "Parent Task 1", Duration = 50000, Progress = 70, ParentId = null, Priority = "High", Approved = true });
+            data.Add(new BusinessObject() { TaskId = 2, TaskName = "Child task 1", Duration = 400000, Progress = 80, ParentId = 1, Priority = "Normal", Approved = false });
+            data.Add(new BusinessObject() { TaskId = 3, TaskName = "Child Task 2", Duration = 500000, Progress = 65, ParentId = 1, Priority = "Critical", Approved = true });
+            data.Add(new BusinessObject() { TaskId = 4, TaskName = "Parent Task 2", Duration = 609890, Progress = 77, ParentId = null, Priority = "Low", Approved = false });
+            data.Add(new BusinessObject() { TaskId = 5, TaskName = "Child Task 5", Duration = 9778686, Progress = 25, ParentId = 4, Priority = "Normal", Approved = true });
+            data.Add(new BusinessObject() { TaskId = 6, TaskName = "Child Task 6", Duration = 954359, Progress = 7, ParentId = 5, Priority = "Normal", Approved = false });
+            data.Add(new BusinessObject() { TaskId = 7, TaskName = "Parent Task 3", Duration = 478708, Progress = 45, ParentId = null, Priority = "High", Approved = true });
+            data.Add(new BusinessObject() { TaskId = 8, TaskName = "Child Task 7", Duration = 36786979, Progress = 38, ParentId = 7, Priority = "Critical", Approved = false });
+            data.Add(new BusinessObject() { TaskId = 9, TaskName = "Child Task 8", Duration = 778907897, Progress = 70, ParentId = 7, Priority = "Low", Approved = true });
+            count += 5;
+        }
+        return data;
+    }
+
+    public void RowSelectingHandler(RowSelectingEventArgs<BusinessObject> args)
+    {
+        isRowSelectingTriggered = true;
+    }
+
+    public void RowSelectedHandler(RowSelectEventArgs<BusinessObject> args)
+    {
+        isRowSelectedTriggered = true;
+    }
+    public class BusinessObject
+    {
+        public int TaskId { get; set; }
+        public string TaskName { get; set; }
+        public int Duration { get; set; }
+        public int Progress { get; set; }
+        public string Priority { get; set; }
+        public int? ParentId { get; set; }
+        public Boolean Approved { get; set; }
+    } 
+}

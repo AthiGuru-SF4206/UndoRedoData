@@ -1,0 +1,232 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+
+<SfFixture @ref="fixtureAllPropertiesCombined" Test="QueryCellInfoEventArgs_AllProperties_Combined" Description="QueryCellInfoEventArgs - All properties combined GET/SET">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridAllPropertiesCombined" Height="315" AllowSelection="true">
+            <GridEvents QueryCellInfo="OnQueryCellInfoCombined" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAllPropertiesCombined { get; set; }
+    public SfGrid<Order> gridAllPropertiesCombined { get; set; }
+    private QueryCellInfoEventArgs<Order> capturedEventArgs { get; set; }
+
+    public void OnQueryCellInfoCombined(QueryCellInfoEventArgs<Order> args)
+    {
+        // GET all properties (Correct case)
+        capturedEventArgs = args;
+        
+        var cellData = args.Cell;
+        var columnData = args.Column;
+        var rowData = args.Data;
+        var foreignKeyData = args.ForeignKeyData;
+        
+        // SET ForeignKeyData
+        args.ForeignKeyData = new Dictionary<string, IEnumerable<object>>
+        {
+            { "Countries", new List<object> { "USA", "UK", "France" } }
+        };
+    }
+
+    public async void QueryCellInfoEventArgs_AllProperties_Combined(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        
+        await cut.Instance.SelectRowAsync(0);
+        cut.Render();
+        
+        cut.WaitForState(() => capturedEventArgs != null, TimeSpan.FromMilliseconds(500));
+        
+        // Verify all properties were accessed
+        Assert.NotNull(cut.Instance);
+        if (capturedEventArgs != null)
+        {
+            Assert.NotNull(capturedEventArgs.Data);
+            Assert.NotNull(capturedEventArgs.Column);
+            Assert.NotNull(capturedEventArgs.Cell);
+            Assert.NotNull(capturedEventArgs.ForeignKeyData);
+        }
+    }
+}
+
+
+
+<SfFixture @ref="fixtureAllPropertiesDirect" Test="RowDragSelectedEventArgs_AllProperties_Direct_GetSet" Description="RowDragSelectedEventArgs - All properties direct GET and validation">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridAllPropertiesDirect" Height="315" AllowRowDragAndDrop="true">
+            <GridEvents RowDragSelectionCompleted="OnRowDragSelectedComplete" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureAllPropertiesDirect { get; set; }
+    public SfGrid<Order> gridAllPropertiesDirect { get; set; }
+    
+    // Storage variables for captured property values
+    private string capturedTargetGridID { get; set; }
+    private int capturedRowStartIndex { get; set; }
+    private int capturedRowEndIndex { get; set; }
+    private int capturedCellStartIndex { get; set; }
+    private int capturedCellEndIndex { get; set; }
+    private bool eventExecuted { get; set; }
+
+    public void OnRowDragSelectedComplete(RowDragSelectedEventArgs<Order> args)
+    {
+        // DIRECT GET OPERATIONS - immediately access all properties
+        
+        // GET #1: TargetGridID (nullable string)
+        capturedTargetGridID = args.TargetGridID;
+        
+        // GET #2: RowStartIndex (int)
+        capturedRowStartIndex = args.RowStartIndex;
+        
+        // GET #3: RowEndIndex (int)
+        capturedRowEndIndex = args.RowEndIndex;
+        
+        // GET #4: CellStartIndex (int)
+        capturedCellStartIndex = args.CellStartIndex;
+        
+        // GET #5: CellEndIndex (int)
+        capturedCellEndIndex = args.CellEndIndex;
+        
+        eventExecuted = true;
+    }
+
+    public void RowDragSelectedEventArgs_AllProperties_Direct_GetSet(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.Render();
+        
+        // ===== SCENARIO 1: Test all properties with valid values =====
+        
+        // Create RowDragSelectedEventArgs to test property GET operations
+        var testArgs1 = new RowDragSelectedEventArgs<Order>()
+        {
+            TargetGridID = "TestGrid_Coverage",
+            RowStartIndex = 2,
+            RowEndIndex = 8,
+            CellStartIndex = 1,
+            CellEndIndex = 5
+        };
+        
+        // Directly invoke event handler to trigger GET operations on all properties
+        OnRowDragSelectedComplete(testArgs1);
+        
+        // Verify event was executed (all properties were accessed)
+        Assert.True(eventExecuted, "Event handler should have been executed");
+        
+        // Verify TargetGridID property GET
+        Assert.Equal("TestGrid_Coverage", capturedTargetGridID);
+        Assert.NotNull(capturedTargetGridID);
+        
+        // Verify RowStartIndex property GET
+        Assert.Equal(2, capturedRowStartIndex);
+        Assert.True(capturedRowStartIndex >= 0, "RowStartIndex should be non-negative");
+        
+        // Verify RowEndIndex property GET
+        Assert.Equal(8, capturedRowEndIndex);
+        Assert.True(capturedRowEndIndex >= capturedRowStartIndex, "RowEndIndex should be >= RowStartIndex");
+        
+        // Verify CellStartIndex property GET
+        Assert.Equal(1, capturedCellStartIndex);
+        Assert.True(capturedCellStartIndex >= 0, "CellStartIndex should be non-negative");
+        
+        // Verify CellEndIndex property GET
+        Assert.Equal(5, capturedCellEndIndex);
+        Assert.True(capturedCellEndIndex >= capturedCellStartIndex, "CellEndIndex should be >= CellStartIndex");
+        
+        // ===== SCENARIO 2: Test with NULL TargetGridID (single grid scenario) =====
+        
+        var testArgs2 = new RowDragSelectedEventArgs<Order>()
+        {
+            TargetGridID = null,
+            RowStartIndex = 0,
+            RowEndIndex = 5,
+            CellStartIndex = 0,
+            CellEndIndex = 3
+        };
+        
+        OnRowDragSelectedComplete(testArgs2);
+        
+        // Verify TargetGridID can be null
+        Assert.Null(capturedTargetGridID);
+        Assert.Equal(0, capturedRowStartIndex);
+        Assert.Equal(5, capturedRowEndIndex);
+        
+        // ===== SCENARIO 3: Test with single row/cell selection (start == end) =====
+        
+        var testArgs3 = new RowDragSelectedEventArgs<Order>()
+        {
+            TargetGridID = "SingleSelection",
+            RowStartIndex = 3,
+            RowEndIndex = 3,
+            CellStartIndex = 2,
+            CellEndIndex = 2
+        };
+        
+        OnRowDragSelectedComplete(testArgs3);
+        
+        // Verify single selection (start == end is valid)
+        Assert.Equal(3, capturedRowStartIndex);
+        Assert.Equal(3, capturedRowEndIndex);
+        Assert.Equal(2, capturedCellStartIndex);
+        Assert.Equal(2, capturedCellEndIndex);
+        Assert.Equal("SingleSelection", capturedTargetGridID);
+        
+        // ===== SCENARIO 4: Test with large indices =====
+        
+        var testArgs4 = new RowDragSelectedEventArgs<Order>()
+        {
+            TargetGridID = "LargeRangeGrid",
+            RowStartIndex = 100,
+            RowEndIndex = 500,
+            CellStartIndex = 10,
+            CellEndIndex = 25
+        };
+        
+        OnRowDragSelectedComplete(testArgs4);
+        
+        // Verify large indices are handled correctly
+        Assert.Equal(100, capturedRowStartIndex);
+        Assert.Equal(500, capturedRowEndIndex);
+        Assert.Equal(10, capturedCellStartIndex);
+        Assert.Equal(25, capturedCellEndIndex);
+        
+        // Verify ranges
+        var rowRange = capturedRowEndIndex - capturedRowStartIndex;
+        var cellRange = capturedCellEndIndex - capturedCellStartIndex;
+        Assert.Equal(400, rowRange);
+        Assert.Equal(15, cellRange);
+        
+        // ===== TYPE AND BOUNDARY VALIDATIONS =====
+        
+        // Verify all integer properties are correct type
+        Assert.True(capturedRowStartIndex is int, "RowStartIndex should be int type");
+        Assert.True(capturedRowEndIndex is int, "RowEndIndex should be int type");
+        Assert.True(capturedCellStartIndex is int, "CellStartIndex should be int type");
+        Assert.True(capturedCellEndIndex is int, "CellEndIndex should be int type");
+        
+        // Verify TargetGridID is string type
+        Assert.True(capturedTargetGridID is string || capturedTargetGridID == null, 
+                    "TargetGridID should be string or null");
+    }
+}

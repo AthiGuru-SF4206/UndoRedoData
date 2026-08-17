@@ -1,0 +1,18 @@
+.git/
+bin/
+obj/
+.vs/
+*.sln
+Nuget/
+.vscode/
+nuget.exe
+node_modules/
+scripts/bundles/
+scripts/index.js
+package-lock.json
+scripts/entries.json
+scripts/individual-entries.json
+scripts/modules/sf-import-script.js
+
+# spec-gen analysis artifacts
+.spec-gen/

@@ -1,0 +1,393 @@
+@using Syncfusion.Blazor.Grids
+@using System.Collections.Generic
+@using System.Dynamic
+@inherits GridTestBase
+
+<!-- Test Case 1: Grid Initialization with Dynamic Data -->
+<SfFixture @ref="fixture1" Test="ForeignKeyColumnDynamicGridInitializationTest" Description="Foreign Key Column Dynamic Grid Initialization Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+              @*   <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 2: Data Binding with Dynamic Data -->
+<SfFixture @ref="fixture2" Test="ForeignKeyColumnDynamicDataBindingTest" Description="Foreign Key Column Dynamic Data Binding Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+              @*   <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 3: Excel Export with Dynamic Data -->
+<SfFixture @ref="fixture3" TestAsync="ForeignKeyColumnDynamicExcelExportTest" Description="Foreign Key Column Dynamic Excel Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+              @*   <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 4: CSV Export with Dynamic Data -->
+<SfFixture @ref="fixture4" TestAsync="ForeignKeyColumnDynamicCsvExportTest" Description="Foreign Key Column Dynamic CSV Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+             @*    <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 5: PDF Export with Dynamic Data -->
+<SfFixture @ref="fixture5" TestAsync="ForeignKeyColumnDynamicPdfExportTest" Description="Foreign Key Column Dynamic PDF Export Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid5" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+               @*  <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 6: Sequential Export with Dynamic Data -->
+<SfFixture @ref="fixture6" TestAsync="ForeignKeyColumnDynamicAllExportsSequentialTest" Description="Foreign Key Column Dynamic All Exports Sequential Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+             @*    <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<!-- Test Case 7: Nested Dynamic Structure -->
+<SfFixture @ref="fixture7" Test="ForeignKeyColumnDynamicNestedStructureTest" Description="Foreign Key Column Dynamic Nested Structure Test">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="@DynamicOrders" Height="315" AllowExcelExport="true" AllowPdfExport="true">
+            <GridColumns>
+                <GridColumn Field="OrderID" HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+           @*      <GridForeignColumn Field="EmployeeID" HeaderText="Employee Name" ForeignKeyValue="FirstName" ForeignDataSource="@DynamicEmployees" Width="150"></GridForeignColumn> *@
+                <GridColumn Field="Freight" HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="ShipCity" HeaderText="Ship City" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfFixture fixture2 { get; set; }
+    SfFixture fixture3 { get; set; }
+    SfFixture fixture4 { get; set; }
+    SfFixture fixture5 { get; set; }
+    SfFixture fixture6 { get; set; }
+    SfFixture fixture7 { get; set; }
+
+    private SfGrid<DynamicDictionary> Grid { get; set; }
+    private SfGrid<DynamicDictionary> Grid2 { get; set; }
+    private SfGrid<DynamicDictionary> Grid3 { get; set; }
+    private SfGrid<DynamicDictionary> Grid4 { get; set; }
+    private SfGrid<DynamicDictionary> Grid5 { get; set; }
+    private SfGrid<DynamicDictionary> Grid6 { get; set; }
+    private SfGrid<DynamicDictionary> Grid7 { get; set; }
+    
+    private List<DynamicDictionary> DynamicOrders { get; set; } = new();
+    private List<DynamicDictionary> DynamicEmployees { get; set; } = new();
+
+    // Test Methods
+    void ForeignKeyColumnDynamicGridInitializationTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        Assert.NotNull(cut);
+        Assert.NotNull(Grid);
+    }
+
+    void ForeignKeyColumnDynamicDataBindingTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        Assert.NotEmpty(DynamicOrders);
+        Assert.Equal(15, DynamicOrders.Count);
+        Assert.NotEmpty(DynamicEmployees);
+        Assert.Equal(9, DynamicEmployees.Count);
+    }
+
+    async Task ForeignKeyColumnDynamicExcelExportTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        await Grid3.ExportToExcelAsync();
+        Assert.NotNull(Grid3);
+    }
+
+    async Task ForeignKeyColumnDynamicCsvExportTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        await Grid4.ExportToExcelAsync();
+        Assert.NotNull(Grid4);
+    }
+
+    async Task ForeignKeyColumnDynamicPdfExportTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        await Grid5.ExportToPdfAsync();
+        Assert.NotNull(Grid5);
+    }
+
+    async Task ForeignKeyColumnDynamicAllExportsSequentialTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        await Grid6.ExportToExcelAsync();
+        await Grid6.ExportToExcelAsync();
+        await Grid6.ExportToPdfAsync();
+        Assert.NotNull(Grid6);
+    }
+
+    void ForeignKeyColumnDynamicNestedStructureTest(Fixture fixture)
+    {
+        if (DynamicOrders.Count == 0)
+            DynamicOrders = GenerateDynamicOrderData();
+        if (DynamicEmployees.Count == 0)
+            DynamicEmployees = GenerateDynamicEmployeeData();
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<DynamicDictionary>>();
+        var firstOrder = DynamicOrders.FirstOrDefault();
+        Assert.NotNull(firstOrder);
+        var firstEmployee = DynamicEmployees.FirstOrDefault();
+        Assert.NotNull(firstEmployee);
+    }
+
+    public List<DynamicDictionary> GenerateDynamicOrderData()
+    {
+        return Enumerable.Range(1, 15).Select((x) =>
+        {
+            DynamicDictionary Order = new DynamicDictionary();
+            Order.SetProperty("OrderID", 10247 + x);
+            Order.SetProperty("EmployeeID", (x % 9) + 1);
+            Order.SetProperty("Freight", Math.Round(new Random().NextDouble() * 100, 2));
+            
+            // Nested Structure for ShipCity
+            DynamicDictionary ShipInfo = new DynamicDictionary();
+            string[] cities = { "Reims", "Münster", "Rio de Janeiro", "Lyon", "Charleroi", "Bern", "Genève", "Resende", "San Cristóbal", "Graz", "México D.F.", "Köln", "Albuquerque", "Paris", "Berlin" };
+            ShipInfo.SetProperty("City", cities[x - 1]);
+            ShipInfo.SetProperty("Country", "France");
+            Order.SetProperty("ShipCity", ShipInfo.GetProperty("City"));
+
+            return Order;
+        }).Cast<DynamicDictionary>().ToList();
+    }
+
+    public List<DynamicDictionary> GenerateDynamicEmployeeData()
+    {
+        return Enumerable.Range(1, 9).Select((x) =>
+        {
+            DynamicDictionary Employee = new DynamicDictionary();
+            Employee.SetProperty("EmployeeID", x);
+            
+            string[] firstNames = { "Nancy", "Andrew", "Janet", "Margaret", "Steven", "Michael", "Robert", "Laura", "Anne" };
+            Employee.SetProperty("FirstName", firstNames[x - 1]);
+            
+            // Nested Structure for Employee Details
+            DynamicDictionary EmployeeInfo = new DynamicDictionary();
+            EmployeeInfo.SetProperty("Title", "Sales Representative");
+            EmployeeInfo.SetProperty("Department", "Sales");
+            Employee.SetProperty("EmployeeInfo", EmployeeInfo);
+
+            return Employee;
+        }).Cast<DynamicDictionary>().ToList();
+    }
+
+    public class DynamicDictionary : DynamicObject, System.ComponentModel.ICustomTypeDescriptor
+    {
+        Dictionary<string, object> dictionary = new Dictionary<string, object>();
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            return dictionary.TryGetValue(binder.Name, out result);
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            dictionary[binder.Name] = value;
+            return true;
+        }
+
+        public override System.Collections.Generic.IEnumerable<string> GetDynamicMemberNames()
+        {
+            return dictionary.Keys;
+        }
+
+        public void SetProperty(string name, object value)
+        {
+            dictionary[name] = value;
+        }
+
+        public object GetProperty(string name)
+        {
+            if (dictionary.TryGetValue(name, out object value))
+            {
+                return value;
+            }
+            return null;
+        }
+
+        // ICustomTypeDescriptor implementation for reflection-based access
+        public System.ComponentModel.PropertyDescriptorCollection GetProperties()
+        {
+            return GetProperties(null);
+        }
+
+        public System.ComponentModel.PropertyDescriptorCollection GetProperties(System.Attribute[] attributes)
+        {
+            var properties = new System.Collections.Generic.List<System.ComponentModel.PropertyDescriptor>();
+            foreach (var kvp in dictionary)
+            {
+                properties.Add(new DynamicPropertyDescriptor(kvp.Key, kvp.Value?.GetType() ?? typeof(object), this));
+            }
+            return new System.ComponentModel.PropertyDescriptorCollection(properties.ToArray());
+        }
+
+        public System.ComponentModel.AttributeCollection GetAttributes()
+        {
+            return System.ComponentModel.TypeDescriptor.GetAttributes(this.GetType());
+        }
+
+        public string GetClassName()
+        {
+            return this.GetType().Name;
+        }
+
+        public string GetComponentName()
+        {
+            return this.GetType().FullName;
+        }
+
+        public System.ComponentModel.TypeConverter GetConverter()
+        {
+            return new System.ComponentModel.TypeConverter();
+        }
+
+        public System.ComponentModel.EventDescriptor GetDefaultEvent()
+        {
+            return null;
+        }
+
+        public System.ComponentModel.PropertyDescriptor GetDefaultProperty()
+        {
+            return null;
+        }
+
+        public object GetEditor(System.Type editorBaseType)
+        {
+            return null;
+        }
+
+        public System.ComponentModel.EventDescriptorCollection GetEvents()
+        {
+            return System.ComponentModel.TypeDescriptor.GetEvents(this.GetType());
+        }
+
+        public System.ComponentModel.EventDescriptorCollection GetEvents(System.Attribute[] attributes)
+        {
+            return System.ComponentModel.TypeDescriptor.GetEvents(this.GetType(), attributes);
+        }
+
+        public object GetPropertyOwner(System.ComponentModel.PropertyDescriptor pd)
+        {
+            return this;
+        }
+
+        private class DynamicPropertyDescriptor : System.ComponentModel.PropertyDescriptor
+        {
+            private readonly DynamicDictionary _parent;
+            private readonly Type _propertyType;
+
+            public DynamicPropertyDescriptor(string name, Type propertyType, DynamicDictionary parent)
+                : base(name, null)
+            {
+                _parent = parent;
+                _propertyType = propertyType;
+            }
+
+            public override Type ComponentType => _parent.GetType();
+
+            public override bool IsReadOnly => false;
+
+            public override Type PropertyType => _propertyType;
+
+            public override bool CanResetValue(object component) => true;
+
+            public override object GetValue(object component)
+            {
+                return _parent.GetProperty(this.Name);
+            }
+
+            public override void ResetValue(object component)
+            {
+                _parent.SetProperty(this.Name, null);
+            }
+
+            public override void SetValue(object component, object value)
+            {
+                _parent.SetProperty(this.Name, value);
+            }
+
+            public override bool ShouldSerializeValue(object component) => true;
+        }
+    }
+}

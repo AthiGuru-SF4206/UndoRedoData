@@ -1,0 +1,94 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using System.Dynamic;
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="SortComparer is not working properly with ExpandoObject">
+    <ComponentUnderTest>
+        <SfGrid DataSource="GenerateRecords()" AllowFiltering="true" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=CustomerID SortComparer="new CustomExpandoComparer()" HeaderText="Customer Name" Width="120">
+                    <Template>
+                        @{
+                            dynamic? value = context as ExpandoObject;
+                        }
+                        <span>Customer Id: @value?.CustomerID</span>
+                    </Template>
+                </GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=ShipCountry HeaderText="ShipCountry" Format="C2" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<ExpandoObject> Grid;
+    public List<ExpandoObject> Orders { get; set; }
+
+    public List<ExpandoObject> GenerateRecords()
+    {
+        Orders = Enumerable.Range(1, 75).Select((x) =>
+        {
+            dynamic d = new ExpandoObject();
+            d.OrderID = 1000 + x;
+            d.CustomerID = x % 2 == 0 ? "ALFKI1" : x % 5 == 0 ? "ANANTR2" : x % 11 == 0 ? "ANTON3" : "BOLID4";
+            d.Freight = Math.Round((2.3 * x), 2);
+            d.OrderDate = x % 2 == 0 ? new DateTime(2010, 11, 5) : x % 5 == 0 ? new DateTime(2018, 10, 3) : x % 11 == 0 ? new DateTime(1995, 9, 9) : new DateTime(2012, 8, 2);
+            d.ShipCountry = x % 3 == 0 ? "USA" : x % 2 == 0 ? "UK" : "USA";
+            d.Verified = x % 3 == 0 ? true : false;
+            return d;
+        }).Cast<ExpandoObject>().ToList<ExpandoObject>();
+        return Orders;
+    }
+
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ExpandoObject>>();
+        Assert.True(cut.Instance.SortSettings.Columns == null); // Sorting
+        await cut.Instance.SortColumnAsync("CustomerID", SortDirection.Descending, true);
+        Assert.True(cut.Instance.SortSettings.Columns.Count() == 1);
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+    public class CustomExpandoComparer : IComparer<Object>
+    {
+        public int Compare(object XRowDataToCompare, object YRowDataToCompare)
+        {
+            dynamic? XRowData = XRowDataToCompare as ExpandoObject;
+            dynamic? YRowData = YRowDataToCompare as ExpandoObject;
+
+            if (XRowData is null || YRowData is null)
+            {
+                return 0;
+            }
+
+            string XRowDataCN = (string)XRowData!.CustomerID;
+            string YRowDataCN = (string)YRowData!.CustomerID;
+
+            var xDigit = Int16.Parse("" + XRowDataCN.Last());
+            var yDigit = Int16.Parse("" + YRowDataCN.Last());
+
+            if (xDigit < yDigit)
+            {
+                return -1;
+            }
+            else if (xDigit > yDigit)
+            {
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+    }
+}

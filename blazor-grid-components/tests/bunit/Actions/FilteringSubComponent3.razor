@@ -1,0 +1,1762 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Tests
+@using System.Threading.Tasks
+
+<SfFixture @ref="fixture30" TestAsync="GridFilterMenu_DialogLifecycle_NonAdaptive" Description="Menu filter - dialog lifecycle non-adaptive">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" AllowGrouping="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture30 { get; set; }
+    public async Task GridFilterMenu_DialogLifecycle_NonAdaptive(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        Assert.True(cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter").Count > 0);
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[0].Click();
+        var filterRenderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(filterRenderer.Instance);
+        await cut.InvokeAsync(async () => await filterRenderer.Instance.OpenFilterDialog());
+        cut.WaitForState(() => cut.FindAll(".e-filter-popup").Count > 0);
+        var gridType = grid.GetType();
+        var filterModuleProp = gridType.GetProperty("FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+        var filterModule = filterModuleProp!.GetValue(grid);
+        Assert.NotNull(filterModule);
+        var fmType = filterModule!.GetType();
+        var filterIconIsClickedProp = fmType.GetProperty(
+            "FilterIconIsClicked",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterIconIsClickedProp);
+        var clickedBeforeClose = (bool)filterIconIsClickedProp!.GetValue(filterModule)!;
+        Assert.True(clickedBeforeClose);
+        var rendererInstance = filterRenderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var closedMethod = rendererType.GetMethod("Closed",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(closedMethod);
+        cut.InvokeAsync(() => closedMethod!.Invoke(rendererInstance, null)).GetAwaiter();
+        var clickedAfterClose = (bool)filterIconIsClickedProp.GetValue(filterModule)!;
+        Assert.False(clickedAfterClose);
+        await grid.FilterByColumnAsync(nameof(Order.OrderID), "equal", 1001);
+        cut.WaitForState(() => grid.FilterSettings.Columns.Count == 1);
+        Assert.True(grid.FilterSettings.Columns.Count == 1);
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[0].Click();
+        filterRenderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        rendererInstance = filterRenderer.Instance;
+        rendererType = rendererInstance.GetType();
+        var clearMethod = rendererType.GetMethod("ClearBtnClick",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(clearMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var clearTask = (Task)clearMethod!.Invoke(rendererInstance, null)!;
+            await clearTask;
+        });
+        cut.WaitForState(() => grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0);
+        Assert.True(grid.FilterSettings.Columns == null || grid.FilterSettings.Columns.Count == 0);
+        var filterIconColumnProp = fmType.GetProperty(
+            "FilterIconColumn",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterIconColumnProp);
+        var iconColumn = filterIconColumnProp!.GetValue(filterModule);
+        Assert.Null(iconColumn);
+        var clickedAfterClear = (bool)filterIconIsClickedProp.GetValue(filterModule)!;
+        Assert.False(clickedAfterClear);
+    }
+}
+
+<SfFixture @ref="fixture31" TestAsync="GridFilterMenu_OperatorHelpers" Description="Menu filter - operator helpers GetClass/GetNumberClass/IsNullOrEmptyOperator">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture31 { get; set; }
+    public async Task GridFilterMenu_OperatorHelpers(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[0].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var stringDropProp = rendererType.GetProperty("StringDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var numberDropProp = rendererType.GetProperty("NumberDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(stringDropProp);
+        Assert.NotNull(numberDropProp);
+        var stringDropObj = stringDropProp!.GetValue(rendererInstance);
+        var numberDropObj = numberDropProp!.GetValue(rendererInstance);
+        Assert.NotNull(stringDropObj);
+        Assert.NotNull(numberDropObj);
+        var stringDrop = (System.Collections.IList)stringDropObj!;
+        var numberDrop = (System.Collections.IList)numberDropObj!;
+        Assert.True(stringDrop.Count > 0);
+        Assert.True(numberDrop.Count > 0);
+        static string GetOperatorValue(object opItem)
+        {
+            var opType = opItem.GetType();
+            var valueProp = opType.GetProperty("Value");
+            Assert.NotNull(valueProp);
+            return (string)valueProp!.GetValue(opItem)!;
+        }
+        int emptyIndex = -1;
+        int notEmptyIndex = -1;
+        int equalIndex = -1;
+        for (int i = 0; i < stringDrop.Count; i++)
+        {
+            var val = GetOperatorValue(stringDrop[i]);
+            if (val == "isempty")
+            {
+                emptyIndex = i;
+            }
+            else if (val == "isnotempty")
+            {
+                notEmptyIndex = i;
+            }
+            else if (val == "equal")
+            {
+                equalIndex = i;
+            }
+        }
+        Assert.True(emptyIndex >= 0, "StringDropDown must contain 'isempty'.");
+        Assert.True(notEmptyIndex >= 0, "StringDropDown must contain 'isnotempty'.");
+        Assert.True(equalIndex >= 0, "StringDropDown must contain 'equal'.");
+        int isNullIndex = -1;
+        int isNotNullIndex = -1;
+        int numEqualIndex = -1;
+        for (int i = 0; i < numberDrop.Count; i++)
+        {
+            var val = GetOperatorValue(numberDrop[i]);
+            if (val == "isnull")
+            {
+                isNullIndex = i;
+            }
+            else if (val == "isnotnull")
+            {
+                isNotNullIndex = i;
+            }
+            else if (val == "equal")
+            {
+                numEqualIndex = i;
+            }
+        }
+        Assert.True(isNullIndex >= 0, "NumberDropDown must contain 'isnull'.");
+        Assert.True(isNotNullIndex >= 0, "NumberDropDown must contain 'isnotnull'.");
+        Assert.True(numEqualIndex >= 0, "NumberDropDown must contain 'equal'.");
+        var getClassMethod = rendererType.GetMethod("GetClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var getNumberClassMethod = rendererType.GetMethod("GetNumberClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getClassMethod);
+        Assert.NotNull(getNumberClassMethod);
+        var resultNullIndex = (bool)getClassMethod!.Invoke(rendererInstance, new object?[] { (int?)null, stringDropObj })!;
+        Assert.True(resultNullIndex, "GetClass should return true when stringIndex is null.");
+        var resultIsEmpty = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)emptyIndex, stringDropObj })!;
+        Assert.False(resultIsEmpty, "GetClass should return false for 'isempty' operator.");
+        var resultIsNotEmpty = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)notEmptyIndex, stringDropObj })!;
+        Assert.False(resultIsNotEmpty, "GetClass should return false for 'isnotempty' operator.");
+        var resultEqual = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)equalIndex, stringDropObj })!;
+        Assert.True(resultEqual, "GetClass should return true for normal operator like 'equal'.");
+        var numberResultNullIndex = (bool)getNumberClassMethod!.Invoke(rendererInstance, new object?[] { (int?)null, numberDropObj })!;
+        Assert.True(numberResultNullIndex, "GetNumberClass should return true when stringIndex is null.");
+        var numberResultIsNull = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)isNullIndex, numberDropObj })!;
+        Assert.False(numberResultIsNull, "GetNumberClass should return false for 'isnull' operator.");
+        var numberResultIsNotNull = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)isNotNullIndex, numberDropObj })!;
+        Assert.False(numberResultIsNotNull, "GetNumberClass should return false for 'isnotnull' operator.");
+        var numberResultEqual = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)numEqualIndex, numberDropObj })!;
+        Assert.True(numberResultEqual, "GetNumberClass should return true for normal operator like 'equal'.");
+        var isNullOrEmptyMethod = rendererType.GetMethod("IsNullOrEmptyOperator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isNullOrEmptyMethod);
+        bool CheckIsNullOrEmpty(string op)
+        {
+            return (bool)isNullOrEmptyMethod!.Invoke(rendererInstance, new object[] { op })!;
+        }
+        Assert.True(CheckIsNullOrEmpty("isnull"));
+        Assert.True(CheckIsNullOrEmpty("isnotnull"));
+        Assert.True(CheckIsNullOrEmpty("isempty"));
+        Assert.True(CheckIsNullOrEmpty("isnotempty"));
+        Assert.False(CheckIsNullOrEmpty("equal"));
+    }
+}
+
+<SfFixture @ref="fixture32" TestAsync="GridFilterMenu_OperatorHelpers2" Description="Menu filter - operator helpers GetClass/GetNumberClass/IsNullOrEmptyOperator">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture32 { get; set; }
+    public async Task GridFilterMenu_OperatorHelpers2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter")[0].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var stringDropProp = rendererType.GetProperty(
+            "StringDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        var numberDropProp = rendererType.GetProperty(
+            "NumberDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(stringDropProp);
+        Assert.NotNull(numberDropProp);
+        var stringDropObj = stringDropProp!.GetValue(rendererInstance);
+        var numberDropObj = numberDropProp!.GetValue(rendererInstance);
+        Assert.NotNull(stringDropObj);
+        Assert.NotNull(numberDropObj);
+        var stringDrop = (System.Collections.IList)stringDropObj!;
+        var numberDrop = (System.Collections.IList)numberDropObj!;
+        Assert.True(stringDrop.Count > 0);
+        Assert.True(numberDrop.Count > 0);
+        static string GetOperatorValue(object opItem)
+        {
+            var opType = opItem.GetType();
+            var valueProp = opType.GetProperty("Value",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(valueProp);
+            return (string)valueProp!.GetValue(opItem)!;
+        }
+        int emptyIndex = -1;
+        int notEmptyIndex = -1;
+        int equalIndex = -1;
+        for (int i = 0; i < stringDrop.Count; i++)
+        {
+            var val = GetOperatorValue(stringDrop[i]);
+            if (val == "isempty")
+            {
+                emptyIndex = i;
+            }
+            else if (val == "isnotempty")
+            {
+                notEmptyIndex = i;
+            }
+            else if (val == "equal")
+            {
+                equalIndex = i;
+            }
+        }
+        Assert.True(emptyIndex >= 0, "StringDropDown must contain 'isempty'.");
+        Assert.True(notEmptyIndex >= 0, "StringDropDown must contain 'isnotempty'.");
+        Assert.True(equalIndex >= 0, "StringDropDown must contain 'equal'.");
+        int isNullIndex = -1;
+        int isNotNullIndex = -1;
+        int numEqualIndex = -1;
+        for (int i = 0; i < numberDrop.Count; i++)
+        {
+            var val = GetOperatorValue(numberDrop[i]);
+            if (val == "isnull")
+            {
+                isNullIndex = i;
+            }
+            else if (val == "isnotnull")
+            {
+                isNotNullIndex = i;
+            }
+            else if (val == "equal")
+            {
+                numEqualIndex = i;
+            }
+        }
+        Assert.True(isNullIndex >= 0, "NumberDropDown must contain 'isnull'.");
+        Assert.True(isNotNullIndex >= 0, "NumberDropDown must contain 'isnotnull'.");
+        Assert.True(numEqualIndex >= 0, "NumberDropDown must contain 'equal'.");
+        var getClassMethod = rendererType.GetMethod(
+            "GetClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var getNumberClassMethod = rendererType.GetMethod(
+            "GetNumberClass",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(getClassMethod);
+        Assert.NotNull(getNumberClassMethod);
+        var resultNullIndex = (bool)getClassMethod!.Invoke(rendererInstance, new object?[] { (int?)null, stringDropObj })!;
+        Assert.True(resultNullIndex, "GetClass should return true when stringIndex is null.");
+        var resultIsEmpty = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)emptyIndex, stringDropObj })!;
+        Assert.False(resultIsEmpty, "GetClass should return false for 'isempty' operator.");
+        var resultIsNotEmpty = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)notEmptyIndex, stringDropObj })!;
+        Assert.False(resultIsNotEmpty, "GetClass should return false for 'isnotempty' operator.");
+        var resultEqual = (bool)getClassMethod.Invoke(rendererInstance, new object?[] { (int?)equalIndex, stringDropObj })!;
+        Assert.True(resultEqual, "GetClass should return true for normal operator like 'equal'.");
+        var numberResultNullIndex = (bool)getNumberClassMethod!.Invoke(rendererInstance, new object?[] { (int?)null, numberDropObj })!;
+        Assert.True(numberResultNullIndex, "GetNumberClass should return true when stringIndex is null.");
+        var numberResultIsNull = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)isNullIndex, numberDropObj })!;
+        Assert.False(numberResultIsNull, "GetNumberClass should return false for 'isnull' operator.");
+        var numberResultIsNotNull = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)isNotNullIndex, numberDropObj })!;
+        Assert.False(numberResultIsNotNull, "GetNumberClass should return false for 'isnotnull' operator.");
+        var numberResultEqual = (bool)getNumberClassMethod.Invoke(rendererInstance, new object?[] { (int?)numEqualIndex, numberDropObj })!;
+        Assert.True(numberResultEqual, "GetNumberClass should return true for normal operator like 'equal'.");
+        var isNullOrEmptyMethod = rendererType.GetMethod(
+            "IsNullOrEmptyOperator",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isNullOrEmptyMethod);
+        bool CheckIsNullOrEmpty(string op)
+        {
+            return (bool)isNullOrEmptyMethod!.Invoke(rendererInstance, new object[] { op })!;
+        }
+        Assert.True(CheckIsNullOrEmpty("isnull"));
+        Assert.True(CheckIsNullOrEmpty("isnotnull"));
+        Assert.True(CheckIsNullOrEmpty("isempty"));
+        Assert.True(CheckIsNullOrEmpty("isnotempty"));
+        Assert.False(CheckIsNullOrEmpty("equal"));
+    }
+}
+
+<SfFixture @ref="fixture33" TestAsync="GridFilterMenu_EditorSettingsBranches" Description="Menu filter - OnInitialized editor settings branches">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+<GridColumn Field="@nameof(Order.CustomerID)"
+            Width="150"
+            FilterEditorSettings="@(new AutoCompleteFilterParams {
+                AutoCompleteParams = new DropDowns.AutoCompleteModel {
+                    MinLength = 1,
+                    ShowClearButton = true,
+                    ShowPopupButton = true,
+                    DebounceDelay = 300,
+                    Highlight = true,
+                    EnableVirtualization = false,
+                    SuggestionCount = 5
+                }
+            })">
+</GridColumn>
+<GridColumn Field="@nameof(Order.OrderDate)"
+            Type="ColumnType.DateTime"
+            Width="150"
+            FilterEditorSettings="@(new DateTimeFilterParams {
+    DateTimePickerParams = new Syncfusion.Blazor.Calendars.DateTimePickerModel<object> {
+        CssClass = "dt-css",
+        EnableRtl = false,
+        Readonly = false,
+        Format = "G",
+        ShowClearButton = true,
+        TimeFormat = "T",
+        FirstDayOfWeek = 1
+    }
+})">
+</GridColumn>
+               <GridColumn Field="@nameof(Order.OrderDate)"
+            Type="ColumnType.TimeOnly"
+            Width="150"
+            FilterEditorSettings="@(new TimeFilterParams {
+                TimePickerParams = new Calendars.TimePickerModel<object> {
+                    CssClass = "tm-css",
+                    EnableRtl = false,
+                    Readonly = false,
+                    ShowClearButton = true,
+                    Step = 5,
+                    Format = "T"
+                }
+            })">
+</GridColumn>
+<GridColumn Field="@nameof(Order.OrderDate)"
+            Type="ColumnType.DateOnly"
+            Width="150"
+            FilterEditorSettings="@(new DateFilterParams {
+                DatePickerParams = new Calendars.DatePickerModel {
+                    CssClass = "dp-css",
+                    EnableRtl = false,
+                    Readonly = false,
+                    ShowClearButton = true,
+                    Format = "d",
+                    FirstDayOfWeek = 1
+                }
+            })">
+</GridColumn>
+<GridColumn Field="@nameof(Order.OrderID)"
+            Type="ColumnType.Integer"
+            Width="150"
+            FilterEditorSettings="@(new NumericFilterParams {
+                NumericTextBoxParams = new NumericTextBoxModel<object> {
+                    CssClass = "num-css",
+                    EnableRtl = false,
+                    Readonly = false,
+                    ShowClearButton = true,
+                    Currency = "USD",
+                    Decimals = 0,
+                    ValidateDecimalOnType = false,
+                    Step = 1,
+                    Min = 0,
+                    Max = 9999
+                }
+            })">
+</GridColumn>
+<GridColumn Field="@nameof(Order.Verified)"
+            Type="ColumnType.Boolean"
+            Width="150"
+            FilterEditorSettings="@(new DropDownFilterParams {
+                DropDownListParams = new DropDowns.DropDownListModel<object, object> {
+                    CssClass = "dd-css",
+                    EnableRtl = false,
+                    Readonly = false,
+                    ShowClearButton = true,
+                    DebounceDelay = 200
+                }
+            })">
+</GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture33 { get; set; }
+    public async Task GridFilterMenu_EditorSettingsBranches(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count >= 6);
+        (Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order> instance, System.Type type) OpenRendererForColumn(int index)
+        {
+            icons[index].Click();
+            var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+            Assert.NotNull(renderer.Instance);
+            return (renderer.Instance, renderer.Instance.GetType());
+        }
+        var (autoRenderer, autoType) = OpenRendererForColumn(0);
+        var autoAttrField = autoType.GetField(
+            "autoCompleteAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoAttrField);
+        var autoAttr = autoAttrField!.GetValue(autoRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(autoAttr);
+        Assert.True(autoAttr!.Count > 0);
+        var (dtRenderer, dtType) = OpenRendererForColumn(1);
+        var dtAttrField = dtType.GetField(
+            "dateTimePickerAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dtAttrField);
+        var dtAttr = dtAttrField!.GetValue(dtRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(dtAttr);
+        Assert.True(dtAttr!.Count >= 0);
+        var (timeRenderer, timeType) = OpenRendererForColumn(2);
+        var timeAttrField = timeType.GetField(
+            "timePickerAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(timeAttrField);
+        var timeAttr = timeAttrField!.GetValue(timeRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(timeAttr);
+        Assert.True(timeAttr!.Count >= 0);
+        var (dateRenderer, dateType) = OpenRendererForColumn(3);
+        var dateAttrField = dateType.GetField(
+            "datePickerAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dateAttrField);
+        var dateAttr = dateAttrField!.GetValue(dateRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(dateAttr);
+        Assert.True(dateAttr!.Count >= 0);
+        var (numRenderer, numType) = OpenRendererForColumn(4);
+        var numAttrField = numType.GetField(
+            "numericTextBoxAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(numAttrField);
+        var numAttr = numAttrField!.GetValue(numRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(numAttr);
+        Assert.True(numAttr!.Count >= 0);
+        var (ddRenderer, ddType) = OpenRendererForColumn(5);
+        var ddAttrField = ddType.GetField(
+            "dropDownListAttributes",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(ddAttrField);
+        var ddAttr = ddAttrField!.GetValue(ddRenderer) as System.Collections.IDictionary;
+        Assert.NotNull(ddAttr);
+        Assert.True(ddAttr!.Count >= 0);
+    }
+}
+
+<SfFixture @ref="fixture34" TestAsync="GridFilterMenu_DialogCanceling" Description="Menu filter - cancel paths (FilterDialogOpening/OnActionBegin)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents FilterDialogOpening="FilterDialogOpening_Cancel"
+                        OnActionBegin="OnActionBegin_Cancel"
+                        TValue="Order">
+            </GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture34 { get; set; }
+    private bool _cancelOnFilterDialogOpening = false;
+    private bool _cancelOnActionBegin = false;
+    public async Task GridFilterMenu_DialogCanceling(Fixture fixture)
+    {
+        var cut = fixture34.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        var gridType = grid.GetType();
+        var filterModuleProp = gridType.GetProperty(
+            "FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+        var filterModule = filterModuleProp!.GetValue(grid);
+        Assert.NotNull(filterModule);
+        var fmType = filterModule!.GetType();
+        var filterIconIsClickedProp = fmType.GetProperty(
+            "FilterIconIsClicked",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterIconIsClickedProp);
+        bool GetIconClicked() => (bool)filterIconIsClickedProp!.GetValue(filterModule)!;
+        _cancelOnFilterDialogOpening = false;
+        _cancelOnActionBegin = false;
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        Assert.True(GetIconClicked());
+        _cancelOnFilterDialogOpening = true;
+        await cut.InvokeAsync(async () => await renderer.Instance.OpenFilterDialog());
+        Assert.False(GetIconClicked());
+        Assert.True(cut.FindAll(".e-filter-popup").Count == 0);
+        _cancelOnFilterDialogOpening = false;
+        _cancelOnActionBegin = false;
+        icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer2 = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer2.Instance);
+        Assert.True(GetIconClicked());
+        _cancelOnActionBegin = true;
+        await cut.InvokeAsync(async () => await renderer2.Instance.OpenFilterDialog());
+        Assert.False(GetIconClicked());
+        Assert.True(cut.FindAll(".e-filter-popup").Count == 0);
+    }
+    public void FilterDialogOpening_Cancel(FilterDialogOpeningEventArgs args)
+    {
+        if (_cancelOnFilterDialogOpening)
+        {
+            args.Cancel = true;
+        }
+    }
+    public void OnActionBegin_Cancel(ActionEventArgs<Order> args)
+    {
+        if (_cancelOnActionBegin &&
+            args.RequestType == Syncfusion.Blazor.Grids.Action.FilterBeforeOpen)
+        {
+            args.Cancel = true;
+        }
+    }
+}
+
+<SfFixture @ref="fixture35" TestAsync="GridFilterMenu_CustomValuePipeline" Description="Menu filter - custom value pipeline (CreatedHandler + CustomFilterValueMaintain + CustomValueHandler)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnablePersistence="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture35 { get; set; }
+    public async Task GridFilterMenu_CustomValuePipeline(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.EnablePersistence = true;
+        if (grid.FilterSettings.Columns == null)
+        {
+            grid.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        grid.FilterSettings.Columns.Clear();
+        grid.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+            ActualValue = "ALFKI",
+#pragma warning disable BL0005
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+#pragma warning restore BL0005
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var createdHandler = rendererType.GetMethod(
+            "CreatedHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandler);
+        await cut.InvokeAsync(async () =>
+        {
+            var createdTask = (Task)createdHandler!.Invoke(rendererInstance, new object[] { new object() })!;
+            await createdTask;
+        });
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItemProp = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem);
+        var orderItem = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", orderItem.CustomerID);
+        var customValueHandler = rendererType.GetMethod(
+            "CustomValueHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var handlerParams = customValueHandler!.GetParameters();
+        Assert.True(handlerParams.Length == 1);
+        var argsType = handlerParams[0].ParameterType;
+        var customArgs = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(textProp);
+        textProp!.SetValue(customArgs, "CustomValue123");
+        var itemProp = argsType.GetProperty("Item",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(itemProp);
+        await cut.InvokeAsync(async () =>
+        {
+            var handlerTask = (Task)customValueHandler.Invoke(rendererInstance, new object[] { customArgs })!;
+            await handlerTask;
+        });
+        var menuFilterValueAfter = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("CustomValue123", menuFilterValueAfter);
+        var customFilterItemAfter = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItemAfter);
+        var argsItem = itemProp!.GetValue(customArgs);
+        Assert.Same(customFilterItemAfter, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture36" TestAsync="GridFilterMenu_CustomValuePipeline2" Description="Menu filter - custom value pipeline (CreatedHandler + CustomFilterValueMaintain + CustomValueHandler)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnablePersistence="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture36 { get; set; }
+    public async Task GridFilterMenu_CustomValuePipeline2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.EnablePersistence = true;
+        if (grid.FilterSettings.Columns == null)
+        {
+            grid.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        grid.FilterSettings.Columns.Clear();
+        grid.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+#pragma warning disable BL0005
+            ActualValue = "ALFKI",
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+#pragma warning restore BL0005
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var createdHandler = rendererType.GetMethod(
+            "CreatedHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandler);
+        await cut.InvokeAsync(async () =>
+        {
+            var createdTask = (Task)createdHandler!.Invoke(rendererInstance, new object[] { new object() })!;
+            await createdTask;
+        });
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItemProp = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem);
+        var orderItem = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", orderItem.CustomerID);
+        var customValueHandler = rendererType.GetMethod(
+            "CustomValueHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var parameters = customValueHandler!.GetParameters();
+        Assert.True(parameters.Length == 1);
+        var argsType = parameters[0].ParameterType;
+        var argsInstance = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(textProp);
+        textProp!.SetValue(argsInstance, "CustomValue123");
+        var itemProp = argsType.GetProperty("Item",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(itemProp);
+        await cut.InvokeAsync(async () =>
+        {
+            var handlerTask = (Task)customValueHandler.Invoke(rendererInstance, new object[] { argsInstance })!;
+            await handlerTask;
+        });
+        var menuFilterValueAfter = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("CustomValue123", menuFilterValueAfter);
+        var customFilterItemAfter = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItemAfter);
+        var argsItem = itemProp!.GetValue(argsInstance);
+        Assert.Same(customFilterItemAfter, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture37" TestAsync="GridFilterMenu_CustomValuePipeline3" Description="Menu filter - custom value pipeline (CreatedHandler + CustomFilterValueMaintain + CustomValueHandler)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnablePersistence="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture37 { get; set; }
+    public async Task GridFilterMenu_CustomValuePipeline3(Fixture fixture)
+    {
+        var cut = fixture37.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.EnablePersistence = true;
+        if (grid.FilterSettings.Columns == null)
+        {
+            grid.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        grid.FilterSettings.Columns.Clear();
+        grid.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+#pragma warning disable BL0005
+            ActualValue = "ALFKI",
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+#pragma warning restore BL0005
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var createdHandler = rendererType.GetMethod(
+            "CreatedHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandler);
+        await cut.InvokeAsync(async () =>
+        {
+            var createdTask = (Task)createdHandler!.Invoke(rendererInstance, new object[] { new object() })!;
+            await createdTask;
+        });
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItemProp = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem);
+        var orderItem = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", orderItem.CustomerID);
+        var customValueHandler = rendererType.GetMethod(
+            "CustomValueHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var parameters = customValueHandler!.GetParameters();
+        Assert.True(parameters.Length == 1);
+        var argsType = parameters[0].ParameterType;
+        var argsInstance = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(textProp);
+        textProp!.SetValue(argsInstance, "CustomValue123");
+        var itemProp = argsType.GetProperty("Item",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(itemProp);
+        await cut.InvokeAsync(async () =>
+        {
+            var handlerTask = (Task)customValueHandler.Invoke(rendererInstance, new object[] { argsInstance })!;
+            await handlerTask;
+        });
+        var menuFilterValueAfter = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("CustomValue123", menuFilterValueAfter);
+        var customFilterItemAfter = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItemAfter);
+        var argsItem = itemProp!.GetValue(argsInstance);
+        Assert.Same(customFilterItemAfter, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture38" TestAsync="GridFilterMenu_CustomValuePipeline4" Description="Menu filter - custom value pipeline (CreatedHandler + CustomFilterValueMaintain + CustomValueHandler)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnablePersistence="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture38 { get; set; }
+    public async Task GridFilterMenu_CustomValuePipeline4(Fixture fixture)
+    {
+        var cut = fixture38.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.EnablePersistence = true;
+        if (grid.FilterSettings.Columns == null)
+        {
+            grid.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        grid.FilterSettings.Columns.Clear();
+        grid.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+#pragma warning disable BL0005
+            ActualValue = "ALFKI",
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+#pragma warning restore BL0005
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var createdHandler = rendererType.GetMethod(
+            "CreatedHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandler);
+        await cut.InvokeAsync(async () =>
+        {
+            var createdTask = (Task)createdHandler!.Invoke(rendererInstance, new object[] { new object() })!;
+            await createdTask;
+        });
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItemProp = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem);
+        var orderItem = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", orderItem.CustomerID);
+        var customValueHandler = rendererType.GetMethod(
+            "CustomValueHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var parameters = customValueHandler!.GetParameters();
+        Assert.True(parameters.Length == 1);
+        var argsType = parameters[0].ParameterType;
+        var argsInstance = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(textProp);
+        textProp!.SetValue(argsInstance, "CustomValue123");
+        var itemProp = argsType.GetProperty("Item",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(itemProp);
+        await cut.InvokeAsync(async () =>
+        {
+            var handlerTask = (Task)customValueHandler.Invoke(rendererInstance, new object[] { argsInstance })!;
+            await handlerTask;
+        });
+        var menuFilterValueAfter = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("CustomValue123", menuFilterValueAfter);
+        var customFilterItemAfter = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItemAfter);
+        var argsItem = itemProp!.GetValue(argsInstance);
+        Assert.Same(customFilterItemAfter, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture39" TestAsync="GridFilterMenu_CustomStringQuery" Description="Menu filter - CustomFilterQuery and AutoCompleteDataBound pipeline">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture39 { get; set; }
+    public async Task GridFilterMenu_CustomStringQuery(Fixture fixture)
+    {
+        var cut = fixture39.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var dropProp = rendererType.GetProperty(
+            "StringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dropProp);
+        var autoProp = rendererType.GetProperty(
+            "AutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoProp);
+        var autoPropType = autoProp.PropertyType;
+        var dropInstance = Activator.CreateInstance(dropProp!.PropertyType)!;
+        dropProp.SetValue(rendererInstance, dropInstance);
+        var autoInstance = Activator.CreateInstance(autoProp!.PropertyType)!;
+        autoProp.SetValue(rendererInstance, autoInstance);
+        var dropType = dropInstance.GetType();
+        var dropValueProp = dropType.GetProperty("Value",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dropValueProp);
+        dropValueProp!.SetValue(dropInstance, "doesnotcontains");
+        var autoType = autoInstance.GetType();
+        var filterOperatorProp = autoType.GetProperty("FilterOperator",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+        var listDataProp = autoType.GetProperty("ListData",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(listDataProp);
+        var valueProp = autoType.GetProperty("Value",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(valueProp);
+        var isFilterQueryUpdatedProp = autoType.GetProperty("IsFilterQueryUpdated",
+            System.Reflection.BindingFlags.Public| System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isFilterQueryUpdatedProp);
+        var genericArgs = autoPropType.GetGenericArguments();
+        var itemType = genericArgs.Length > 1 ? genericArgs[1] : typeof(string);
+        var listType = typeof(List<>).MakeGenericType(itemType);
+        var emptyList = Activator.CreateInstance(listType);
+        listDataProp!.SetValue(autoInstance, emptyList);
+        var customFilterQuery = rendererType.GetMethod(
+            "CustomFilterQuery",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterQuery);
+        var filteringArgs = new Syncfusion.Blazor.DropDowns.FilteringEventArgs();
+            
+         GridReflection.SetPropertyValue(filteringArgs, "Text", "ALFKI");
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)customFilterQuery!.Invoke(rendererInstance, new object[] { filteringArgs })!;
+            await task;
+        });
+        var gridType = grid.GetType();
+        var filterModuleProp = gridType.GetProperty(
+            "FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+        var filterModule = filterModuleProp!.GetValue(grid);
+        Assert.NotNull(filterModule);
+        var fmType = filterModule!.GetType();
+        var isCustomFilterAppliedProp = fmType.GetProperty(
+            "IsCustomFilterApplied",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isCustomFilterAppliedProp);
+        var isCustomApplied = (bool)isCustomFilterAppliedProp!.GetValue(filterModule)!;
+        Assert.True(isCustomApplied);
+        var filterOp = (string?)filterOperatorProp!.GetValue(autoInstance);
+        Assert.False(string.IsNullOrEmpty(filterOp));
+        var isRenderedFromTreeGridProp = gridType.GetProperty(
+            "IsRenderedFromTreeGrid",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (isRenderedFromTreeGridProp != null)
+        {
+            isRenderedFromTreeGridProp.SetValue(grid, true);
+        }
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var customFilterItemProp2 = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp2);
+        var autoCompleteDataBound = rendererType.GetMethod(
+            "AutoCompleteDataBound",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoCompleteDataBound);
+        var dataBoundArgs = new Syncfusion.Blazor.DropDowns.DataBoundEventArgs();
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)autoCompleteDataBound!.Invoke(rendererInstance, new object[] { dataBoundArgs })!;
+            await task;
+        });
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItem2 = customFilterItemProp2!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem2);
+        var autoValue = valueProp!.GetValue(autoInstance);
+        Assert.Equal("ALFKI", autoValue);
+    }
+}
+
+<SfFixture @ref="fixture40" TestAsync="GridFilterMenu_CustomValueAndQueryPipeline" Description="Menu filter - custom value + AutoComplete string pipeline (CreatedHandler, CustomFilterValueMaintain, CustomValueHandler, CustomFilterQuery, AutoCompleteDataBound)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order" DataSource="GenerateOrderData()" AllowFiltering="true" AllowPaging="true" EnablePersistence="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" TextAlign="TextAlign.Right" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture40 { get; set; }
+    public async Task GridFilterMenu_CustomValueAndQueryPipeline(Fixture fixture)
+    {
+        var cut = fixture40.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        grid.EnablePersistence = true;
+        if (grid.FilterSettings.Columns == null)
+        {
+            grid.FilterSettings.Columns = new List<GridFilterColumn>();
+        }
+        grid.FilterSettings.Columns.Clear();
+        grid.FilterSettings.Columns.Add(new GridFilterColumn
+        {
+            Field = nameof(Order.CustomerID),
+#pragma warning disable BL0005
+            ActualValue = "ALFKI",
+            ColumnType = Syncfusion.Blazor.Grids.ColumnType.String.ToString(),
+#pragma warning restore BL0005
+            Operator = Operator.Equal,
+            Value = "ALFKI"
+        });
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 1);
+        icons[1].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var rendererInstance = renderer.Instance;
+        var rendererType = rendererInstance.GetType();
+        var createdHandler = rendererType.GetMethod(
+            "CreatedHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(createdHandler);
+        await cut.InvokeAsync(async () =>
+        {
+            var createdTask = (Task)createdHandler!.Invoke(rendererInstance, new object[] { new object() })!;
+            await createdTask;
+        });
+        var menuFilterValueProp = rendererType.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuFilterValue = (string?)menuFilterValueProp!.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValue);
+        var customFilterItemProp = rendererType.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterItemProp);
+        var customFilterItem = customFilterItemProp!.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem);
+        var orderItem = Assert.IsType<Order>(customFilterItem);
+        Assert.Equal("ALFKI", orderItem.CustomerID);
+        var stringDropProp = rendererType.GetProperty(
+            "StringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(stringDropProp);
+        var autoProp = rendererType.GetProperty(
+            "AutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoProp);
+        var stringDropInstance = Activator.CreateInstance(stringDropProp!.PropertyType)!;
+        stringDropProp.SetValue(rendererInstance, stringDropInstance);
+        var autoInstance = Activator.CreateInstance(autoProp!.PropertyType)!;
+        autoProp.SetValue(rendererInstance, autoInstance);
+        var dropType = stringDropInstance.GetType();
+        var dropValueProp = dropType.GetProperty("Value",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(dropValueProp);
+        dropValueProp!.SetValue(stringDropInstance, "doesnotcontains");
+        var autoType = autoInstance.GetType();
+        var filterOperatorProp = autoType.GetProperty("FilterOperator") 
+            ?? autoType.GetProperty("FilterOperator", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterOperatorProp);
+        var listDataProp = autoType.GetProperty("ListData") 
+            ?? autoType.GetProperty("ListData", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(listDataProp);
+        var autoValueProp = autoType.GetProperty("Value") 
+            ?? autoType.GetProperty("Value", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoValueProp);
+        var isFilterQueryUpdatedProp = autoType.GetProperty("IsFilterQueryUpdated") 
+            ?? autoType.GetProperty("IsFilterQueryUpdated", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isFilterQueryUpdatedProp);
+        var autoPropType = autoProp.PropertyType;
+        var genericArgs = autoPropType.GetGenericArguments();
+        var itemType = genericArgs.Length > 1 ? genericArgs[1] : typeof(string);
+        var listType = typeof(List<>).MakeGenericType(itemType);
+        var emptyList = Activator.CreateInstance(listType);
+        listDataProp!.SetValue(autoInstance, emptyList);
+        var customFilterQuery = rendererType.GetMethod(
+            "CustomFilterQuery",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterQuery);
+         var filteringArgs = new Syncfusion.Blazor.DropDowns.FilteringEventArgs();
+            
+         GridReflection.SetPropertyValue(filteringArgs, "Text", "ALFKI");
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)customFilterQuery!.Invoke(rendererInstance, new object[] { filteringArgs })!;
+            await task;
+        });
+        var gridType = grid.GetType();
+        var filterModuleProp = gridType.GetProperty(
+            "FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+        var filterModule = filterModuleProp!.GetValue(grid);
+        Assert.NotNull(filterModule);
+        var fmType = filterModule!.GetType();
+        var isCustomFilterAppliedProp = fmType.GetProperty(
+            "IsCustomFilterApplied",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isCustomFilterAppliedProp);
+        var isCustomApplied = (bool)isCustomFilterAppliedProp!.GetValue(filterModule)!;
+        Assert.True(isCustomApplied);
+        var filterOp = (string?)filterOperatorProp!.GetValue(autoInstance);
+        Assert.False(string.IsNullOrEmpty(filterOp));
+        var isRenderedFromTreeGridProp = gridType.GetProperty(
+            "IsRenderedFromTreeGrid",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (isRenderedFromTreeGridProp != null)
+        {
+            isRenderedFromTreeGridProp.SetValue(grid, true);
+        }
+        var autoCompleteDataBound = rendererType.GetMethod(
+            "AutoCompleteDataBound",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoCompleteDataBound);
+        var dataBoundArgs = new Syncfusion.Blazor.DropDowns.DataBoundEventArgs();
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task)autoCompleteDataBound!.Invoke(rendererInstance, new object[] { dataBoundArgs })!;
+            await task;
+        });
+        var menuFilterValueAfterDataBound = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("ALFKI", menuFilterValueAfterDataBound);
+        var customFilterItem2 = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItem2);
+        var autoValue = autoValueProp!.GetValue(autoInstance);
+        Assert.Equal("ALFKI", autoValue);
+        var customValueHandler = rendererType.GetMethod(
+            "CustomValueHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customValueHandler);
+        var parameters = customValueHandler!.GetParameters();
+        Assert.True(parameters.Length == 1);
+        var argsType = parameters[0].ParameterType;
+        var argsInstance = Activator.CreateInstance(argsType)!;
+        var textProp = argsType.GetProperty("Text",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(textProp);
+        textProp!.SetValue(argsInstance, "CustomValue123");
+        var itemProp = argsType.GetProperty("Item",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(itemProp);
+        await cut.InvokeAsync(async () =>
+        {
+            var handlerTask = (Task)customValueHandler.Invoke(rendererInstance, new object[] { argsInstance })!;
+            await handlerTask;
+        });
+        var menuFilterValueAfterHandler = (string?)menuFilterValueProp.GetValue(rendererInstance);
+        Assert.Equal("CustomValue123", menuFilterValueAfterHandler);
+        var customFilterItemAfterHandler = customFilterItemProp.GetValue(rendererInstance);
+        Assert.NotNull(customFilterItemAfterHandler);
+        var argsItem = itemProp!.GetValue(argsInstance);
+        Assert.Same(customFilterItemAfterHandler, argsItem);
+    }
+}
+
+<SfFixture @ref="fixture41" TestAsync="GridFilterMenu_AdaptiveDialogLifecycle_Menu"
+           Description="Menu filter - adaptive dialog methods (AdaptiveRendered / CloseHandler)">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true"
+                EnableAdaptiveUI="true"
+                AdaptiveUIMode="Syncfusion.Blazor.Grids.AdaptiveMode.Both">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture41 { get; set; }
+    public async Task GridFilterMenu_AdaptiveDialogLifecycle_Menu(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 0);
+        icons[0].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+        var instance = renderer.Instance;
+        var type = instance.GetType();
+        var acProp = type.GetProperty(
+            "autoCompleteFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(acProp);
+        acProp!.SetValue(instance, "AdaptiveAutoText");
+        var acValue = acProp.GetValue(instance);
+        Assert.Equal("AdaptiveAutoText", acValue);
+        var madProp = type.GetProperty(
+            "MenuAdaptiveDialog",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(madProp);
+        var dialogInstance = Activator.CreateInstance(madProp!.PropertyType);
+        Assert.NotNull(dialogInstance);
+        madProp.SetValue(instance, dialogInstance);
+        Assert.Same(dialogInstance, madProp.GetValue(instance));
+        var gridType = grid.GetType();
+        var filterModuleProp = gridType.GetProperty(
+            "FilterModule",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+        var filterModule = filterModuleProp!.GetValue(grid);
+        Assert.NotNull(filterModule);
+        var fmType = filterModule!.GetType();
+        var iconClickedProp = fmType.GetProperty(
+            "FilterIconIsClicked",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(iconClickedProp);
+        iconClickedProp!.SetValue(filterModule, true);
+        Assert.True((bool)iconClickedProp.GetValue(filterModule)!);
+        var adaptiveRenderedMethod = type.GetMethod(
+            "AdaptiveRendered",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(adaptiveRenderedMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task?)adaptiveRenderedMethod!.Invoke(instance, Array.Empty<object>());
+            if (task != null)
+            {
+                await task.ConfigureAwait(true);
+            }
+        });
+        var closeHandlerMethod = type.GetMethod(
+            "CloseHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(closeHandlerMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task?)closeHandlerMethod!.Invoke(instance, Array.Empty<object>());
+            if (task != null)
+            {
+                await task.ConfigureAwait(true);
+            }
+        });
+        var isClickedAfter = (bool)iconClickedProp.GetValue(filterModule)!;
+        Assert.False(isClickedAfter);
+    }
+}
+
+<SfFixture @ref="fixture42" TestAsync="GridFilterMenu_FilterBtnClick_AdvancedBranches"
+           Description="Menu filter - FilterBtnClick Date/DateTime Json path and double numeric branch">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderDate)"
+                            Type="ColumnType.Date"
+                            Format="d"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)"
+                            Type="ColumnType.DateTime"
+                            Width="150">
+                </GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)"
+                            Type="ColumnType.Double"
+                            Width="150">
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture42 { get; set; }
+    public async Task GridFilterMenu_FilterBtnClick_AdvancedBranches(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count >= 3);
+        (Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order> instance, System.Type type)
+            OpenRendererForColumn(int index)
+        {
+            icons[index].Click();
+            var r = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+            Assert.NotNull(r.Instance);
+            return (r.Instance, r.Instance.GetType());
+        }
+        {
+            var (rendererInstance, type) = OpenRendererForColumn(0);
+            var datePickerProp = type.GetProperty(
+                "DatePicker",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(datePickerProp);
+            var datePicker = Activator.CreateInstance(datePickerProp!.PropertyType);
+            Assert.NotNull(datePicker);
+            var valueProp = datePickerProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(valueProp);
+            valueProp!.SetValue(datePicker, new DateTime(2010, 5, 1));
+            datePickerProp.SetValue(rendererInstance, datePicker);
+            var numDropDownProp = type.GetProperty(
+                "NumberOperatorDropDown",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(numDropDownProp);
+            var numDropDown = Activator.CreateInstance(numDropDownProp!.PropertyType);
+            Assert.NotNull(numDropDown);
+            var numValueProp = numDropDownProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(numValueProp);
+            numValueProp!.SetValue(numDropDown, "equal");
+            numDropDownProp.SetValue(rendererInstance, numDropDown);
+            var filterBtnClick = type.GetMethod(
+                "FilterBtnClick",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(filterBtnClick);
+            await cut.InvokeAsync(async () =>
+            {
+                var task = (Task?)filterBtnClick!.Invoke(rendererInstance, Array.Empty<object>());
+                if (task != null)
+                {
+                    await task.ConfigureAwait(true);
+                }
+            });
+            Assert.NotNull(grid.FilterSettings);
+            Assert.True(grid.FilterSettings.Columns.Count > 0);
+            Assert.Equal(nameof(Order.OrderDate), grid.FilterSettings.Columns[0].Field);
+        }
+        icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count >= 3);
+        {
+            var (rendererInstance, type) = OpenRendererForColumn(1);
+            var dtPickerProp = type.GetProperty(
+                "DateTimePicker",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(dtPickerProp);
+            var dtPicker = Activator.CreateInstance(dtPickerProp!.PropertyType);
+            Assert.NotNull(dtPicker);
+            var valueProp = dtPickerProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(valueProp);
+            valueProp!.SetValue(dtPicker, new DateTime(2010, 5, 1, 10, 0, 0));
+            dtPickerProp.SetValue(rendererInstance, dtPicker);
+            var numDropDownProp = type.GetProperty(
+                "NumberOperatorDropDown",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(numDropDownProp);
+            var numDropDown = Activator.CreateInstance(numDropDownProp!.PropertyType);
+            Assert.NotNull(numDropDown);
+            var numValueProp = numDropDownProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(numValueProp);
+            numValueProp!.SetValue(numDropDown, "equal");
+            numDropDownProp.SetValue(rendererInstance, numDropDown);
+            var filterBtnClick = type.GetMethod(
+                "FilterBtnClick",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(filterBtnClick);
+            await cut.InvokeAsync(async () =>
+            {
+                var task = (Task?)filterBtnClick!.Invoke(rendererInstance, Array.Empty<object>());
+                if (task != null)
+                {
+                    await task.ConfigureAwait(true);
+                }
+            });
+            Assert.NotNull(grid.FilterSettings);
+            Assert.True(grid.FilterSettings.Columns.Count > 0);
+            Assert.Equal(nameof(Order.OrderDate), grid.FilterSettings.Columns[0].Field);
+        }
+        icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count >= 3);
+        {
+            var (rendererInstance, type) = OpenRendererForColumn(2);
+            var isIntProp = type.GetProperty(
+                "_isInteger",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var isLongProp = type.GetProperty(
+                "_isLong",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(isIntProp);
+            Assert.NotNull(isLongProp);
+            isIntProp!.SetValue(rendererInstance, false);
+            isLongProp!.SetValue(rendererInstance, false);
+            var numDoubleProp = type.GetProperty(
+                "NumericValueasDouble",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(numDoubleProp);
+            var numDouble = Activator.CreateInstance(numDoubleProp!.PropertyType);
+            Assert.NotNull(numDouble);
+            var valueProp = numDoubleProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(valueProp);
+            valueProp!.SetValue(numDouble, 26.7);
+            numDoubleProp.SetValue(rendererInstance, numDouble);
+            var numDropDownProp = type.GetProperty(
+                "NumberOperatorDropDown",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(numDropDownProp);
+            var numDropDown = Activator.CreateInstance(numDropDownProp!.PropertyType);
+            Assert.NotNull(numDropDown);
+            var numValueProp = numDropDownProp.PropertyType.GetProperty("Value");
+            Assert.NotNull(numValueProp);
+            numValueProp!.SetValue(numDropDown, "equal");
+            numDropDownProp.SetValue(rendererInstance, numDropDown);
+            var filterBtnClick = type.GetMethod(
+                "FilterBtnClick",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Assert.NotNull(filterBtnClick);
+            await cut.InvokeAsync(async () =>
+            {
+                var task = (Task?)filterBtnClick!.Invoke(rendererInstance, Array.Empty<object>());
+                if (task != null)
+                {
+                    await task.ConfigureAwait(true);
+                }
+            });
+            Assert.NotNull(grid.FilterSettings);
+            Assert.True(grid.FilterSettings.Columns.Any(c => c.Field == nameof(Order.Freight)));
+        }
+    }
+}
+
+<SfFixture @ref="fixture43"
+           TestAsync="GridFilterMenu_CustomStringQuery_ComplexField"
+           Description="Menu filter - CustomFilterQuery 'doesnot' branch and AutoCompleteDataBound complex-field path">
+    <ComponentUnderTest>
+        <SfGrid TItem="Order"
+                DataSource="GenerateOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture43 { get; set; }
+   public async Task GridFilterMenu_CustomStringQuery_ComplexField(Fixture fixture)
+    {
+        var cut = fixture43.GetComponentUnderTest<SfGrid<Order>>();
+        var grid = cut.Instance;
+
+        // Click filter icon to create FilterMenuRenderer<Order>
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 0);
+        icons[0].Click();
+
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<Order>>();
+        Assert.NotNull(renderer.Instance);
+
+        var instance = renderer.Instance;
+        var type = instance.GetType();
+        var parentProp = type.GetProperty(
+            "Parent",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(parentProp);
+
+        var parent = parentProp!.GetValue(instance)!;           
+        var parentType = parent.GetType();
+
+
+        var filterModuleProp = parentType.GetProperty(
+            "FilterModule",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterModuleProp);
+
+        var filterModule = filterModuleProp!.GetValue(parent)!;
+        var fmType = filterModule.GetType();
+        var filterIconColumnProp = fmType.GetProperty(
+            "FilterIconColumn",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(filterIconColumnProp);
+
+        var columnsProp = parentType.GetProperty("Columns");
+        Assert.NotNull(columnsProp);
+
+        var columns = (System.Collections.IList)columnsProp!.GetValue(parent)!;
+        Assert.True(columns.Count > 0);
+
+        var firstColumn = columns[0];
+        var colType = firstColumn!.GetType();
+        var fieldProp = colType.GetProperty("Field");
+        Assert.NotNull(fieldProp);
+        fieldProp!.SetValue(firstColumn, "Customer.CustomerID");
+        filterIconColumnProp!.SetValue(filterModule, firstColumn);
+        var autoProp = type.GetProperty(
+            "AutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoProp);
+        var autoInstance = Activator.CreateInstance(autoProp!.PropertyType);
+        Assert.NotNull(autoInstance);
+        autoProp.SetValue(instance, autoInstance);
+        var autoType = autoProp.PropertyType;
+        var listDataProp = autoType.GetProperty(
+            "ListData",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        if (listDataProp != null)
+        {
+            var listType = listDataProp.PropertyType;
+            var elementType = listType.IsGenericType
+                ? listType.GetGenericArguments()[0]
+                : typeof(object);
+
+            var emptyList = Activator.CreateInstance(
+                typeof(System.Collections.Generic.List<>).MakeGenericType(elementType));
+
+            listDataProp.SetValue(autoInstance, emptyList);
+        }
+        var stringOpProp = type.GetProperty(
+            "StringOperatorDropDown",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(stringOpProp);
+        var stringDropDown = Activator.CreateInstance(stringOpProp!.PropertyType);
+        Assert.NotNull(stringDropDown);
+        var ddValueProp = stringOpProp.PropertyType.GetProperty("Value");
+        Assert.NotNull(ddValueProp);
+        ddValueProp!.SetValue(stringDropDown, "doesnotcontain");
+        stringOpProp.SetValue(instance, stringDropDown);
+         var filteringArgs = new Syncfusion.Blazor.DropDowns.FilteringEventArgs();
+            
+         GridReflection.SetPropertyValue(filteringArgs, "Text", "ComplexText");
+        var customFilterQueryMethod = type.GetMethod(
+            "CustomFilterQuery",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customFilterQueryMethod);
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task?)customFilterQueryMethod!.Invoke(instance, new object[] { filteringArgs });
+            if (task != null)
+            {
+                await task.ConfigureAwait(true);
+            }
+        });
+        var isCustomFilterAppliedProp = fmType.GetProperty(
+            "IsCustomFilterApplied",
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(isCustomFilterAppliedProp);
+        Assert.True((bool)isCustomFilterAppliedProp!.GetValue(filterModule)!);
+        var filterOperatorProp = autoType.GetProperty("FilterOperator");
+        if (filterOperatorProp != null)
+        {
+            var filterOpValue = filterOperatorProp.GetValue(autoInstance);
+            Assert.NotNull(filterOpValue);
+        }
+        var autoCompleteDataBoundMethod = type.GetMethod(
+            "AutoCompleteDataBound",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoCompleteDataBoundMethod);
+        var dataBoundArgs = new Syncfusion.Blazor.DropDowns.DataBoundEventArgs();
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task?)autoCompleteDataBoundMethod!.Invoke(instance, new object[] { dataBoundArgs });
+            if (task != null)
+            {
+                await task.ConfigureAwait(true);
+            }
+        });
+        var isFilterQueryUpdatedProp = autoType.GetProperty("IsFilterQueryUpdated");
+        if (isFilterQueryUpdatedProp != null)
+        {
+            var isUpdated = (bool)isFilterQueryUpdatedProp.GetValue(autoInstance)!;
+            Assert.False(isUpdated);
+        }
+        var menuFilterValueProp = type.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        var menuVal = (string?)menuFilterValueProp!.GetValue(instance);
+        Assert.Equal("ComplexText", menuVal);
+    }
+}
+
+<SfFixture @ref="fixture44"
+           TestAsync="GridFilterMenu_CustomFilterValueMaintain_ComplexObject"
+           Description="Menu filter - CustomFilterValueMaintain() for complex nested object field (Address.City)">
+    <ComponentUnderTest>
+        <SfGrid TItem="ComplexOrder"
+                DataSource="GenerateComplexOrderData()"
+                AllowFiltering="true"
+                AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="Address.City" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture44 { get; set; }
+    public class ComplexOrder1
+    {
+        public int Id { get; set; }
+        public AddressInfo Address { get; set; } = new AddressInfo();
+    }
+    public class AddressInfo
+    {
+        public string City { get; set; } = string.Empty;
+    }
+    public List<ComplexOrder1> GenerateComplexOrderData()
+    {
+        return new List<ComplexOrder1>
+        {
+            new ComplexOrder1 { Id = 1, Address = new AddressInfo { City = "Initial" } },
+            new ComplexOrder1 { Id = 2, Address = new AddressInfo { City = "Other" } }
+        };
+    }
+    public async Task GridFilterMenu_CustomFilterValueMaintain_ComplexObject(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ComplexOrder1>>();
+        var grid = cut.Instance;
+        var icons = cut.FindAll(".e-filtermenudiv.e-icons.e-icon-filter");
+        Assert.True(icons.Count > 0);
+        icons[0].Click();
+        var renderer = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.FilterMenuRenderer<ComplexOrder1>>();
+        Assert.NotNull(renderer.Instance);
+        var instance = renderer.Instance;
+        var type = instance.GetType();
+        var menuFilterValueProp = type.GetProperty(
+            "menuFilterValue",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(menuFilterValueProp);
+        menuFilterValueProp!.SetValue(instance, "Chennai");
+        var autoProp = type.GetProperty(
+            "AutoComplete",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(autoProp);
+        var autoInstance = Activator.CreateInstance(autoProp!.PropertyType);
+        Assert.NotNull(autoInstance);
+        autoProp.SetValue(instance, autoInstance);
+        var method = type.GetMethod(
+            "CustomFilterValueMaintain",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(method);
+        await cut.InvokeAsync(async () =>
+        {
+            var task = (Task?)method!.Invoke(instance, Array.Empty<object>());
+            if (task != null)
+            {
+                await task.ConfigureAwait(true);
+            }
+        });
+        var customItemProp = type.GetProperty(
+            "CustomFilterItem",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(customItemProp);
+        var customItem = (ComplexOrder1?)customItemProp!.GetValue(instance);
+        Assert.NotNull(customItem);
+        Assert.NotNull(customItem!.Address);
+        Assert.Equal("Chennai", customItem.Address.City);
+    }
+}

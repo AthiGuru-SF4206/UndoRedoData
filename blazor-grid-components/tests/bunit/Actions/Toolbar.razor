@@ -1,0 +1,222 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+
+
+<SfFixture @ref="fixture" Test="ToolbarRendering" Description="Toolbar Feature Testig">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar=@Toolbaritems AllowSorting="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents TValue="Order" ExportComplete="ExcelExportHandler" OnActionBegin="ActionBeginHandler"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    public List<string> Toolbaritems = new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel", "Search","Print" };
+
+    async void ToolbarRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll("#" + cut.Instance.ID + "_toolbarItems").Count, "Toolbar rendering properly");
+        Assert.True(8 == cut.FindAll(".e-toolbar-item").Count(), "Context Menu items rendering properly");
+        Assert.False(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-overlay"), "Add Item Enabled");
+        Assert.False(cut.FindAll(".e-toolbar-item")[1].ClassList.Contains("e-overlay"), "Edit Item Enabled");
+        Assert.False(cut.FindAll(".e-toolbar-item")[2].ClassList.Contains("e-overlay"), "Delete Item Enabled");
+        Assert.True(cut.FindAll(".e-toolbar-item")[3].ClassList.Contains("e-overlay"), "Update Item Disabled");
+        Assert.True(cut.FindAll(".e-toolbar-item")[4].ClassList.Contains("e-overlay"), "Cancel Item Disabled");
+        Assert.False(cut.FindAll(".e-toolbar-item")[7].ClassList.Contains("e-overlay"), "Search Item Enabled");
+        Assert.False(cut.FindAll(".e-toolbar-item")[5].ClassList.Contains("e-overlay"), "Print Item Enabled");
+        cut.FindAll(".e-toolbar-item")[5].Click(new MouseEventArgs());
+        await cut.Instance.PrintAsync();
+
+        cut.FindAll(".e-row")[0].Children[1].DoubleClick(new MouseEventArgs());
+
+        Assert.False(cut.FindAll(".e-toolbar-item")[3].ClassList.Contains("e-overlay"), "Toolbar Update Enabled properly");
+        Assert.False(cut.FindAll(".e-toolbar-item")[4].ClassList.Contains("e-overlay"), "Toolbar Cancel Enabled properly");
+        Assert.True(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-overlay"), "Toolbar Add Disabled properly");
+        Assert.True(cut.FindAll(".e-toolbar-item")[2].ClassList.Contains("e-overlay"), "Toolbar Delete Disabled properly");
+        Assert.True(cut.FindAll(".e-row")[0].Children[0].FirstElementChild.ClassList.Contains("e-gridform"), "Cell Edit Form generated properly");
+
+        cut.FindAll(".e-row")[2].Children[1].Click(new MouseEventArgs());
+
+        Assert.True(cut.FindAll(".e-row")[0].Children[1].TextContent == "Testing", "Cell is saved properly");
+        Assert.True(cut.FindAll(".e-toolbar-item")[3].ClassList.Contains("e-overlay"), "Toolbar Update disabled properly");
+        Assert.True(cut.FindAll(".e-toolbar-item")[4].ClassList.Contains("e-overlay"), "Toolbar Cancel disabled properly");
+        Assert.False(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-overlay"), "Toolbar Add enabled properly");
+        Assert.False(cut.FindAll(".e-toolbar-item")[2].ClassList.Contains("e-overlay"), "Toolbar Delete enabled properly");
+        //await cut.Instance.EnableToolbarItems(new List<string>() { "Grid_Update", "Grid_Cancel" }, true);
+        //cut.WaitForState(() => cut.FindAll(".e-toolbar-item")[3].ClassList.Contains("e-overlay") == false, TimeSpan.FromSeconds(1000));
+        //Assert.False(cut.FindAll(".e-toolbar-item")[3].ClassList.Contains("e-overlay"), "Update Item Enabled");
+        //Assert.False(cut.FindAll(".e-toolbar-item")[4].ClassList.Contains("e-overlay"), "Cancel Item Enabled");
+        //await cut.Instance.EnableToolbarItems(new List<string>() { "Grid_Add" }, false);
+        //Assert.False(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-overlay"), "Add Item Disabled");
+        //Toolbaritems = new List<string>() { "ExcelExport", "CsvExport", "PdfExport", "Print" };
+        //Assert.True(4 == cut.FindAll(".e-toolbar-item").Count(), "Dynamic Item Changes");
+        //cut.Instance.EnableRtl = true;
+        //Assert.True(cut.FindAll("#" + cut.Instance.ID + "_toolbarItems")[0].ClassList.Contains("e-rtl"), "RTL Mode Check");
+        //cut.Instance.EnableRtl = false;
+        //Assert.False(cut.FindAll("#" + cut.Instance.ID + "_toolbarItems")[0].ClassList.Contains("e-rtl"), "RTL Mode Check");
+        //cut.FindAll(".e-toolbar-item").ElementAt(0).Click();
+        //Toolbaritems = new List<string>() { };
+        //Assert.True(0 == cut.FindAll(".e-toolbar-item").Count(), "No Toolbar Item");
+        //search item tab index and aria-label is not applied in blazor
+        //Assert.True(5 == cut.Find(".e-toolbar-left").Children.Count(), "CurrentViewData count is proper");
+        //Assert.True(0 == cut.Find(".e-toolbar-center").Children.Count(), "CurrentViewData count is proper");
+        //Assert.True(1 == cut.Find(".e-toolbar-right").Children.Count(), "CurrentViewData count is proper");
+    }
+
+    public void ActionBeginHandler(ActionEventArgs<Order> args)
+    {
+        if (args.RequestType.Equals(Syncfusion.Blazor.Grids.Action.Save))
+        {
+            args.Data.CustomerID = "Testing";               //save value in grid
+        }
+    }
+
+    public async void ToolbarClick(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        if (args.Item.Text == "Excel Export")
+        {
+            await cut.Instance.ExportToExcelAsync();
+        }
+    }
+
+    public void ExcelExportHandler(object args)
+    {
+        Assert.True("Success" == args.ToString(), "Excel Check");
+    }
+}
+
+<SfFixture @ref="fixture2" Test="ToolbarTemplateRendering" Description="Toolbar Template Testig">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowSorting="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <SfToolbar ID="customToolbar">
+                <ToolbarItems>
+                    <ToolbarItem Type="ItemType.Input">
+                        <Template>
+                            <SfDropDownList TValue="string" TItem="Select" DataSource=@LocalData Width="200">
+                                <DropDownListFieldSettings Text="text" Value="text"> </DropDownListFieldSettings>
+                                <DropDownListEvents TValue="string" TItem="Select" ValueChange="OnChange"> </DropDownListEvents>
+                            </SfDropDownList>
+                        </Template>
+                    </ToolbarItem>
+                </ToolbarItems>
+            </SfToolbar>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    public class Select
+    {
+        public string text { get; set; }
+    }
+    List<Select> LocalData = new List<Select>
+{
+            new Select() { text = "0"},
+            new Select() { text = "1"},
+            new Select() { text = "2"},
+            new Select() { text = "3"},
+            new Select() { text = "4"},
+            new Select() { text = "5"},
+            new Select() { text = "6"},
+            new Select() { text = "7"},
+            new Select() { text = "8"},
+            new Select() { text = "9"},
+    };
+
+    public async Task OnChange(Syncfusion.Blazor.DropDowns.ChangeEventArgs<string, Select> args)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(int.Parse(args.Value));
+    }
+
+    async void ToolbarTemplateRendering(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll("#" + "customToolbar").Count, "Toolbar Template rendering properly");
+        Assert.True(1 == cut.FindAll(".e-dropdownlist").Count, "Dropdown rendering properly");
+        var dropdown = cut.FindComponent<SfDropDownList<string, Select>>();
+        dropdown.SetParametersAndRender(p => p.Add(pd => pd.Value, "5"));
+    }
+}
+
+
+<SfFixture @ref="fixture3" Test="CustomToolbarRendering" Description="Custom Toolbar Testing">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar="CustomToolbaritems" AllowSorting="true" AllowExcelExport="true" AllowPdfExport="true" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridEvents OnToolbarClick="ToolbarClickHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Ship Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+<style>
+    .e-expand::before {
+        content: '\e82e';
+    }
+
+    .e-collapse::before {
+        content: '\e834';
+    }
+</style>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private List<ItemModel> CustomToolbaritems = new List<ItemModel>() { new ItemModel() { Text = "Expand all", TooltipText = "Expand all", PrefixIcon = "e-expand" }, new ItemModel() { Text = "Collapse all", TooltipText = "Collapse all", PrefixIcon = "e-collapse", Align = (Syncfusion.Blazor.Navigations.ItemAlign.Right) } };
+
+    async void CustomToolbarRendering(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll("#" + cut.Instance.ID + "_toolbarItems").Count, "Toolbar rendering properly");
+        Assert.True(2 == cut.FindAll(".e-toolbar-item").Count(), "custom toolbar items rendering properly");
+        Assert.False(cut.FindAll(".e-toolbar-item")[0].ClassList.Contains("e-overlay"), "Expand Item Enabled");
+        Assert.False(cut.FindAll(".e-toolbar-item")[1].ClassList.Contains("e-overlay"), "Collpase Item Enabled");
+        Assert.True(cut.FindAll(".e-btn-icon")[0].ClassList.Contains("e-expand"), "Expand Item Icon");
+        Assert.True(cut.FindAll(".e-btn-icon")[1].ClassList.Contains("e-collapse"), "Collpase Item Icon");
+        Assert.True(cut.FindAll(".e-tbar-btn-text")[0].InnerHtml.Equals(" Expand all "), "custom toolbar text applied properly");
+        Assert.True(cut.FindAll(".e-tbar-btn-text")[1].InnerHtml.Equals(" Collapse all "), "custom toolbar text applied properly");
+        cut.FindAll(".e-btn").ElementAt(0).Click();
+    }
+
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        if (args.Item.Text == "Expand all")
+        {
+            await cut.Instance.ExpandAllGroupAsync();
+        }
+        if (args.Item.Text == "Collapse all")
+        {
+            await cut.Instance.CollapseAllGroupAsync();
+        }
+    }
+}

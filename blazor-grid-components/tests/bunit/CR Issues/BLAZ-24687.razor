@@ -1,0 +1,86 @@
+﻿@inherits GridTestBase
+@using System.Collections.ObjectModel;
+@using System.ComponentModel;
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Record is not updated properly when by changing the property with ObservableCollection">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@OnInitialized()" AllowPaging="true">
+      <GridSelectionSettings Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell"
+                               Type="Syncfusion.Blazor.Grids.SelectionType.Single"                               
+                               AllowDragSelection="false"
+                               EnableToggle="false"
+                               />
+    <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true"></GridEditSettings>
+    <GridColumns>
+        <GridColumn Field=@nameof(DataOrder.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="@TextAlign.Center" HeaderTextAlign="@TextAlign.Center" Width="140"></GridColumn>
+        <GridColumn Field=@nameof(DataOrder.CustomerName) HeaderText="Customer Name" Width="150"></GridColumn>
+        <GridColumn Field=@nameof(DataOrder.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" Width="140" TextAlign="@TextAlign.Right" HeaderTextAlign="@TextAlign.Right"></GridColumn>
+        <GridColumn Field=@nameof(DataOrder.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" TextAlign="TextAlign.Right" Type="ColumnType.Date" Width="160"></GridColumn>
+    </GridColumns>
+</SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code{
+    SfFixture fixture { get; set; }
+    SfGrid<DataOrder> Grid;
+    private ObservableCollection<DataOrder> observableData { get; set; }
+    private int uniqueId;
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<DataOrder>>();
+        UpdateRecord();
+        var updateName = observableData[0].CustomerName; 
+        Assert.True(updateName == "Record Updated");
+    }
+
+    protected ObservableCollection<DataOrder> OnInitialized()
+    {
+        return observableData = new ObservableCollection<DataOrder>(Enumerable.Range(1, 5).Select(x => new DataOrder()
+        {
+            OrderID = 10000 + x,
+            CustomerName = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }));
+    }
+
+    private void UpdateRecord()
+    {
+        if (observableData.Count() != 0)
+        {
+            var name = observableData.First();
+            name.CustomerName = "Record Updated";
+        }
+    }
+
+    public class DataOrder : INotifyPropertyChanged
+    {
+        public int OrderID { get; set; }
+        private string customerID { get; set; }
+        public string CustomerName
+        {
+            get { return customerID; }
+            set
+            {
+                this.customerID = value;
+                NotifyPropertyChanged("CustomerID");
+            }
+        }
+        public DateTime OrderDate { get; set; }
+        public double Freight { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void NotifyPropertyChanged(string propertyName)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
+}
+

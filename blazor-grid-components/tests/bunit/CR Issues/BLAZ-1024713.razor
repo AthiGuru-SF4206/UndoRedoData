@@ -1,0 +1,54 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Dynamic Data with Grouping and GroupFooterTemplate">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@_items" AllowGrouping="true" AllowSorting="true">
+            <GridGroupSettings Columns="@(new[] { nameof(SaleItem.Category) })"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(SaleItem.Category)" HeaderText="Category" Width="160"></GridColumn>
+                <GridColumn Field="@nameof(SaleItem.Amount)" HeaderText="Amount" Format="C2" Width="150" TextAlign="TextAlign.Right"></GridColumn>
+            </GridColumns>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field="@nameof(SaleItem.Amount)" Type="AggregateType.Sum" Format="C2">
+                            <FooterTemplate>
+                                @{
+                                    var agg = context as AggregateTemplateContext;
+                                }
+                                <b>Grand total: @agg?.Sum</b>
+                            </FooterTemplate>
+                            <GroupFooterTemplate>
+                                @{
+                                    var agg = context as AggregateTemplateContext;
+                                }
+                                <b>Subtotal: @agg?.Sum</b>
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<SaleItem> Grid;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<SaleItem>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+    }
+    private record SaleItem(string Category, decimal Amount);
+
+    private readonly List<SaleItem> _items =
+    [
+        new("Stocks",  5_000.00m),
+        new("Stocks", -1_200.00m),
+        new("Stocks",  3_400.00m),
+        new("Bonds",   2_300.00m),
+        new("Bonds",     800.00m),
+    ];
+}

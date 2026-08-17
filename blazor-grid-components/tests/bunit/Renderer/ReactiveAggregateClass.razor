@@ -1,0 +1,464 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Data
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="EnableAdaptive UI with Aggregates">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateProductData()" AllowFiltering="true" AllowGrouping="true" @ref="DefaultGrid" AllowPaging="true" EnableAdaptiveUI="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridGroupSettings Columns=@Units></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(Product.Discontinued) Type="AggregateType.TrueCount">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Truecount: @aggregate.TrueCount</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Max">
+                            <GroupCaptionTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Maximum: @aggregate.Max</p>
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ID) HeaderText="ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.ProductName) HeaderText="ProductName" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.UnitsInStock) HeaderText="Units In Stock" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Product.Discontinued) HeaderText="Discontinued" TextAlign="TextAlign.Right" DisplayAsCheckBox="true" Type="ColumnType.Boolean"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Product> DefaultGrid;
+    public List<Product> Products { get; set; }
+    private string[] Units = (new string[] { "QuantityPerUnit" });
+    public List<Product> GenerateProductData()
+    {
+        return Products = Enumerable.Range(1, 10).Select(x => new Product
+        {
+            ID = 1000+x,
+            ProductName = (new string[] { "Chai", "Chang", "Aniseed Syrup", "Chef Anton's Cajun Seasoning", "Chef Anton's Gumbo Mix" })[new Random().Next(5)],
+            QuantityPerUnit = (new string[] { "10 boxes x 20 bags", "24 - 12 oz bottles", "12 - 550 ml bottles", "48 - 6 oz jars", "36 boxes" })[new Random().Next(5)],
+            UnitsInStock = x,
+            Discontinued = (new bool[] { true, false })[new Random().Next(2)]
+        }).ToList();
+    }
+    bool preventCurrentAction = false;
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        cut.WaitForState(() => cut.FindAll(".e-row").Count() > 0);
+        var cell = cut.FindAll(".e-row .e-rowcell")[3];
+        await cell.DoubleClickAsync(new MouseEventArgs());
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform").Count() > 0);
+        var inputField = cut.FindAll(".e-row .e-rowcell")[3].QuerySelector(".e-input");
+        await cut.InvokeAsync(() => inputField.Change("100"));
+        inputField.KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        Assert.True(cut.FindAll(".e-updatedtd").Count() > 0);
+
+        await cut.Instance.AddRecordAsync();
+        Product addRecord = new Product()
+        {
+            ID = 5000,
+            ProductName = "ABCDE",
+            QuantityPerUnit = "100",
+            UnitsInStock = 50,
+            Discontinued = false
+        };
+        await DefaultGrid.AddRecordAsync(addRecord);
+        await DefaultGrid.SelectRowAsync(4);
+        await DefaultGrid.DeleteRecordAsync();
+        // Product updatedData = new Product() { ID = 1009, ProductName = "ANTON", QuantityPerUnit = "100", UnitsInStock = 20, Discontinued = true };
+        // var batchChanges = new BatchChanges<Product>()
+        // {
+        //     ChangedRecords = new List<Product>() { updatedData }
+        // };
+        // // await DefaultGrid.UpdateBatchRowAsync(updatedData);
+        // await DefaultGrid.ApplyBatchChangesAsync(batchChanges);
+        
+        
+        
+        await DefaultGrid.EndEditAsync();
+        await DefaultGrid.FilterByColumnAsync("ProductName", "equal", "Chai");
+    }
+}
+
+
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="EnableAdaptive UI with Footer Aggregate to trigger UpdateEmptyList method">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateProductData2()" AllowGrouping="true" @ref="DefaultGrid2" AllowPaging="true" EnableAdaptiveUI="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridGroupSettings Columns=@Units2></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ID) HeaderText="ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.ProductName) HeaderText="Product Name" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.UnitsInStock) HeaderText="Units In Stock" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Product.Discontinued) HeaderText="Discontinued" TextAlign="TextAlign.Right" DisplayAsCheckBox="true" Type="ColumnType.Boolean"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Product> DefaultGrid2;
+    public List<Product> Products2 { get; set; }
+    private string[] Units2 = (new string[] { "QuantityPerUnit" });
+    public List<Product> GenerateProductData2()
+    {
+        return new List<Product>();
+    }
+    bool preventCurrentAction2= false;
+    public async void GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        await cut.Instance.AddRecordAsync();
+    }
+}
+
+
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="EnableAdaptive UI with Aggregates with custom adaptor">
+    <ComponentUnderTest>
+        <SfGrid TValue="Product" DataSource="@GenerateProductData3()" AllowFiltering="true" AllowGrouping="true" @ref="DefaultGrid3" AllowPaging="true" EnableAdaptiveUI="true">
+            <SfDataManager AdaptorInstance="@typeof(CustomAdaptor)" Adaptor="Adaptors.CustomAdaptor"></SfDataManager>
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridGroupSettings Columns=@Units3></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ID) HeaderText="ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.ProductName) HeaderText="ProductName" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.UnitsInStock) HeaderText="Units In Stock" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Product.Discontinued) HeaderText="Discontinued" TextAlign="TextAlign.Right" DisplayAsCheckBox="true" Type="ColumnType.Boolean"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Product> DefaultGrid3;
+    public static List<Product> Products3 { get; set; }
+    private string[] Units3 = (new string[] { "QuantityPerUnit" });
+    bool preventCurrentAction3 = false;
+    public List<Product> GenerateProductData3()
+    {
+        return Products3 = Enumerable.Range(1, 10).Select(x => new Product
+        {
+            ID = 1000 + x,
+            ProductName = (new string[] { "Chai", "Chang", "Aniseed Syrup", "Chef Anton's Cajun Seasoning", "Chef Anton's Gumbo Mix" })[new Random().Next(5)],
+            QuantityPerUnit = (new string[] { "10 boxes x 20 bags", "24 - 12 oz bottles", "12 - 550 ml bottles", "48 - 6 oz jars", "36 boxes" })[new Random().Next(5)],
+            UnitsInStock = x,
+            Discontinued = (new bool[] { true, false })[new Random().Next(2)]
+        }).ToList();
+    }
+    public async void GridBasicRendering3(Fixture fixture)
+    {
+        var cut3 = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        await cut3.Instance.AddRecordAsync();
+        Assert.True(cut3.FindAll(".e-insertedrow").Count == 1);
+        Product addRecord = new Product()
+        {
+            ID = 5000,
+            ProductName = "ABCDE",
+            QuantityPerUnit = "100",
+            UnitsInStock = 50,
+            Discontinued = false
+        };
+        await DefaultGrid3.FilterByColumnAsync("ProductName", "equal", "Chai");
+        await DefaultGrid3.AddRecordAsync(addRecord);
+        await DefaultGrid3.SelectRowAsync(4);
+        await DefaultGrid3.DeleteRecordAsync();
+        await DefaultGrid3.EndEditAsync();
+        await DefaultGrid3.ClearFilteringAsync();
+    }
+
+    public class CustomAdaptor : DataAdaptor
+    {
+        // Performs the data read operation.
+        public override object Read(DataManagerRequest dm, string key = null)
+        {
+            // Retrieve the data source.
+            IEnumerable<Product> DataSource = Products3;
+
+            // Perform searching on the data source if search criteria are provided.
+            if (dm.Search != null && dm.Search.Count > 0)
+            {
+                DataSource = DataOperations.PerformSearching(DataSource, dm.Search);
+            }
+
+            // Perform sorting on the data source if sorting criteria are provided.
+            if (dm.Sorted != null && dm.Sorted.Count > 0)
+            {
+                DataSource = DataOperations.PerformSorting(DataSource, dm.Sorted);
+            }
+
+            // Perform filtering on the data source if filter criteria are provided.
+            if (dm.Where != null && dm.Where.Count > 0)
+            {
+                DataSource = DataOperations.PerformFiltering(DataSource, dm.Where, dm.Where[0].Operator);
+            }
+
+            // Count the total number of records.
+            int count = DataSource.Cast<Product>().Count();
+
+            // Perform paging by skipping the specified number of records.
+            if (dm.Skip != 0)
+            {
+                DataSource = DataOperations.PerformSkip(DataSource, dm.Skip);
+            }
+
+            // Take the specified number of records for paging.
+            if (dm.Take != 0)
+            {
+                DataSource = DataOperations.PerformTake(DataSource, dm.Take);
+            }
+
+            // Return the result with or without counts based on the request.
+            return dm.RequiresCounts ? new DataResult() { Result = DataSource, Count = count } : (object)DataSource;
+        }
+
+        // Performs the insert operation.
+        public override object Insert(DataManager dm, object value, string key)
+        {
+            Products3.Insert(0, value as Product);
+            return value;
+        }
+
+        // Performs the remove operation.
+        public override object Remove(DataManager dm, object value, string keyField, string key)
+        {
+            Products3.Remove(Products3.Where(or => or.ID == int.Parse(value.ToString())).FirstOrDefault());
+            return value;
+        }
+
+        // Performs the update operation.
+        public override object Update(DataManager dm, object value, string keyField, string key)
+        {
+            var data = Products3.Where(or => or.ID == (value as Product).ID).FirstOrDefault();
+            if (data != null)
+            {
+                data.ID = (value as Product).ID;
+                data.ProductName = (value as Product).ProductName;
+                data.QuantityPerUnit = (value as Product).QuantityPerUnit;
+                data.UnitsInStock = (value as Product).UnitsInStock;
+                data.Discontinued = (value as Product).Discontinued;
+            }
+            return value;
+        }
+
+        // Performs the batch update operation.
+        public override object BatchUpdate(DataManager dm, object Changed, object Added, object Deleted, string KeyField, string Key, int? dropIndex)
+        {
+            // Update the changed records in the data source.
+            if (Changed != null)
+            {
+                foreach (var record in (IEnumerable<Product>)Changed)
+                {
+                    Product val = Products3.Where(or => or.ID == record.ID).FirstOrDefault();
+                    val.ProductName = record.ProductName;
+                    val.QuantityPerUnit = record.QuantityPerUnit;
+                    val.UnitsInStock = record.UnitsInStock;
+                    val.Discontinued = record.Discontinued;
+                }
+            }
+
+            // Add the new records to the data source.
+            if (Added != null)
+            {
+                foreach (var record in (IEnumerable<Product>)Added)
+                {
+                    Products3.Add(record);
+                }
+            }
+
+            // Remove the deleted records from the data source.
+            if (Deleted != null)
+            {
+                foreach (var record in (IEnumerable<Product>)Deleted)
+                {
+                    Products3.Remove(Products3.Where(or => or.ID == record.ID).FirstOrDefault());
+                }
+            }
+
+            // Return the updated data source.
+            return Products3;
+        }
+    }
+
+}
+
+
+
+@code{
+    public class Product
+    {
+        public int ID { get; set; }
+        public string ProductName { get; set; }
+        public string QuantityPerUnit { get; set; }
+        public int UnitsInStock { get; set; }
+        public bool Discontinued { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture71" Test="ReactiveAggregateGroupingFooter71" Description="ReactiveAggregate grouping triggers footer refresh">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateProductData71()" AllowGrouping="true" AllowFiltering="true" AllowPaging="true" EnableAdaptiveUI="true">
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field="@nameof(Product.UnitsInStock)" Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <span class="footer-agg">@aggregate.Sum</span>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field="@nameof(Product.ProductName)"></GridColumn>
+                <GridColumn Field="@nameof(Product.UnitsInStock)"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture71 { get; set; }
+
+    List<Product> GenerateProductData71()
+    {
+        return new List<Product>
+        {
+            new Product { ProductName = "Chai", UnitsInStock = 10 },
+            new Product { ProductName = "Chai", UnitsInStock = 20 },
+            new Product { ProductName = "Chang", UnitsInStock = 30 }
+        };
+    }
+
+    void ReactiveAggregateGroupingFooter71(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        cut.Instance.GroupColumnAsync(nameof(Product.ProductName)).Wait();
+        cut.Instance.FilterByColumnAsync(nameof(Product.ProductName), "equal", "Chai").Wait();
+        cut.WaitForState(() => cut.FindAll(".footer-agg").Count == 1, TimeSpan.FromSeconds(2));
+        Assert.True(cut.Find(".footer-agg").InnerHtml.Contains("30"));
+    }
+}
+
+<SfFixture @ref="fixture31" Test="ReactiveAggregateFiltering31" Description="ReactiveAggregate coverage via filtering with footer aggregate">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateProductData31()" AllowFiltering="true" EnableAdaptiveUI="true">
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Sum">
+                            <FooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <span class="agg-value">@aggregate.Sum</span>
+                                }
+                            </FooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ID) IsPrimaryKey="true"></GridColumn>
+                <GridColumn Field=@nameof(Product.ProductName)></GridColumn>
+                <GridColumn Field=@nameof(Product.UnitsInStock)></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+
+    SfFixture fixture31 { get; set; }
+
+    List<Product> GenerateProductData31()
+    {
+        return new List<Product>
+        {
+            new Product { ID = 1, ProductName = "Chai", UnitsInStock = 10 },
+            new Product { ID = 2, ProductName = "Chang", UnitsInStock = 20 },
+            new Product { ID = 3, ProductName = "Chai", UnitsInStock = 30 }
+        };
+    }
+
+    void ReactiveAggregateFiltering31(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        cut.Instance.FilterByColumnAsync(nameof(Product.ProductName), "equal", "Chai").Wait();
+        cut.WaitForState(() => cut.FindAll(".agg-value").Count == 1);
+        Assert.True(cut.Find(".agg-value").InnerHtml.Contains("40"));
+    }
+}

@@ -1,0 +1,58 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridSelectTest"  Description="args.cancel does not fine properly">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRecords()" AllowSelection="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridSelectionSettings Mode="SelectionMode.Both"></GridSelectionSettings>
+            <GridEvents RowSelecting="RowSelecting" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+
+    public async Task GridSelectTest(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+        // Select the first row
+
+        await Grid.SelectRowAsync(0);
+        Assert.True(Grid.SelectedRecords.Count == 0);
+
+    }
+    public async void RowSelecting(RowSelectingEventArgs<Order> args)
+    {
+        args.Cancel = true;
+    }
+
+    public List<Order> GenerateRecords()
+    {
+        return new List<Order>
+        {
+            new Order() { OrderID = 1, CustomerID = "ALFKI", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 },
+            new Order() { OrderID = 2, CustomerID = "ANANTR", OrderDate = new DateTime(1994, 04, 04), Freight = 26.8 },
+            new Order() { OrderID = 3, CustomerID = "BLONP", OrderDate = new DateTime(1993, 03, 10), Freight = 27.9 },
+            new Order() { OrderID = 4, CustomerID = "ANTON", OrderDate = new DateTime(1992, 02, 14), Freight = 28.6 },
+            new Order() { OrderID = 5, CustomerID = "BOLID", OrderDate = new DateTime(1991, 01, 18), Freight = 29.1 },
+        };
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

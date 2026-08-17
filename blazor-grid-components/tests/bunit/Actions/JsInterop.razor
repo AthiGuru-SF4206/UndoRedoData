@@ -1,0 +1,457 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Infinite scrolling normal grid">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid1" @ref="Grid1" DataSource="GetVirtualData()" EnableInfiniteScrolling=true Height="400">
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> Grid1;
+    public List<Order> GridData1 { get; set; }
+
+    public void GridBasicRendering1(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "Infinite scrolling enabled");
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Rows.Count == 60);
+        string infiniteArgs = "{\"requestType\":\"InfiniteScrolling\"}";
+        cut.Instance._jsAdaptor.LoadInfiniteData(infiniteArgs, isBottom: true).GetAwaiter();
+        Assert.True(cut.Instance.Rows.Count == 80);
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Generate lazy load child items for the infinite scroll normal mode">
+    <ComponentUnderTest>
+        <SfGrid ID="Grid2" @ref="Grid2" DataSource="GenerateRows2()" Height="400" RowHeight="38" EnableInfiniteScrolling=true AllowGrouping=true>
+            <GridPageSettings PageSize="20"></GridPageSettings>
+            <GridGroupSettings Columns="@Initial5" EnableLazyLoading=true></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(OrderData2.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(OrderData2.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<OrderData2> Grid2;
+    public List<OrderData2> GridData2 { get; set; }
+    private string[] Initial5 = (new string[] { "CustomerID" });
+    public void GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<OrderData2>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.Height != "auto", "Grid height set successfully");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grouped columns available");
+        Assert.True(cut.Instance.GroupSettings.EnableLazyLoading, "Lazy load grouping enabled");
+        Assert.True(cut.Instance.RowHeight > 0, "Row height available");
+        Assert.True(cut.Instance.EnableInfiniteScrolling, "Infinite scrolling enabled");
+        ActionArgs args = new ActionArgs();
+        args.RequestType = "InfiniteScrolling";
+        cut.Instance.GroupModule.ExpandCollapse(cut.Instance.Rows[0]).GetAwaiter();
+        var middleuid = cut.FindAll(".e-lazyload-middle-down")[0].GetAttribute("data-uid");
+        var middleIndex = int.Parse(cut.FindAll(".e-lazyload-middle-down")[0].GetAttribute("aria-rowindex"));
+        string infiniteArgs = "{\"requestType\":\"InfiniteScrolling\"}";
+        cut.InvokeAsync(() => cut.Instance._jsAdaptor.LoadInfiniteData(infiniteArgs, isBottom: true, isLazyLoadChild:true, middleRowUid: middleuid, middleRowIndex:middleIndex));
+        cut.WaitForState(() => cut.Instance.Rows.Count == 59, TimeSpan.FromMilliseconds(2000));
+    }
+
+    public List<OrderData2> GenerateRows2()
+    {
+        List<OrderData2> data = new List<OrderData2>();
+        int count = 1000;
+
+        for (int i = 0; i < 2000; i++)
+        {
+            data.Add(new OrderData2() { OrderID = count + 1, CustomerID = "Alfki", OrderDate = new DateTime(1995, 05, 15), Freight = 25.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 2, CustomerID = "Anantr", OrderDate = new DateTime(1994, 04, 04), Freight = 26.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 3, CustomerID = "Blonp", OrderDate = new DateTime(1993, 03, 10), Freight = 27.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 4, CustomerID = "Anton", OrderDate = new DateTime(1992, 02, 14), Freight = 28.7 * 2 });
+            data.Add(new OrderData2() { OrderID = count + 5, CustomerID = "Bolid", OrderDate = new DateTime(1991, 01, 18), Freight = 29.7 * 2 });
+            count += 5;
+        }
+        GridData2 = data;
+        return data;
+    }
+
+    public class OrderData2
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Row virtualization loading new rows in grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> Grid3;
+
+    void GridBasicRendering3(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page records rendered properly");
+        Assert.True(cut.Instance.Rows[0].Index == 0, "Before virtual refresh");
+        var virtualArgs = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":23,\"virtualEndIndex\":63,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs, scrollTop:874).GetAwaiter();
+        Assert.True(cut.Instance.Rows[0].Index == 23, "After virtual refresh");
+    }
+}
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Row virtualization with grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid4" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings Columns="InitialGroup"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture4 { get; set; }
+    private SfGrid<Order> Grid4;
+    private string[] InitialGroup = (new string[] { "OrderID" });
+    void GridBasicRendering4(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page records rendered properly");
+        var beforeVirtualRefreshUid = cut.Instance.Rows[0].Uid;
+        var virtualArgs = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":23,\"virtualEndIndex\":63,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs, scrollTop: 874).GetAwaiter();
+        var afterVirtualRefrshUid = cut.Instance.Rows[0].Uid;
+        Assert.True(beforeVirtualRefreshUid != afterVirtualRefrshUid, "New rows loaded");
+    }
+}
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Row virtualization with lazy load grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid5" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" AllowGrouping=true Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Cancel", "Update" })">
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridGroupSettings EnableLazyLoading=true Columns="Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture5 { get; set; }
+    private SfGrid<Order> Grid5;
+    private string[] Initial = (new string[] { "CustomerID", "OrderID"});
+    void GridBasicRendering5(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.EnableVirtualization);
+        Assert.True(cut.Instance.PageSettings.PageSize > 0);
+        Assert.True(cut.Instance.RowHeight > 0);
+        Assert.True(cut.Instance.Rows.Count == cut.Instance.PageSettings.PageSize, "Grid one page records rendered properly");
+        cut.Instance.GroupModule.ExpandCollapse(cut.Instance.Rows[0]).GetAwaiter();
+        var beforeVirtualRefreshUid = cut.Instance.Rows[0].Uid;
+        var virtualArgs = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":23,\"virtualEndIndex\":63,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs, scrollTop: 874).GetAwaiter();
+        var afterVirtualRefrshUid = cut.Instance.Rows[0].Uid;
+        Assert.True(beforeVirtualRefreshUid != afterVirtualRefrshUid, "New rows loaded");
+
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        var virtualArgs1 = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":0,\"virtualEndIndex\":40,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs1, scrollTop: 0).GetAwaiter();
+
+        cut.FindAll(".e-toolbar-item")[3].Click();
+        var virtualArgs2 = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":23,\"virtualEndIndex\":63,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs2, scrollTop: 874).GetAwaiter();
+
+        cut.FindAll(".e-toolbar-item")[0].Click();
+        cut.Instance.EditSettings.NewRowPosition = NewRowPosition.Bottom;
+        var virtualArgs3 = "{\"requestType\":\"virtualscroll\",\"nextRowToNavigate\":0,\"virtualStartIndex\":0,\"virtualEndIndex\":40,\"axis\":\"Y\",\"RHeight\":38}";
+        cut.Instance._jsAdaptor.VirtualRefresh(virtualArgs3, scrollTop: 0).GetAwaiter();     
+    }
+}
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Disable show add new row form">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid6" DataSource="GetAllRecords()" Height="400" Width="400" AllowPaging=true AllowRowDragAndDrop=true>
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal" ShowAddNewRow=true></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture6 { get; set; }
+    private SfGrid<Order> Grid6;
+
+    void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.EditSettings.ShowAddNewRow, "Add new row form enabled");
+        Assert.True(cut.Instance.AllowRowDragAndDrop, "Row drag and drop enabled");
+        var requestType = "RowDragStart";
+        cut.Instance._jsAdaptor.DisableShowAddForm(requestType, true).GetAwaiter();
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="GroupColumn Action">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid9" DataSource="GetAllRecords()" Height="400" Width="400" AllowPaging=true AllowGrouping=true>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> Grid9;
+
+    void GridBasicRendering9(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        cut.Instance._jsAdaptor.GroupColumn("CustomerID", "Group").GetAwaiter();
+        Assert.True(cut.Instance.GroupSettings.Columns[0] == "CustomerID", "Grouped columns available");
+        cut.Instance._jsAdaptor.GroupColumn("CustomerID", "UnGroup").GetAwaiter();
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() == 0 , "Grouped columns removed");
+    }
+}
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="lazy load grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid7" DataSource="GetVirtualData()" Height="400" Width="400" EnableVirtualization="true" RowHeight="38" AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings EnableLazyLoading=true Columns="Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> Grid7;
+
+    void GridBasicRendering7(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-recordpluscollapse")[0].Click();
+        cut.FindAll(".e-recordplusexpand")[0].Click();
+
+        
+    }
+}
+
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="lazy load without Virtualisatoin">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid8" DataSource="GetVirtualData()" Height="400" AllowPaging=true Width="400" RowHeight="38" AllowGrouping=true>
+            <GridPageSettings PageSize="40"></GridPageSettings>
+            <GridGroupSettings EnableLazyLoading=true Columns="Initial"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> Grid8;
+
+    void GridBasicRendering8(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-recordpluscollapse")[0].Click();
+        cut.FindAll(".e-recordplusexpand")[0].Click();
+    }
+}
+
+@{
+    var Initials = (new string[] { "CustomerID" });
+}
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="Prevent Extra Frozen Cell Rendering with Hidden Frozen Column and Grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid10" DataSource="GetAllRecords()" Width="600" AllowResizing="true" AllowRowDragAndDrop=true AllowGrouping="true">
+            <GridGroupSettings Columns="Initials"></GridGroupSettings>
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Visible="false" IsFrozen="true" />
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID" IsFrozen="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> Grid10;
+
+    void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture10.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(cut.Instance.AllowRowDragAndDrop, "Row drag and drop enabled");
+        Assert.True(cut.Instance.AllowResizing, "Column resizing enabled");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grid has grouped columns");
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        
+        var frozenColumns = cut.Instance.Columns.Where(col => col.IsFrozen).ToList();
+        Assert.True(frozenColumns.Count > 0, "Grid has frozen columns");
+        
+        var initialDisableState = cut.Instance.GroupModule.DisableExtraFrozenTd;
+        
+        cut.Instance._jsAdaptor.PreventExtraFrozenCellRendering();
+        
+        Assert.True(cut.Instance.GroupModule.DisableExtraFrozenTd, "DisableExtraFrozenTd flag is set to true");
+        Assert.True(cut.Instance.GroupModule.DisableExtraFrozenTd != initialDisableState || initialDisableState == true,
+            "DisableExtraFrozenTd state changed or was already true");
+
+        var resizableColumn = cut.Instance.Columns.FirstOrDefault(col => col.Field == nameof(Order.OrderID));
+        var columnWidthArgs = "{\"requestType\":\"columnWidthChanged\",\"columnUid\":\"" + resizableColumn.Uid + "\",\"width\":\"150\"}";
+        cut.Instance._jsAdaptor.ColumnWidthChanged(columnWidthArgs, isResizing: false);
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid maintains its data after PreventExtraFrozenCellRendering");
+    }
+}
+
+
+<SfFixture @ref="Fixture11" Test="GridBasicRendering11" Description="ColumnWidthChanger coverage">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid11" DataSource="GetAllRecords()" Width="600" AllowResizing="true" AllowRowDragAndDrop=true AllowGrouping="true" EnablePersistence="true" FrozenColumns="1">
+            <GridGroupSettings Columns="Initials"></GridGroupSettings>
+            <GridEvents TValue="Order" OnResizeStart="OnResizeStart" ResizeStopped="ResizeStopped"></GridEvents>
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Visible="false" IsFrozen="true" />
+                <GridColumn Field="@nameof(Order.OrderID)" Width="110" HeaderText="Order ID" IsFrozen="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="120" HeaderText="Customer ID" IsFrozen="true"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture Fixture11 { get; set; }
+    private SfGrid<Order> Grid11;
+    bool resizeStoppedCancel;
+
+    void GridBasicRendering11(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(cut.Instance.AllowRowDragAndDrop, "Row drag and drop enabled");
+        Assert.True(cut.Instance.AllowResizing, "Column resizing enabled");
+        Assert.True(cut.Instance.AllowGrouping, "Grouping enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Count() > 0, "Grid has grouped columns");
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+
+        var frozenColumns = cut.Instance.Columns.Where(col => col.IsFrozen).ToList();
+        Assert.True(frozenColumns.Count > 0, "Grid has frozen columns");
+
+        var initialDisableState = cut.Instance.GroupModule.DisableExtraFrozenTd;
+
+        cut.Instance._jsAdaptor.PreventExtraFrozenCellRendering();
+
+        Assert.True(cut.Instance.GroupModule.DisableExtraFrozenTd, "DisableExtraFrozenTd flag is set to true");
+        var resizableColumn = cut.Instance.Columns.FirstOrDefault(col => col.Field == nameof(Order.OrderID));
+        var columnWidthArgsWithAllowStopEvent = "{\"requestType\":\"columnResizeStopped\","
+            + "\"columnUid\":\"" + resizableColumn.Uid + "\","
+            + "\"width\":\"150\","
+            + "\"allowStopEvent\":true,"
+            + "\"tableWidth\":\"600\","
+            + "\"leftFrozenTableWidth\":\"200\","
+            + "\"rightFrozenTableWidth\":\"100\""
+        + "}";
+        //cut.Instance._jsAdaptor.ColumnWidthChanged(columnWidthArgsWithAllowStopEvent, isResizing: false);
+        cut.InvokeAsync(() => cut.Instance._jsAdaptor.ColumnWidthChanged(columnWidthArgsWithAllowStopEvent, isResizing: false));
+        resizeStoppedCancel = true;
+        //cut.Instance._jsAdaptor.ColumnWidthChanged(columnWidthArgsWithAllowStopEvent, isResizing: false);
+        cut.InvokeAsync(() => cut.Instance._jsAdaptor.ColumnWidthChanged(columnWidthArgsWithAllowStopEvent, isResizing: false));
+
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid maintains its data after PreventExtraFrozenCellRendering");
+    }
+
+    public void OnResizeStart(ResizeArgs args)
+    {
+        
+    }
+    public void ResizeStopped(ResizeArgs args)
+    {   
+        args.Cancel = resizeStoppedCancel;
+        Assert.True(args.Column.Field != null, "Check Field not null");
+    }
+}
+ 
+ 
+

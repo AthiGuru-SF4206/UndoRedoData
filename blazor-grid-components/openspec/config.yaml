@@ -1,0 +1,981 @@
+schema: spec-driven
+version: 2.0
+component: blazor-grid
+mode: autonomous
+
+# ============================================================================
+# SCHEMA ROUTING
+# spec-driven  → feature implementation  (/opsx:propose → /opsx:apply)
+# bug-schema   → bug fixing              (/opsx:generate <artifact-id>)
+# ============================================================================
+schemas:
+  spec-driven:
+    description: "Feature implementation workflow"
+    entry_command: "/opsx:propose <change-name>"
+    prompt: ".github/prompts/opsx-propose.prompt.md"
+    apply_command: "/opsx:apply <change-name>"
+    archive_command: "/opsx:archive <change-name>"
+
+  bug-schema:
+    description: "Bug-fix workflow — TDD-driven, human-gated, 10-stage"
+    schema_file: "bug-schema.yaml"
+    entry_command: "/opsx:generate bug-report <change-name>"
+    prompt: ".github/prompts/opsx-generate.prompt.md"
+    apply_command: "/opsx:apply <change-name>"
+    archive_command: "/opsx:archive <change-name>"
+    templates_dir: "openspec/templates/"
+    stages:
+      - { id: bug-report,         stage: 1,  prompt: ".github/prompts/opsx-generate-bug-report.prompt.md" }
+      - { id: root-cause,         stage: 2,  prompt: ".github/prompts/opsx-generate-root-cause.prompt.md" }
+      - { id: tdd-tests,          stage: 3,  prompt: ".github/prompts/opsx-generate-tdd-tests.prompt.md" }
+      - { id: fix-spec,           stage: 4,  prompt: ".github/prompts/opsx-generate-fix-spec.prompt.md" }
+      - { id: implementation,     stage: 5,  prompt: ".github/prompts/opsx-generate-implementation.prompt.md" }
+      - { id: regression-tests,   stage: 6,  prompt: ".github/prompts/opsx-generate-regression-tests.prompt.md" }
+      - { id: performance-tests,  stage: 7,  prompt: ".github/prompts/opsx-generate-performance-tests.prompt.md" }
+      - { id: security-tests,     stage: 8,  prompt: ".github/prompts/opsx-generate-security-tests.prompt.md" }
+      - { id: human-approval,     stage: 9,  prompt: ".github/prompts/opsx-generate-human-approval.prompt.md" }
+      - { id: final-verification, stage: 10, prompt: ".github/prompts/opsx-generate-final-verification.prompt.md" }
+  
+  bug-schema-optimized:
+    description: "Optimized Bug-fix workflow — Skill-mapped, 60% token reduction, 5-stage"
+    schema_file: "config-bug-fix-optimized.yaml"
+    entry_command: "/opsx:bug-fix <bug-description>"
+    prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md"
+    configuration_reference: "openspec/config-bug-fix-optimized.yaml (feature_skill_map)"
+    apply_command: "/opsx:apply <change-name>"
+    archive_command: "/opsx:archive <change-name>"
+    templates_dir: "openspec/templates/"
+    
+    optimization_features:
+      - "Skill-driven domain mapping (no codebase-wide searches)"
+      - "Pre-built file location mapping (feature_skill_map)"
+      - "Session-level read caching (prevent duplicate file reads)"
+      - "Token budget enforcement (3000 tokens per bug)"
+      - "Line-limited file reads (120 lines max per file)"
+    
+    stages:
+      - { id: bug-validation,    stage: 1, prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md", token_budget: 2400 }
+      - { id: tdd-design,        stage: 2, prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md", token_budget: 2600 }
+      - { id: fix-verification,  stage: 3, prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md", token_budget: 2500 }
+      - { id: security-perf,     stage: 4, prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md", token_budget: 1600 }
+      - { id: archive,           stage: 5, prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md", token_budget: 500 }
+
+metadata:
+  component: "Syncfusion.Blazor.Grids"
+  package: "Syncfusion.Blazor"
+  framework: "ASP.NET Core Blazor (.NET / C#)"
+  project: "Syncfusion.Blazor.Grid"
+  rendering: "Razor components + JS interop"
+  test: "bUnit + .NET test"
+
+context: |
+  Syncfusion Blazor Grid component configuration for OpenSpec-driven analysis.
+  Architecture follows component parameters, event callbacks, lifecycle partials,
+  internal actions/renderers, and JS interop integration.
+
+  Canonical specs (read matching section only — never load all):
+    openspec/specs/overview/spec.md           Component overview + feature ownership
+    openspec/specs/architecture/spec.md       Component hierarchy + lifecycle contracts
+    openspec/specs/lifecycle/spec.md          Lifecycle phases + render pipeline
+    openspec/specs/lessons-learned.md         Confirmed AI corrections (inject as task memory)
+
+  Token budget per invocation (HARD LIMIT: 3000 total):
+    Static context (standards + domain section) : 600 tokens max
+    Dynamic context (diff / method body)         : 1000 tokens max
+    Task memory keys (change name, confidence)   : 200 tokens max
+    Response budget                              : 1200 tokens max
+
+  Load discipline:
+    - Read the matching domain spec section only — never load the whole file
+    - Paste method/property body only (<=120 lines) — never the full source file
+    - If context still overflows: chunk by component, process one component per turn    - "STRICT: Check read-cache before EVERY file read (prevent duplicate reads)"
+    - "STRICT: Use append-only reads (only new lines beyond previous read range)"
+    - "STRICT: ONLY read files listed in domain_map entry for identified domain"
+    - "STRICT: Reject file read attempts outside domain_map.files scope"
+    - "PROHIBITED: Do not create *-summary.md, *-analysis.md, or *-report.md files"
+rules:
+  workflow:
+    - "MANDATE: Always run /opsx:explore before proposing for MEDIUM or HIGH risk changes"
+    - "Exception: Skip exploration only for documentation-only or config-only changes"
+    - "EXPLORATION.md MUST be created in the change directory with concrete findings and line numbers"
+    - "Do NOT write proposal.md without first reading the matching domain spec section"
+    - "Speed comes from knowing exactly what to change, not from starting fast"
+    - "After archiving, append a lessons-learned entry in openspec/specs/lessons-learned.md"
+
+  exploration:
+    strategy: "component_inventory → domain_mapping → selective_load → code_scan"
+    mandatory_steps:
+      - "Step 1: Identify target domain from Blazor component/setting names (GridColumns, GridSortSettings, GridEvents)"
+      - "Step 2: Load core lifecycle files first (SfGrid.Lifecycle.cs, SfGrid.Properties.cs, SfGrid.Methods.cs)"
+      - "Step 3: Load 2-3 relevant domain files max (.razor/.cs, Internal/Actions, EventModels, Enumeration)"
+      - "Step 4: Grep docs selectively by Blazor domain name (sorting/filtering/editing/selection)"
+      - "Step 5: Scan code with line-level evidence for parameters, events, and side effects"
+      - "Step 6: For bugs — identify exact file + method + line where fault lives, cite it in EXPLORATION.md"
+      - "Step 7: For features — identify all cross-cutting concerns: virtualization, JS interop, export, selection"
+      - "Step 8: Identify what EXISTS vs what is MISSING vs what is UNCLEAR"
+      - "Step 9: End with a clear recommendation: proceed / adjust scope / stop"
+      - "Step 10: Document findings in EXPLORATION.md with file references and line numbers"
+  proposal:
+    format: "PROBLEM → ROOT CAUSE → SOLUTION → SPECS AFFECTED"
+    requirements:
+      - "Keep under 500 words"
+      - "MUST reference specific findings from EXPLORATION.md — no assumptions"
+      - "Cite concrete evidence: 'GridSortSettings.razor.cs line 45 is missing null guard' not 'tests might be missing'"
+      - "Cite exploration findings with line numbers"
+      - "Reference specs: openspec/specs/[domain]/spec.md"
+      - "List MODIFIED vs NEW specs explicitly"
+      - "Include a Non-goals section (explicit scope boundary)"
+      - "Map proposal to Blazor component API (parameters, cascading values, EventCallback events, JS interop)"
+      - "List affected files under root and Internal/ folders"
+      - "For bugs: declare confidence level (HIGH / MEDIUM / LOW)"
+      - "For features: declare risk level (LOW / MEDIUM / HIGH)"
+      - "HIGH-risk features: pause after proposal.md for human architect review before continuing"
+  design:
+    structure: "APPROACH → ALTERNATIVES → ARCHITECTURE → PATTERNS"
+    requirements:
+      - "Explain WHY (not just WHAT)"
+      - "Reference code patterns from exploration"
+      - "List EVERY file that will be modified (file path + method/property name)"
+      - "Technical decisions MUST explain WHY with alternatives considered"
+      - "Preserve Blazor component architecture (Razor + partial class + Internal action services)"
+      - "Follow grid lifecycle paths in SfGrid.Lifecycle.cs and related method/property partials"
+      - "Preserve .NET event and callback flow (GridEvents/EventModels)"
+      - "Security impact note: does this change touch MarkupString, eval, user template input, or new JS interop calls?"
+      - "Accessibility impact note: does this add interactive elements, dialogs, or focusable regions?"
+      - "Performance impact note: does this affect virtualization, re-render cycles, or large allocation paths?"
+      - "For bugs with LOW confidence: output hypothesis list only — NO design diff"
+    constraints:
+      - "No breaking API changes"
+      - "Backward compatible parameter and event behavior"
+      - "No regressions in state synchronization across component hierarchy"
+      - "Dispose/unsubscribe cleanup for interop, event handlers, and lifecycle resources"
+      - "Performance: no avoidable re-render loops or large allocation spikes"
+  tasks:
+    format: "Actionable, specific, measurable"
+    requirements:
+      - "Break every task into chunks completable in <=2 hours"
+      - "EVERY task MUST specify: file path + method/property name + change type (add/modify/delete)"
+      - "Reference line numbers from exploration"
+      - "Include file paths and symbol names (components, methods, properties)"
+      - "Specify unit/integration scenarios to add (bUnit/.NET tests)"
+      - "The second-to-last task MUST be: scaffold bUnit spec with Tester agent (bug fixes always; features always)"
+      - "The last task MUST be: Run dotnet build && dotnet test — all green"
+      - "For MEDIUM/HIGH risk: include a task for running /opsx:security-check before apply"
+      - "Order by dependency"
+    examples:
+      bad: "Add tests for sorting"
+      good_feature: "Modify GridSortSettings.razor.cs:UpdateSortDescriptors (lines 45-67) to propagate sort state on parameter change (modify)"
+      good_test: "Add bUnit test in Bunit/Actions/SortTests.cs: verify SfGrid re-renders after GridSortColumns change with correct sort order"
+  specs:
+    - "Requirements use SHALL / MUST (normative) — never 'should' or 'may'"
+    - "Every requirement MUST have at least one WHEN/THEN testable scenario"
+    - "Use fixed ISO dates in all examples: DateTime.Parse(\"2024-01-15\") — NEVER DateTime.Now"
+    - "Reference the matching domain spec for context"
+    - "Include accessibility requirements (ARIA, keyboard) where applicable"
+    - "State coverage impact: which methods/branches will be newly covered"
+
+  verification:
+    checklist:
+      - "All specs referenced and valid"
+      - "No public API breakage"
+      - "No lifecycle/disposal regressions in component or interop paths"
+      - "EventCallback and GridEvents behavior unchanged"
+      - "bUnit/.NET test impact identified and updated"
+      - "Accessibility and keyboard behavior preserved"
+
+verification:
+  type_check: "dotnet build Syncfusion.Blazor.Grid.csproj -c Debug"
+  test_command: "dotnet test Bunit/Syncfusion.Blazor.Tests.Grids.csproj -c Debug"
+  coverage_target: 90
+  must_pass:
+    - "C# compilation succeeds with no new errors"
+    - "bUnit/.NET tests passing"
+    - "Coverage >= 85% for new code"
+    - "No public API/parameter/event changes (unless approved)"
+    - "CHANGELOG.md updated"
+
+
+
+# ============================================================================
+# CACHE STRATEGY (Prevents Token Waste from Duplicate Reads)
+# ============================================================================
+
+cache_strategy:
+  enabled: true
+  mode: "ephemeral-read-log"
+  lifetime: "per-change-lifecycle"
+  tracking:
+    format: "CSV"
+    location: "[change-dir]/.read-cache.csv"
+    hidden_file: true
+    deleted_after: "archive-stage"
+    fields: ["FILE_PATH", "LINE_START", "LINE_END", "STAGE", "TIMESTAMP", "BYTES_READ", "REASON"]
+  
+  overlap_detection:
+    enabled: true
+    threshold_lines: 10
+    action: "skip_and_reference"
+    message: "File already loaded in previous stage; use cached findings instead"
+  
+  append_only_reads:
+    enabled: true
+    rule: "If need lines 51-150 and previously read 1-50, read ONLY 51-150"
+    benefit: "Token savings: 30-40% reduction in file read operations"
+
+
+
+# ============================================================================
+# OUTPUT GUARDRAILS (Strict File Creation Enforcement)
+# ============================================================================
+
+output_guardrails:
+  mode: "strict-whitelist"
+  enforcement: "reject_unapproved_files"
+  
+  prohibited_patterns:
+    - "-summary"
+    - "-analysis"
+    - "-report"
+    - "-findings"
+    - "-breakdown"
+    - "-notes"
+    - "-audit-results"
+    - "-baseline"
+    - "-results"
+    - ".log"
+    - "intermediate-"
+  
+  approved_files_by_stage:
+    explore:
+      allowed:
+        - "exploration.md"
+      message: "Only exploration.md permitted in explore stage"
+    
+    propose:
+      allowed:
+        - "proposal.md"
+        - "design.md"
+        - "tasks.md"
+        - "specs/"
+      message: "Only proposal.md, design.md, tasks.md, and specs/ permitted in propose stage"
+    
+    apply:
+      allowed:
+        - "tasks.md"
+        - "[source-files-only]"
+      message: "Only modified source files and updated tasks.md permitted in apply stage. NO new files."
+    
+    audit:
+      allowed: []
+      message: "No new files permitted. Audit results go in gate checklist only (inline approval form)"
+    
+    archive:
+      managed_by: "system"
+      allowed:
+        - ".openspec.yaml"
+        - "exploration.md"
+        - "proposal.md"
+        - "design.md"
+        - "tasks.md"
+        - "specs/"
+      message: "Archive contents auto-managed by system. Only approved artifacts retained."
+  
+  enforcement_action: "abort_with_error"
+  error_template: |
+    ❌ FILE CREATION PROHIBITED
+    
+    Filename: {filename}
+    Reason: Matches blocked pattern: {blocked_pattern}
+    Current Stage: {stage}
+    
+    ℹ️ Approved output files for {stage} stage:
+    {approved_list}
+    
+    💡 Redirect your content:
+    - Analysis findings → existing approved artifact
+    - Design decisions → design.md or proposal.md
+    - Audit results → gate checklist (inline)
+
+
+
+# ============================================================================
+# TOKEN BUDGET ENFORCEMENT (Per-Stage Hard Limits)
+# ============================================================================
+
+token_budgets:
+  global_hard_limit: 3000
+  enforcement: "abort_if_exceeded_by_10_percent"
+  
+  by_stage:
+    explore:
+      description: "Bug identification + root cause analysis"
+      static_context: 600
+      dynamic_reads: 1000
+      response: 800
+      total: 2400
+      
+    propose:
+      description: "TDD test design + proposal + design"
+      static_context: 400
+      dynamic_reads: 1200
+      response: 1000
+      total: 2600
+      
+    apply:
+      description: "Fix implementation + verification"
+      static_context: 300
+      dynamic_reads: 1500
+      response: 700
+      total: 2500
+      
+    audit:
+      description: "Security + performance checks"
+      static_context: 200
+      dynamic_reads: 800
+      response: 600
+      total: 1600
+      
+    archive:
+      description: "Archive + lessons learned"
+      static_context: 100
+      dynamic_reads: 0
+      response: 400
+      total: 500
+  
+  tracking:
+    granularity: "per-invocation"
+    reporting: "console + change-dir/.token-report.txt"
+    threshold_warning: "85%"
+    threshold_abort: "110%"
+
+
+
+# ============================================================================
+# LIFECYCLE CLEANUP RULES (Archive Phase Validation)
+# ============================================================================
+
+lifecycle_cleanup:
+  archive_stage:
+    keep:
+      - ".openspec.yaml"
+      - "exploration.md"
+      - "proposal.md"
+      - "design.md"
+      - "tasks.md"
+      - "specs/"
+    delete:
+      - ".read-cache.csv"
+      - "[change-name]-read-log.txt"
+      - "*-summary.md"
+      - "*-analysis.md"
+      - "*-report.md"
+      - "*-findings.txt"
+      - "*.log"
+      - "intermediate-*.md"
+      - "audit-results-*.md"
+      - "performance-baseline-*.txt"
+    
+    validation:
+      - "Verify no prohibited files in archive"
+      - "Verify .read-cache.csv is deleted (ephemeral)"
+      - "Verify only 6 core artifacts remain"
+    
+    message: "Archive validated: only core artifacts retained"
+
+
+
+# ============================================================================
+# TDD & REGRESSION TESTING GUARANTEES
+# ============================================================================
+
+tdd_discipline:
+  checkpoints: 5
+  
+  checkpoint_1_exploration:
+    stage: "Explore"
+    requirement: "Create failing BUnit test (proves bug exists)"
+    validation: "Test must FAIL with bug present"
+    gate: "Human approves root cause + failing test"
+  
+  checkpoint_2_test_suite:
+    stage: "Propose"
+    requirement: "Complete test suite (all FAIL initially)"
+    validation: "All test cases must FAIL before fix"
+    gate: "Human approves test cases (all fail)"
+  
+  checkpoint_3_fix_implemented:
+    stage: "Apply"
+    requirement: "All tests PASS after fix"
+    validation: "Run: dotnet test (100% pass rate)"
+    gate: "Auto-proceed if all tests pass"
+  
+  checkpoint_4_regression:
+    stage: "Apply"
+    requirement: "Regression tests across interacting domains"
+    validation: "All feature combination tests PASS"
+    gate: "Auto-proceed if no regressions"
+  
+  checkpoint_5_security:
+    stage: "Audit"
+    requirement: "Security + performance audit complete"
+    validation: "Checklist passed, metrics acceptable"
+    gate: "Human approves security + performance"
+
+regression_testing:
+  scope: "Interacting domains from domain_map.interactions"
+  strategy: "Cross-feature verification"
+  
+  test_matrix:
+    - "Primary domain feature tests"
+    - "All interacting domain tests"
+    - "Integration tests (2-3 domain combinations)"
+    - "State synchronization across features"
+    - "Virtualization + primary feature interaction"
+    - "Editing + primary feature interaction"
+    - "Export + primary feature interaction"
+  
+  pass_criteria: "100% of tests PASS (no regressions)"
+  failure_action: "ABORT fix, revert changes, investigate regression"
+
+
+
+# ============================================================================
+# BUG-FIX OPTIMIZATION SCHEMA MAPPING
+# Reference: openspec/config-bug-fix-optimized.yaml (v2.1.1)
+# Purpose: Map optimized bug-fix workflow to configuration & prompts
+# ============================================================================
+
+bug_fix_optimization_mapping:
+  enabled: true
+  schema_file: "openspec/config-bug-fix-optimized.yaml"
+  prompt_file: ".github/prompts/opsx-bug-fix-optimized.prompt.md"
+  
+  feature_skill_map_reference: |
+    The feature_skill_map in config-bug-fix-optimized.yaml provides:
+    
+    For each domain (sorting, filtering, grouping, etc.):
+    - skill: Path to primary domain SKILL.md (pre-built knowledge)
+    - related_skills: Optional companion SKILL.md paths that MUST also be loaded
+    - spec: Path to domain specification
+    - components: List of Blazor components in domain
+    - files: Exact files to read (NO codebase-wide searches)
+    - interactions: Cross-feature domains to test
+    - lines_per_file: Max lines to read (120 default)
+    - risk_level: high/medium/low/critical
+    
+    Example: Feature_skill_map["sorting"] provides:
+    - skill: ".github/skills/sorting-skill/SKILL.md"
+    - files: ["GridSortSettings.razor.cs", "GridSortColumns.razor.cs", "GridSortColumn.cs"]
+    - interactions: ["filtering", "grouping", "virtualization", "infinite-scroll"]
+  
+  session_read_cache:
+    enabled: true
+    description: "Session-level file read caching (prevents duplicate reads)"
+    tracking_file: ".session-read-cache.log"
+    enforcement: "MANDATORY across all 5 stages"
+    tokens_saved_per_session: "800-1600 tokens"
+  
+  optimization_rules:
+    rule_1: "Load Skill Before Codebase (40% token savings)"
+    rule_2: "Read Only Mapped Files (saves 1000+ tokens per bug)"
+    rule_3: "Max 120 Lines Per File (saves 30% per file read)"
+    rule_4: "Cache All File Reads Within SESSION (30-50% tokens saved)"
+    rule_5: "Read Spec Before Code (saves 15% tokens)"
+    rule_6: "Regression Test Only Interactions (saves 40% test time)"
+    rule_7: "No Codebase-Wide Searches (eliminates token waste)"
+    rule_8: "SESSION-LEVEL READ CACHING (CRITICAL — mandatory enforcement)"
+  
+  stage_mapping:
+    stage_1:
+      name: "BUG VALIDATION"
+      config_reference: "config-bug-fix-optimized.yaml:bug_fix_workflow:stage_1"
+      token_budget: 2400
+      output: "exploration.md"
+      gate: "Human approval required"
+      session_cache: "Initialize and populate"
+    
+    stage_2:
+      name: "TDD DESIGN"
+      config_reference: "config-bug-fix-optimized.yaml:bug_fix_workflow:stage_2"
+      token_budget: 2600
+      output: "proposal.md, design.md, tasks.md"
+      gate: "Human approval required"
+      session_cache: "Use cached Stage 1 reads"
+    
+    stage_3:
+      name: "FIX VERIFICATION"
+      config_reference: "config-bug-fix-optimized.yaml:bug_fix_workflow:stage_3"
+      token_budget: 2500
+      output: "Modified source files + updated tasks.md"
+      gate: "Auto-proceed if 100% tests pass"
+      session_cache: "Reuse all cached files"
+    
+    stage_4:
+      name: "SECURITY & PERFORMANCE"
+      config_reference: "config-bug-fix-optimized.yaml:bug_fix_workflow:stage_4"
+      token_budget: 1600
+      output: "Gate checklist (inline only)"
+      gate: "Human approval required"
+      session_cache: "Reference only, no new reads"
+    
+    stage_5:
+      name: "ARCHIVE"
+      config_reference: "config-bug-fix-optimized.yaml:bug_fix_workflow:stage_5"
+      token_budget: 500
+      output: "Archive folder with 6 core artifacts"
+      gate: "Auto-proceed"
+      session_cache: "Clear cache after archiving"
+  
+  workflow_comparison:
+    original_bug_schema:
+      stages: 10
+      gate_points: 10
+      token_efficiency: "baseline"
+      workflow_type: "multi-stage, exploratory"
+    
+    optimized_bug_schema:
+      stages: 5
+      gate_points: 4
+      token_efficiency: "60% reduction (3600+ tokens saved)"
+      workflow_type: "skill-mapped, prescriptive"
+      key_improvement: "Feature_skill_map eliminates manual file searching"
+  
+  migration_guidance:
+    when_to_use_optimized: |
+      Use bug-schema-optimized for:
+      - Well-defined bugs in known domains (sorting, filtering, etc.)
+      - When domain is clearly identified from bug description
+      - Token budget is critical (LLM cost optimization)
+      
+    when_to_use_original: |
+      Use bug-schema (10-stage) for:
+      - Complex cross-feature bugs (affects multiple domains)
+      - Novel issues not covered in feature_skill_map
+      - When thorough exploration is required
+  
+  integration_checklist:
+    - "✅ feature_skill_map loaded before any file reads"
+    - "✅ Session read cache initialized at bug-fix start"
+    - "✅ ONLY mapped files read (no codebase-wide searches)"
+    - "✅ Max 120 lines per file enforced"
+    - "✅ Token budget per stage tracked"
+    - "✅ Duplicate reads detected and rejected"
+    - "✅ Regression tests limited to interactions list"
+    - "✅ Session cache cleared after Stage 5 archive"
+
+# ============================================================================
+# BLAZOR GRID DOMAIN MAP
+# Purpose: Smart loading guide for autonomous agents
+# Strategy: Load only the domain section needed per change request
+# ============================================================================
+
+domain_map:
+
+  # ----------------------------------------
+  # CORE DATA DOMAINS
+  # ----------------------------------------
+
+  sorting:
+    category: "core_data"
+    components: ["GridSortSettings", "GridSortColumns", "GridSortColumn"]
+    files: ["GridSortSettings.razor.cs", "GridSortColumns.razor.cs", "GridSortColumn.cs", "Internal/Actions/"]
+    spec: "openspec/specs/sorting/spec.md"
+    interactions: ["filtering", "grouping", "virtualization", "infinite-scroll", "export"]
+    risk_level: "high"
+
+  filtering:
+    category: "core_data"
+    components: ["GridFilterSettings", "GridFilterColumns", "GridFilterColumn"]
+    files: ["GridFilterSettings.razor.cs", "GridFilterColumns.razor.cs", "GridFilterColumn.cs", "Internal/Actions/"]
+    spec: "openspec/specs/filtering/spec.md"
+    interactions: ["sorting", "grouping", "search", "infinite-scroll", "export"]
+    risk_level: "high"
+
+  grouping:
+    category: "core_data"
+    components: ["GridGroupSettings"]
+    files: ["GridGroupSettings.razor.cs", "Internal/Actions/"]
+    spec: "openspec/specs/grouping/spec.md"
+    interactions: ["sorting", "filtering", "aggregates", "virtualization"]
+    risk_level: "critical"
+
+  paging:
+    category: "core_data"
+    components: ["GridPageSettings"]
+    files: ["GridPageSettings.razor.cs", "Internal/Actions/"]
+    spec: "openspec/specs/paging/spec.md"
+    interactions: ["sorting", "filtering", "grouping", "export"]
+    risk_level: "medium"
+
+  search:
+    category: "core_data"
+    components: ["GridSearchSettings"]
+    files: ["GridSearchSettings.cs", "Internal/Actions/"]
+    spec: "openspec/specs/search/spec.md"
+    interactions: ["filtering"]
+    risk_level: "low"
+
+  aggregates:
+    category: "core_data"
+    components: ["GridAggregates", "GridAggregate", "GridAggregateColumns", "GridAggregateColumn"]
+    files: ["GridAggregate.razor.cs", "GridAggregateColumn.razor.cs", "Internal/Actions/"]
+    spec: "openspec/specs/aggregates/spec.md"
+    interactions: ["grouping", "filtering", "virtualization"]
+    risk_level: "medium"
+
+  virtualization:
+    category: "core_data"
+    components: ["SfGrid", "GridInfiniteScrollSettings"]
+    files: ["SfGrid.Properties.cs", "GridInfiniteScrollSettings.razor.cs", "Internal/Actions/", "Internal/Renderer/"]
+    spec: "openspec/specs/virtualization/spec.md"
+    interactions: ["grouping", "selection", "editing", "aggregates"]
+    risk_level: "critical"
+
+  infinite-scroll:
+    category: "core_data"
+    components: ["SfGrid", "GridInfiniteScrollSettings"]
+    files:
+      - "GridInfiniteScrollSettings.razor.cs"
+      - "GridInfiniteScrollSettings.razor"
+      - "SfGrid.Properties.cs"
+      - "SfGrid.Lifecycle.cs"
+      - "Internal/Actions/InfiniteScroll.cs"
+      - "SfGrid.Methods.cs"
+      - "SfGrid.razor.cs"
+      - "Internal/Base/GridJSInteropAdaptor.cs"
+      - "Internal/Actions/Data.cs"
+      - "Internal/Actions/Edit.cs"
+      - "Internal/Actions/Group.cs"
+    spec: "openspec/specs/infinite-scroll/spec.md"
+    skill: ".github/skills/infinite-scroll-skill/SKILL.md"
+    related_skills:
+      - ".github/skills/infinite-scroll-dom-structure-skill/SKILL.md"
+    interactions: ["grouping", "editing", "sorting", "filtering", "search", "paging", "selection", "aggregates", "column-virtualization", "frozen-columns", "row-drag-drop", "key-navigation"]
+    risk_level: "critical"
+
+  # ----------------------------------------
+  # EDITING DOMAINS
+  # ----------------------------------------
+  
+  frozen-rows-columns-dom-structure:
+    category: "columns"
+    components: ["SfGrid", "GridHeader", "GridContent", "GridRow"]
+    files:
+      - "SfGrid.razor.cs"
+      - "Internal/SfGrid.razor"
+      - "Internal/Renderer/GridHeader.razor"
+      - "Internal/Renderer/GridContent.razor"
+      - "Internal/Renderer/GridRow.razor"
+      - "Internal/Renderer/GridRow.razor.cs"
+      - "Internal/Generators/RowModelGenerator.cs"
+    spec: "openspec/specs/architecture/spec.md"
+    skill: ".github/skills/frozen-rows-columns-dom-structure-skill/SKILL.md"
+    interactions: ["columns", "grouping", "virtualization", "infinite-scroll", "editing", "sorting", "filtering"]
+    risk_level: "critical"
+
+  editing:
+    category: "editing"
+    components: ["GridEditSettings"]
+    files: ["GridEditSettings.cs", "Internal/Actions/", "Internal/Editors/"]
+    spec: "openspec/specs/editing/spec.md"
+    interactions: ["selection", "validation", "virtualization", "columns"]
+    risk_level: "critical"
+
+  # ----------------------------------------
+  # UNDO & REDO DOMAIN
+  # ----------------------------------------
+
+  undo-redo:
+    category: "editing"
+    components: ["GridEditSettings"]
+    files: ["GridEditSettings.cs", "Internal/Actions/Edit.cs", "SfGrid.Methods.cs", "SfGrid.Properties.cs", "GridEvents.cs", "EventModels/Grids.cs"]
+    spec: "openspec/specs/undo-redo/spec.md"
+    interactions: ["editing", "sorting", "filtering", "grouping", "paging", "virtualization", "frozen-columns", "selection"]
+    risk_level: "critical"
+
+  # ----------------------------------------
+  # SELECTION DOMAIN
+  # ----------------------------------------
+
+  selection:
+    category: "selection"
+    components: ["GridSelectionSettings"]
+    files: ["GridSelectionSettings.cs", "Internal/Actions/"]
+    spec: "openspec/specs/selection/spec.md"
+    interactions: ["virtualization", "grouping", "editing"]
+    risk_level: "critical"
+
+  # ----------------------------------------
+  # COLUMN DOMAINS
+  # ----------------------------------------
+
+  columns:
+    category: "columns"
+    components: ["GridColumns", "GridColumn", "GridForeignColumn", "GridCommandColumn", "GridCommandColumns"]
+    files: ["GridColumn.cs", "GridColumns.razor.cs", "GridCommandColumn.cs", "Internal/GridColumn.razor", "Internal/Renderer/"]
+    spec: "openspec/specs/columns/spec.md"
+    interactions: ["sorting", "filtering", "editing", "selection", "export"]
+    risk_level: "high"
+
+  # ----------------------------------------
+  # TEMPLATE DOMAINS
+  # ----------------------------------------
+
+  templates:
+    category: "templates"
+    components: ["GridTemplates"]
+    files: ["GridTemplates.cs", "Internal/Renderer/"]
+    spec: "openspec/specs/templates/spec.md"
+    interactions: ["virtualization", "editing", "export"]
+    risk_level: "medium"
+
+  # ----------------------------------------
+  # EVENTS DOMAIN
+  # ----------------------------------------
+
+  events:
+    category: "events"
+    components: ["GridEvents"]
+    files: ["GridEvents.cs", "EventModels/Grids.cs"]
+    spec: "openspec/specs/events/spec.md"
+    interactions: ["all domains — events cross-cut the entire component"]
+    risk_level: "high"
+
+  # ----------------------------------------
+  # INTEROP & LIFECYCLE
+  # ----------------------------------------
+
+  lifecycle:
+    category: "foundation"
+    components: ["SfGrid"]
+    files: ["SfGrid.Lifecycle.cs", "SfGrid.Properties.cs", "SfGrid.Methods.cs", "SfGrid.razor.cs"]
+    spec: "openspec/specs/lifecycle/spec.md"
+    interactions: ["all domains"]
+    risk_level: "critical"
+
+  interop:
+    category: "foundation"
+    components: ["SfGrid"]
+    files: ["sf-grid.js", "SfGrid.Methods.cs", "Internal/Base/"]
+    spec: "openspec/specs/interop/spec.md"
+    interactions: ["virtualization", "editing", "selection"]
+    risk_level: "high"
+
+
+
+# ============================================================================
+# PROMPTS REFERENCE
+# ============================================================================
+
+prompts:
+  autonomous_mode: ".codestudio/prompts/autonomous-mode.prompt.md"
+  explore_mode: ".codestudio/prompts/opsx-explore.prompt.md"
+  propose_mode: ".codestudio/prompts/opsx-propose.prompt.md"
+  apply_mode: ".codestudio/prompts/opsx-apply.prompt.md"
+  archive_mode: ".codestudio/prompts/opsx-archive.prompt.md"
+  
+  # Bug-schema stage prompts (10-stage original workflow)
+  generate_dispatcher:      ".github/prompts/opsx-generate.prompt.md"
+  generate_bug_report:      ".github/prompts/opsx-generate-bug-report.prompt.md"
+  generate_root_cause:      ".github/prompts/opsx-generate-root-cause.prompt.md"
+  generate_tdd_tests:       ".github/prompts/opsx-generate-tdd-tests.prompt.md"
+  generate_fix_spec:        ".github/prompts/opsx-generate-fix-spec.prompt.md"
+  generate_implementation:  ".github/prompts/opsx-generate-implementation.prompt.md"
+  generate_regression:      ".github/prompts/opsx-generate-regression-tests.prompt.md"
+  generate_performance:     ".github/prompts/opsx-generate-performance-tests.prompt.md"
+  generate_security:        ".github/prompts/opsx-generate-security-tests.prompt.md"
+  generate_human_approval:  ".github/prompts/opsx-generate-human-approval.prompt.md"
+  generate_final_verify:    ".github/prompts/opsx-generate-final-verification.prompt.md"
+  
+  # ⭐ Optimized Bug-fix prompts (5-stage workflow with skill mapping)
+  bug_fix_optimized:        ".github/prompts/opsx-bug-fix-optimized.prompt.md"
+  bug_fix_integrated:       ".github/prompts/opsx-bug-fix-integrated.prompt.md"
+  bug_fix_resolver:         ".github/prompts/opsx-bug-fix-resolver.prompt.md"
+  
+  # Bug-fix optimization configuration reference
+  bug_fix_config_optimized: "openspec/config-bug-fix-optimized.yaml"
+  bug_fix_config_original:  "openspec/config.yaml (domain_map section)"
+
+
+
+# ============================================================================
+# BUG-SCHEMA OPERATION REGISTRATION
+# ============================================================================
+
+operations:   
+  bug_fix_optimized:
+    name: "Bug-Fix Workflow Optimized (bug-schema-optimized — 5-stage skill-mapped)"
+    schema: "bug-schema-optimized"
+    entry_command: "/opsx:bug-fix <bug-description>"
+    dispatcher_prompt: ".github/prompts/opsx-bug-fix-optimized.prompt.md"
+    configuration_file: "openspec/config-bug-fix-optimized.yaml"
+    config_version: "2.1.1"
+    templates_dir: "openspec/templates/"
+    workflow_stages: 5
+    
+    optimization_features:
+      - "Skill-driven domain mapping (feature_skill_map)"
+      - "No codebase-wide searches (reads only mapped files)"
+      - "Session-level read caching (prevents duplicate file reads)"
+      - "Line-limited reads (120 lines max per file)"
+      - "Token budget enforcement (3000 tokens per bug)"
+      - "Pre-built regression scope (interactions matrix)"
+      - "60% token reduction vs 10-stage workflow"
+    
+    approval_gates:
+      - "Stage 1: BUG VALIDATION — root cause + failing test approved"
+      - "Stage 2: TDD DESIGN — test suite (all fail) approved"
+      - "Stage 3: FIX VERIFICATION — auto-proceed if all tests pass + no regressions"
+      - "Stage 4: SECURITY & PERFORMANCE — security + performance checklist approved"
+      - "Stage 5: ARCHIVE — auto-proceed, lessons-learned updated"
+    
+    artifacts:
+      - { id: bug-validation,    stage: 1, generates: "exploration.md" }
+      - { id: tdd-design,        stage: 2, generates: "proposal.md, design.md, tasks.md, specs/" }
+      - { id: fix-verification,  stage: 3, generates: "[source-files-modified]" }
+      - { id: security-perf,     stage: 4, generates: "[gate-checklist-inline]" }
+      - { id: archive,           stage: 5, generates: "[archive-folder]" }
+    
+    session_caching:
+      enabled: true
+      tracking_file: ".session-read-cache.log"
+      enforcement: "MANDATORY across all 5 stages"
+      description: |
+        Session-level caching prevents re-reading the same file in a single
+        bug-fix workflow. Each file read is logged with timestamp, stage, and
+        line range. Before reading any file, check cache first.
+    
+    token_budget:
+      global_limit: 3000
+      by_stage:
+        stage_1: 2400  # BUG VALIDATION
+        stage_2: 2600  # TDD DESIGN
+        stage_3: 2500  # FIX VERIFICATION
+        stage_4: 1600  # SECURITY & PERFORMANCE
+        stage_5: 500   # ARCHIVE
+    
+    output_location: "openspec/changes/<change-name>/"
+    
+    regression_matrix:
+      strategy: "From feature_skill_map.[domain].interactions — pre-built, no manual discovery"
+      scope: "Only test domains listed in interactions; no unrelated tests"
+      automation: "Automatic scope determination from config-bug-fix-optimized.yaml"
+
+# ============================================================================
+# BUG-FIX OPTIMIZATION INTEGRATION SUMMARY
+# ============================================================================
+
+bug_fix_integration:
+  
+  schema_files:
+    original_schema: "bug-schema.yaml (10-stage, exploratory)"
+    optimized_schema: "openspec/config-bug-fix-optimized.yaml (5-stage, skill-mapped)"
+    description: |
+      The optimized schema (config-bug-fix-optimized.yaml v2.1.1) is now 
+      integrated into config.yaml via:
+      1. New "bug-schema-optimized" entry in schemas section
+      2. New "bug_fix_optimized" operation in operations section
+      3. Prompts mapping in prompts section
+      4. Feature_skill_map reference in bug_fix_optimization_mapping section
+  
+  key_configuration_files:
+    - "openspec/config.yaml (this file — orchestration)"
+    - "openspec/config-bug-fix-optimized.yaml (domain skill mapping + session caching)"
+    - ".github/prompts/opsx-bug-fix-optimized.prompt.md (5-stage workflow prompt)"
+    - ".github/prompts/opsx-bug-fix-integrated.prompt.md (integrated workflow)"
+    - ".github/prompts/opsx-bug-fix-resolver.prompt.md (resolver agent)"
+  
+  feature_skill_map_domains:
+    description: "Mapped domains in config-bug-fix-optimized.yaml"
+    core_data:
+      - sorting (high risk)
+      - filtering (high risk)
+      - grouping (critical risk)
+      - paging (medium risk)
+      - search (low risk)
+      - aggregates (medium risk)
+      - virtualization (critical risk)
+      - infinite-scroll (critical risk)
+    editing: [editing]
+    selection: [selection]
+    columns: [columns]
+    templates: [templates]
+    events: [events]
+    foundation: [lifecycle, interop]
+  
+  session_read_caching_enforcement:
+    rule: "DO NOT re-read files already reviewed in the current session"
+    tracking: ".session-read-cache.log (auto-maintained)"
+    enforcement: "MANDATORY — abort on duplicate read attempt"
+    benefits:
+      - "Prevents token waste from duplicate reads"
+      - "Typical savings: 800-1600 tokens per bug"
+      - "Monthly savings (20 bugs): 16,000-32,000 tokens"
+    
+    workflow_integration:
+      stage_1: "Initialize and populate session cache"
+      stage_2: "Check cache BEFORE any file read"
+      stage_3: "Reuse cached files only"
+      stage_4: "Reference cache, no new file reads"
+      stage_5: "Clear cache after archiving"
+  
+  optimization_rules_mapped:
+    rule_1: "Load Skill Before Codebase (40% token savings)"
+    rule_2: "Read Only Mapped Files (saves 1000+ tokens per bug)"
+    rule_3: "Max 120 Lines Per File (saves 30% per file read)"
+    rule_4: "Cache All File Reads Within SESSION (30-50% tokens saved) — CRITICAL"
+    rule_5: "Read Spec Before Code (saves 15% tokens)"
+    rule_6: "Regression Test Only Interactions (saves 40% test time)"
+    rule_7: "No Codebase-Wide Searches (eliminates token waste)"
+    rule_8: "SESSION-LEVEL READ CACHING — MANDATORY ENFORCEMENT"
+  
+  token_budget_comparison:
+    original_10_stage:
+      total_per_bug: "~6000 tokens (variable)"
+      efficiency: "baseline"
+      workflow: "exploratory"
+    
+    optimized_5_stage:
+      total_per_bug: "3000 tokens (hard limit)"
+      efficiency: "60% reduction"
+      workflow: "prescriptive"
+      savings: "3600+ tokens per bug"
+  
+  usage_guidance:
+    use_optimized_when:
+      - "Bug domain is clearly identified (sorting, filtering, etc.)"
+      - "Feature is well-mapped in feature_skill_map"
+      - "Token budget optimization is priority"
+      - "Fast turnaround required"
+    
+    use_original_when:
+      - "Complex cross-feature bugs"
+      - "Novel or unmapped feature domains"
+      - "Thorough exploration required"
+      - "Analyzing new architectural patterns"
+  
+  integration_checklist:
+    domain_mapping: "✅ feature_skill_map integrated into config-bug-fix-optimized.yaml"
+    schema_files: "✅ config-bug-fix-optimized.yaml in openspec/"
+    prompts: "✅ opsx-bug-fix-optimized.prompt.md in .github/prompts/"
+    config_schema: "✅ bug-schema-optimized entry in schemas section"
+    operations: "✅ bug_fix_optimized entry in operations section"
+    prompts_section: "✅ bug_fix_optimized prompts mapped in prompts section"
+    session_caching: "✅ Session-level read caching rules enforced across stages"
+    regression_scope: "✅ Regression matrix pre-built in feature_skill_map.interactions"
+  
+  cross_references:
+    from_config_yaml_to_optimized:
+      - "schemas:bug-schema-optimized → config-bug-fix-optimized.yaml"
+      - "operations:bug_fix_optimized → feature_skill_map in config-bug-fix-optimized.yaml"
+      - "prompts:bug_fix_optimized → opsx-bug-fix-optimized.prompt.md"
+      - "bug_fix_optimization_mapping → comprehensive integration guide"
+    
+    from_optimized_back_to_config_yaml:
+      - "config-bug-fix-optimized.yaml:feature_skill_map → domain_map in config.yaml"
+      - "All optimization_rules → enforced by prompts from config.yaml"
+      - "All session_read_cache rules → enforced by workflows from config.yaml"
+
+# ============================================================================
+# END OF CONFIGURATION
+# ============================================================================

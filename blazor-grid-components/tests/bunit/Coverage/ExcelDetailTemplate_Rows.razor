@@ -1,0 +1,299 @@
+@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.Grids
+@using System.IO
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="ExcelDetailTemplate args.RowInfo.Rows coverage for detail template export">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" ID="Grid" DataSource="ProductData.GetAllRecords()" Toolbar="@(new List<string>() { "ExcelExport" })" AllowExcelExport="true" Height="450px">
+            <GridTemplates>
+                <DetailTemplate>
+                    @{
+                        var employee = (context as ProductData);
+                        <table class="detailtable" width="100%">
+                            <colgroup>
+                                <col width="40%" />
+                                <col width="60%" />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th colspan="2" style="font-weight: 500;text-align: center;background-color: #ADD8E6;">
+                                        Product Details
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span>@employee.ProductDesc</span>
+                                    </td>
+                                    <td>
+                                        <span class="link">
+                                            Contact: <a href="mailto:${@employee.Contact}">@employee.Contact</a>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span style="font-weight: 500;"> @employee.Cost</span>
+                                    </td>
+                                    <td>
+                                        <span>Available: @employee.Available </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span class="@((employee.Status == "Available") ? "available" : "unavailable")" style="font-weight: 500;"> @employee.Status</span>
+                                    </td>
+                                    <td>
+                                        <span>@employee.ReturnPolicy</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span style="font-weight: 500;color: #0a76ff;">Offers: @employee.Offers </span>
+                                    </td>
+
+                                    <td>
+                                        <span>@employee.Cancellation</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <span style="font-weight: 500;color: #0a76ff;"> Ratings: @employee.Ratings</span>
+                                    </td>
+                                    <td>
+                                        <span style="font-weight: 500;color: #0a76ff;">@employee.Delivery</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEvents ExcelDetailTemplateExporting="ExcelDetailTemplateHandler" OnToolbarClick="ToolbarClickHandler" TValue="ProductData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(ProductData.Category) HeaderText="Category" Width="110"> </GridColumn>
+                <GridColumn Field=@nameof(ProductData.ProductID) HeaderText="Product ID" Width="160"> </GridColumn>
+                <GridColumn Field=@nameof(ProductData.Status) HeaderText="Status" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+<style type="text/css" class="cssStyles">
+    .detailtable td {
+        font-size: 13px;
+        padding: 4px;
+        max-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: normal;
+    }
+
+    .unavailable {
+        color: #FF0000;
+    }
+
+    .available {
+        color: #00FF00;
+    }
+</style>
+
+@code {
+    private SfFixture fixture;
+    private SfGrid<ProductData> Grid;
+    public List<ProductData> Employees { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<ProductData>>();
+        Assert.True(cut.Instance.TotalItemCount == 20, "All the records are rendered.");
+        ExcelExportProperties ExportProperties = new ExcelExportProperties();
+        ExportProperties.ExcelDetailRowMode = ExcelDetailRowMode.Collapse;
+        await cut.Instance.ExportToExcelAsync(ExportProperties);
+        Assert.True(true, "Excel Exported Successfully with Rows coverage");
+    }
+
+    public async Task ToolbarClickHandler(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Id == "Grid_excelexport")
+        {
+            ExcelExportProperties ExportProperties = new ExcelExportProperties();
+            ExportProperties.ExcelDetailRowMode = ExcelDetailRowMode.Collapse;
+            await Grid.ExportToExcelAsync(ExportProperties);
+        }
+    }
+
+    // COVERAGE 2: args.RowInfo.Rows
+    // Initialize a list to hold detail template rows for the Excel export.
+    public void ExcelDetailTemplateHandler(ExcelDetailTemplateEventArgs<ProductData> args)
+    {
+        var data = args.ParentRow.Data;
+        var excelRows = new List<ExcelDetailTemplateRow>();
+
+        // Add the first row with product description and contact as a hyperlink.
+        excelRows.Add(new ExcelDetailTemplateRow()
+        {
+            Cells = new List<ExcelDetailTemplateCell>()
+            {
+                new ExcelDetailTemplateCell()
+                {
+                    CellValue = data.ProductDesc, Index = 0
+                },
+                new ExcelDetailTemplateCell()
+                {
+                    Index = 1, Hyperlink = new Hyperlink() { DisplayText = data.Contact, Target = "mailto:" + data.Contact }
+                }
+            }
+        });
+
+        excelRows.Add(new ExcelDetailTemplateRow()
+        {
+            Cells = new List<ExcelDetailTemplateCell>()
+            {
+                new ExcelDetailTemplateCell()
+                {
+                    CellValue = data.Cost, Index = 0
+                },
+                new ExcelDetailTemplateCell()
+                {
+                    Index = 1, CellValue = "Available: " + data.Available
+                }
+            }
+        });
+
+        // Add the second row with product cost and availability status.
+        excelRows.Add(new ExcelDetailTemplateRow()
+        {
+            Cells = new List<ExcelDetailTemplateCell>()
+            {
+                new ExcelDetailTemplateCell()
+                {
+                    CellValue = data.Status, Index = 0,
+                    Style = new ExcelStyle()
+                    {
+                        FontColor = data.Status == "Available" ? "#00FF00" : "#FF0000"
+                    }
+                },
+                new ExcelDetailTemplateCell()
+                {
+                    Index = 1, CellValue = data.ReturnPolicy
+                }
+            }
+        });
+
+        // Add the third row with product status and return policy.
+        excelRows.Add(new ExcelDetailTemplateRow()
+        {
+            Cells = new List<ExcelDetailTemplateCell>()
+            {
+                new ExcelDetailTemplateCell()
+                {
+                    CellValue = "Offers: " + data.Offers, Index = 0, Style = new ExcelStyle()
+                    {
+                        FontColor = "#0A76FF", FontSize = 12
+                    }
+                },
+                new ExcelDetailTemplateCell()
+                {
+                    Index = 1, CellValue = data.Cancellation
+                }
+            }
+        });
+
+        // Add the fifth row with product ratings and delivery information.
+        excelRows.Add(new ExcelDetailTemplateRow()
+        {
+            Cells = new List<ExcelDetailTemplateCell>()
+            {
+                new ExcelDetailTemplateCell()
+                {
+                    CellValue = "Ratings: " + data.Ratings, Index = 0, Style = new ExcelStyle()
+                    {
+                        FontColor = "#0A76FF", FontSize = 12
+                    }
+                },
+                new ExcelDetailTemplateCell()
+                {
+                    Index = 1, CellValue = data.Delivery, Style = new ExcelStyle()
+                    {
+                        FontColor = "#0A76FF", FontSize = 12
+                    }
+                }
+            }
+        });
+
+        // Assign the customized detail rows to the RowInfo.
+        args.RowInfo.Rows = excelRows;
+    }
+
+    public class ProductData
+    {
+        public static List<ProductData> Products = new List<ProductData>();
+
+        public ProductData(string category, string offers, string cost, string available, string itemID, string productID,
+                           string contact, string status, string productDesc, string returnPolicy,
+                           string delivery, string cancellation, string ratings)
+        {
+            Category = category;
+            Offers = offers;
+            Cost = cost;
+            Available = available;
+            ItemID = itemID;
+            ProductID = productID;
+            Contact = contact;
+            Status = status;
+            ProductDesc = productDesc;
+            ReturnPolicy = returnPolicy;
+            Delivery = delivery;
+            Cancellation = cancellation;
+            Ratings = ratings;
+        }
+
+        public string Category { get; set; }
+        public string Offers { get; set; }
+        public string Cost { get; set; }
+        public string Available { get; set; }
+        public string ItemID { get; set; }
+        public string ProductID { get; set; }
+        public string Contact { get; set; }
+        public string Status { get; set; }
+        public string ProductDesc { get; set; }
+        public string ReturnPolicy { get; set; }
+        public string Delivery { get; set; }
+        public string Cancellation { get; set; }
+        public string Ratings { get; set; }
+
+        public static List<ProductData> GetAllRecords()
+        {
+            if (Products.Count == 0)
+            {
+                Products.Add(new ProductData("Suits/Slim", "5%", "199.99$", "10", "Suit-001", "EJ-SU-01", "nancy@domain.com", "Available", "Slim Fit Suit", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.5"));
+                Products.Add(new ProductData("Suits/Classic", "12%", "249.99$", "8", "Suit-002", "EJ-SU-02", "andrew@domain.com", "Available", "Classic Fit Suit", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.8"));
+                Products.Add(new ProductData("Suits/Formal", "5%", "149.99$", "15", "Suit-003", "EJ-SU-03", "janet@domain.com", "Available", "Formal Fit Suit", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.7"));
+                Products.Add(new ProductData("Pants/Slim", "10%", "19.99$", "50", "Pant-001", "EJ-PA-01", "margaret@domain.com", "Available", "Slim Fit Pants", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.2"));
+                Products.Add(new ProductData("Pants/Casual", "15%", "25.99$", "35", "Pant-002", "EJ-PA-02", "steven@domain.com", "Available", "Casual Cotton Pants", "Return within 7 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.4"));
+                Products.Add(new ProductData("Shirts/Formal", "8%", "39.99$", "20", "Shirt-001", "EJ-SH-01", "michael@domain.com", "Available", "Formal Cotton Shirt", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.6"));
+                Products.Add(new ProductData("Shirts/Casual", "10%", "29.99$", "60", "Shirt-002", "EJ-SH-02", "robert@domain.com", "Available", "Casual Check Shirt", "Return within 15 days", "** FREE Delivery **", "Cancellation upto 48 hrs", "4.3"));
+                Products.Add(new ProductData("Shirts/Denim", "6%", "49.99$", "25", "Shirt-003", "EJ-SH-03", "laura@domain.com", "Available", "Denim Shirt", "Return within 10 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.1"));
+                Products.Add(new ProductData("Jackets/Leather", "18%", "199.99$", "5", "Jacket-001", "EJ-JA-01", "anne@domain.com", "Available", "Leather Jacket", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 6 hrs", "4.9"));
+                Products.Add(new ProductData("Jackets/Bomber", "20%", "129.99$", "12", "Jacket-002", "EJ-JA-02", "paul@domain.com", "Available", "Bomber Jacket", "Return within 7 days", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.6"));
+
+                Products.Add(new ProductData("T-Shirts/Graphic", "10%", "19.99$", "80", "TShirt-001", "EJ-TS-01", "nancy@domain.com", "Available", "Graphic Tee", "Return within 15 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.5"));
+                Products.Add(new ProductData("T-Shirts/Plain", "5%", "14.99$", "90", "TShirt-002", "EJ-TS-02", "andrew@domain.com", "Available", "Plain T-Shirt", "Return within 10 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.2"));
+                Products.Add(new ProductData("T-Shirts/Sports", "12%", "24.99$", "70", "TShirt-003", "EJ-TS-03", "janet@domain.com", "Available", "Sports Tee", "Return within 7 days", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.7"));
+                Products.Add(new ProductData("Jeans/Skinny", "15%", "59.99$", "30", "Jeans-001", "EJ-JE-01", "margaret@domain.com", "Available", "Skinny Fit Jeans", "Return within 15 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.6"));
+                Products.Add(new ProductData("Jeans/Straight", "8%", "54.99$", "40", "Jeans-002", "EJ-JE-02", "steven@domain.com", "Available", "Straight Cut Jeans", "Return within 10 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.4"));
+                Products.Add(new ProductData("Sweaters/Wool", "10%", "34.99$", "18", "Sweater-001", "EJ-SW-01", "michael@domain.com", "Available", "Woolen Sweater", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 6 hrs", "4.3"));
+                Products.Add(new ProductData("Sweaters/Cotton", "7%", "29.99$", "22", "Sweater-002", "EJ-SW-02", "robert@domain.com", "Available", "Cotton Sweater", "Return within 10 days", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.2"));
+                Products.Add(new ProductData("Blazers/Formal", "14%", "89.99$", "10", "Blazer-001", "EJ-BL-01", "laura@domain.com", "Available", "Formal Blazer", "Return within 5 days", "** FREE Delivery **", "Cancellation upto 6 hrs", "4.7"));
+                Products.Add(new ProductData("Blazers/Casual", "10%", "79.99$", "14", "Blazer-002", "EJ-BL-02", "anne@domain.com", "Available", "Casual Blazer", "No Returns Applicable", "** FREE Delivery **", "Cancellation upto 12 hrs", "4.5"));
+                Products.Add(new ProductData("Hoodies/Zip", "0%", "39.99$", "0", "Hoodie-001", "EJ-HO-01", "paul@domain.com", "Unavailable", "Zip-up Hoodie", "Return within 10 days", "** FREE Delivery **", "Cancellation upto 24 hrs", "4.6"));
+            }
+            return Products;
+        }
+    }
+}

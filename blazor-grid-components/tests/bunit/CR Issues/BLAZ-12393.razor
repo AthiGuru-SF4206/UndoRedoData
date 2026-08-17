@@ -1,0 +1,73 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="CheckBox Header not getting updated while adding and cancelling in batch mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            @*<GridEvents OnBatchAdd="BatchAddHandler" TValue="Order"></GridEvents>*@
+            <GridEditSettings ShowConfirmDialog="false" AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="Syncfusion.Blazor.Grids.EditMode.Batch"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Uid="CheckBox" Type="ColumnType.CheckBox" Width="40"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var beforeadd = GridData.Count;
+
+        Order addRecord = new Order()
+        {
+            OrderID = 1100,
+            CustomerID = "ABCDE",
+            Freight = 25.7,
+            OrderDate = new DateTime(2010, 5, 1)
+        };
+        Grid.AddRecordAsync(addRecord);
+        Grid.CloseEditAsync();
+
+        var afteradd = GridData.Count;
+
+        // checking the header
+        Assert.True(cut.FindAll(".e-frame")[0].ClassList.Contains("e-uncheck"));
+    }
+
+
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+
+        //Orders = GridData;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+

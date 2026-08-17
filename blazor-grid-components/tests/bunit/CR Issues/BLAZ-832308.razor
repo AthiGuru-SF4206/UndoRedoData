@@ -1,0 +1,73 @@
+﻿@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Stacked movable header rendering">
+    <ComponentUnderTest>
+        <SfGrid @ref="grid" DataSource="GenerateRows()" AllowPaging="true" FrozenColumns="4">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn HeaderText="Order Details" TextAlign="TextAlign.Center">
+                    <GridColumns>
+                        <GridColumn Field="OrderDate" Width="130" HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                        <GridColumn Field="Freight" Width="135" Format="C2" TextAlign="TextAlign.Right" MinWidth="10">
+                        </GridColumn>
+                    </GridColumns>
+                </GridColumn>
+                <GridColumn HeaderText="Ship Details" TextAlign="TextAlign.Center">
+                    <GridColumns>
+                        <GridColumn Field="ShippedDate" Width="140" HeaderText="Shipped Date" Format="d" TextAlign="TextAlign.Right" MinWidth="10"></GridColumn>
+                        <GridColumn Field="ShipCountry" Width="145" HeaderText="Ship Country" MinWidth="10"></GridColumn>
+                    </GridColumns>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    public static List<Order> Orders { get; set; }
+    SfGrid<Order> grid;
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.FrozenColumns > 0, "Frozen columns count is greater than 0");
+        var headerCellCount = cut.FindAll(".e-headercell").Count();
+        var frozenHeaderCellCount = cut.FindAll(".e-headercell.e-leftfreeze").Count();
+        var movableHeaderCellCount = headerCellCount - frozenHeaderCellCount;
+        Assert.True(movableHeaderCellCount == 3, "Movable stacked header get rendered properly");
+    }
+
+
+    public List<Order> GenerateRows()
+    {
+        List<Order> data = new List<Order>();
+        data.Add(new Order() { OrderID = 10001, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 15), Freight = 25.7 * 2, ShipCountry = "Denmark", ShippedDate = new DateTime(2000, 11, 20) });
+        data.Add(new Order() { OrderID = 10002, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 11), Freight = 26.7 * 2, ShipCountry = "Barzil", ShippedDate = new DateTime(2001, 12, 21) });
+        data.Add(new Order() { OrderID = 10003, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 12), Freight = 27.7 * 2, ShipCountry = "India", ShippedDate = new DateTime(2002, 01, 01) });
+        data.Add(new Order() { OrderID = 10004, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 30), Freight = 28.7 * 2, ShipCountry = "China", ShippedDate = new DateTime(2003, 02, 02) });
+        data.Add(new Order() { OrderID = 10005, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 13), Freight = 29.7 * 2, ShipCountry = "Russia", ShippedDate = new DateTime(2004, 03, 03) });
+        data.Add(new Order() { OrderID = 10006, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2, ShipCountry = "Switzerland", ShippedDate = new DateTime(2005, 04, 04) });
+        data.Add(new Order() { OrderID = 10007, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2, ShipCountry = "Austria", ShippedDate = new DateTime(2006, 05, 05) });
+        data.Add(new Order() { OrderID = 10008, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2, ShipCountry = "Denmark", ShippedDate = new DateTime(2007, 07, 07) });
+        data.Add(new Order() { OrderID = 10009, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2, ShipCountry = "Switzerland", ShippedDate = new DateTime(2005, 04, 04) });
+        data.Add(new Order() { OrderID = 100010, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2, ShipCountry = "Barzil", ShippedDate = new DateTime(2001, 12, 21) });
+        data.Add(new Order() { OrderID = 100011, CustomerID = "ALFKI", OrderDate = new DateTime(1991, 05, 14), Freight = 30.7 * 2, ShipCountry = "Switzerland", ShippedDate = new DateTime(2005, 04, 04) });
+        data.Add(new Order() { OrderID = 100012, CustomerID = "ANANTR", OrderDate = new DateTime(1991, 07, 10), Freight = 31.7 * 2, ShipCountry = "Austria", ShippedDate = new DateTime(2006, 05, 05) });
+        data.Add(new Order() { OrderID = 100013, CustomerID = "BLONP", OrderDate = new DateTime(1991, 05, 9), Freight = 32.7 * 2, ShipCountry = "Denmark", ShippedDate = new DateTime(2007, 07, 07) });
+        data.Add(new Order() { OrderID = 100014, CustomerID = "ANTON", OrderDate = new DateTime(1991, 12, 29), Freight = 33.7 * 2, ShipCountry = "Switzerland", ShippedDate = new DateTime(2005, 04, 04) });
+        data.Add(new Order() { OrderID = 100015, CustomerID = "BOLID", OrderDate = new DateTime(1991, 05, 28), Freight = 34.7 * 2, ShipCountry = "Barzil", ShippedDate = new DateTime(2001, 12, 21) });
+        return Orders = data;
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+        public string ShipCountry { get; set; }
+        public DateTime? ShippedDate { get; set; }
+    }
+}

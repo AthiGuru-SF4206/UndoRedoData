@@ -1,0 +1,757 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@inherits EditorCellBase<TCell>
+
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Data
+
+@if (Column != null && Column.IsForeignColumn())
+{
+    if (Column.IsGridForeignColumn) // Only for GridForeignColumn Component
+    {
+        @Column.GetDropDown()!(Model!)
+    }
+    else if (Column.ActualType!.Equals(typeof(Guid)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="Guid" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(Guid?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="Guid?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(int?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="int?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(int)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="int" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(string)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="string" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(double)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="double" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(double?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="double?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(float)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="float" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(float?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="float?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(long)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="long" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(long?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="long?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(ulong)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="ulong" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(ulong?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="ulong?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(short)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="short" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(short?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="short?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(ushort)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="ushort" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(ushort?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="ushort?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(uint)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="uint" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(uint?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="uint?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(decimal)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="decimal" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+    else if (Column.ActualType.Equals(typeof(decimal?)))
+    {
+        <ForeignKeyEditCell Model="Model" TItem="object" TValue="decimal?" ForeignKeyColumnParameters="foreignKeyColumnParameters"></ForeignKeyEditCell>
+    }
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(string))
+{
+    <SfDropDownList ID="@FieldName" TValue="string" TItem="TCell" Value="@Value?.ToString()" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="StringExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="string"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(int?))
+{
+    <SfDropDownList ID="@FieldName" TValue="int?" TItem="TCell" Value="@((int?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="NullableIntExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="int?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(int))
+{
+    <SfDropDownList ID="@FieldName" TValue="int" TItem="TCell" Value="@((int)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="IntExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="int"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(double?))
+{
+    <SfDropDownList ID="@FieldName" TValue="double?" TItem="TCell" Value="@((double?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="NullableDoubleExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="int?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(double))
+{
+    <SfDropDownList ID="@FieldName" TValue="double" TItem="TCell" Value="@((double)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="DoubleExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="double"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(float?))
+{
+    <SfDropDownList ID="@FieldName" TValue="float?" TItem="TCell" Value="@((float?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableFloatExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="float?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(float))
+{
+    <SfDropDownList ID="@FieldName" TValue="float" TItem="TCell" Value="@((float)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="FloatExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="float"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(long))
+{
+    <SfDropDownList ID="@FieldName" TValue="long" TItem="TCell" Value="@((long)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="LongExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="long"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(long?))
+{
+    <SfDropDownList ID="@FieldName" TValue="long?" TItem="TCell" Value="@((long?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableLongExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="long?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(ulong))
+{
+    <SfDropDownList ID="@FieldName" TValue="ulong" TItem="TCell" Value="@((ulong)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="UlongExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="ulong"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(ulong?))
+{
+    <SfDropDownList ID="@FieldName" TValue="ulong?" TItem="TCell" Value="@((ulong?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableUlongExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="ulong?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(ushort?))
+{
+    <SfDropDownList ID="@FieldName" TValue="ushort?" TItem="TCell" Value="@((ushort?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableUshortExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="ushort?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(ushort))
+{
+    <SfDropDownList ID="@FieldName" TValue="ushort" TItem="TCell" Value="@((ushort)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="UshortExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="ushort"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(short?))
+{
+    <SfDropDownList ID="@FieldName" TValue="short?" TItem="TCell" Value="@((short?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableShortExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="short?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(short))
+{
+    <SfDropDownList ID="@FieldName" TValue="short" TItem="TCell" Value="@((short)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="ShortExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="short"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(uint))
+{
+    <SfDropDownList ID="@FieldName" TValue="uint" TItem="TCell" Value="@((uint)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="UintExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="uint"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(uint?))
+{
+    <SfDropDownList ID="@FieldName" TValue="uint?" TItem="TCell" Value="@((uint?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableUintExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="uint?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(Guid?))
+{
+    <SfDropDownList ID="@FieldName" TValue="Guid?" TItem="TCell" Value="@((Guid?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl" ValueExpression="NullableGuidExp"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="Guid?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(Guid))
+{
+    <SfDropDownList ID="@FieldName" TValue="Guid" TItem="TCell" Value="@((Guid)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl" ValueExpression="GuidExp"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="Guid"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(decimal?))
+{
+    <SfDropDownList ID="@FieldName" TValue="decimal?" TItem="TCell" Value="@((decimal?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="NullableDecimalExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="decimal?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(decimal))
+{
+    <SfDropDownList ID="@FieldName" TValue="decimal" TItem="TCell" Value="@((decimal)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="DecimalExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="decimal"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(byte?))
+{
+    <SfDropDownList ID="@FieldName" TValue="byte?" TItem="TCell" Value="@((byte?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="NullableByteExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="byte?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(byte))
+{
+    <SfDropDownList ID="@FieldName" TValue="byte" TItem="TCell" Value="@((byte)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="ByteExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="byte"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(sbyte?))
+{
+    <SfDropDownList ID="@FieldName" TValue="sbyte?" TItem="TCell" Value="@((sbyte?)Value)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="NullableSbyteExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="sbyte?"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && Column.ValueType == typeof(sbyte))
+{
+    <SfDropDownList ID="@FieldName" TValue="sbyte" TItem="TCell" Value="@((sbyte)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                    Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType"
+                    ValueChanged="@ValueChanged" ValueExpression="SbyteExp" DataSource="@ParentDropData" @attributes="attributes">
+        <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+        <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="sbyte"></DropDownListEvents>
+        @if (isDataManager)
+        {
+            <SfDataManager @attributes="DataManagerAttributes">
+                @Parent.DataManager?.ChildContent
+            </SfDataManager>
+        }
+    </SfDropDownList>
+}
+else if (Column != null && !Column.IsForeignColumn() && (Column.ValueType == typeof(string) || Column.ValueType == typeof(Object)))
+{
+    <SfDropDownList ID="@FieldName" TValue="Object" TItem="TCell" Value="@((Object)Value!)" Enabled="@(PreventAddForm ? false : Enabled)" EnableRtl="@Parent!.EnableRtl"
+                Placeholder="@PlaceHolder" FloatLabelType="@FloatLabelType" ValueChanged="@ValueChanged" ValueExpression="ObjectExp" DataSource="@ParentDropData" @attributes="attributes">
+    <DropDownListFieldSettings Value="@Column.Field" Text="@Column.Field"></DropDownListFieldSettings>
+    <DropDownListEvents TItem="TCell" ValueChange="ValueChange" TValue="Object"></DropDownListEvents>
+    @if (isDataManager)
+    {
+        <SfDataManager @attributes="DataManagerAttributes">
+            @Parent.DataManager?.ChildContent
+        </SfDataManager>
+    }
+    </SfDropDownList>
+}
+
+
+
+@code{
+
+    internal Type? CheckType { get; set; }
+
+    public EditorDropDownModel? Model { get; set; }
+
+    internal GridForeignKeyColumnParameters? foreignKeyColumnParameters { get; set; }
+
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    bool isDataManager = false;
+    IDictionary<string, object> DataManagerAttributes = new Dictionary<string, object>();
+    IEnumerable<object>? DropData = null;
+    IEnumerable<TCell>? ParentDropData = null;
+    public List<GridColumn> GridColumns => GridUtils.GetColumns(Parent!);
+    private bool IsColumnUidRequired { get; set; }
+    private string? DuplicateForeignkeyField { get; set; }
+    private bool IsCustomDataSource { get; set; }
+
+    protected override void OnInitialized()
+    {
+
+        base.OnInitialized();
+        var ForeignData = Column!.GetForeignData() ?? Column.ColumnData;
+        DropData = Column.IsForeignColumn() && ForeignData != null ? DataUtil.GetDistinct((IEnumerable<object>)ForeignData, Column.ForeignKeyField ?? Column.Field) : (IEnumerable<object>)Parent?.DataSource!;
+        if (!Column.IsForeignColumn() && Parent != null && Parent.DataSource != null)
+            ParentDropData = DataUtil.GetDistinct(Parent.DataSource, Column.Field);
+
+        if (Column.EditorSettings is DropDownEditCellParams param && param.Params != null)
+        {
+            DropDownListModel<object, object> model = param.Params;
+            IsCustomDataSource = model.DataSource != null ;
+            attributes = new Dictionary<string, object>()
+            {
+                    { nameof(model.Enabled), model.Enabled = Column.AllowEditing ? model.Enabled : false},
+                    { nameof(model.CssClass), model.CssClass },
+                    { nameof(model.FilterBarPlaceholder), model.FilterBarPlaceholder },
+                    { nameof(model.AllowFiltering), model.AllowFiltering },
+                    { nameof(model.PopupDisplayMode), model.PopupDisplayMode },
+                    //TODO: Change data type into RenderFragment for Templates properties
+                    //{ nameof(model.FooterTemplate), model.FooterTemplate },
+                    //{ nameof(model.HeaderTemplate), model.HeaderTemplate },
+                    { nameof(model.PopupHeight), model.PopupHeight },
+                    { nameof(model.PopupWidth), model.PopupWidth },
+                    { nameof(model.Readonly), model.Readonly },
+                    { nameof(model.ShowClearButton), model.ShowClearButton },
+                    //{ nameof(model.ValueTemplate), model.ValueTemplate },
+                    //{ nameof(model.ActionFailureTemplate), model.ActionFailureTemplate },
+                    { nameof(model.DataSource), model.DataSource ?? DropData },
+                    { nameof(model.FilterType), model.FilterType },
+                    { nameof(model.IgnoreCase), model.IgnoreCase },
+                    //{ nameof(model.IgnoreAccent), model.IgnoreAccent },
+                    //{ nameof(model.EnableVirtualization), model.EnableVirtualization },
+                    //{ nameof(model.Width), model.Width },
+                    { nameof(model.Query), model.Query }
+                };
+        }
+
+        if ((Parent != null && Parent.DataManager != null && Parent.DataManager.IsDataManager) ||
+            (Column.IsForeignColumn() && Column.DataManager != null && Column.DataManager.IsDataManager))
+        {
+            isDataManager = true; DataManager _dm = Column.IsForeignColumn() ? Column.DataManager! : Parent!.DataManager!;
+            if (_dm != null && _dm.AdaptorInstance != null && _dm.DataType != null && _dm.Headers != null && _dm.Json != null && _dm.RequestType != null && _dm.HttpClientInstance != null && _dm.GraphQLAdaptorOptions != null)
+            {
+                DataManagerAttributes = new Dictionary<string, object>()
+            {
+                { nameof(DataManager.Accept), _dm.Accept },
+                { nameof(DataManager.Adaptor), _dm.Adaptor },
+                { nameof(DataManager.AdaptorInstance), _dm.AdaptorInstance},
+                { nameof(DataManager.CrossDomain), _dm.CrossDomain },
+                { nameof(DataManager.DataType), _dm.DataType },
+                { nameof(DataManager.Headers), _dm.Headers },
+                { nameof(DataManager.Json), _dm.Json },
+                { nameof(DataManager.Offline), _dm.Offline },
+                { nameof(DataManager.Url), _dm.Url },
+                { nameof(DataManager.RequestType), _dm.RequestType },
+                { nameof(DataManager.RequiresFormat), _dm.RequiresFormat },
+                { nameof(DataManager.HttpClientInstance), _dm.HttpClientInstance },
+                { nameof(DataManager.GraphQLAdaptorOptions), _dm.GraphQLAdaptorOptions }
+            };
+            }
+            
+            //If datamanager then no need to send data source as attribute as we have datamanager component.
+            if (!IsCustomDataSource)
+            {
+                attributes.Remove("DataSource");
+            }
+            isDataManager = IsCustomDataSource ? false : true;
+        }
+
+        Value = Parent?.PropHelper!.GetObject(Column?.Field!, RowData!);
+        object valueExp = GetValueExpression(Column!)!;
+        Model = new EditorDropDownModel(){
+            PlaceHolder = PlaceHolder,
+            FloatLabelType = FloatLabelType,
+            isDataManager = isDataManager,
+            Attributes = attributes,
+            DataManagerAttributes = DataManagerAttributes,
+            Column = Column!,
+            Enabled = Enabled,
+            DropData = DropData,
+            Value = Value,
+            ValueExpression = valueExp
+        };
+        var duplicateForeignKeyColumns = ForeignKey<TCell>.GetForeignKeyColumnsAsync(GridColumns).Where(x => x.Field == Column?.Field).ToList();
+        if (duplicateForeignKeyColumns.Count > 1)
+        {
+            IsColumnUidRequired = true;
+            DuplicateForeignkeyField = Column?.Field;
+
+        }
+        foreignKeyColumnParameters = new GridForeignKeyColumnParameters()
+        {
+            IsColumnUidRequired = IsColumnUidRequired,
+            DuplicateForeignkeyField = DuplicateForeignkeyField
+        };
+    }
+
+   
+    private object? GetValueExpression(GridColumn column)
+    {
+        object? valueExp = null;
+        if (Column != null && Column.IsForeignColumn())
+        {
+            valueExp = GetForeignKeyValueExpression(column);
+        }
+        else if (column?.ValueType == typeof(string))
+        {
+            valueExp = StringExp;
+        }
+        else if (column?.ValueType == typeof(int))
+        {
+            valueExp = IntExp;
+        }
+        else if (column?.ValueType == typeof(int?))
+        {
+            valueExp = NullableIntExp;
+        }
+        else if (column?.ValueType == typeof(double?))
+        {
+            valueExp = NullableDoubleExp;
+        }
+        else if (column?.ValueType == typeof(double))
+        {
+            valueExp = DoubleExp;
+        }
+        else if (column?.ValueType == typeof(float?))
+        {
+            valueExp = NullableFloatExp;
+        }
+        else if (column?.ValueType == typeof(float))
+        {
+            valueExp = FloatExp;
+        }
+        else if (column?.ValueType == typeof(long?))
+        {
+            valueExp = NullableLongExp;
+        }
+        else if (column?.ValueType == typeof(long))
+        {
+            valueExp = LongExp;
+        }
+        else if (column?.ValueType == typeof(ulong?))
+        {
+            valueExp = NullableUlongExp;
+        }
+        else if (column?.ValueType == typeof(ulong))
+        {
+            valueExp = UlongExp;
+        }
+        else if (column?.ValueType == typeof(short?))
+        {
+            valueExp = NullableShortExp;
+        }
+        else if (column?.ValueType == typeof(short))
+        {
+            valueExp = ShortExp;
+        }
+        else 
+        {
+            valueExp = GetChildValueExpression(column!);
+        }
+        return valueExp;
+    }
+
+    private object? GetForeignKeyValueExpression(GridColumn column)
+    {
+        object? valueExp = null;
+        switch (column.ActualType)
+        {
+            case Type t when t == typeof(int?):
+                valueExp = NullableIntExp;
+                break;
+
+            case Type t when t == typeof(string):
+                valueExp = StringExp;
+                break;
+
+            case Type t when t == typeof(double?):
+                valueExp = NullableDoubleExp;
+                break;
+
+            case Type t when t == typeof(decimal?):
+                valueExp = NullableDecimalExp;
+                break;
+
+            case Type t when t == typeof(long?):
+                valueExp = NullableLongExp;
+                break;
+
+            case Type t when t == typeof(Guid?):
+                valueExp = NullableGuidExp;
+                break;
+        }
+        return valueExp;
+    }
+
+    private object? GetChildValueExpression(GridColumn column)
+    {
+        object? valueExp = null;
+        if (column.ValueType == typeof(ushort?))
+        {
+            valueExp = NullableUshortExp;
+        }
+        else if (column.ValueType == typeof(ushort))
+        {
+            valueExp = UshortExp;
+        }
+        else if (column.ValueType == typeof(uint?))
+        {
+            valueExp = NullableUintExp;
+        }
+        else if (column.ValueType == typeof(uint))
+        {
+            valueExp = UintExp;
+        }        
+        else if (column.ValueType == typeof(decimal?))
+        {
+            valueExp = NullableDecimalExp;
+        }
+        else if (column.ValueType == typeof(decimal))
+        {
+            valueExp = DecimalExp;
+        }
+        else if (column.ValueType == typeof(Guid?))
+        {
+            valueExp = NullableGuidExp;
+        }
+        else if (column.ValueType == typeof(Guid))
+        {
+            valueExp = GuidExp;
+        }
+        else if (column.ValueType == typeof(DateTime?))
+        {
+            valueExp = NullableDateExp;
+        }
+        else if (column.ValueType == typeof(DateTime))
+        {
+            valueExp = DateExp;
+        }
+        else if (column.ValueType == typeof(DateTimeOffset?))
+        {
+            valueExp = NullableOffsetExp;
+        }
+        else if (column.ValueType == typeof(DateTimeOffset))
+        {
+            valueExp = OffsetExp;
+        }
+        else if (column.ValueType == typeof(Object))
+        {
+            valueExp = ObjectExp;
+        }
+        return valueExp;
+    }
+
+    internal void ValueChange<T, TData>(ChangeEventArgs<T, TData> args)
+    {
+        Value = args.Value;
+        if (Parent != null && Parent.EditModule != null)
+        Parent.EditModule.SetValue<T>(args.Value, Column?.Field!);
+    }
+}
+
+

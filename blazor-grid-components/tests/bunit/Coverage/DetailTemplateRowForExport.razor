@@ -1,0 +1,290 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Data
+@using System.IO
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="DetailTemplateRow, DetailTemplateSettings and more lines are covered here by extending ExcelDetailTemplate.razor test">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" ID="Grid" DataSource="GenerateEmployeeData()" AllowExcelExport="true" AllowPdfExport=true Toolbar="@(new List<string>() { "ExcelExport" })">
+            <GridTemplates>
+                <DetailTemplate>
+                    @{
+                        var employee = (context as EmployeeData);
+                    }
+                    <SfGrid DataSource="GenerateOrderData()" Query="@(new Query().Where("EmployeeID", "equal", employee.EmployeeID))">
+                        <GridTemplates>
+                            <DetailTemplate Context="CustomerContext">
+                                @{
+                                    var customer = (CustomerContext as Order);
+                                }
+                                <SfGrid DataSource="@OrderInfo" TValue="OrderDetails" Query="@(new Query().Where("OrderID", "equal", customer.OrderID))">
+                                    <GridColumns>
+                                        <GridColumn Field=@nameof(OrderDetails.CustomerID) HeaderText="Customer ID" TextAlign="TextAlign.Right" Width="110"> </GridColumn>
+                                        <GridColumn Field=@nameof(OrderDetails.Title) HeaderText="Title" Width="110"></GridColumn>
+                                        <GridColumn Field=@nameof(OrderDetails.Address) HeaderText="Address" TextAlign="TextAlign.Right" Width="90" Format="C2"></GridColumn>
+                                        <GridColumn Field=@nameof(OrderDetails.Country) HeaderText="Country" Width="110"></GridColumn>
+                                    </GridColumns>
+                                </SfGrid>
+                            </DetailTemplate>
+                        </GridTemplates>
+                        <GridColumns>
+                            <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="110"> </GridColumn>
+                            <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="110"></GridColumn>
+                            <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" TextAlign="TextAlign.Right" Width="90" Format="C2"></GridColumn>
+                            <GridColumn Field=@nameof(Order.ShipCity) HeaderText="Ship City" Width="110"></GridColumn>
+                        </GridColumns>
+                    </SfGrid>
+                </DetailTemplate>
+            </GridTemplates>
+            <GridEvents ExcelDetailTemplateExporting="ExcelDetailTemplateHandler" PdfDetailTemplateExporting="PdfDetailTemplateHandler" TValue="EmployeeData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(EmployeeData.EmployeeID) HeaderText="EmployeeID" Width="110"> </GridColumn>
+                <GridColumn Field=@nameof(EmployeeData.FirstName) HeaderText="First Name" Width="110"> </GridColumn>
+                <GridColumn Field=@nameof(EmployeeData.Title) HeaderText="Title" Width="110"></GridColumn>
+                <GridColumn Field=@nameof(EmployeeData.Country) HeaderText="Country" Width="110"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture { get; set; }
+    SfGrid<EmployeeData> DefaultGrid;
+    public List<EmployeeData> Employees { get; set; }
+    public List<OrderDetails> OrderInfo { get; set; }
+    public static List<Order> Orders { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeData>>();
+        Assert.True(cut.Instance.TotalItemCount == 9, "All the records are rendered.");
+        Orders = GenerateOrderData();
+        Employees = GenerateEmployeeData();
+        OrderInfo = GenerateOrderDetailsData();
+        ExcelExportProperties ExportProperties = new ExcelExportProperties();
+        ExportProperties.ExcelDetailRowMode = ExcelDetailRowMode.Expand;
+        await cut.Instance.ExportToExcelAsync(ExportProperties);
+        Assert.True(true, "Excel Exported Successfully");
+        PdfExportProperties PdfExportProperties = new PdfExportProperties();
+        PdfExportProperties.PdfDetailRowMode = PdfDetailRowMode.Expand;
+        await this.DefaultGrid.ExportToPdfAsync(PdfExportProperties);
+    }
+
+    public void ExcelDetailTemplateHandler(ExcelDetailTemplateEventArgs<EmployeeData> args)
+    {
+        var excelRows = new List<ExcelDetailTemplateRow>();
+        var data = Orders.ToList().Where(_ => _.EmployeeID == args.ParentRow.Data.EmployeeID).ToList();
+        for (var i = 0; i < data.Count(); i++)
+        {
+            var row = data[i];
+            var childData = OrderInfo.ToList().Where(_ => _.OrderID == row.OrderID).ToList();
+            var excelchildRows = new List<ExcelDetailTemplateRow>();
+            var excelRow = ProcessExcelRow(new List<string>() { row.OrderID.ToString(), row.CustomerID.ToString(), row.Freight.ToString(), row.ShipCity });
+            for (var j = 0; j < childData.Count; j++)
+            {
+                var childRow = childData[j];
+                excelchildRows.Add(ProcessExcelRow(new List<string>() { childRow.CustomerID.ToString(), childRow.Title.ToString(), childRow.Address.ToString(), childRow.Country }));
+            }
+            excelRow.ChildRowInfo = new ExcelDetailTemplateRowSettings() { 
+                Headers = new List<ExcelDetailTemplateRow>() { ProcessExcelRow(new List<string>() { "Customer Name", "Title", "Address", "Country" }) }, 
+                Rows = excelchildRows,
+                Image = new ExcelExport.Image() { },
+                Hyperlink = new Hyperlink() { Target = "#", DisplayText = "Click Here" },
+                Text = null
+            };
+            excelRows.Add(excelRow);
+        }
+        args.RowInfo.Headers = new List<ExcelDetailTemplateRow>() { ProcessExcelRow(new List<string>() { "Order ID", "Customer ID", "Freight", "Ship City" }) };
+        args.RowInfo.Rows = excelRows;
+    }
+
+    public void PdfDetailTemplateHandler(PdfDetailTemplateEventArgs<EmployeeData> args)
+    {
+        var pdfRows = new List<PdfDetailTemplateRow>();
+        var data = Orders.ToList().Where(_ => _.EmployeeID == args.ParentRow.Data.EmployeeID).ToList();
+        for (var i = 0; i < data.Count(); i++)
+        {
+            var row = data[i];
+            var childData = OrderInfo.ToList().Where(_ => _.OrderID == row.OrderID).ToList();
+            var pdfchildRows = new List<PdfDetailTemplateRow>();
+            var pdfRow = ProcessPdfRow(new List<string>() { row.OrderID.ToString(), row.CustomerID.ToString(), row.Freight.ToString(), row.ShipCity });
+            for (var j = 0; j < childData.Count; j++)
+            {
+                var childRow = childData[j];
+                pdfchildRows.Add(ProcessPdfRow(new List<string>() { childRow.CustomerID.ToString(), childRow.Title.ToString(), childRow.Address.ToString(), childRow.Country }));
+            }
+            byte[] minimalPngImage = new byte[]
+            {
+                0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+                0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+                0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+                0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+                0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+            };
+    
+            var imageStream = new MemoryStream(minimalPngImage);
+            pdfRow.ChildRowInfo = new PdfDetailTemplateRowSettings()
+            {
+                Image = PdfExport.PdfImage.FromStream(imageStream),
+                Hyperlink = new Hyperlink() { Target = "#", DisplayText = "Click Here" },
+                Text = null
+            };
+            pdfRows.Add(pdfRow);
+        }
+        args.RowInfo.Headers = new List<PdfDetailTemplateRow>() { ProcessPdfRow(new List<string>() { "Order ID", "Customer ID", "Freight", "Ship City" }) };
+        args.RowInfo.Rows = pdfRows;
+    }
+
+    PdfDetailTemplateRow ProcessPdfRow(List<string> value)
+    {
+        var cells = new List<PdfDetailTemplateCell>();
+        for (var j = 0; j < value.Count(); j++)
+        {
+            cells.Add(new PdfDetailTemplateCell { CellValue = $"{value[j]}", Index = j });
+        }
+        return new PdfDetailTemplateRow { Cells = cells, Index = null };
+    }
+
+    ExcelDetailTemplateRow ProcessExcelRow(List<string> value)
+    {
+        var cells = new List<ExcelDetailTemplateCell>();
+        for (var j = 0; j < value.Count(); j++)
+        {
+            cells.Add(new ExcelDetailTemplateCell { CellValue = $"{value[j]}", Index = j });
+        }
+        return new ExcelDetailTemplateRow { Cells = cells };
+    }
+
+    protected void OnInitialized()
+    {
+        Employees = new List<EmployeeData>
+        {
+            new EmployeeData() {EmployeeID = 1, FirstName="Nancy",  Title="Sales Representative",City="Texas", Country="USA"},
+            new EmployeeData() {EmployeeID = 2, FirstName="Andrew",  Title="Vice President",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 3, FirstName="Janet",  Title="Sales",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 4, FirstName="Margaret",  Title="Sales Manager",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 5, FirstName="Steven",  Title="Inside Sales Coordinator",City="Vegas", Country="USA"},
+            new EmployeeData() {EmployeeID = 6, FirstName="Smith",  Title="HR Manager",City="Dubai", Country="UAE"},
+            new EmployeeData() {EmployeeID = 7, FirstName="Steven",  Title="Inside Sales Coordinator",City="Paris", Country="France"},
+            new EmployeeData() {EmployeeID = 8, FirstName="Smith",  Title="HR Manager",City="Mumbai", Country="India"},
+            new EmployeeData() {EmployeeID = 9, FirstName="Smith",  Title="HR Manager",City="Chennai", Country="India"},
+        };
+        Orders = new List<Order>
+        {
+            new Order() {EmployeeID = 1, OrderID=1001, CustomerID="Nancy", ShipCity="Texas", Freight=2.1*1 },
+            new Order() {EmployeeID = 2, OrderID=1002, CustomerID="Andrew", ShipCity="London", Freight=2.1*2},
+            new Order() {EmployeeID = 3, OrderID=1003, CustomerID="Janet", ShipCity="London", Freight=2.1*3},
+            new Order() {EmployeeID = 4, OrderID=1004, CustomerID="Margaret", ShipCity="London", Freight= 2.1*4},
+            new Order() {EmployeeID = 5, OrderID=1005, CustomerID="Steven", ShipCity="Vegas", Freight=2.1*5},
+            new Order() {EmployeeID = 6, OrderID=1006, CustomerID="Smith", ShipCity="Dubai", Freight=2.1*6},
+            new Order() {EmployeeID = 7, OrderID=1007, CustomerID="Steven", ShipCity="Paris", Freight=2.1*7},
+            new Order() {EmployeeID = 8, OrderID=1008, CustomerID="Smith", ShipCity="Mumbai", Freight=2.1*8},
+            new Order() {EmployeeID = 9, OrderID=1009, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 2, OrderID=1010, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 3, OrderID=1011, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 3, OrderID=1012, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+        };
+
+        OrderInfo = new List<OrderDetails>
+        {
+            new OrderDetails() { OrderID=1001, Title="Sales Representative", CustomerID="Nancy", Country="Germany", Address="Obere Str. 57" },
+            new OrderDetails() { OrderID=1002, Title="HR Manager", CustomerID="Andrew", Country="Mexico", Address="Avda. de la Constitución 2222"},
+            new OrderDetails() { OrderID=1003, Title="Vice President", CustomerID="Janet", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1004, Title="Inside Sales Coordinator", CustomerID="Margaret", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1005, Title="HR Manager", CustomerID="Steven", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1006, Title="Vice President", CustomerID="Smith", Country="Mexico", Address="Avda. de la Constitución 2222"},
+            new OrderDetails() { OrderID=1007, Title="Sales", CustomerID="Steven", Country="France", Address="24, place Kléber"},
+            new OrderDetails() { OrderID=1008, Title="HR Manager", CustomerID="Smith", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1009, Title="Sales", CustomerID="Smith", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1010, Title="Vice President", CustomerID="Smith", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1011, Title="Inside Sales Coordinator", CustomerID="Smith", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1012, Title="HR Manager", CustomerID="Smith", Country="India", Address="45A "},
+        };
+    }
+
+    public List<Order> GenerateOrderData()
+    {
+        Orders = new List<Order>
+        {
+            new Order() {EmployeeID = 1, OrderID=1001, CustomerID="Nancy", ShipCity="Texas", Freight=2.1*1 },
+            new Order() {EmployeeID = 2, OrderID=1002, CustomerID="Andrew", ShipCity="London", Freight=2.1*2},
+            new Order() {EmployeeID = 3, OrderID=1003, CustomerID="Janet", ShipCity="London", Freight=2.1*3},
+            new Order() {EmployeeID = 4, OrderID=1004, CustomerID="Margaret", ShipCity="London", Freight= 2.1*4},
+            new Order() {EmployeeID = 5, OrderID=1005, CustomerID="Steven", ShipCity="Vegas", Freight=2.1*5},
+            new Order() {EmployeeID = 6, OrderID=1006, CustomerID="Smith", ShipCity="Dubai", Freight=2.1*6},
+            new Order() {EmployeeID = 7, OrderID=1007, CustomerID="Steven", ShipCity="Paris", Freight=2.1*7},
+            new Order() {EmployeeID = 8, OrderID=1008, CustomerID="Smith", ShipCity="Mumbai", Freight=2.1*8},
+            new Order() {EmployeeID = 9, OrderID=1009, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 2, OrderID=1010, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 3, OrderID=1011, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+            new Order() {EmployeeID = 3, OrderID=1012, CustomerID="Smith", ShipCity="Chennai", Freight=2.1*9},
+        };
+        return Orders;
+    }
+
+    public List<EmployeeData> GenerateEmployeeData()
+    {
+        Employees = new List<EmployeeData>
+        {
+            new EmployeeData() {EmployeeID = 1, FirstName="Nancy",  Title="Sales Representative",City="Texas", Country="USA"},
+            new EmployeeData() {EmployeeID = 2, FirstName="Andrew",  Title="Vice President",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 3, FirstName="Janet",  Title="Sales",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 4, FirstName="Margaret",  Title="Sales Manager",City="London", Country="UK"},
+            new EmployeeData() {EmployeeID = 5, FirstName="Steven",  Title="Inside Sales Coordinator",City="Vegas", Country="USA"},
+            new EmployeeData() {EmployeeID = 6, FirstName="Smith",  Title="HR Manager",City="Dubai", Country="UAE"},
+            new EmployeeData() {EmployeeID = 7, FirstName="Steven",  Title="Inside Sales Coordinator",City="Paris", Country="France"},
+            new EmployeeData() {EmployeeID = 8, FirstName="Smith",  Title="HR Manager",City="Mumbai", Country="India"},
+            new EmployeeData() {EmployeeID = 9, FirstName="Smith",  Title="HR Manager",City="Chennai", Country="India"},
+        };
+        return Employees;
+    }
+
+    public List<OrderDetails> GenerateOrderDetailsData()
+    {
+        return OrderInfo = new List<OrderDetails>
+        {
+            new OrderDetails() { OrderID=1001, Title="Sales Representative", CustomerID="Nancy", Country="Germany", Address="Obere Str. 57" },
+            new OrderDetails() { OrderID=1002, Title="HR Manager", CustomerID="Andrew", Country="Mexico", Address="Avda. de la Constitución 2222"},
+            new OrderDetails() { OrderID=1003, Title="Vice President", CustomerID="Janet", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1004, Title="Inside Sales Coordinator", CustomerID="Margaret", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1005, Title="HR Manager", CustomerID="Steven", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1006, Title="Vice President", CustomerID="Smith", Country="Mexico", Address="Avda. de la Constitución 2222"},
+            new OrderDetails() { OrderID=1007, Title="Sales", CustomerID="Steven", Country="France", Address="24, place Kléber"},
+            new OrderDetails() { OrderID=1008, Title="HR Manager", CustomerID="Smith", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1009, Title="Sales", CustomerID="Smith", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1010, Title="Vice President", CustomerID="Smith", Country="Spain", Address="C/ Araquil, 67"},
+            new OrderDetails() { OrderID=1011, Title="Inside Sales Coordinator", CustomerID="Smith", Country="Mexico", Address="Mataderos 2312"},
+            new OrderDetails() { OrderID=1012, Title="HR Manager", CustomerID="Smith", Country="India", Address="45A "},
+        };
+    }
+
+    public class EmployeeData
+    {
+        public int? EmployeeID { get; set; }
+        public string FirstName { get; set; }
+        public string Title { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+    }
+    public class Order
+    {
+        public int OrderID { get; set; }
+        public int? EmployeeID { get; set; }
+        public string CustomerID { get; set; }
+        public double Freight { get; set; }
+        public string ShipCity { get; set; }
+    }
+
+    public class OrderDetails
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public string Title { get; set; }
+        public string Address { get; set; }
+        public string Country { get; set; }
+    }
+}

@@ -1,0 +1,29 @@
+﻿@inherits GridTestBase
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Empty Label is removed when validation message is empty">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" Toolbar="@(new List<string>() {  "Edit", "Delete", "Update", "Cancel" })" AllowPaging="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" ValidationRules="@(new ValidationRules{ Required=true, Number=true})" TextAlign="TextAlign.Right" Width="140"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="CustomerID" ValidationRules="@(new ValidationRules{ Required=true})" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.PriceValue) ValidationRules="@(new ValidationRules{ Required=true, Range = new object[]{1, 1000}})" Format="C2" TextAlign="TextAlign.Right" Width="100"></GridColumn>
+                <GridColumn Field=@nameof(Order.Quantity) HeaderText="Quantity" Width="100"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+
+@code {
+
+    SfFixture fixture { get; set; }
+    public List<Order> GridData { get; set; }
+    public async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.FindAll(".e-gridform").Count() > 0, TimeSpan.FromMilliseconds(1000));
+        Assert.True(cut.FindAll(".e-gridform")[0].QuerySelector(".e-error") == null, "No empty Labels must be found on start edit");
+    }
+}

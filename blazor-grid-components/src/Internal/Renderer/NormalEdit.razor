@@ -1,0 +1,352 @@
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@* @inherits GridRowBase<TCell> *@
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Data
+@using Syncfusion.Blazor.Grids.Internal.Editors
+@using System.Collections 
+
+<td class="e-editcell e-normaledit @(Parent!.FrozenColumns != 0 || Parent.FrozenRows != 0 && Parent.EditSettings?.Mode == EditMode.Normal ? "e-edit-frozen" : "")"
+    colspan="@(Parent.IsRenderedFromTreeGrid ? (Parent.AllowRowDragAndDrop ? VisibleCols + 1 : VisibleCols) : VisibleCols + IndentCount)"@onkeydown:stopPropagation="true">
+    <EditForm @ref="EditForm" EditContext="@(Parent.EditModule?.EditContext)" class="@(IsShowNewAddForm ? "e-gridform e-lib e-formvalidator e-adding" : "e-gridform e-lib e-formvalidator e-editing")">
+        @if (Parent.EditSettings?.Validator != null)
+        {
+            @Parent.EditSettings.Validator(new ValidatorTemplateContext() {
+               Data = Parent.EditModule?.CloneData!, EditContext = Parent.EditModule?.EditContext!,
+               ShowValidationMessage = (string field, bool isValid, string message) =>
+               {
+                   Parent?.EditModule!.ApplyFormValidation(new Blazor.Internal.ValidationResult()
+                   {
+                       FieldName = field,
+                       IsValid = isValid,
+                       Message = message
+                   });
+               }
+            });
+        }
+        else
+        {
+            <DataAnnotationsValidator />
+            <ColumnsValidator T="TCell" OnValidated="@(async (ValidationResult args) => await Parent.EditModule!.ApplyFormValidation(args))"
+                              ValidationRules="@Parent.EditModule?.ValidationRules()">
+            </ColumnsValidator>
+        }
+        @if (Parent.EditSettings!.Template != null)
+        {
+            Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+            @Parent.EditSettings.Template(edittemplateData.Data!)
+        }
+        else
+        {
+            <table class="e-table e-inline-edit">
+                <WidthController TContent="TCell" Columns="Columns"></WidthController>
+                <tbody>
+                    <tr>
+                        @foreach (var Cell in Cells!)
+                        {
+                            if (Cell?.CellType == CellType.Indent)
+                            {
+                                <td class="e-indentcell"></td>
+                                continue;
+                            }
+                            if (Cell?.CellType == CellType.Detail)
+                            {
+                                <td class="e-detailrowcollapse"></td>
+                                continue;
+                            }
+                            if (Cell?.CellType == CellType.RowDrag) // TODO: Check while draganddrop feature
+                            {
+                                <td class="e-dragindentcell"></td>
+                                continue;
+                            }
+                            //TODO: Handle drag and drop here
+                            var Column = Cell?.Column;
+                            var EditType = Column!.EditType;
+                            EditType = (Column?.Type == ColumnType.CheckBox) == true && !(PreventShowAddForm || IsShowNewAddForm) ? EditType.BooleanEdit : EditType;
+                            var Class = "e-rowcell";
+                            //Render td only when visible, hidden columns are allowed or an grouped column
+                            @if (Parent.ShouldRenderColumn(Cell!.Visible, Column!.Field))
+                            {
+                                if (Cell.IsSpanned || Cell.IsRowSpanned) { continue; }
+                                if (Parent!.EditModule?.IsLastRow == true)
+                                {
+                                    Class = $"{Class} e-lastrowcell";
+                                }
+                                if (EditType == EditType.BooleanEdit)
+                                {
+                                    Class = $"{Class} e-boolcell";
+                                }
+                                if(!Cell.Visible)
+                                {
+                                    Class = $"{Class} e-hide";
+                                }
+                                if (Column.Commands != null)
+                                {
+                                    Class = $"{Class} e-unboundcell";
+                                    Class = $"{Class} " + (Cell.Column!.directParamKeys.Contains("TextAlign") && Cell.Column.TextAlign != TextAlign.None ? GridUtils.GetAlignmentClass(Cell.Column): "e-rightalign");
+                                }
+                                else
+                                {
+                                    // Apply alignment class in absence of commands column
+                                    Class = $"{Class} {GridUtils.GetAlignmentClass(Cell?.Column!)}";
+                                }
+                                if (Parent.FreezeModule!.GetFrozenCount() > 0 || Parent.Columns!.Any(x => x.Freeze == FreezeDirection.Fixed))
+                                {
+                                    Class = $"{Class} {Parent.FreezeModule!.ApplyFrozenColumnsClass(Column)}";
+                                }
+
+                                var FreezeStyle = Parent.FreezeModule!.ApplyFrozenColumnsStyles(Column);
+                                object value = null!;
+                                if (!string.IsNullOrEmpty(Column?.Field))
+                                    value = Parent.PropHelper?.GetObject(Column?.Field!, Parent.EditModule!.CloneData!)!;
+                                else
+                                    value = null!;
+                                @* NOTE: Binding the on-keydown, on-focus, on-click event in the td element will break in the dropdown editing scenario. refer task BLAZ-24746 *@
+                                <td class="@Class" data-sf-style="@FreezeStyle" e-mappinguid="@Column!.Uid" @attributes="GetSpanAttributes(Cell!)">
+                                    @if (Column?.EditTemplate != null && !PreventShowAddForm)
+                                    {
+                                        edittemplateData.Column = Cell!.Column;
+                                        edittemplateData.Data = Parent.EditSettings.ShowAddNewRow ? Parent.EditModule!.CloneData! : edittemplateData.Data!;
+                                        Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                                        @Column.EditTemplate(edittemplateData.Data!);
+                                    }
+                                    else if (Column?.Commands != null)
+                                    {
+                                        <div class="e-unboundcelldiv">
+                                            @foreach (var command in Cell?.Column!.Commands!)
+                                            {
+                                                if (command?.Type == CommandButtonType.Save || command?.Type == CommandButtonType.Cancel || command?.Type == CommandButtonType.None)
+                                                {
+                                                    <SfButton Type="button" @attributes="Parent.SetButtonOptions(command)" IconCss="@(command.ButtonOption.IconCss)" Disabled="@(PreventShowAddForm ? true : false)"
+                                                            CssClass="@($"{command.ButtonOption.CssClass} e-edit-delete e-{command.Type}button")"
+                                                            @onclick="(async () => await CommandClickHandler(command, Row!, Cell))">
+                                                    </SfButton>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        if (Column?.Field != "" || EditType == EditType.BooleanEdit)
+                                        {
+                                            Row<object> row = null!;
+                                            if (IsDisableRow)
+                                            {
+                                                row = Parent.EditModule?.GetModelGenerator(true)!;
+                                            }
+                                            if (EditType == EditType.DefaultEdit)
+                                            {
+                                                <TextBoxEditCell T="TCell" Column="Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></TextBoxEditCell>
+                                            }
+                                            else if (EditType == EditType.NumericEdit)
+                                            {
+                                                <NumericEditCell TCell="TCell" Column="@Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></NumericEditCell>
+                                            }
+                                            else if (EditType == EditType.DropDownEdit)
+                                            {
+                                                <DropDownEditCell TCell="TCell" Column="@Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></DropDownEditCell>
+                                            }
+                                            else if (EditType == EditType.BooleanEdit)
+                                            {
+                                                <BooleanEditCell T="TCell" Column="@Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></BooleanEditCell>
+                                            }
+                                            else if (EditType == EditType.DatePickerEdit || EditType == EditType.DateTimePickerEdit)
+                                            {
+                                                <DatePickerEditCell TCell="TCell" Column="@Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></DatePickerEditCell>
+                                            }
+                                            else if (EditType == EditType.TimePickerEdit)
+                                            {
+                                                <TimePickerEditCell TCell="TCell" Column="@Column" PreventAddForm=@PreventShowAddForm RowData="@((TCell)(IsDisableRow ? row.Data : Parent.EditModule!.CloneData)!)"></TimePickerEditCell>
+                                            }
+                                        }
+                                    }
+                                </td>
+                            }
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        }
+        @if(!PreventShowAddForm){
+            <ValidationTooltip T="TCell" Columns="Columns"></ValidationTooltip>
+        }
+    </EditForm>
+</td>
+
+
+@code {
+
+    #region Public Properties
+
+    [Parameter]
+    public List<Cell<object>>? Cells { get; set; }
+    [Parameter]
+    public Row<object>? Row { get; set; }
+
+    [CascadingParameter]
+        public SfGrid<TCell>? Parent { get; set; }
+    public EditForm? EditForm { get; set; }
+
+    /// <summary>
+    /// Used to disable the add form while editing any other row in the grid when the ShowAddNewRow property is set to true.
+    /// </summary>
+    [Parameter]
+    public bool PreventShowAddForm { get; set; }
+
+    /// <summary>
+    /// Prevents the value from showing on the add form while editing any other row in the grid when the ShowAddNewRow property is set to true.
+    /// </summary>
+    [Parameter]
+    public bool IsDisableRow { get; set; }
+
+    /// <summary>
+    /// Used to identify the add form when generating more than one edit form in the grid.
+    /// </summary>
+    [Parameter]
+    public bool IsShowNewAddForm { get; set; }
+
+    #endregion
+
+    #region Internal Properties
+
+    internal EditTemplateData edittemplateData = new EditTemplateData();
+
+    public List<GridColumn> Columns => Cells?.FindAll(c => (c?.CellType == CellType.Data ||
+                            c?.CellType == CellType.CommandColumn)).Select(c => c?.Column).ToList()!;
+
+    internal int VisibleCols => Columns.FindAll(_ => _.Visible).Count;
+
+    internal int IndentCount => Cells!.FindAll(c => c.CellType == CellType.Detail ||
+            c.CellType == CellType.RowDrag || c.CellType == CellType.Indent).Count;
+
+    #endregion
+
+    #region Lifecycle Methods
+
+    protected override void OnInitialized()
+    {
+        edittemplateData.Data = Parent!.EditModule!.CloneData!;
+    }
+
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        Parent!.EditModule!.EditContext = Parent.EditModule.EditContext ?? this.EditForm!.EditContext;
+        if (firstRender)
+        {
+            var frozenEdit = Parent.FreezeModule!.GetFrozenCount() > 0;
+            await Parent.EditModule.FocusEditableCell(frozenEdit);
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Builds and returns span attributes (rowspan and colspan) for a cell based on its span values.
+    /// Span attributes are only applied when the cell is not spanned and the span values are greater than 1.
+    /// Also ensures that span attributes are removed when they're no longer needed.
+    /// </summary>
+    private IDictionary<string, object> GetSpanAttributes(Cell<object> cell)
+    {
+        var spanAttributes = new Dictionary<string, object>();
+        
+        if (cell == null)
+        {
+            return spanAttributes;
+        }
+
+        if (cell.ColSpan.HasValue && cell.ColSpan > 1)
+        {
+            spanAttributes.Add("colspan", cell.ColSpan.Value);
+            spanAttributes.Add("aria-colspan", cell.ColSpan.Value);
+        }
+
+        if (cell.RowSpan.HasValue && cell.RowSpan > 1)
+        {
+            spanAttributes.Add("rowspan", cell.RowSpan.Value);
+            spanAttributes.Add("aria-rowspan", cell.RowSpan.Value);
+        }
+
+        return spanAttributes;
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+        /// <summary>
+        /// Handles command button click events
+        /// </summary>
+        internal async Task CommandClickHandler(GridCommandColumn column, Row<object> row, Cell<object> cell)
+        {
+            if (column == null || row == null) return;
+
+            if (Parent!.GridEvents?.OnRecordClick.HasDelegate == true || Parent.IsRenderedFromTreeGrid || Parent.IsRenderedFromFileManager)
+            {
+                var recordClickArgs = new RecordClickEventArgs<TCell>()
+                {
+                    CellIndex = (cell?.Index ?? -1),
+                    RowData = (TCell)row.Data!,
+                    RowIndex = (row.Index ?? -1),
+                    Column = cell?.Column!,
+                    Parent = Parent
+                };
+                if (Parent.IsRenderedFromTreeGrid || Parent.IsRenderedFromFileManager)
+                    await Parent.EventAggregator.NotifyAsync("RecordClick", recordClickArgs);
+                else
+                    await Parent.GridEvents!.OnRecordClick.InvokeAsync(recordClickArgs);
+            }
+
+            bool isRowModified = Parent.IsDataModified(row, Parent.EditModule!.CloneData!, column);
+            if (Parent.GridEvents?.CommandClicked.HasDelegate == true || Parent.IsRenderedFromTreeGrid)
+            {
+                var args = new CommandClickEventArgs<TCell>()
+                {
+                    Cancel = false,
+                    RowData = (TCell)row.Data!,
+                    EditedData = (isRowModified) ? (TCell)Parent.EditModule.CloneData! : default(TCell)!,
+                    CommandColumn = new CommandModel()
+                    {
+                        ButtonOption = column.ButtonOption,
+                        Title = column.Title,
+                        Type = column.Type,
+                        ID = column.ID,
+                        Uid = column.Uid
+                    },
+                    Parent = Parent
+                };
+                if (Parent.IsRenderedFromTreeGrid)
+                    await Parent.EventAggregator.NotifyAsync("CommandClick", args);
+                else
+                    await Parent.GridEvents!.CommandClicked.InvokeAsync(args);
+                if (args.Cancel)
+                    return;
+            }
+
+            switch (column.Type)
+            {
+                case CommandButtonType.Edit:
+                    if (!Parent.EditSettings!.Mode.Equals(EditMode.Batch))
+                    {
+                        await Parent.EditModule.StartEdit(row);
+                    }
+                    break;
+                case CommandButtonType.Delete:
+                    await Parent.SelectRowAsync(row.Index ?? -1);
+                    await Parent.DeleteRecordAsync();
+                    break;
+                case CommandButtonType.Save:
+                    await Parent.EndEditAsync();
+                    break;
+                case CommandButtonType.Cancel:
+                    await Parent.CloseEditAsync();
+                    break;
+            }
+        }
+
+    #endregion
+}

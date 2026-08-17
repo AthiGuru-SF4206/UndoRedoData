@@ -1,0 +1,167 @@
+﻿@using Microsoft.AspNetCore.Components.Web;
+@using System.Globalization;
+
+@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+
+    <tr class="e-filterbar" rowspan="1" role="row">
+        @if ((Parent?.IsDataLoaded == true))
+        {
+            filterBarColumns = new List<FilterDetails>();
+            GetActualColumns();
+            @foreach (var cell in filterBarColumns)
+            {
+                GridColumn? column = cell?.Column;
+                string? cellType = cell?.CellType;
+                string Title = column != null ? column.HeaderText + Localizer?.GetText(GridLocaleKeys.FilterbarTitle) : "";
+                object FilterValue = string.Empty;
+                object ActualValue = string.Empty;
+                string FieldName = column?.Field ?? "";
+                string Predicate = null!;
+                bool IgnoreAccent = false;
+                bool MatchCase = false;
+                bool IsCheckbox = column != null && column.Type.Equals(ColumnType.CheckBox) && column.Field.Equals("");
+                bool isMovableHeader = FilterBarParameters!.IsFrozen.HasValue && FilterBarParameters.IsFrozen == false;
+                bool isVirtualMovable = Parent.EnableColumnVirtualization && isMovableHeader;
+                bool isVirtualCell = false;
+                if (isVirtualMovable)
+                {
+                    isVirtualCell = ((column?.Index > (Parent.VirtualScrollModule!.StartColumnIndex - 1)) && (column?.Index < Parent.VirtualScrollModule!.EndColumnIndex + 1));
+                }
+                if (column != null && Parent.FilterSettings?.Columns != null && Parent.FilterSettings.Columns.Count != 0)
+                {
+                    foreach (GridFilterColumn Col in Parent.FilterSettings.Columns)
+                    {
+                        if (Col?.Uid == column?.Uid)
+                        {
+                            bool isJsonElement = Col?.Value?.GetType().Name == "JsonElement";
+                            if (isJsonElement && column?.ValueType == null)
+                            {
+                                Parent.SetColumnValueType();
+                            }
+                            FilterValue = isJsonElement ? SfBaseUtils.ChangeType(Col?.Value, column?.ValueType) : !string.IsNullOrEmpty(Col?.RawInputValue) ? Col.RawInputValue : Col?.Value!;
+                            ActualValue = Col?.ActualValue!;
+                            FieldName = Col?.Field!;
+                            Predicate = Col?.Predicate!;
+                            IgnoreAccent = Col!.IgnoreAccent!;
+                            MatchCase = Col.MatchCase!;
+                        }
+                    }
+                }
+                @if ((column != null && cellType?.Equals("data") == true && column.Visible && (isVirtualCell || !isVirtualMovable)) || cellType?.Equals("data") != true)
+                {
+                    var filterInputParameters = new FilterInputParameters()
+                    {
+                        FieldName = FieldName,
+                        ActualValue = ActualValue,
+                        IsCheckbox = IsCheckbox,
+                        CellType = cellType,
+                        Column = column,
+                        FilterValue = FilterValue,
+                        Predicate = Predicate,
+                        IgnoreAccent = IgnoreAccent,
+                        MatchCase = MatchCase,
+                        IsFrozen = FilterBarParameters.IsFrozen,
+                        IsFrozenRight = FilterBarParameters.IsFrozenRight
+                    };
+                    <FilterInput TContent=TContent FilterInputParameters=filterInputParameters></FilterInput>
+                }
+            }
+        }
+    </tr>
+
+@code {
+    [Parameter]
+    public FilterBarParameters? FilterBarParameters { get; set; }
+
+    [CascadingParameter]
+    SfGrid<TContent>? Parent { get; set; }
+
+    private List<FilterDetails> filterBarColumns { get; set; } = new List<FilterDetails>();
+
+    public GridColumn? Column { get; set; }
+    public KeyboardEventArgs? KArgs { get; set; }
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    private class FilterDetails
+    {
+        public GridColumn? Column { set; get; }
+        public string? CellType { set; get; }
+    }
+
+    private void GetActualColumns()
+    {  
+        if (Parent!.Columns != null)
+        {
+            if (Parent.AllowGrouping && Parent.GroupSettings?.Columns?.Count() > 0)
+            {
+                for (var i = 0; i < Parent.GroupSettings.Columns.Count(); i++)
+                {
+                    filterBarColumns.Add(new FilterDetails { CellType = CellType.Indent.ToString().ToLower(CultureInfo.InvariantCulture), Column = null! });
+                }
+            }
+            if (((IGrid)Parent)?.GridTemplates?.DetailTemplate != null && !Parent.IsRenderedFromTreeGrid)
+            {
+                filterBarColumns.Add(new FilterDetails { CellType = CellType.DetailIndent.ToString().ToLower(CultureInfo.InvariantCulture), Column = null! });
+            }
+
+            if (Parent!.AllowRowDragAndDrop)
+            {
+                filterBarColumns.Add(new FilterDetails { CellType = CellType.RowDrag.ToString().ToLower(CultureInfo.InvariantCulture), Column = null! });
+            }
+            GetDataColumn(Parent.EnableColumnVirtualization ? FilterBarParameters!.IsFrozen.HasValue && FilterBarParameters.IsFrozen == true ? Parent.RearrangeColumns(GridUtils.GetColumns(Parent)) : Parent.VirtualScrollModule!.GetVirtualColumns() : Parent.RearrangeColumns(GridUtils.GetColumns(Parent)));
+            UpdateFilterBarColumns();
+        }
+    }
+
+    internal void GetDataColumn(List<GridColumn> columns)
+    {
+        if (columns != null)
+        {
+            foreach (GridColumn column in columns)
+            {
+                filterBarColumns.Add(new FilterDetails { CellType = CellType.Data.ToString().ToLower(CultureInfo.InvariantCulture), Column = column });
+            }
+        }
+    }
+
+    internal void UpdateFilterBarColumns()
+    {
+        var Cells = filterBarColumns;
+        if (Parent?.FreezeModule!.GetFrozenCount() == 0) filterBarColumns = Cells;
+
+        if (FilterBarParameters!.IsFrozen.HasValue && FilterBarParameters.IsFrozen == true)
+        {
+            if (Parent?.FrozenColumns > 0)
+            {
+                filterBarColumns = Cells?.Where(x => x.Column?.Index < Parent.FrozenColumns).ToList()!;
+                if (Parent.AllowFreezeLineMoving)
+                {
+                    filterBarColumns?.AddRange(Cells?.Where(x => x.Column?.IsFrozen == true).ToList()!);
+                }
+            }
+            else if (FilterBarParameters.IsFrozenRight)
+            {
+                filterBarColumns = Cells?.Where(x => x.Column?.IsFrozen == true && x.Column?.Freeze == FreezeDirection.Right).ToList()!;
+            }
+            else
+            {
+                filterBarColumns = Cells?.Where(x => x.Column?.IsFrozen == true && x.Column?.Freeze != FreezeDirection.Right).ToList()!;
+            }
+        }
+        else if (FilterBarParameters.IsFrozen.HasValue && FilterBarParameters.IsFrozen == false)
+        {
+            if(Parent?.FrozenColumns > 0){
+                filterBarColumns = Cells?.Where(x => x.Column?.Index >= Parent.FrozenColumns).ToList()!;
+            } else {
+                filterBarColumns = Cells?.Where(x => x.Column?.IsFrozen != true).ToList()!;
+            }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Localizer = Parent?.Localizer!;
+    }
+}

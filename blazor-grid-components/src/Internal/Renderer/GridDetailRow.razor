@@ -1,0 +1,73 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@using Microsoft.AspNetCore.Components.Web
+@typeparam TRow
+@inherits GridRowBase<TRow>
+
+@if (RowParameters != null && RowParameters.Row?.IsDetailRow == true)
+{
+    bool isRowVisible = true;
+    @if (Parent != null && Parent.IsRenderedFromTreeGrid)
+    {
+        var data = RowParameters.Row?.Data;
+        var parentRecord = IsExpanded(data!, true);
+        if (!parentRecord)
+        {
+            isRowVisible = false;
+        }
+    }
+    @if (RowParameters.Row?.IsDirty == true && RowParameters.Row?.IsExpand == true && RowParameters.Row.Action.Equals(EditAction.Deleted))
+    {
+        classList = "e-detailrow e-hiddenrow e-updatedtd";
+    }
+    @if (isRowVisible)
+    {
+        <tr class="@classList" data-uid="@RowParameters.Row?.Uid">
+            @foreach (var cell in RowParameters.Row?.Cells!)
+            {
+                CellComponentService? service = Parent!.CellService;
+                string? cellType = service?.CellSelector != null ? service?.CellSelector(RowParameters.Row!, cell!) : cell?.CellType.ToString();
+                cellType = Parent.CellService?.HasCell(cellType!) == true ? cellType : null!;
+                if (cell != null && cell.CellType != CellType.Data)
+                {
+                    if (cell.CellType == CellType.Indent || cell.CellType == CellType.DetailIndent)
+                    {
+                        var cellParams = new GridCellParameters()
+                        {
+                            Row = RowParameters.Row!,
+                            Cell = cell,
+                            IsFrozen = RowParameters.IsFrozen ?? false,
+                            IsFrozenRight = RowParameters.IsFrozenRight
+                        };
+                        @RenderIndentCell(cellParams)
+                        ;
+                    }
+                }
+                else if (cellType != null)
+                {
+                    @Parent.CellService?.GetCell(cellType)(new CellContext<object>() { Row = RowParameters.Row!, Cell = cell! });
+                }
+                else
+                {
+                    cell!.IsTemplate = true;
+                    <th data-uid="@cell?.Uid" colspan="@cell?.ColSpan" class="@($"e-detailcell")"
+                        @onkeydown:preventDefault="true" @onkeydown:stopPropagation="true"
+                        @onkeydown="async (KeyboardEventArgs e)=> await Parent.FocusModule!.ProcessKeyDown(e, RowParameters.Row!, cell!)"
+                        tabindex="0" scope="col">
+                        <div @onkeydown:stopPropagation="true">
+                            @(((IGrid)Parent)?.GridTemplates?.DetailTemplate!(RowParameters.Row?.Data!))
+                        </div>
+                    </th>
+                }
+            }
+        </tr>
+    }
+}
+
+@code
+{
+    #region State
+    private string? focusClass { get; set; }
+
+    private string classList { get; set; } = "e-detailrow";
+    #endregion
+}

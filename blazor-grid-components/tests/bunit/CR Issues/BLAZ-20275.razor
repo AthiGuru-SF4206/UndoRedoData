@@ -1,0 +1,75 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" Test="InitialSorting" Description=" Exception throws when grouping a column with initial sorted columns">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="@GenerateRecord()"
+                AllowFiltering="true"
+                AllowGrouping="true"
+                AllowMultiSorting="true"
+                AllowSorting="true"
+                AllowPaging="true">
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridSortSettings Columns="@(new List<GridSortColumn>(){ new GridSortColumn{ Field = "OrderDate", Direction = SortDirection.Ascending}, new GridSortColumn{ Field = "Freight", Direction = SortDirection.Ascending } })">
+            </GridSortSettings>
+            @*<GridSortSettings>
+                    <GridSortColumns>
+                        <GridSortColumn Field="OrderDate" Direction="SortDirection.Ascending"></GridSortColumn>
+                        <GridSortColumn Field="Freight" Direction="SortDirection.Descending"></GridSortColumn>
+                    </GridSortColumns>
+                </GridSortSettings>*@
+            @*<GridFilterSettings Type="FilterType.Excel"></GridFilterSettings>*@
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+    {
+    SfFixture fixture { get; set; }
+    public SfGrid<Order> DefaultGrid;
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    public async void InitialSorting(Fixture fixture)
+    {
+
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.TotalItemCount == 10);
+        Assert.True(cut.Instance.AllowGrouping == true);
+        Assert.True(cut.Instance.AllowSorting == true);
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count());
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+        await DefaultGrid.GroupColumnAsync("OrderID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+        Assert.True(cut.Instance.GroupSettings.Columns[0] == "OrderID", "");
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.Instance.SortSettings.Columns.Where(x => x.Direction.Equals(SortDirection.Descending)).ToList().Count(), "SortDirection Count is proper");
+    }
+
+    public List<Order> Orderss { get; set; }
+    public List<Order> GenerateRecord()
+
+    {
+        return Orderss = Enumerable.Range(1, 10).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = (new DateTime[] { new DateTime(2010, 5, 1),
+                    new DateTime(2010, 5, 2), new DateTime(2010, 5, 3), })[new Random().Next(3)]
+        }).ToList();
+    }
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+

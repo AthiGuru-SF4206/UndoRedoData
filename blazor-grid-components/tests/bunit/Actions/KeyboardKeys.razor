@@ -1,0 +1,280 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Normal grid with filter bar">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true AllowFiltering=true Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-headercell")[0].Click();
+        cut.FindAll(".e-headercell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown" });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp" });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey = true });
+        cut.FindAll(".e-headercell")[3].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "Home" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "End" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "End", CtrlKey=true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft" });
+        cut.FindAll(".e-headercell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[cut.FindAll(".e-rowcell").Count() -1].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.FindAll(".e-headercell")[0].KeyDown(new KeyboardEventArgs() { Key = "LeftArrow" });
+        cut.FindAll(".e-headercell")[3].KeyDown(new KeyboardEventArgs() { Key = "RightArrow" });
+        cut.FindAll(".e-headercell")[1].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey=true });
+        // await cut.Instance.SelectRowAsync(0);
+        // await cut.Instance.StartEditAsync();
+        // cut.FindAll(".e-unfreeze")[cut.FindAll(".e-unfreeze").Count - 1].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        // var editedCellCount = cut.FindAll(".e-unfreeze").Count();
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 100).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Show Add New Row enabled in grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowAddNewRow=true></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+
+    public async Task GridBasicRendering2(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-headercell")[3].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        // cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey = true });
+        // cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp" });
+
+    }
+
+}
+
+<SfFixture @ref="fixture3" TestAsync="GridBasicRendering3" Description="Grid with checkbox column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" ShowAddNewRow=true></GridEditSettings>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+
+    public async Task GridBasicRendering3(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.WaitForState(() => cut.FindAll(".e-rowcell").Count > 0, TimeSpan.FromMilliseconds(1000));
+        //cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Space" });
+        Assert.True(cut.FindAll(".e-checkbox-wrapper").Count > 0);
+        cut.FindAll(".e-checkbox-wrapper")[1].Click();
+        cut.WaitForState(() => cut.Instance.SelectedRowIndex == 0, TimeSpan.FromMilliseconds(500));
+    }
+
+}
+
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Grid with selection disabled">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="false" AllowPaging=true Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture4 { get; set; }
+
+    public void GridBasicRendering4(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-rowcell")[0].Click();
+    }
+}
+
+<SfFixture @ref="fixture5" TestAsync="GridBasicRendering5" Description="Grid with Grouping">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowGrouping="true" AllowPaging=true Toolbar="@(new List<string>(){ "Add", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Visible=false Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture5 { get; set; }
+
+    public async Task GridBasicRendering5(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.FindAll(".e-headercell")[1].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft" });
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.FindAll(".e-headercell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight" });
+        await cut.Instance.GroupColumnAsync("OrderID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length > 0, TimeSpan.FromMilliseconds(100));
+        cut.FindAll(".e-headercell")[1].KeyDown(new KeyboardEventArgs() { Key = "Tab" });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey = true });
+        cut.FindAll(".e-recordplusexpand")[2].KeyDown(new KeyboardEventArgs() { Key = "Tab", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft" });
+        cut.FindAll(".e-recordplusexpand")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown" });
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        await cut.Instance.GroupColumnAsync("OrderDate");
+        cut.FindAll(".e-recordplusexpand")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp" });
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length > 2, TimeSpan.FromMilliseconds(100));
+
+        cut.FindAll(".e-recordplusexpand")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp", CtrlKey = true });
+        await Task.Delay(100);
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count == 0, "No expand buttons must be found");
+        cut.FindAll(".e-recordpluscollapse")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", AltKey = true });
+        await Task.Delay(100);
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count == 1, "One expand alone must be found");
+        cut.FindAll(".e-recordpluscollapse")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", CtrlKey = true });
+        await Task.Delay(100);
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count == 0, "No collapse buttons must be found");
+        cut.FindAll(".e-recordplusexpand")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp", AltKey = true });
+        await Task.Delay(100);
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count == 1, "One collapse button only must be found");
+
+    }
+
+}
+
+<SfFixture @ref="fixture6" TestAsync="GridBasicRendering6" Description="cell selection flow mode">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowSelection="true" AllowPaging=true >
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Cell" CellSelectionMode="CellSelectionMode.Flow"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture6 { get; set; }
+
+    public async Task GridBasicRendering6(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+       
+        cut.FindAll(".e-rowcell")[2].Click(new MouseEventArgs() {Type="click"});
+        cut.FindAll(".e-rowcell")[15].Click(new MouseEventArgs(){ ShiftKey = true, Type = "click"});
+        cut.FindAll(".e-rowcell")[25].Click(new MouseEventArgs(){ ShiftKey = true, CtrlKey=true, Type = "click"});
+        cut.FindAll(".e-rowcell")[2].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[15].Click(new MouseEventArgs() { CtrlKey = true, Type = "click" });
+        cut.FindAll(".e-rowcell")[2].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[15].Click(new MouseEventArgs() { Type = "click", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[25].Click(new MouseEventArgs() { Type = "click", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+        cut.FindAll(".e-rowcell")[2].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp", ShiftKey=true });
+        cut.FindAll(".e-rowcell")[6].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[6].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "Escape" });
+        cut.FindAll(".e-rowcell")[2].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowDown", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[2].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[22].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[22].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[22].KeyDown(new KeyboardEventArgs() { Key = "ArrowUp", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[22].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight", ShiftKey = true });
+
+        cut.FindAll(".e-rowcell")[0].Click(new MouseEventArgs() { Type = "click" });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowRight", ShiftKey = true });
+        cut.FindAll(".e-rowcell")[0].KeyDown(new KeyboardEventArgs() { Key = "ArrowLeft", ShiftKey = true });
+
+
+        // var mouseEvent = new MouseEventArgs()
+        //     {
+        //         ShiftKey = true,
+        //         Type = "click"
+        //     };
+        // cut.FindAll(".e-rowcell")[15].Click(mouseEvent);
+
+    }
+}

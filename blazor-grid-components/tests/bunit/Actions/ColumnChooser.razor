@@ -1,0 +1,494 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Popups
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="ColumnChooser visible">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid10" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems10>
+            <GridEvents OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompletedHandlers" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150" DisableHtmlEncode="false" EnableSanitization="false"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" DisableHtmlEncode="false" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> DefaultGrid10;
+
+    public string[] ToolbarItems10 = new string[] { "ColumnChooser" };
+    void GridBasicRendering10(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-cc-toolbar")[0].Click(new MouseEventArgs());
+        var ColumnChooserInstance = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ColumnChooser<Order>>();
+        Assert.True(ColumnChooserInstance != null);
+        ColumnChooserInstance.Instance.SelectAllClickHandler();
+       
+    }
+}
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="ColumnChooser false visible">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid11" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems10>
+            <GridEvents OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompletedHandlers" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Visible="false" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture11 { get; set; }
+    private SfGrid<Order> DefaultGrid11;
+
+    public string[] ToolbarItems11 = new string[] { "ColumnChooser" };
+    void GridBasicRendering11(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-cc-toolbar")[0].Click(new MouseEventArgs());
+        var ColumnChooserInstance = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ColumnChooser<Order>>();
+        Assert.True(ColumnChooserInstance != null);
+        ColumnChooserInstance.Instance.SelectAllClickHandler();
+
+
+    }
+}
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="ColumnChooser with AdaptiveUI">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid8" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems9>
+            <GridEvents OnActionBegin="ActionBeginHandler" OnActionComplete="ActionCompletedHandlers" BeforeOpenColumnChooser="ColumnOpen" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID"  Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d"  Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture9 { get; set; }
+    private SfGrid<Order> DefaultGrid9;
+
+    public string[] ToolbarItems9 = new string[] { "ColumnChooser" };
+    void GridBasicRendering9(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-columnchooser-btn")[0].Click(new MouseEventArgs());
+        var ColumnChooserInstance = cut.FindComponent<Syncfusion.Blazor.Grids.Internal.ColumnChooser<Order>>();
+        Assert.True(ColumnChooserInstance != null);
+        Assert.True(cut.FindAll(".e-rowcell").Count() > 0);
+        cut.FindAll(".e-rowcell")[0].Click(new MouseEventArgs());
+
+        cut.FindAll(".e-columnchooser-btn")[0].Click(new MouseEventArgs());
+        cut.FindAll(".e-cc_okbtn")[0].Click(new MouseEventArgs());
+
+
+    }
+
+    public void ActionBeginHandler(ActionEventArgs<Order> args)
+    {
+        // Here, you can customize your code.
+    }
+
+    public void ActionCompletedHandlers(ActionEventArgs<Order> args)
+    {
+        // Here, you can customize your code.
+    }
+
+    private void ColumnOpen(ColumnChooserEventArgs args1)
+    {
+        if (args1.DialogInstance != null)
+        {
+            
+        }
+    }
+}
+
+<SfFixture @ref="fixture" Test="ColumnChooserRendering" Description="ColumnChooser with all the Visible Columns">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" ShowColumnChooser="true" Toolbar=@ToolbarItems AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    public string[] ToolbarItems = new string[] { "ColumnChooser" };
+    public IRenderedComponent<SfGrid<Order>> cut { get; set; }
+    void ColumnChooserRendering(Fixture fixture)
+    {
+
+        cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+
+    void show_hide()
+    {
+        var bb = this.cut.FindAll(".e-toolbar-item");
+        var btn = this.cut.FindAll(".e-btn");
+        Assert.True(this.cut.FindAll(".e-icons.e-choosercheck")[0].ClassList.Contains("e-check"), "Checking  all the Columsn checked or not.");
+
+
+        Assert.True(this.cut.Instance.GetVisibleColumnsAsync().Result.Count() == 4, "Total Visible Columns");
+
+        this.cut.FindAll(".e-icons.e-choosercheck")[1].Click();
+
+        this.cut.FindAll(".e-icons.e-choosercheck")[2].Click();
+
+        btn[1].Click();
+
+        Assert.True(this.cut.Instance.GetVisibleColumnsAsync().Result.Count() == 2, "Total Visible Columns");
+        Assert.True(this.cut.Instance.GetVisibleColumnsAsync().Result[0].Field == "Freight", "Total Visible Columns");
+        Assert.True(this.cut.Instance.GetVisibleColumnsAsync().Result[1].Field == "OrderDate", "Total Visible Columns");
+        Assert.True(this.cut.Instance.GetHiddenColumnsAsync().Result.Count() == 2, "Total Visible Columns");
+        Assert.True(this.cut.Instance.GetHiddenColumnsAsync().Result[0].Field == "OrderID", "Total Visible Columns");
+        Assert.True(this.cut.Instance.GetHiddenColumnsAsync().Result[1].Field == "CustomerID", "Total Visible Columns");
+
+
+    }
+}
+
+
+
+<SfFixture @ref="fixture1" Test="ColumnChooserRendering1" Description="Column chooser with initial CustomerID  columns as Visible false.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid1" DataSource="GenerateOrderData()" ShowColumnChooser="true" Toolbar=@ToolbarItems1 AllowPaging="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Visible="false" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide1" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture1 { get; set; }
+    private SfGrid<Order> DefaultGrid1;
+    public string[] ToolbarItems1 = new string[] { "ColumnChooser" };
+    public IRenderedComponent<SfGrid<Order>> cut1 { get; set; }
+    void ColumnChooserRendering1(Fixture fixture)
+    {
+
+        cut1 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+
+    void show_hide1()
+    {
+
+        var btn = this.cut1.FindAll(".e-btn");
+        Assert.True(this.cut1.FindAll(".e-icons.e-choosercheck")[2].ClassList.Contains("e-uncheck"), "Checking  all the Columsn checked or not.");
+
+
+        Assert.True(this.cut1.Instance.GetVisibleColumnsAsync().Result.Count() == 3, "Total Visible Columns");
+
+        this.cut1.FindAll(".e-icons.e-choosercheck")[1].Click();
+
+        this.cut1.FindAll(".e-icons.e-choosercheck")[2].Click();
+
+        btn[1].Click();
+        var aas = this.cut1.Instance.GetVisibleColumnsAsync();
+        Assert.True(this.cut1.Instance.GetVisibleColumnsAsync().Result.Count() == 3, "Total Visible Columns");
+        Assert.True(this.cut1.Instance.GetVisibleColumnsAsync().Result[0].Field == "CustomerID", "Total Visible Columns");
+        Assert.True(this.cut1.Instance.GetVisibleColumnsAsync().Result[1].Field == "Freight", "Total Visible Columns");
+        Assert.True(this.cut1.Instance.GetVisibleColumnsAsync().Result[2].Field == "OrderDate", "Total Visible Columns");
+        Assert.True(this.cut1.Instance.GetHiddenColumnsAsync().Result.Count() == 1, "Total Visible Columns");
+        var bb = this.cut1.Instance.GetHiddenColumnsAsync();
+        Assert.True(this.cut1.Instance.GetHiddenColumnsAsync().Result[0].Field == "OrderID", "Total Visible Columns");
+
+    }
+}
+
+
+
+<SfFixture @ref="fixture2" Test="ColumnChooserRendering2" Description="Column chooser with initial CustomerID  columns as Visible false.">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" ShowColumnChooser="true" Toolbar=@ToolbarItems2 AllowPaging="true">
+            <GridEvents BeforeOpenColumnChooser="BeforeOpenColumnChooserHandler" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Visible="false" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide2" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+    public string[] ToolbarItems2 = new string[] { "ColumnChooser" };
+    public IRenderedComponent<SfGrid<Order>> cut2 { get; set; }
+    void ColumnChooserRendering2(Fixture fixture)
+    {
+        using var ctx = new TestContext();
+
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Order>>();
+
+      //  var dialog = ctx.RenderComponent<SfDialog>();
+
+        var btn = fixture.GetFragment<SfButton>();
+        btn.FindAll(".e-btn").ElementAt(0).Click();
+
+    }
+
+    public void BeforeOpenColumnChooserHandler(ColumnChooserEventArgs Args)
+    {
+        //customize your code here
+    }
+    void show_hide2()
+    {
+        var tools = this.cut2.FindAll(".e-toolbar-item");
+
+        this.cut2.FindAll(".e-columnchooser-btn")[0].Click();
+        var cc = this.cut2.FindAll(".e-popup-open");
+        var btn = this.cut2.FindAll(".e-btn");
+        Assert.True(this.cut2.FindAll(".e-icons.e-choosercheck")[2].ClassList.Contains("e-uncheck"), "Checking  all the Columsn checked or not.");
+
+
+        Assert.True(this.cut2.Instance.GetVisibleColumnsAsync().Result.Count() == 3, "Total Visible Columns");
+
+        this.cut2.FindAll(".e-icons.e-choosercheck")[1].Click();
+
+        this.cut2.FindAll(".e-icons.e-choosercheck")[2].Click();
+
+        btn[1].Click();
+        var aas = this.cut2.Instance.GetVisibleColumnsAsync();
+        Assert.True(this.cut2.Instance.GetVisibleColumnsAsync().Result.Count() == 3, "Total Visible Columns");
+        Assert.True(this.cut2.Instance.GetVisibleColumnsAsync().Result[0].Field == "CustomerID", "Total Visible Columns");
+        Assert.True(this.cut2.Instance.GetVisibleColumnsAsync().Result[1].Field == "Freight", "Total Visible Columns");
+        Assert.True(this.cut2.Instance.GetVisibleColumnsAsync().Result[2].Field == "OrderDate", "Total Visible Columns");
+        Assert.True(this.cut2.Instance.GetHiddenColumnsAsync().Result.Count() == 1, "Total Visible Columns");
+        var bb = this.cut2.Instance.GetHiddenColumnsAsync();
+        Assert.True(this.cut2.Instance.GetHiddenColumnsAsync().Result[0].Field == "OrderID", "Total Visible Columns");
+
+    }
+}
+
+
+<SfFixture @ref="fixture7" Test="GridBasicRendering7" Description="Show Hide column using Button Click and Testing the DOM">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid7" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems3>
+            <GridEvents OnActionComplete="ActionCompletedHandler1" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID"  Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d"  Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+    <Fragment>
+        <SfButton OnClick="show_hide7" CssClass="e-primary" Content="Hide"></SfButton>
+    </Fragment>
+</SfFixture>
+@code
+  {
+    SfFixture fixture7 { get; set; }
+    private SfGrid<Order> DefaultGrid7;
+
+    public string[] ToolbarItems3 = new string[] { "ColumnChooser" };
+    public IRenderedComponent<SfGrid<Order>> cut7 { get; set; }
+    void GridBasicRendering7(Fixture fixture)
+    {
+
+        cut7 = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+       // Assert.True(2 == cut7.Instance.GetVisibleColumnsAsync().Result.Count, "Number of  Columns generated before clicking ShowHide button ");
+        //Assert.True(0 == cut.FindAll(".e-row").ElementAt(0).ChildNodes.GetElementsByClassName("e-hide").Length, "Number of  Columns hided in DOM before clicking ShowHide button ");
+        var btn = this.cut7.FindAll(".e-btn");
+        btn[0].Click();
+
+    }
+    public void ActionCompletedHandler1(ActionEventArgs<Order> args)
+    {
+        Assert.True("OrderID" == args.HiddenColumns[0].Field, "Hidden column Field name");
+        Assert.True("CustomerID" == args.HiddenColumns[0].Field, "Hidden Column Field Name");
+    }
+
+    void show_hide7()
+    {
+        var btn = this.cut7.FindAll(".e-btn");
+        this.cut7.FindAll(".e-icons.e-choosercheck")[1].Click();
+
+        this.cut7.FindAll(".e-icons.e-choosercheck")[2].Click();
+
+        btn[1].Click();
+    }
+}
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="ColumnChooser with AdaptiveUI">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid8" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems4>
+            <GridEvents OnActionComplete="ActionCompletedHandler1" TValue="Order"></GridEvents>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID"  Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d"  Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+  {
+    SfFixture fixture8 { get; set; }
+    private SfGrid<Order> DefaultGrid8;
+
+    public string[] ToolbarItems4 = new string[] { "ColumnChooser" };
+    void GridBasicRendering8(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.FindAll(".e-columnchooser-btn")[0].Click(new MouseEventArgs());
+    }
+  }
+<SfFixture @ref="fixture12" TestAsync="GridBasicRendering12" Description="ColumnChooser Cancel button clicked and trigger clearValues()">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid12" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems12>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture12 { get; set; }
+    private SfGrid<Order> DefaultGrid12;
+    public string[] ToolbarItems12 = new string[] { "ColumnChooser" };
+    async Task GridBasicRendering12(Fixture fixture12)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var columnC = cut.FindAll(".e-cc-toolbar")[0];
+        columnC.Click();
+        cut.FindAll(".e-cc-cnbtn")[0].Click();
+    }
+}
+
+<SfFixture @ref="fixture13" TestAsync="GridBasicRendering13" Description="ColumnChooser OutSideClick">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid13" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems13>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture13 { get; set; }
+    private SfGrid<Order> DefaultGrid13;
+    public string[] ToolbarItems13 = new string[] { "ColumnChooser" };
+    async Task GridBasicRendering13(Fixture fixture13)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var columnC = cut.FindAll(".e-cc-toolbar")[0];
+        columnC.Click();
+        await cut.InvokeAsync(() => { cut.Instance.EventAggregator.Trigger("HideColumnChooser", null); });
+    }
+   
+}
+
+<SfFixture @ref="fixture16" TestAsync="GridBasicRendering16" Description="ColumnChooser CancelIconTrigger">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid16" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems16>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture16 { get; set; }
+    private SfGrid<Order> DefaultGrid16;
+    public string[] ToolbarItems16 = new string[] { "ColumnChooser" };
+    async Task GridBasicRendering16(Fixture fixture16)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var columnC = cut.FindAll(".e-cc-toolbar")[0];
+        columnC.Click();
+        cut.FindAll(".e-ccsearch")[0].Input("O");
+        cut.FindAll(".e-cc-cancel")[0].Click();
+    }
+   
+}
+
+<SfFixture @ref="fixture18" TestAsync="GridBasicRendering18" Description="ColumnChooser SelectAllHandler()">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid18" DataSource="GenerateOrderData()" AllowPaging="true" ShowColumnChooser="true" Toolbar=@ToolbarItems18>
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="70"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture18 { get; set; }
+    private SfGrid<Order> DefaultGrid18;
+    public string[] ToolbarItems18 = new string[] { "ColumnChooser" };
+    async Task GridBasicRendering18(Fixture fixture18)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var columnC = cut.FindAll(".e-cc-toolbar")[0];
+        columnC.Click();
+        cut.FindAll(".e-choosercheck")[1].Click();
+        cut.FindAll(".e-choosercheck")[3].Click();
+        cut.FindAll(".e-choosercheck")[3].Click();
+    }
+   
+}

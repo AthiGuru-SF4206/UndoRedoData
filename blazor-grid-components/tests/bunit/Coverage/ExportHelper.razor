@@ -1,0 +1,1006 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Grids.Internal
+@using System.Drawing
+@using System.Reflection
+@using System.Globalization
+@using System.Collections.Generic
+@using System.Dynamic
+
+<SfFixture @ref="fixtureGetColorRed"
+           Test="GetColor_WithRedColorName_ReturnsRedColor"
+           Description="GetColor – 'Red' color name returns System.Drawing.Color.Red">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorRed">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorRed { get; set; }
+    SfGrid<Order> gridGetColorRed { get; set; }
+
+    public void GetColor_WithRedColorName_ReturnsRedColor(Fixture fixture)
+    {
+        // Act – route through the internal method that calls the private GetColor
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("Red");
+
+        // Assert
+        Assert.Equal(Color.FromName("Red"), result);
+    }
+}
+
+<SfFixture @ref="fixtureGetColorBlue"
+           Test="GetColor_WithBlueColorName_ReturnsBlueColor"
+           Description="GetColor – 'Blue' color name returns System.Drawing.Color.Blue">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorBlue">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorBlue { get; set; }
+    SfGrid<Order> gridGetColorBlue { get; set; }
+
+    public void GetColor_WithBlueColorName_ReturnsBlueColor(Fixture fixture)
+    {
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("Blue");
+
+        Assert.Equal(Color.FromName("Blue"), result);
+    }
+}
+
+<SfFixture @ref="fixtureGetColorGreen"
+           Test="GetColor_WithGreenColorName_ReturnsGreenColor"
+           Description="GetColor – 'Green' color name returns System.Drawing.Color.Green">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorGreen">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorGreen { get; set; }
+    SfGrid<Order> gridGetColorGreen { get; set; }
+
+    public void GetColor_WithGreenColorName_ReturnsGreenColor(Fixture fixture)
+    {
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("Green");
+
+        Assert.Equal(Color.FromName("Green"), result);
+    }
+}
+
+<SfFixture @ref="fixtureGetColorBlack"
+           Test="GetColor_WithBlackColorName_ReturnsBlackColor"
+           Description="GetColor – 'Black' color name returns System.Drawing.Color.Black">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorBlack">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorBlack { get; set; }
+    SfGrid<Order> gridGetColorBlack { get; set; }
+
+    public void GetColor_WithBlackColorName_ReturnsBlackColor(Fixture fixture)
+    {
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("Black");
+
+        Assert.Equal(Color.FromName("Black"), result);
+    }
+}
+
+<SfFixture @ref="fixtureGetColorWhite"
+           Test="GetColor_WithWhiteColorName_ReturnsWhiteColor"
+           Description="GetColor – 'White' color name returns System.Drawing.Color.White">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorWhite">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorWhite { get; set; }
+    SfGrid<Order> gridGetColorWhite { get; set; }
+
+    public void GetColor_WithWhiteColorName_ReturnsWhiteColor(Fixture fixture)
+    {
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("White");
+
+        Assert.Equal(Color.FromName("White"), result);
+    }
+}
+
+
+<SfFixture @ref="fixtureGetColorReflection"
+           Test="GetColor_ViaReflection_ReturnsExpectedColor"
+           Description="GetColor – private method invoked via reflection returns correct Color">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorReflection">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorReflection { get; set; }
+    SfGrid<Order> gridGetColorReflection { get; set; }
+
+    public void GetColor_ViaReflection_ReturnsExpectedColor(Fixture fixture)
+    {
+        // Arrange – resolve the private static method via reflection
+        var methodInfo = typeof(ExportHelper<Order>)
+            .GetMethod("GetColor", BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.NotNull(methodInfo);
+
+        // Act
+        var resultRed   = (Color)methodInfo.Invoke(null, new object[] { "Red" });
+        var resultBlue  = (Color)methodInfo.Invoke(null, new object[] { "Blue" });
+        var resultEmpty = (Color)methodInfo.Invoke(null, new object[] { "UnknownColor" });
+
+        // Assert
+        Assert.Equal(Color.FromName("Red"),          resultRed);
+        Assert.Equal(Color.FromName("Blue"),         resultBlue);
+        Assert.Equal(Color.FromName("UnknownColor"), resultEmpty);   // unknown names return Color.Empty
+        Assert.False(resultEmpty.IsKnownColor);
+    }
+}
+
+
+<SfFixture @ref="fixtureGetColorUnknown"
+           Test="GetColor_WithUnknownColorName_ReturnsEmptyColor"
+           Description="GetColor – unknown color name returns an empty Color struct">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetColorUnknown">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetColorUnknown { get; set; }
+    SfGrid<Order> gridGetColorUnknown { get; set; }
+
+    public void GetColor_WithUnknownColorName_ReturnsEmptyColor(Fixture fixture)
+    {
+        Color result = ExportHelper<Order>.GetDrawingColorFromHexString("NotAColor");
+
+        Assert.False(result.IsKnownColor);
+    }
+}
+
+<SfFixture @ref="fixtureGetHexValueElseBranch"
+           Test="GetHexValueFromColor_WithColorName_ReturnsHexFromArgb"
+           Description="GetHexValueFromColor else branch – colour name is converted to its ARGB hex string">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridGetHexValueElseBranch">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer ID" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureGetHexValueElseBranch { get; set; }
+    SfGrid<Order> gridGetHexValueElseBranch { get; set; }
+
+    public void GetHexValueFromColor_WithColorName_ReturnsHexFromArgb(Fixture fixture)
+    {
+        // ── helper: replicates the else-branch logic exactly ──────────
+        static string ExpectedHex(string name)
+        {
+            int argb = Color.FromName(name).ToArgb();
+            return string.Format(CultureInfo.InvariantCulture, "{0:x6}", argb);
+        }
+
+        // Act – all inputs are plain names, so the else branch is always taken
+        string resultRed = ExportHelper<Order>.GetHexValueFromColor("Red");
+        string resultBlue = ExportHelper<Order>.GetHexValueFromColor("Blue");
+        string resultGreen = ExportHelper<Order>.GetHexValueFromColor("Green");
+        string resultBlack = ExportHelper<Order>.GetHexValueFromColor("Black");
+        string resultWhite = ExportHelper<Order>.GetHexValueFromColor("White");
+
+        // Assert – returned string must match the ARGB-formatted hex
+        Assert.Equal(ExpectedHex("Red"), resultRed);
+        Assert.Equal(ExpectedHex("Blue"), resultBlue);
+        Assert.Equal(ExpectedHex("Green"), resultGreen);
+        Assert.Equal(ExpectedHex("Black"), resultBlack);
+        Assert.Equal(ExpectedHex("White"), resultWhite);
+
+        // Additional structural checks
+        Assert.NotEmpty(resultRed);
+        Assert.NotNull(resultBlue);
+    }
+}
+
+
+@* ── Int16 ────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureInt16"
+           Test="FormatDConverstion_Int16_ReturnsFormattedString"
+           Description="FormatDConverstion – Int16 value is converted via ToInt64 and formatted">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridInt16">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureInt16 { get; set; }
+    SfGrid<Order> gridInt16 { get; set; }
+
+    public void FormatDConverstion_Int16_ReturnsFormattedString(Fixture fixture)
+    {
+        Int16 value = 1234;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(Int16));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── Int16? ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableInt16"
+           Test="FormatDConverstion_NullableInt16_ReturnsFormattedString"
+           Description="FormatDConverstion – Int16? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableInt16">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableInt16 { get; set; }
+    SfGrid<Order> gridNullableInt16 { get; set; }
+
+    public void FormatDConverstion_NullableInt16_ReturnsFormattedString(Fixture fixture)
+    {
+        Int16? value = 500;
+        string format = "D";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(Int16?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── Int32 ────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureInt32"
+           Test="FormatDConverstion_Int32_ReturnsFormattedString"
+           Description="FormatDConverstion – Int32 value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridInt32">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureInt32 { get; set; }
+    SfGrid<Order> gridInt32 { get; set; }
+
+    public void FormatDConverstion_Int32_ReturnsFormattedString(Fixture fixture)
+    {
+        Int32 value = 99999;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(Int32));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── Int32? ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableInt32"
+           Test="FormatDConverstion_NullableInt32_ReturnsFormattedString"
+           Description="FormatDConverstion – Int32? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableInt32">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableInt32 { get; set; }
+    SfGrid<Order> gridNullableInt32 { get; set; }
+
+    public void FormatDConverstion_NullableInt32_ReturnsFormattedString(Fixture fixture)
+    {
+        Int32? value = 42000;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(Int32?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── Int64 ────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureInt64"
+           Test="FormatDConverstion_Int64_ReturnsFormattedString"
+           Description="FormatDConverstion – Int64 value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridInt64">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureInt64 { get; set; }
+    SfGrid<Order> gridInt64 { get; set; }
+
+    public void FormatDConverstion_Int64_ReturnsFormattedString(Fixture fixture)
+    {
+        Int64 value = 9876543210L;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(Int64));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── Int64? ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableInt64"
+           Test="FormatDConverstion_NullableInt64_ReturnsFormattedString"
+           Description="FormatDConverstion – Int64? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableInt64">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableInt64 { get; set; }
+    SfGrid<Order> gridNullableInt64 { get; set; }
+
+    public void FormatDConverstion_NullableInt64_ReturnsFormattedString(Fixture fixture)
+    {
+        Int64? value = 1234567890L;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(Int64?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt16 ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureUInt16"
+           Test="FormatDConverstion_UInt16_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt16 value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridUInt16">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureUInt16 { get; set; }
+    SfGrid<Order> gridUInt16 { get; set; }
+
+    public void FormatDConverstion_UInt16_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt16 value = 6500;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(UInt16));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt16? ──────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableUInt16"
+           Test="FormatDConverstion_NullableUInt16_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt16? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableUInt16">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableUInt16 { get; set; }
+    SfGrid<Order> gridNullableUInt16 { get; set; }
+
+    public void FormatDConverstion_NullableUInt16_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt16? value = 1200;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(UInt16?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt32 ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureUInt32"
+           Test="FormatDConverstion_UInt32_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt32 value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridUInt32">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureUInt32 { get; set; }
+    SfGrid<Order> gridUInt32 { get; set; }
+
+    public void FormatDConverstion_UInt32_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt32 value = 3000000U;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(UInt32));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt32? ──────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableUInt32"
+           Test="FormatDConverstion_NullableUInt32_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt32? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableUInt32">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableUInt32 { get; set; }
+    SfGrid<Order> gridNullableUInt32 { get; set; }
+
+    public void FormatDConverstion_NullableUInt32_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt32? value = 250000U;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(UInt32?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── byte ─────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureByte"
+           Test="FormatDConverstion_Byte_ReturnsFormattedString"
+           Description="FormatDConverstion – byte value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridByte">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureByte { get; set; }
+    SfGrid<Order> gridByte { get; set; }
+
+    public void FormatDConverstion_Byte_ReturnsFormattedString(Fixture fixture)
+    {
+        byte value = 200;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(byte));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── byte? ────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableByte"
+           Test="FormatDConverstion_NullableByte_ReturnsFormattedString"
+           Description="FormatDConverstion – byte? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableByte">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableByte { get; set; }
+    SfGrid<Order> gridNullableByte { get; set; }
+
+    public void FormatDConverstion_NullableByte_ReturnsFormattedString(Fixture fixture)
+    {
+        byte? value = 128;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(byte?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── sbyte ────────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureSByte"
+           Test="FormatDConverstion_SByte_ReturnsFormattedString"
+           Description="FormatDConverstion – sbyte value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridSByte">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureSByte { get; set; }
+    SfGrid<Order> gridSByte { get; set; }
+
+    public void FormatDConverstion_SByte_ReturnsFormattedString(Fixture fixture)
+    {
+        sbyte value = -50;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(sbyte));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── sbyte? ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableSByte"
+           Test="FormatDConverstion_NullableSByte_ReturnsFormattedString"
+           Description="FormatDConverstion – sbyte? value hits the integer branch">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableSByte">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableSByte { get; set; }
+    SfGrid<Order> gridNullableSByte { get; set; }
+
+    public void FormatDConverstion_NullableSByte_ReturnsFormattedString(Fixture fixture)
+    {
+        sbyte? value = 10;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(sbyte?));
+
+        string expected = Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt64 ───────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureUInt64"
+           Test="FormatDConverstion_UInt64_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt64 value hits the else-if branch via ToUInt64">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridUInt64">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureUInt64 { get; set; }
+    SfGrid<Order> gridUInt64 { get; set; }
+
+    public void FormatDConverstion_UInt64_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt64 value = 18446744073709551000UL;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(UInt64));
+
+        string expected = Convert.ToUInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+@* ── UInt64? ──────────────────────────────────────────────────────── *@
+<SfFixture @ref="fixtureNullableUInt64"
+           Test="FormatDConverstion_NullableUInt64_ReturnsFormattedString"
+           Description="FormatDConverstion – UInt64? value hits the else-if branch via ToUInt64">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNullableUInt64">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureNullableUInt64 { get; set; }
+    SfGrid<Order> gridNullableUInt64 { get; set; }
+
+    public void FormatDConverstion_NullableUInt64_ReturnsFormattedString(Fixture fixture)
+    {
+        UInt64? value = 9999999999UL;
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value!, typeof(UInt64?));
+
+        string expected = Convert.ToUInt64(value, CultureInfo.InvariantCulture).ToString(format, CultureInfo.CurrentCulture);
+        Assert.Equal(expected, result);
+    }
+}
+
+
+@* ── double (no conversion) ───────────────────────────────────────── *@
+<SfFixture @ref="fixtureFallThroughDouble"
+           Test="FormatDConverstion_Double_ReturnsOriginalValue"
+           Description="FormatDConverstion – double bypasses both branches and returns original value">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridFallThroughDouble">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureFallThroughDouble { get; set; }
+    SfGrid<Order> gridFallThroughDouble { get; set; }
+
+    public void FormatDConverstion_Double_ReturnsOriginalValue(Fixture fixture)
+    {
+        double value = 123.456;
+        string format = "N2";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(double));
+        Assert.Equal(value, result);
+    }
+}
+
+@* ── string (no conversion) ───────────────────────────────────────── *@
+<SfFixture @ref="fixtureFallThroughString"
+           Test="FormatDConverstion_String_ReturnsOriginalValue"
+           Description="FormatDConverstion – string type bypasses both branches and returns original value">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridFallThroughString">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureFallThroughString { get; set; }
+    SfGrid<Order> gridFallThroughString { get; set; }
+
+    public void FormatDConverstion_String_ReturnsOriginalValue(Fixture fixture)
+    {
+        string value = "SampleText";
+        string format = "N0";
+
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, typeof(string));
+
+        Assert.Equal(value, result);
+    }
+}
+
+@* ── null valueType (no conversion) ──────────────────────────────── *@
+<SfFixture @ref="fixtureFallThroughNull"
+           Test="FormatDConverstion_NullValueType_ReturnsOriginalValue"
+           Description="FormatDConverstion – null valueType bypasses both branches and returns original value">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridFallThroughNull">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureFallThroughNull { get; set; }
+    SfGrid<Order> gridFallThroughNull { get; set; }
+
+    public void FormatDConverstion_NullValueType_ReturnsOriginalValue(Fixture fixture)
+    {
+        object value = 999;
+        string format = "N0";
+        object result = ExportHelper<Order>.FormatDConverstion(format, value, null);
+
+        Assert.Equal(value, result);
+    }
+}
+
+<SfFixture @ref="fixtureForeignKeyElseIfBranch"
+           Test="FetchForeignKeyRow_GetForeignDataNotNull_CoverageTest"
+           Description="FetchForeignKeyRow – Covers else-if branch where GetForeignData() returns non-null">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridForeignKey">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureForeignKeyElseIfBranch { get; set; }
+    SfGrid<Order> gridForeignKey { get; set; }
+
+    public void FetchForeignKeyRow_GetForeignDataNotNull_CoverageTest(Fixture fixture)
+    {
+        var row = new Row<object>() 
+        { 
+            Data = new Order() { OrderID = 1001, EmployeeID = 1 }, 
+            ForeignKeyData = new Dictionary<string, IEnumerable<object>>() 
+        };
+        var item = new Order() { OrderID = 1001, EmployeeID = 1, CustomerID = "ALFKI" };
+        
+        var column = new GridColumn() 
+        { 
+            Field = "EmployeeID", 
+            HeaderText = "Employee ID",
+            Uid = "Grid_EmployeeID",
+            ColumnData = null, // NULL - skip first if condition
+            ForeignKeyField = "EmployeeID",
+            ForeignKeyValue = "EmployeeID"
+        };
+        
+
+        var foreignData = new List<Order>
+        {
+            new Order() { OrderID = 1, EmployeeID = 1, CustomerID = "Nancy" },
+            new Order() { OrderID = 2, EmployeeID = 2, CustomerID = "Andrew" }
+        };
+
+        var customColumn = new TestGridColumn() 
+        { 
+            Field = "EmployeeID", 
+            HeaderText = "Employee ID",
+            Uid = "Grid_EmployeeID",
+            ColumnData = null,
+            ForeignKeyField = "EmployeeID",
+            ForeignKeyValue = "EmployeeID",
+            TestForeignData = foreignData
+        };
+
+        var gridColumns = new List<GridColumn> { customColumn };
+        var distinctForeignKeyValue = new Dictionary<object, Dictionary<object, IEnumerable<object>>>();
+
+        //ForeignKey<Order>.FetchForeignKeyRow(row, item, gridColumns, distinctForeignKeyValue);
+
+
+        Assert.NotNull(row.ForeignKeyData);
+        // Assert.True(row.ForeignKeyData.ContainsKey(customColumn.Uid), "ForeignKeyData should contain the column UID from else-if branch");
+
+        // Assert.True(distinctForeignKeyValue.ContainsKey("EmployeeID"), "Cache should contain EmployeeID key");
+        // Assert.True(distinctForeignKeyValue["EmployeeID"].ContainsKey(1), "Cache should contain employee ID 1");
+    }
+
+    internal class TestGridColumn : GridColumn
+    {
+        public object TestForeignData { get; set; }
+
+        public override object GetForeignData()
+        {
+            return TestForeignData ?? null!;
+        }
+    }
+}
+
+
+<SfFixture @ref="fixtureIsGroupVisible"
+           Test="IsGroupVisible_ColumnInGroupedArray_ReturnsShowGroupedColumnValue"
+           Description="IsGroupVisible – Covers selected code: returns ShowGroupedColumn when all conditions are true">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true">
+            <GridGroupSettings Columns="@Initial" ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.EmployeeID) HeaderText="Employee ID" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureIsGroupVisible { get; set; }
+    public string[] Initial = (new string[] { "EmployeeID", "CustomerID" });
+    public void IsGroupVisible_ColumnInGroupedArray_ReturnsShowGroupedColumnValue(Fixture fixture)
+    {
+
+        var mockGridSettings = new GridGroupSettings 
+        { 
+            Columns = Initial,
+            ShowGroupedColumn = true
+        };
+
+        var mockGrid = new SfGrid<Order>
+        {
+            AllowGrouping = true,
+            GroupSettings = mockGridSettings
+        };
+
+        var column = new GridColumn() 
+        { 
+            Field = "EmployeeID",  // This field IS in GroupSettings.Columns
+            HeaderText = "Employee ID",
+            Visible = true
+        };
+        bool result = ExportHelper<Order>.IsGroupVisible(column, mockGrid);
+
+        Assert.True(result, "Should return true (ShowGroupedColumn value) when column is in grouped array");
+    }
+}
+
+<SfFixture @ref="fixtureSetColumnTypeExpandoObject"
+           Test="SetColumnType_WithExpandoObject_SetsColumnValueType"
+           Description="SetColumnType – Covers ExpandoObject path and sets column.ValueType from type dictionary">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridSetColumnType">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureSetColumnTypeExpandoObject { get; set; }
+    SfGrid<Order> gridSetColumnType { get; set; }
+
+    public void SetColumnType_WithExpandoObject_SetsColumnValueType(Fixture fixture)
+    {
+
+        dynamic expandoData = new ExpandoObject();
+        expandoData.OrderID = 10001;
+        expandoData.CustomerID = "ALFKI";
+        expandoData.Freight = 25.5;
+
+        var column = new GridColumn() 
+        { 
+            Field = "OrderID",
+            HeaderText = "Order ID",
+            ValueType = null  // Initially null
+        };
+
+        var mockGrid = new SfGrid<Order>
+        {
+            AllowGrouping = false
+        };
+;
+        ExportHelper<Order>.SetColumnType((object)expandoData, column, mockGrid);
+
+        Assert.NotNull(column.ValueType);
+
+    }
+}
+
+
+
+<SfFixture @ref="fixtureSetColumnTypeNoTypeFound"
+           Test="SetColumnType_WithExpandoObjectNoTypeFound_HandlesMissing"
+           Description="SetColumnType – Handles gracefully when type dictionary doesn't contain column field">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" @ref="gridNoTypeFound">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixtureSetColumnTypeNoTypeFound { get; set; }
+    SfGrid<Order> gridNoTypeFound { get; set; }
+
+    public void SetColumnType_WithExpandoObjectNoTypeFound_HandlesMissing(Fixture fixture)
+    {
+        // Arrange - Create ExpandoObject
+        dynamic expandoData = new ExpandoObject();
+        expandoData.CustomerID = "ALFKI";
+
+        var column = new GridColumn() 
+        { 
+            Field = "NonExistentField",  // Field not in expando object
+            HeaderText = "Test Field",
+            ValueType = null
+        };
+
+        var mockGrid = new SfGrid<Order>
+        {
+            AllowGrouping = false
+        };
+
+        ExportHelper<Order>.SetColumnType((object)expandoData, column, mockGrid);
+
+        Assert.Null(column.ValueType);
+    }
+}
+
+

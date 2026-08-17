@@ -1,0 +1,410 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TCell
+@implements IDisposable
+
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Buttons
+@using Microsoft.AspNetCore.Components.Forms
+@using Syncfusion.Blazor.Grids.Internal.Editors
+@using Microsoft.AspNetCore.Components.Web
+
+
+@if (Parent!.IsEdit && (!Parent.EnableAdaptiveUI ||(Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && Parent.SyncfusionService.IsDeviceMode) ||(Parent.EnableAdaptiveUI && Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && !Parent.SyncfusionService.IsDeviceMode)))
+{
+    var DialogSettings = Parent.EditSettings!.Dialog;
+    <SfDialog ID=@($"{Parent.ID}_dialogEdit_wrapper") @ref="GridEditDialog" EnableRtl="Parent.EnableRtl" CssClass="e-edit-dialog" AllowDragging="true" ShowCloseIcon="true" IsModal="true"
+              CloseOnEscape="true" Width="@(Parent.EditSettings.Template != null ? "auto" : "330px")" @attributes="attributes">
+        @if (DialogSettings != null && (!string.IsNullOrEmpty(DialogSettings.XValue) || !string.IsNullOrEmpty(DialogSettings.YValue)))
+        {
+            <DialogPositionData X=@DialogSettings.XValue Y="@DialogSettings.YValue"></DialogPositionData>
+        }
+        @if (DialogSettings != null && (DialogSettings.AnimationEffect != null || DialogSettings.AnimationDelay > 0 || DialogSettings.AnimationDuration != 400))
+        {
+            <DialogAnimationSettings Effect=" DialogSettings.AnimationEffect ?? DialogEffect.Fade" Duration="DialogSettings.AnimationDuration" Delay="DialogSettings.AnimationDelay"></DialogAnimationSettings>
+        }
+        else
+        {
+            <DialogAnimationSettings Effect="DialogEffect.None"></DialogAnimationSettings>
+        }
+        <DialogEvents OnClose="@(async ( BeforeCloseEventArgs args) =>
+                                 {
+                                     if (args.IsInteracted)
+                                     {
+                                        await Parent.EditModule!.CloseEdit();
+                                     }
+                                 })">
+        </DialogEvents>
+        <DialogTemplates>
+            <Header>
+                @if (Parent.EditSettings.HeaderTemplate != null)
+                {
+                    Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                    @Parent.EditSettings.HeaderTemplate(edittemplateData.Data!);
+                }
+                else
+                {
+                    var DefaultTemp = Parent.EditModule!.IsAdd ? Localizer?.GetText(GridLocaleKeys.AddFormTitle)
+                        : $"{Localizer?.GetText(GridLocaleKeys.EditFormTitle)} {PrimaryKey}";
+                    @DefaultTemp
+                }
+            </Header>
+            <Content>
+                <div class="@(Parent.EditModule!.IsAdd ? "e-insertedrow" : "e-editedrow")">
+                    <EditForm EditContext="@(Parent.EditModule.EditContext)" class="e-gridform e-lib e-formvalidator e-editing">
+                        @if (Parent.EditSettings.Validator != null)
+                        {
+                            @Parent.EditSettings.Validator(new ValidatorTemplateContext()
+                            {
+                               Data = Parent.EditModule.CloneData!,
+                               EditContext = Parent.EditModule.EditContext!,
+                               ShowValidationMessage = (string field, bool isValid, string message) =>
+                               {
+                                   Parent?.EditModule.ApplyFormValidation(new Blazor.Internal.ValidationResult()
+                                   {
+                                       FieldName = field,
+                                       IsValid = isValid,
+                                       Message = message
+                                   });
+                               }
+                            });
+                        }
+                        else
+                        {
+                           <DataAnnotationsValidator/>
+                            <ColumnsValidator T="TCell" OnValidated="@(async (ValidationResult args) => await Parent.EditModule.ApplyFormValidation(args))"
+                                              ValidationRules="@Parent.EditModule.ValidationRules()">
+                            </ColumnsValidator>
+                        }
+                        @if (Parent.EditSettings.Template != null)
+                        {
+                            Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                            @Parent.EditSettings.Template(edittemplateData.Data!)
+                        }
+                        else
+                        {
+                            <table class="e-table">
+                                <tbody>
+                                    @foreach (var Column in Columns)
+                                    {
+                                        var EditType = Column.EditType;
+                                        EditType = Column.Type == ColumnType.CheckBox ? EditType.BooleanEdit : EditType;
+                                        object value = null!;
+                                        if (!string.IsNullOrEmpty(Column?.Field))
+                                            value = Parent.PropHelper!.GetObject(Column?.Field!, Parent.EditModule.CloneData!);
+                                        else
+                                            value = null!;
+                                        if (!Column!.Visible && (!Parent.GroupSettings?.Columns?.Any(field => field == Column.Field) ?? true) || Column.Commands != null || Column.Type == ColumnType.CheckBox)
+                                        {
+                                            continue;
+                                        }
+                                        <tr>
+                                            <td class="e-rowcell @(Parent.EnableRtl ? "e-textAlign-right" : "e-textAlign-left")" e-mappinguid="@($"{Column.Uid}_Dialog")">
+                                                @if (Column.EditTemplate != null)
+                                                {
+                                                    edittemplateData.Column = Column;
+                                                    Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                                                    @Column.EditTemplate(edittemplateData.Data!);
+                                                }
+                                                else if (EditType == EditType.DefaultEdit)
+                                                {
+                                                    <TextBoxEditCell T="TCell" Column="Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TextBoxEditCell>
+                                                }
+                                                else if (EditType == EditType.NumericEdit)
+                                                {
+                                                    <NumericEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></NumericEditCell>
+                                                }
+                                                else if (EditType == EditType.DropDownEdit)
+                                                {
+                                                    <DropDownEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DropDownEditCell>
+                                                }
+                                                else if (EditType == EditType.BooleanEdit)
+                                                {
+                                                    <BooleanEditCell T="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></BooleanEditCell>
+                                                }
+                                                else if (EditType == EditType.DatePickerEdit || EditType == EditType.DateTimePickerEdit)
+                                                {
+                                                    <DatePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DatePickerEditCell>
+                                                }
+                                                else if (EditType == EditType.TimePickerEdit)
+                                                {
+                                                    <TimePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TimePickerEditCell>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        <ValidationTooltip T="TCell" Columns="Columns"></ValidationTooltip>
+                    </EditForm>
+                </div>
+                @{
+                    Parent.EditModule.EditDialogInstance = GridEditDialog;
+                }
+            </Content>
+            <FooterTemplate>
+                @if (Parent.EditSettings.FooterTemplate != null)
+                {
+                    Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                    @Parent.EditSettings.FooterTemplate(edittemplateData.Data!);
+                }
+                else
+                {
+                    <SfButton CssClass="e-control e-btn e-lib e-primary e-flat" Content="@Localizer?.GetText(GridLocaleKeys.SaveButton)"
+                              @onclick="(async () => {
+                                            
+                                            await Task.Delay(10);
+                                            if(Parent.IsAdd){
+                                                Parent.FocusModule!.SelectedCellIndex = await Parent.EditModule!.GetSelectedCellIndex();
+                                            }
+                                            await Parent.EditModule!.EndEdit();   
+                                        })"></SfButton>
+                    <SfButton CssClass="e-control e-btn e-lib e-flat" Content="@Localizer!.GetText(GridLocaleKeys.CancelButton)"
+                              @onclick="(async () => {
+                                            await Parent.EditModule!.CloseEdit();
+                                        })"></SfButton>
+                }
+            </FooterTemplate>
+        </DialogTemplates>
+    </SfDialog>
+}
+ else if (Parent.IsEdit && Parent.EnableAdaptiveUI && (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Both) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && Parent.SyncfusionService.IsDeviceMode) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && !Parent.SyncfusionService.IsDeviceMode)))
+{
+    var DialogSettings = Parent.EditSettings!.Dialog;
+    <SfDialog ID=@($"{Parent.ID}_adaptive_dialogEdit_wrapper") @ref="GridEditDialog" EnableRtl="Parent.EnableRtl" Target=@($"#{Parent.ID}") CssClass="e-responsive-dialog e-dlg-modal e-bigger e-dlg-fullscreen e-edit-dialog"
+              Width="100%" Height="100%" @attributes="attributes">
+        @if (DialogSettings != null && (!string.IsNullOrEmpty(DialogSettings.XValue) || !string.IsNullOrEmpty(DialogSettings.YValue)))
+        {
+            <DialogPositionData X=@DialogSettings.XValue Y="@DialogSettings.YValue"></DialogPositionData>
+        }
+        @if (DialogSettings != null && (DialogSettings.AnimationEffect != null || DialogSettings.AnimationDelay > 0 || DialogSettings.AnimationDuration != 400))
+        {
+            <DialogAnimationSettings Effect=" DialogSettings.AnimationEffect ?? DialogEffect.Fade" Duration="DialogSettings.AnimationDuration" Delay="DialogSettings.AnimationDelay"></DialogAnimationSettings>
+        }
+        else
+        {
+            <DialogAnimationSettings Effect="DialogEffect.None"></DialogAnimationSettings>
+        }
+        <DialogEvents Created="AdaptiveEditDialog" OnClose="@(async (BeforeCloseEventArgs args) =>
+                                {
+                                    args.Cancel = true;
+                                     await Parent.EditModule!.CloseEdit();
+                                })">
+        </DialogEvents>
+        <DialogTemplates>
+            <Header>
+                @if(DialogSettings?.ShowCloseIcon == false || DialogSettings == null){
+                <SfButton IconCss="e-btn-icon e-icon-dlg-close e-icons" CssClass="e-dlg-closeicon-btn"
+                          @onclick="@(async () =>
+                                      {
+                                            await Parent.CloseEditAsync();
+                                       })" HtmlAttributes="@(new Dictionary<string, object>() { { "title", Localizer!.GetText(GridLocaleKeys.Close) } })"></SfButton>
+                }
+                <div class="e-dlg-header">
+                    <div class="e-res-custom-element">
+                        <div class="e-dlg-custom-header" id="@($"{Parent.ID}dialogEdit_wrapper_title")">
+                            @if (Parent.EditSettings.HeaderTemplate != null)
+                            {
+                                Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                                @Parent.EditSettings.HeaderTemplate(edittemplateData.Data!);
+                            }
+                            else
+                            {
+                                var DefaultTemp = Parent.EditModule!.IsAdd ? Localizer?.GetText(GridLocaleKeys.AddFormTitle)
+                                    : $"{Localizer?.GetText(GridLocaleKeys.EditFormTitle)} {PrimaryKey}";
+                                @DefaultTemp
+                            }
+                        </div>
+                        <SfButton CssClass="e-res-apply-btn" @onclick="(async () => {
+                                                                           
+                                                                           await Parent.EndEditAsync();
+                                                                       })" Content="@Localizer!.GetText(GridLocaleKeys.SaveButton)" HtmlAttributes="@(new Dictionary<string, object>() { { "title", Localizer.GetText(GridLocaleKeys.Save) } })"></SfButton>
+                    </div>
+                </div>
+            </Header>
+            <Content>
+                <div class="@(Parent.EditModule!.IsAdd ? "e-insertedrow" : "e-editedrow")">
+                    <EditForm EditContext="@(Parent.EditModule.EditContext)" class="e-gridform e-lib e-formvalidator e-editing">
+                        @if (Parent.EditSettings.Validator != null)
+                        {
+                            @Parent.EditSettings.Validator(new ValidatorTemplateContext()
+                            {
+                               Data = Parent.EditModule.CloneData!,
+                               EditContext = Parent.EditModule.EditContext!,
+                               ShowValidationMessage = (string field, bool isValid, string message) =>
+                               {
+                                   Parent?.EditModule.ApplyFormValidation(new Blazor.Internal.ValidationResult()
+                                   {
+                                       FieldName = field,
+                                       IsValid = isValid,
+                                       Message = message
+                                   });
+                               }
+                            });
+                        }
+                        else
+                        {
+                            <DataAnnotationsValidator></DataAnnotationsValidator>
+                            <ColumnsValidator T="TCell" OnValidated="@(async (ValidationResult args) => await Parent.EditModule.ApplyFormValidation(args))"
+                                              ValidationRules="@Parent.EditModule.ValidationRules()">
+                            </ColumnsValidator>
+                        }
+                        @if (Parent.EditSettings.Template != null)
+                        {
+                            Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                            @Parent.EditSettings.Template(edittemplateData.Data!)
+                        }
+                        else
+                        {
+                            <table class="e-table">
+                                <tbody>
+                                    @foreach (var Column in Columns)
+                                    {
+                                        var EditType = Column.EditType;
+                                        EditType = Column.Type == ColumnType.CheckBox ? EditType.BooleanEdit : EditType;
+                                        object value = null!;
+                                        if (!string.IsNullOrEmpty(Column?.Field))
+                                            value = Parent.PropHelper!.GetObject(Column?.Field!, Parent.EditModule.CloneData!);
+                                        else
+                                            value = null!;
+                                        if (!Column!.Visible && (!Parent.GroupSettings?.Columns?.Any(field => field == Column.Field) ?? true) || Column.Commands != null || Column.Type == ColumnType.CheckBox)
+                                        {
+                                            continue;
+                                        }
+                                        <tr>
+                                            <td class="e-rowcell @(Parent.EnableRtl ? "e-adaptive-align-right" : "e-adaptive-align-left")" e-mappinguid="@($"{Column.Uid}_Dialog")">
+                                                @if (Column.EditTemplate != null)
+                                                {
+                                                    edittemplateData.Column = Column;
+                                                    Parent.EventAggregator.Trigger("EditTemplateData", edittemplateData);
+                                                    @Column.EditTemplate(edittemplateData.Data!);
+                                                }
+                                                else if (EditType == EditType.DefaultEdit)
+                                                {
+                                                    <TextBoxEditCell T="TCell" Column="Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TextBoxEditCell>
+                                                }
+                                                else if (EditType == EditType.NumericEdit)
+                                                {
+                                                    <NumericEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></NumericEditCell>
+                                                }
+                                                else if (EditType == EditType.DropDownEdit)
+                                                {
+                                                    <DropDownEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DropDownEditCell>
+                                                }
+                                                else if (EditType == EditType.BooleanEdit)
+                                                {
+                                                    <BooleanEditCell T="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></BooleanEditCell>
+                                                }
+                                                else if (EditType == EditType.DatePickerEdit || EditType == EditType.DateTimePickerEdit)
+                                                {
+                                                    <DatePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></DatePickerEditCell>
+                                                }
+                                                else if (EditType == EditType.TimePickerEdit)
+                                                {
+                                                    <TimePickerEditCell TCell="TCell" Column="@Column" RowData="@((TCell)Parent!.EditModule!.CloneData!)"></TimePickerEditCell>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                        <ValidationTooltip T="TCell" Columns="Columns"></ValidationTooltip>
+                    </EditForm>
+                </div>
+            </Content>
+          
+        </DialogTemplates>
+    </SfDialog>
+
+}
+
+@code {
+
+    #region State_Fields
+
+    internal string? PrimaryKey;
+    private SfDialog? GridEditDialog { get; set; }
+    IDictionary<string, object> attributes = new Dictionary<string, object>();
+
+    internal EditTemplateData edittemplateData = new EditTemplateData();
+
+    internal ISyncfusionStringLocalizer? Localizer;
+
+    #endregion
+
+    #region Data_ColumnConfiguration
+
+    public List<GridColumn> Columns => GridUtils.GetColumns(Parent!);
+
+    #endregion
+
+    #region Parameters_Cascading
+    
+    [CascadingParameter]
+    public SfGrid<TCell>? Parent { get; set; }
+    
+    #endregion
+    
+    #region Lifecycle_Initialization
+    
+    protected async override Task OnInitializedAsync()
+    {
+        Localizer = Parent!.Localizer!;
+        edittemplateData.Data = Parent.EditModule!.CloneData!;
+        Parent.EventAggregator.Add("ShowDialog", InvokeStateChange);
+        var PrimaryKeys = (await Parent.EditModule.GetPrimaryKeyValue(Parent.EditModule.CloneData!));
+        PrimaryKey = PrimaryKeys.Any() ? PrimaryKeys[0] : null!;
+        if (Parent.EditSettings?.Dialog != null)
+        {
+            if (Parent.EditSettings.Dialog is DialogSettings param && param != null)
+            {
+                DialogSettings model = param;
+                attributes = new Dictionary<string, object>()
+                {
+                    { nameof(model.Height), string.IsNullOrEmpty(model.Height) ? "auto" : model.Height },
+                    { nameof(model.MinHeight), model.MinHeight! },
+                    { nameof(model.Width), string.IsNullOrEmpty(model.Width) ? Parent.EditSettings.Template != null ? "auto" : "330px" : model.Width },
+                    { nameof(model.AllowDragging), model.AllowDragging ?? true },
+                    { nameof(model.CloseOnEscape), model.CloseOnEscape ?? true },
+                    { nameof(model.ShowCloseIcon), model.ShowCloseIcon ?? (Parent.EnableAdaptiveUI ? false : true) },
+                    { nameof(model.EnableResize), model.EnableResize ?? false },
+                    { nameof(model.CssClass), !string.IsNullOrEmpty(model.CssClass) ? Parent.EnableAdaptiveUI ? "e-responsive-dialog e-dlg-modal e-bigger e-edit-dialog " +  model.CssClass : "e-edit-dialog " + model.CssClass : Parent.EnableAdaptiveUI ? "e-responsive-dialog e-dlg-modal e-bigger e-edit-dialog" : "e-edit-dialog" },
+                    { nameof(model.Target), !string.IsNullOrEmpty(model.Target) ? model.Target : null! },
+                    { nameof(model.ZIndex), (double) model.ZIndex },
+                };
+            }
+        }
+    }
+    
+    #endregion
+    
+    #region State_UpdateHandlers
+
+    public virtual void InvokeStateChange(object args)
+    {
+        Parent!.EventAggregator.Remove("ShowDialog");
+        OnInitializedAsync().ConfigureAwait(false);
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    #endregion
+
+    #region UI_DialogBehavior
+
+    private async Task AdaptiveEditDialog()
+    {
+        await Parent!.InvokeMethod("sfBlazor.Grid.customFilterDialog", new object[] { Parent.DataId, $"{Parent.ID}_adaptive_dialogEdit_wrapper" });
+    }
+
+    #endregion
+
+    #region Resource_Cleanup
+    
+    void IDisposable.Dispose()
+    {
+        Parent?.EventAggregator.Remove("ShowDialog", InvokeStateChange);
+    }
+    
+    #endregion
+}

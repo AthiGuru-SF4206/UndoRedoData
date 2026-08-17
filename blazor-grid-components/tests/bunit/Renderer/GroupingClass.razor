@@ -1,0 +1,350 @@
+﻿@inherits GridTestBase
+
+@{
+    var GroupColumns = (new string[] { "CustomerID" });
+    var MultiGroupColumns = (new string[] { "CustomerID", "OrderDate" });
+}
+<SfFixture @ref="fixture7LazyPageSetting" Test="LazyPageSettingOnGrouping" Description="LazyPageSetting resets current page on grouping with lazy loading">
+    <ComponentUnderTest>
+        <SfGrid @ref="LazyLoadingGrid1" DataSource="@GenerateOrderData()" AllowGrouping="true" AllowPaging="true" AllowFiltering="true">
+            <GridGroupSettings Columns="@GroupColumns" EnableLazyLoading="true"></GridGroupSettings>
+            <GridPageSettings PageSize="5" CurrentPage="2"></GridPageSettings>
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridEditSettings AllowEditing="true" AllowDeleting="false" AllowAdding="false"></GridEditSettings>
+            <GridEvents TValue="Order" OnActionComplete="OnActionCompleteLazyPage1"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" EditType="EditType.DatePickerEdit" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" EditType="EditType.NumericEdit" Format="C2" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+                <GridColumn Field=@nameof(Order.Country) HeaderText="Country" EditType="EditType.DropDownEdit" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+{
+    SfFixture fixture7LazyPageSetting { get; set; }
+    private SfGrid<Order> LazyLoadingGrid1;
+    private int actionCompleteLazyPage1Count = 0;
+    private string lastRequestTypeLazyPage1 = string.Empty;
+
+    private void OnActionCompleteLazyPage1(Syncfusion.Blazor.Grids.ActionEventArgs<Order> args)
+    {
+        actionCompleteLazyPage1Count++;
+        lastRequestTypeLazyPage1 = args.RequestType.ToString() ?? string.Empty;
+    }
+
+    void LazyPageSettingOnGrouping(Fixture fixture7LazyPageSetting)
+    {
+        var cut = fixture7LazyPageSetting.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.PageSettings.CurrentPage == 2, "Initial current page should be 2");
+        cut.Instance.GroupColumnAsync("OrderID").GetAwaiter();
+        cut.WaitForState(() => actionCompleteLazyPage1Count > 0);
+        Assert.True(cut.Instance.PageSettings.CurrentPage == 1, "Current page should reset to 1 after grouping with EnableLazyLoading enabled");
+        Assert.True(cut.Instance.GroupSettings.Columns.Length == 2, "Column should be grouped");
+        Assert.True(lastRequestTypeLazyPage1.Equals(Syncfusion.Blazor.Grids.Action.Grouping.ToString()), "RequestType should be Grouping");
+        cut.Instance.UngroupColumnAsync("OrderID").GetAwaiter();
+        cut.WaitForState(() => actionCompleteLazyPage1Count > 1);
+        var initialCollapseButtons = cut.FindAll(".e-recordpluscollapse");
+        Assert.True(initialCollapseButtons.Count > 0, "Collapse buttons exist (groups expanded by default in lazy mode)");
+        var firstRow = cut.Instance.Rows[0];
+        var wasExpanded = firstRow.IsExpand;
+        if (initialCollapseButtons.Count > 0)
+        {
+            initialCollapseButtons[0].Click();
+        }
+        Assert.True(firstRow.IsExpand != wasExpanded, "Row expand state toggled");
+        cut.Instance.SelectRowAsync(1,null,true).GetAwaiter();
+        cut.Instance.StartEditAsync().GetAwaiter();
+        cut.Instance.CollapseAllGroupAsync().GetAwaiter();
+        Task.Delay(200);
+        // var expandButtons = cut.FindAll(".e-recordplusexpand");
+        // if (expandButtons.Count > 0)
+        // {
+        //     expandButtons[0].Click();
+        // }
+        cut.Instance.GroupColumnAsync("OrderID").GetAwaiter();
+        cut.WaitForState(() => actionCompleteLazyPage1Count > 2);
+        cut.Instance.GroupColumnAsync("OrderDate").GetAwaiter();
+        cut.WaitForState(() => actionCompleteLazyPage1Count > 3);
+        cut.Instance.GroupColumnAsync("Country").GetAwaiter();
+        cut.WaitForState(() => actionCompleteLazyPage1Count > 4);
+        initialCollapseButtons = cut.FindAll(".e-recordpluscollapse");
+        if (initialCollapseButtons.Count > 0)
+        {
+            initialCollapseButtons[0].Click();
+            Task.Delay(200);
+        }
+        var rowIndex = cut.Instance.GetRowIndexByPrimaryKeyAsync(1001, true);
+    }
+}
+
+<SfFixture @ref="fixture1" TestAsync="ExpandCollapse_Virtualization" Description="Expand/collapse with virtualization">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" EnableVirtualization="EnableVirtualization" AllowPaging="AllowPaging">
+            <GridGroupSettings Columns="@MultiGroupColumns" ShowGroupedColumn="true" PersistGroupState="PersistGroupState"></GridGroupSettings>
+            <GridEditSettings AllowEditing="true" AllowDeleting="false" AllowAdding="false"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    bool PersistGroupState = false;
+    bool EnableVirtualization = true;
+    bool AllowPaging = false;
+    async Task ExpandCollapse_Virtualization(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.Refresh();
+        cut.WaitForState(() => cut.Instance.CurrentViewData != null && cut.Instance.CurrentViewData.Count() > 0);
+        var rowCount = cut.Instance.Rows?.Count ?? 0;
+        Assert.True(rowCount > 0, "Rows populated after Refresh");
+        var initialCollapseButtons = cut.FindAll(".e-recordpluscollapse");
+        Assert.True(initialCollapseButtons.Count > 0, "Collapse buttons exist (groups expanded by default in lazy mode)");
+        var firstRow = cut.Instance.Rows[0];
+        var wasExpanded = firstRow.IsExpand;
+        if (initialCollapseButtons.Count > 0)
+        {
+            initialCollapseButtons[0].Click();
+        }
+        Assert.True(firstRow.IsExpand != wasExpanded, "Row expand state toggled");
+        await cut.Instance.SelectRowAsync(1);
+        await cut.Instance.StartEditAsync();
+        var expandButtons = cut.FindAll(".e-recordplusexpand");
+        if (expandButtons.Count > 0)
+        {
+            expandButtons[0].Click();
+        }
+        var rowIndex = cut.Instance.GetRowIndexByPrimaryKeyAsync(1001, true);
+        PersistGroupState = true;
+        await cut.InvokeAsync(() => cut.Instance.Refresh());
+        await cut.InvokeAsync(() => cut.Instance.ExpandAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count == 0, "All groups expanded");
+        await cut.InvokeAsync(() => cut.Instance.CollapseAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count == 0, "All groups collapsed");
+        //Below is paging scneario
+        PersistGroupState = true;
+        EnableVirtualization = false;
+        AllowPaging = true;
+        await cut.InvokeAsync(() => cut.Instance.Refresh());
+        await cut.InvokeAsync(() => cut.Instance.ExpandAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count == 0, "All groups expanded");
+        await cut.InvokeAsync(() => cut.Instance.CollapseAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count == 0, "All groups collapsed");
+    }
+}
+
+<SfFixture @ref="fixturePaging" TestAsync="ExpandCollapse_Paging" Description="Expand/collapse with paging">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData()" AllowGrouping="true" AllowPaging="AllowPaging2">
+            <GridGroupSettings Columns="@MultiGroupColumns" ShowGroupedColumn="true" PersistGroupState="PersistGroupState2"></GridGroupSettings>
+            <GridEditSettings AllowEditing="true" AllowDeleting="false" AllowAdding="false"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" TextAlign="TextAlign.Right" Width="160"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Order.Freight) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Sum: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixturePaging { get; set; }
+    bool PersistGroupState2 = true;
+    bool AllowPaging2 = true;
+    async Task ExpandCollapse_Paging(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        await cut.Instance.Refresh();
+        cut.WaitForState(() => cut.Instance.CurrentViewData != null && cut.Instance.CurrentViewData.Count() > 0);
+        var rowCount = cut.Instance.Rows?.Count ?? 0;
+        Assert.True(rowCount > 0, "Rows populated after Refresh");
+        var expandButtons = cut.FindAll(".e-recordplusexpand");
+        if (expandButtons.Count > 0)
+        {
+            expandButtons[0].Click();
+        }
+        //Below is paging scneario
+        await cut.InvokeAsync(() => cut.Instance.Refresh());
+        await cut.InvokeAsync(() => cut.Instance.ExpandAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordpluscollapse").Count == 0, "All groups expanded");
+        await cut.InvokeAsync(() => cut.Instance.CollapseAllGroupAsync());
+        Assert.True(cut.FindAll(".e-recordplusexpand").Count == 0, "All groups collapsed");
+    }
+}
+
+
+<SfFixture @ref="fixture4" Test="DeepGrouping_ExpandCollapseNavigation" Description="Test deep grouping hierarchy with sequential expansion to exercise multi-level navigation. PREREQUISITE: EnableVirtualization for CurrentGroupedData population.">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateOrderData().Take(60).ToList()" AllowGrouping="true" AllowPaging="true">
+            <GridGroupSettings Columns="@(new string[] { "CustomerID", "ShipCountry", "ShipCity" })" ShowGroupedColumn="true"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" IsPrimaryKey="true" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCountry) HeaderText="Country" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.ShipCity) HeaderText="City" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+
+    void DeepGrouping_ExpandCollapseNavigation(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 3);
+        cut.WaitForState(() => cut.Instance.CurrentViewData != null && cut.Instance.CurrentViewData.Count() > 0);
+        var level1Expands = cut.FindAll(".e-recordplusexpand");
+        Assert.True(level1Expands.Count > 0, "Level 1 groups have expand buttons");
+        if (level1Expands.Count > 0)
+        {
+            level1Expands[0].Click();
+            Task.Delay(350);
+            var allExpands = cut.FindAll(".e-recordplusexpand");
+            Assert.True(allExpands.Count > level1Expands.Count || cut.FindAll(".e-recordpluscollapse").Count > 0,
+                "Level 1 expanded - Level 2 groups now visible");
+            var level2Expands = allExpands.Skip(1).FirstOrDefault();
+            if (level2Expands != null)
+            {
+                level2Expands.Click();
+                Task.Delay(350);
+                
+                var afterLevel2 = cut.FindAll(".e-recordpluscollapse");
+                Assert.True(afterLevel2.Count >= 2, "Multi-level expansion successful");
+            }
+        }
+    }
+}
+
+
+<SfFixture @ref="fixture2" Test="InfiniteScrollTest" Description="InfinteScrolling case in ExpandCollapse method">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@GenerateProductData()" AllowGrouping="true" @ref="DefaultGrid2" EnableInfiniteScrolling="true">
+            <GridEditSettings AllowAdding="true" AllowDeleting="true" AllowEditing="true" Mode="EditMode.Batch"></GridEditSettings>
+            <GridGroupSettings Columns=@Units PersistGroupState="true"></GridGroupSettings>
+            <GridAggregates>
+                <GridAggregate>
+                    <GridAggregateColumns>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Sum">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Total units: @aggregate.Sum</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(Product.Discontinued) Type="AggregateType.TrueCount">
+                            <GroupFooterTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Truecount: @aggregate.TrueCount</p>
+                                    </div>
+                                }
+                            </GroupFooterTemplate>
+                        </GridAggregateColumn>
+                        <GridAggregateColumn Field=@nameof(Product.UnitsInStock) Type="AggregateType.Max">
+                            <GroupCaptionTemplate>
+                                @{
+                                    var aggregate = (context as AggregateTemplateContext);
+                                    <div>
+                                        <p>Maximum: @aggregate.Max</p>
+                                    </div>
+                                }
+                            </GroupCaptionTemplate>
+                        </GridAggregateColumn>
+                    </GridAggregateColumns>
+                </GridAggregate>
+            </GridAggregates>
+            <GridColumns>
+                <GridColumn Field=@nameof(Product.ProductName) HeaderText="Product Name" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Product.QuantityPerUnit) HeaderText="Quantity Per Unit" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Product.UnitsInStock) HeaderText="Units In Stock" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Product.Discontinued) HeaderText="Discontinued" TextAlign="TextAlign.Right" DisplayAsCheckBox="true" Type="ColumnType.Boolean"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+
+</SfFixture>
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Product> DefaultGrid2;
+    public List<Product> Products { get; set; }
+    private string[] Units = (new string[] { "QuantityPerUnit" });
+    public void InfiniteScrollTest(Fixture fixture)
+    {
+        cut2 = fixture.GetComponentUnderTest<SfGrid<Product>>();
+        cut2.Instance.SelectRowAsync(1).GetAwaiter();
+        cut2.Instance.StartEditAsync().GetAwaiter();
+        var expandButtons = cut2.FindAll(".e-recordplusexpand");
+        if (expandButtons.Count > 0)
+        {
+            expandButtons[0].Click();
+        }
+    }
+    public List<Product> GenerateProductData()
+    {
+        return Products = Enumerable.Range(1, 10).Select(x => new Product
+        {
+            ProductName = (new string[] { "Chai", "Chang", "Aniseed Syrup", "Chef Anton's Cajun Seasoning", "Chef Anton's Gumbo Mix" })[new Random().Next(5)],
+            QuantityPerUnit = (new string[] { "10 boxes x 20 bags", "24 - 12 oz bottles", "12 - 550 ml bottles", "48 - 6 oz jars", "36 boxes" })[new Random().Next(5)],
+            UnitsInStock = x,
+            Discontinued = (new bool[] { true, false })[new Random().Next(2)]
+        }).ToList();
+    }
+    public IRenderedComponent<SfGrid<Product>> cut2 { get; set; }
+    public class Product
+    {
+        public string ProductName { get; set; }
+        public string QuantityPerUnit { get; set; }
+        public int UnitsInStock { get; set; }
+        public bool Discontinued { get; set; }
+    }
+}

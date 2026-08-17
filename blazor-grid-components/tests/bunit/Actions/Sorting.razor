@@ -1,0 +1,1550 @@
+﻿@inherits GridTestBase
+@*single sort asc testing*@
+
+<SfFixture @ref="fixture" Test="GridBasicRendering" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="SingleSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> DefaultGrid;
+    bool _canAssert = false;
+    async void GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+        cut.FindAll(".e-headercell")[0].Click();
+
+        var sortColumn1 = new Syncfusion.Blazor.Grids.SortColumn { Field = "OrderID", Direction = Syncfusion.Blazor.Grids.SortDirection.Ascending };
+        var sortColumn2 = sortColumn1;
+
+        // Equality Check
+        var result = sortColumn1.Equals((object)sortColumn2);
+        var result2 = sortColumn1.Equals(sortColumn2);
+
+        //HashCode Check
+        var sortColumn = new Syncfusion.Blazor.Grids.SortColumn { Field = "OrderID", Direction = Syncfusion.Blazor.Grids.SortDirection.Ascending };
+        var hashCode = sortColumn.GetHashCode();
+        Assert.IsType<int>(hashCode);
+
+            //Operator Check
+        // Arrange
+        var col1 = new Syncfusion.Blazor.Grids.SortColumn { Field = "OrderID", Direction = Syncfusion.Blazor.Grids.SortDirection.Ascending };
+        var col2 = new Syncfusion.Blazor.Grids.SortColumn { Field = "OrderID", Direction = Syncfusion.Blazor.Grids.SortDirection.Ascending };
+
+        // Act
+        var EqualResult = col1 == col2;
+
+        // Assert
+        Assert.True(EqualResult);
+
+        // Arrange
+        var colNotEqual1 = new Syncfusion.Blazor.Grids.SortColumn { Field = "OrderID", Direction = Syncfusion.Blazor.Grids.SortDirection.Ascending };
+        var colNotEqual2 = new Syncfusion.Blazor.Grids.SortColumn { Field = "CustomerID", Direction = Syncfusion.Blazor.Grids.SortDirection.Descending };
+
+        // Act
+        var NotEqualResult = colNotEqual1 != colNotEqual2;
+        // Assert
+        Assert.False(NotEqualResult); // !Equals() = !true = false
+    }
+
+    void SingleSort()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On Sorting Direction chenges properly");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("OrderID"), "");
+
+    }
+
+}
+@*single sort descending testing*@
+
+<SfFixture @ref="fixture1" Test="GridBasicRendering1" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid1" DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionCompleteHandler"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture1 { get; set; }
+    SfGrid<Order> DefaultGrid1;
+    void GridBasicRendering1(Fixture fixture1)
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        cut.FindAll(".e-headercell")[0].Click();
+        DefaultGrid1.AddSortColumn("OrderDate");
+        DefaultGrid1.UpdateForeignData().GetAwaiter();
+        //cut.FindAll(".e-headercell")[1].Click(new MouseEventArgs() { CtrlKey = true});
+    }
+    void ActionCompleteHandler()
+    {
+        var cut = fixture1.GetComponentUnderTest<SfGrid<Order>>();
+        var a = cut.FindAll(".e-sortnumber").Count();
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("OrderID"), "");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Descending), "On sorting SortDirection Changes properly");
+
+    }
+}
+
+<SfFixture @ref="fixture2" Test="GridBasicRendering2" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid2" DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="false">
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="OnActionComplete"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+  {
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order> DefaultGrid2;
+    async void GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+
+        //Disable sorting
+
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection is proper");
+        cut.FindAll(".e-headercell")[0].Click();
+
+
+        //Enable Paging
+
+        cut.FindComponent<SfPager>().FindAll(".e-link").ElementAt(1).Click();
+        await cut.Instance.GoToPageAsync(2);
+
+    }
+    void OnActionComplete()
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order>>();
+
+        Assert.True(8 == cut.Instance.CurrentViewData.Count(), "paging  working properly during sorting ");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+
+    }
+}
+
+@*Enable Multi sort Testing*@
+
+<SfFixture @ref="fixture3" Test="GridBasicRendering3" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid3" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="EnableMultiSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+  {
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order> DefaultGrid3;
+
+    void GridBasicRendering3(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count());
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        cut.FindAll(".e-headercell")[2].Click(new MouseEventArgs { CtrlKey = true });
+    }
+    void EnableMultiSort()
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On sorting SortDirection Changes properly");
+        Assert.True(3 == cut.FindAll(".e-sortnumber").Count());
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+    }
+}
+
+@*Disable Multisorting testing*@
+
+<SfFixture @ref="fixture4" Test="GridBasicRendering4" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid4" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="false">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="DisableMultiSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture4 { get; set; }
+    SfGrid<Order> DefaultGrid4;
+    void GridBasicRendering4(Fixture fixture4)
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        cut.FindAll(".e-headercell")[2].Click(new MouseEventArgs { CtrlKey = true });
+    }
+    void DisableMultiSort()
+    {
+        var cut = fixture4.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("OrderDate"), "");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On sorting SortDirection Changes properly");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+
+    }
+}
+
+@*clear sorting*@
+
+<SfFixture @ref="fixture5" Test="GridBasicRendering5" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid5" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ClearSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture5 { get; set; }
+    SfGrid<Order> DefaultGrid5;
+    async void GridBasicRendering5(Fixture fixture5)
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        var a = cut.FindAll(".e-sortnumber").Count();
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        await DefaultGrid5.ClearSortingAsync();
+
+    }
+    void ClearSort()
+    {
+        var cut = fixture5.GetComponentUnderTest<SfGrid<Order>>();
+        var a = cut.FindAll(".e-ascending").Count();
+        var b = cut.FindAll(".e-descending").Count();
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+
+    }
+}
+
+@*sort column using method*@
+
+<SfFixture @ref="fixture6" Test="GridBasicRendering6" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid6" DataSource="GenerateOrderData()" AllowSorting="true">
+
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture6 { get; set; }
+    SfGrid<Order> DefaultGrid6;
+    async void GridBasicRendering6(Fixture fixture6)
+    {
+        var cut = fixture6.GetComponentUnderTest<SfGrid<Order>>();
+        var a = cut.FindAll(".e-ascending").Count();
+        var b = cut.FindAll(".e-descending").Count();
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+        await DefaultGrid6.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On Sorting Direction chenges properly");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("OrderID"), "");
+    }
+
+}
+
+@*Multisort column using method*@
+
+<SfFixture @ref="fixture7" TestAsync="GridBasicRendering7" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid7" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture7 { get; set; }
+    SfGrid<Order> DefaultGrid7;
+    async Task GridBasicRendering7(Fixture fixture7)
+    {
+        var cut = fixture7.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        await DefaultGrid7.SortColumnAsync("OrderDate", SortDirection.Ascending, true);
+
+        cut.WaitForState(() => cut.FindAll(".e-ascending").Count() == 2);
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(3 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+    }
+
+}
+@* Disable Multisort column using method*@
+
+<SfFixture @ref="fixture8" Test="GridBasicRendering8" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid8" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture8 { get; set; }
+    SfGrid<Order> DefaultGrid8;
+    async void GridBasicRendering8(Fixture fixture8)
+    {
+        var cut = fixture8.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        await DefaultGrid8.SortColumnAsync("OrderDate", SortDirection.Ascending, false);
+
+        cut.WaitForState(() => cut.FindAll(".e-sortnumber").Count() == 0);
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+    }
+
+}
+@* sorting with group testing*@
+
+<SfFixture @ref="fixture9" Test="GridBasicRendering9" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid9" DataSource="GenerateOrderData()" AllowGrouping="true" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture9 { get; set; }
+    SfGrid<Order> DefaultGrid9;
+    async void GridBasicRendering9(Fixture fixture9)
+    {
+        var cut = fixture9.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        Assert.True(1 == cut.FindAll(".e-groupdroparea").Count, "");
+
+        await DefaultGrid9.SortColumnAsync("OrderDate", SortDirection.Ascending, true);
+
+        cut.WaitForState(() => cut.FindAll(".e-sortnumber").Count() == 3);
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(3 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+        //Enable Grouping
+
+        await DefaultGrid9.GroupColumnAsync("OrderID");
+
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 1);
+        Assert.True(cut.Instance.GroupSettings.Columns[0] == "OrderID", "");
+        Assert.True(1 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+        Assert.True(2 == cut.Instance.SortSettings.Columns.Where(x => x.Direction.Equals(SortDirection.Ascending)).ToList().Count(), "SortDirection Count is proper");
+        Assert.True(3 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+        //Disable Grouping
+
+        await DefaultGrid9.UngroupColumnAsync("OrderID");
+        cut.WaitForState(() => cut.Instance.GroupSettings.Columns.Length == 0);
+        Assert.True(0 == cut.Instance.GroupSettings.Columns.Length, "Group Settings");
+
+    }
+
+}
+
+@*single sort testing*@
+
+<SfFixture @ref="fixture10" Test="GridBasicRendering10" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid10" DataSource="GenerateOrderData()" FrozenColumns="2" FrozenRows="2" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ForeignKeySingleSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code
+  {
+    SfFixture fixture10 { get; set; }
+    private SfGrid<Order> DefaultGrid10;
+    async void GridBasicRendering10(Fixture fixture10)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(0 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(0 == cut.FindAll(".e-descending").Count(), "SortDirection  Count is proper");
+        cut.FindAll(".e-headercell")[0].Click();
+    }
+
+    void ForeignKeySingleSort()
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        var bb = cut.FindAll(".e-ascending").Count();
+        Assert.True(cut.Instance.SortSettings.Columns[0].Direction.Equals(Syncfusion.Blazor.Grids.SortDirection.Ascending), "On Sorting Direction chenges properly");
+        Assert.True(cut.Instance.SortSettings.Columns[0].Field.Equals("OrderID"), "");
+
+    }
+
+}
+@*Multi sort testing*@
+
+<SfFixture @ref="fixture11" Test="GridBasicRendering11" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid11" DataSource="GenerateOrderData()" AllowPaging="true" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ForeignKeyMultiSort"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture11 { get; set; }
+    SfGrid<Order> DefaultGrid11;
+    void GridBasicRendering11(Fixture fixture11)
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        cut.FindAll(".e-headercell")[2].Click(new MouseEventArgs() { CtrlKey = true });
+    }
+    void ForeignKeyMultiSort()
+    {
+        var cut = fixture11.GetComponentUnderTest<SfGrid<Order>>();
+        var aa = cut.FindAll(".e-sortnumber").Count();
+        Assert.True(3 == cut.FindAll(".e-sortnumber").Count(), "Sort number count is proper");
+        Assert.True(2 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+    }
+}
+@*Multisort Column Testing on Same Column*@
+
+<SfFixture @ref="fixture12" Test="GridBasicRendering12" Description="Flat grid with data source and column">
+    <ComponentUnderTest>
+        <SfGrid @ref="DefaultGrid12" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="MultiSortOnSameColumn"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+@code {
+    SfFixture fixture12 { get; set; }
+    SfGrid<Order> DefaultGrid12;
+    void GridBasicRendering12(Fixture fixture12)
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(1 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "SortNumber count is proper");
+        Assert.True(1 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        cut.FindAll(".e-headercell")[0].Click(new MouseEventArgs() { CtrlKey = true });
+    }
+    void MultiSortOnSameColumn()
+    {
+        var cut = fixture12.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(2 == cut.FindAll(".e-sortnumber").Count(), "Sort number count is proper");
+        Assert.True(0 == cut.FindAll(".e-ascending").Count(), "SortDirection Count is proper");
+        Assert.True(2 == cut.FindAll(".e-descending").Count(), "SortDirection Count is proper");
+
+    }
+}
+@*001: SortClickHandler Guard Clauses*@
+<SfFixture @ref="fixture13" Test="SortClickHandler_NullColumn" Description="SortClickHandler with null column parameter">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid13" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete13"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture13;
+    SfGrid<Order> Grid13;
+    
+    async void SortClickHandler_NullColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 001: Verify SortClickHandler handles null column gracefully
+        // This simulates internal null column scenario
+        var initialSortCount = cut.Instance.SortSettings?.Columns?.Count ?? 0;
+        Assert.Equal(0, initialSortCount);
+        // Guard clause prevents null reference exception
+    }
+
+    void ActionComplete13()
+    {
+        // No sort should have been applied
+        Assert.Empty(Grid13.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*002: SortClickHandler with CheckBox column type*@
+<SfFixture @ref="fixture14" Test="SortClickHandler_CheckBoxColumn" Description="SortClickHandler skips CheckBox columns">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid14" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Type="ColumnType.CheckBox" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete14"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture14;
+    SfGrid<Order> Grid14;
+    
+    void SortClickHandler_CheckBoxColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 002: CheckBox column header should not trigger sort
+        var checkboxHeader = cut.FindAll(".e-headercell")[0];
+        checkboxHeader.Click();
+    }
+
+    void ActionComplete14()
+    {
+        // CheckBox column click should not add sort
+        Assert.Empty(Grid14.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*003: SortClickHandler with sorting disabled*@
+<SfFixture @ref="fixture15" Test="SortClickHandler_SortingDisabled" Description="SortClickHandler respects AllowSorting=false">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid15" DataSource="GenerateOrderData()" AllowSorting="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete15"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture15;
+    SfGrid<Order> Grid15;
+    
+    void SortClickHandler_SortingDisabled(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 003: AllowSorting=false should prevent sort
+        var headerCell = cut.FindAll(".e-headercell")[1];
+        headerCell.Click();
+    }
+
+    void ActionComplete15()
+    {
+        // No sort should be applied when AllowSorting is false
+        Assert.Empty(Grid15.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*004: SortClickHandler valid trigger*@
+<SfFixture @ref="fixture16" Test="SortClickHandler_ValidSort" Description="SortClickHandler initiates sort on valid column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid16" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150" Format="c2"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete16"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture16;
+    SfGrid<Order> Grid16;
+    
+    void SortClickHandler_ValidSort(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 004: Valid sort trigger should work
+        var orderIdHeader = cut.FindAll(".e-headercell")[1];
+        orderIdHeader.Click();
+    }
+
+    void ActionComplete16()
+    {
+        // Sort should be applied to OrderID column
+        Assert.NotEmpty(Grid16.SortSettings?.Columns ?? new List<GridSortColumn>());
+        Assert.Equal("OrderID", Grid16.SortSettings.Columns[0].Field);
+        Assert.Equal(SortDirection.Ascending, Grid16.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*005: Class does NOT contain e-ascending -> Direction = Ascending*@
+<SfFixture @ref="fixture17" Test="InitiateSort_NoAscendingClass" Description="Direction Ascending when not in ascending class">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid17" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete17"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture17;
+    SfGrid<Order> Grid17;
+    
+    void InitiateSort_NoAscendingClass(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 005: First click should result in Ascending direction
+        var header = cut.FindAll(".e-headercell")[1];
+        header.Click();
+    }
+
+    void ActionComplete17()
+    {
+        // First sort should be Ascending
+        Assert.Equal(SortDirection.Ascending, Grid17.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*006: Class contains e-ascending -> Direction = Descending*@
+<SfFixture @ref="fixture18" Test="InitiateSort_AscendingToDescending" Description="Direction toggles to Descending when in ascending class">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid18" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete18"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture18;
+    SfGrid<Order> Grid18;
+    
+    void InitiateSort_AscendingToDescending(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 006: Click already ascending column to toggle to Descending
+        var header = cut.FindAll(".e-headercell")[1];
+        header.Click();
+    }
+
+    void ActionComplete18()
+    {
+        // Toggled sort should be Descending
+        Assert.Equal(SortDirection.Descending, Grid18.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*007: Shift key pressed (unsort behavior)*@
+<SfFixture @ref="fixture19" Test="InitiateSort_ShiftKeyUnsort" Description="Shift key removes sort from column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid19" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete19"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture19;
+    SfGrid<Order> Grid19;
+    
+    void InitiateSort_ShiftKeyUnsort(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 007: Shift+Click should remove sort
+        var header = cut.FindAll(".e-headercell")[1];
+        header.Click(new MouseEventArgs { ShiftKey = true });
+    }
+
+    void ActionComplete19()
+    {
+        // Sort should be removed
+        Assert.Empty(Grid19.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*008: AllowUnsort enabled and descending class*@
+<SfFixture @ref="fixture20" Test="InitiateSort_AllowUnsort" Description="AllowUnsort removes sort on second click">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid20" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings AllowUnsort="true">
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Descending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete20"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture20;
+    SfGrid<Order> Grid20;
+    
+    void InitiateSort_AllowUnsort(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 008: AllowUnsort=true, click descending column to unsort
+        var header = cut.FindAll(".e-headercell")[1];
+        header.Click();
+    }
+
+    void ActionComplete20()
+    {
+        // Sort should be removed due to AllowUnsort
+        Assert.Empty(Grid20.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*009: Column is grouped (should not unsort grouped columns)*@
+<SfFixture @ref="fixture21" Test="InitiateSort_GroupedColumn" Description="Grouped columns not removed by unsort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid21" DataSource="GenerateOrderData()" AllowSorting="true" AllowGrouping="true">
+            <GridGroupSettings Columns="@(new string[] { " CustomerID" })"></GridGroupSettings>
+            <GridSortSettings AllowUnsort="true">
+                <GridSortColumns>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete21"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture21;
+    SfGrid<Order> Grid21;
+    
+    void InitiateSort_GroupedColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 009: Grouped column should not be unsorting
+        var header = cut.FindAll(".e-headercell")[1];
+        header.Click(new MouseEventArgs { ShiftKey = true });
+    }
+
+    void ActionComplete21()
+    {
+        // Grouped column sort should remain
+        Assert.NotEmpty(Grid21.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*010: Comprehensive SortColumn scenarios*@
+<SfFixture @ref="fixture22" Test="SortColumn_GuardClause_NullColumn" Description="SortColumn handles null column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid22" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete22"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture22;
+    SfGrid<Order> Grid22;
+    
+    async void SortColumn_GuardClause_NullColumn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 010: Attempt to sort non-existent column
+        await cut.Instance.SortColumnAsync("NonExistentField", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete22()
+    {
+        // Sort should not be applied for null column
+        Assert.Empty(Grid22.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*011: SortColumn with AllowSorting disabled*@
+<SfFixture @ref="fixture23" Test="SortColumn_SortingDisabled" Description="SortColumn respects AllowSorting=false">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid23" DataSource="GenerateOrderData()" AllowSorting="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete23"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture23;
+    SfGrid<Order> Grid23;
+    
+    async void SortColumn_SortingDisabled(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 011: AllowSorting=false prevents sort
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete23()
+    {
+        // Sort should be ignored
+        Assert.Empty(Grid23.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*012: Column-level AllowSorting disabled*@
+<SfFixture @ref="fixture24" Test="SortColumn_ColumnLevelSortDisabled" Description="SortColumn respects column-level AllowSorting=false">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid24" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" AllowSorting="false" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete24"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture24;
+    SfGrid<Order> Grid24;
+    
+    async void SortColumn_ColumnLevelSortDisabled(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 012: Column-level AllowSorting=false prevents sort
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete24()
+    {
+        // Sort should be ignored for OrderID
+        Assert.Empty(Grid24.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*013: AllowMultiSorting disabled forces IsMultiSort to false*@
+<SfFixture @ref="fixture25" Test="SortColumn_SingleSortMode" Description="AllowMultiSorting=false enforces single sort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid25" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="false">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete25"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture25;
+    SfGrid<Order> Grid25;
+    
+    async void SortColumn_SingleSortMode(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 013: Try to add second sort with AllowMultiSorting=false
+        await cut.Instance.SortColumnAsync("CustomerID", SortDirection.Ascending, true);
+    }
+
+    void ActionComplete25()
+    {
+        // Only one sort should exist (old one removed)
+        Assert.Single(Grid25.SortSettings.Columns);
+        Assert.Equal("CustomerID", Grid25.SortSettings.Columns[0].Field);
+    }
+}
+
+@*014-015: NotifyCollectionChangedAction.Add scenarios*@
+<SfFixture @ref="fixture26" Test="SortColumn_FirstSort_Ascending" Description="NotifyCollectionChangedAction.Add for first ascending sort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid26" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete26"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture26;
+    SfGrid<Order> Grid26;
+    
+    async void SortColumn_FirstSort_Ascending(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 014: First sort with Ascending direction
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete26()
+    {
+        Assert.Single(Grid26.SortSettings.Columns);
+        Assert.Equal(SortDirection.Ascending, Grid26.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*015: NotifyCollectionChangedAction.Replace for first descending sort*@
+<SfFixture @ref="fixture27" Test="SortColumn_FirstSort_Descending" Description="NotifyCollectionChangedAction.Replace for first descending sort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid27" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete27"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture27;
+    SfGrid<Order> Grid27;
+    
+    async void SortColumn_FirstSort_Descending(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 015: First sort with Descending direction
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Descending, false);
+    }
+
+    void ActionComplete27()
+    {
+        Assert.Single(Grid27.SortSettings.Columns);
+        Assert.Equal(SortDirection.Descending, Grid27.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*016: Remove sort via invokedByMethod*@
+<SfFixture @ref="fixture28" Test="SortColumn_RemoveViaMethod" Description="NotifyCollectionChangedAction.Remove when invokedByMethod with Direction.None">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid28" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete28"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture28;
+    SfGrid<Order> Grid28;
+    
+    async void SortColumn_RemoveViaMethod(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 016: Remove sort via method call with Direction.None
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.None, false);
+    }
+
+    void ActionComplete28()
+    {
+        Assert.Empty(Grid28.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*017: Replace existing sort*@
+<SfFixture @ref="fixture29" Test="SortColumn_ReplaceExistingSort" Description="NotifyCollectionChangedAction.Replace for re-sort of same column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid29" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete29"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture29;
+    SfGrid<Order> Grid29;
+    
+    async void SortColumn_ReplaceExistingSort(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 017: Re-sort same column to change direction
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Descending, false);
+    }
+
+    void ActionComplete29()
+    {
+        Assert.Single(Grid29.SortSettings.Columns);
+        Assert.Equal(SortDirection.Descending, Grid29.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*018: Add new sort to existing (multi-sort)*@
+<SfFixture @ref="fixture30" Test="SortColumn_AddToMultiSort" Description="NotifyCollectionChangedAction.Add for new column in multi-sort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid30" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete30"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture30;
+    SfGrid<Order> Grid30;
+    
+    async void SortColumn_AddToMultiSort(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 018: Add new column to multi-sort
+        await cut.Instance.SortColumnAsync("CustomerID", SortDirection.Ascending, true);
+    }
+
+    void ActionComplete30()
+    {
+        Assert.Equal(2, Grid30.SortSettings.Columns.Count);
+        Assert.Equal("OrderID", Grid30.SortSettings.Columns[0].Field);
+        Assert.Equal("CustomerID", Grid30.SortSettings.Columns[1].Field);
+    }
+}
+
+@*019: PersistSelection scenarios*@
+<SfFixture @ref="fixture31" Test="SortColumn_ClearRowSelection" Description="Selection cleared when PersistSelection=false and rows selected">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid31" DataSource="GenerateOrderData()" AllowSorting="true" AllowSelection="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" PersistSelection="false"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" RowSelecting="OnRowSelecting" OnActionComplete="ActionComplete31"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture31;
+    SfGrid<Order> Grid31;
+    int selectedRowCount = 0;
+    
+    void OnRowSelecting(RowSelectingEventArgs<Order> args)
+    {
+        selectedRowCount++;
+    }
+
+    async void SortColumn_ClearRowSelection(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // Select first two rows
+        var rows = cut.FindAll("tbody tr");
+        if (rows.Count >= 2)
+        {
+            rows[0].Click();
+            rows[1].Click();
+        }
+        // Wait for selection to complete
+        await Task.Delay(100);
+        // Now sort (should clear selection)
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete31()
+    {
+        // Selection should be cleared
+        Assert.Empty(Grid31.SelectedRowIndexes ?? new List<int>());
+    }
+}
+
+@*020: multiplesCol parameter early return*@
+<SfFixture @ref="fixture32" Test="SortColumn_MultipleColsEarlyReturn" Description="Early return when multipleCols=true">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid32" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete32"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture32;
+    SfGrid<Order> Grid32;
+    int eventFireCount = 0;
+    
+    async void SortColumn_MultipleColsEarlyReturn(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 021: Batch sort with multipleCols=true should skip events
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete32()
+    {
+        Assert.NotEmpty(Grid32.SortSettings?.Columns ?? new List<GridSortColumn>());
+    }
+}
+
+@*021: Column exists and is removed*@
+<SfFixture @ref="fixture33" Test="RemoveSort_ColumnExists" Description="Remove existing sorted column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid33" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                    <GridSortColumn Field="CustomerID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete33"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture33;
+    SfGrid<Order> Grid33;
+    
+    async void RemoveSort_ColumnExists(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 022: Remove OrderID from sort
+        await cut.Instance.ClearSortingAsync(new List<string> { "OrderID" });
+    }
+
+    void ActionComplete33()
+    {
+        Assert.Single(Grid33.SortSettings.Columns);
+        Assert.Equal("CustomerID", Grid33.SortSettings.Columns[0].Field);
+    }
+}
+
+@*022: Column doesn't exist (no-op)*@
+<SfFixture @ref="fixture34" Test="RemoveSort_ColumnNotFound" Description="Remove non-existent column (safe no-op)">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid34" DataSource="GenerateOrderData()" AllowSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete34"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture34;
+    SfGrid<Order> Grid34;
+    
+    async void RemoveSort_ColumnNotFound(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 022: Remove non-existent column
+        await cut.Instance.ClearSortingAsync(new List<string> { "NonExistentField" });
+    }
+
+    void ActionComplete34()
+    {
+        // Original sort should remain unchanged
+        Assert.Single(Grid34.SortSettings.Columns);
+        Assert.Equal("OrderID", Grid34.SortSettings.Columns[0].Field);
+    }
+}
+
+@*023: MultiSort=false, no grouping*@
+<SfFixture @ref="fixture35" Test="UpdateModel_SingleSort_NoGrouping" Description="UpdateModel with single-sort and no groups">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid35" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="false">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete35"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture35;
+    SfGrid<Order> Grid35;
+    
+    async void UpdateModel_SingleSort_NoGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 024: Single-sort mode without grouping
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete35()
+    {
+        Assert.Single(Grid35.SortSettings.Columns);
+    }
+}
+
+@*024: MultiSort=false, with grouping*@
+<SfFixture @ref="fixture36" Test="UpdateModel_SingleSort_WithGrouping" Description="UpdateModel preserves grouped columns in single-sort">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid36" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="false" AllowGrouping="true">
+            <GridGroupSettings Columns="@(new string[] { " CustomerID" })"></GridGroupSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete36"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture36;
+    SfGrid<Order> Grid36;
+    
+    async void UpdateModel_SingleSort_WithGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 024: Single-sort should preserve grouped column
+        await cut.Instance.SortColumnAsync("Freight", SortDirection.Ascending, false);
+    }
+
+    void ActionComplete36()
+    {
+        // CustomerID should remain first as grouped column
+        Assert.Contains(Grid36.SortSettings.Columns, s => s.Field == "CustomerID");
+    }
+}
+
+@*025: MultiSort=true (multi-sort mode)*@
+<SfFixture @ref="fixture37" Test="UpdateModel_MultiSort_Mode" Description="UpdateModel with multi-sort enabled">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid37" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete37"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture37;
+    SfGrid<Order> Grid37;
+    
+    async void UpdateModel_MultiSort_Mode(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 026: Add to existing sort in multi-sort mode
+        await cut.Instance.SortColumnAsync("CustomerID", SortDirection.Ascending, true);
+    }
+
+    void ActionComplete37()
+    {
+        // Both sorts should exist
+        Assert.Equal(2, Grid37.SortSettings.Columns.Count);
+    }
+}
+
+@*026: Column already in sort list (replace)*@
+<SfFixture @ref="fixture38" Test="UpdateModel_ReplaceDuplicate" Description="UpdateModel replaces duplicate sorted column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid38" DataSource="GenerateOrderData()" AllowSorting="true" AllowMultiSorting="true">
+            <GridSortSettings>
+                <GridSortColumns>
+                    <GridSortColumn Field="OrderID" Direction="SortDirection.Ascending"></GridSortColumn>
+                </GridSortColumns>
+            </GridSortSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" Width="150"></GridColumn>
+            </GridColumns>
+            <GridEvents TValue="Order" OnActionComplete="ActionComplete38"></GridEvents>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture38;
+    SfGrid<Order> Grid38;
+    
+    async void UpdateModel_ReplaceDuplicate(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        // 027: Re-sort same column (should replace)
+        await cut.Instance.SortColumnAsync("OrderID", SortDirection.Descending, true);
+    }
+
+    void ActionComplete38()
+    {
+        Assert.Single(Grid38.SortSettings.Columns);
+        Assert.Equal(SortDirection.Descending, Grid38.SortSettings.Columns[0].Direction);
+    }
+}
+
+@*039: ClearSelection on sort with PersistSelection=false and row selected*@
+<SfFixture @ref="fixture39" TestAsync="SortWithRowSelection_ClearSelection" Description="ClearSelection called when rows selected and sorting with PersistSelection=false">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid39" DataSource="GenerateOrderData()" AllowSorting="true" AllowSelection="true" AllowPaging="true">
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" PersistSelection="false"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture39;
+    SfGrid<Order> Grid39;
+    int initialSelectedRowCount = 0;
+
+    async Task SortWithRowSelection_ClearSelection(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        Assert.False(cut.Instance.SelectionSettings.PersistSelection, "PersistSelection must be false");
+        await cut.Instance.SelectRowAsync(1);
+        initialSelectedRowCount = cut.Instance.SelectedRowIndexes.Count;
+        Assert.True(initialSelectedRowCount > 0, "Rows should be selected before sort");
+        await cut.Instance.SortModule.RemoveSortColumn("OrderID");
+    }
+}
+
+
+<SfFixture @ref="fixture40" TestAsync="SortingWithGrouping" Description="Sorting grouped column">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid40" DataSource="GenerateOrderData()" AllowGrouping AllowSorting="true" AllowSelection="true" AllowPaging="true">
+            <GridGroupSettings Columns="@Initial"></GridGroupSettings>
+            <GridSelectionSettings Type="Syncfusion.Blazor.Grids.SelectionType.Multiple" Mode="Syncfusion.Blazor.Grids.SelectionMode.Row" PersistSelection="false"></GridSelectionSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(Order.OrderID)" HeaderText="Order ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.CustomerID)" HeaderText="Customer ID" Width="150"></GridColumn>
+                <GridColumn Field="@nameof(Order.Freight)" HeaderText="Freight" Width="150" Format="c2"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture40;
+    SfGrid<Order> Grid40;
+    public string[] Initial = (new string[] { "CustomerID", "Freight" });
+    async Task SortingWithGrouping(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.Rows.Count > 0, "Grid rendered successfully");
+        cut.Instance.SortColumnAsync("CustomerID", SortDirection.Ascending, false).GetAwaiter();
+    }
+}

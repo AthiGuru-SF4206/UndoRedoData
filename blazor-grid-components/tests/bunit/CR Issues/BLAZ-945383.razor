@@ -1,0 +1,87 @@
+﻿@using System.Collections.ObjectModel
+@inherits GridTestBase
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="DateTime Column Filtering not working properly">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" TValue="BusinessData" AllowFiltering="true" AllowSorting="true" AllowPaging="true">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Excel"></GridFilterSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(BusinessData.OrderID)" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(BusinessData.CustomerID)" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="ShipLocation.ShipCity" HeaderText="Ship City"></GridColumn>
+                <GridColumn Field="ShipLocation.ShipCountry" HeaderText="Ship Country"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    public SfGrid<BusinessData> Grid {get;set;}
+    private System.Collections.ObjectModel.ObservableCollection<BusinessData> _gridData;
+
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<BusinessData>>();
+        Assert.True(Grid.TotalItemCount == 4);
+        await Grid.FilterByColumnAsync("ShipLocation.ShipCity", "equal", null);
+        Assert.True(Grid.TotalItemCount == 1);
+
+    }
+    public ObservableCollection<BusinessData> GenerateRows()
+    {
+       return _gridData = new ObservableCollection<BusinessData>
+    {
+        new BusinessData
+        {
+            OrderID = 1,
+            ShipLocation = new LocationData
+            {
+                ShipCity = "Berlin",
+                ShipCountry = "Germany"
+            }
+        },
+        new BusinessData
+        {
+            OrderID = 2,
+            CustomerID = "CUST2",
+            ShipLocation = new LocationData
+            {
+                ShipCity = "Madrid",
+                ShipCountry = "Spain"
+            }
+        },
+        new BusinessData
+        {
+            OrderID = 3,
+            CustomerID = "CUST3",
+            ShipLocation = new LocationData
+            {
+                ShipCity = "London",
+                ShipCountry = "UK"
+            }
+        },
+        new BusinessData
+        {
+            OrderID = 4,
+            CustomerID = "CUST4"
+        }
+    };
+    }
+
+    public class BusinessData
+    {
+        public int OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public LocationData ShipLocation { get; set; }
+    }
+
+    public class LocationData
+    {
+        public string ShipCity { get; set; }
+        public string ShipCountry { get; set; }
+    }
+}

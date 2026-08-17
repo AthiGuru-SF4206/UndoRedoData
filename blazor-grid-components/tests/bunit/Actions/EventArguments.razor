@@ -1,0 +1,369 @@
+﻿@inherits GridTestBase
+
+@using Syncfusion.Blazor.Navigations
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+
+<SfFixture @ref="fixture" TestAsync="GridBasicRendering" Description="Triggering the GridEvents in the Grid">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid" DataSource="GenerateRows()" AllowGrouping=@_allowGrouping AllowReordering=true AllowSelection="true" AllowFiltering=true AllowRowDragAndDrop=true  Toolbar="@(new List<string>(){ "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridEvents Searching="SearchingHandler" Searched="SearchedHandler" Grouping="GroupingHandler" Grouped="GroupedHandler" ColumnReordering="ColumnReorderingHandler" Filtering="FilteringHandler"
+                OnColumnMenuOpen="ColumnMenuOpenHandler" FilterDialogOpening="FilterDialogOpeningHandler" RowCreating=RowCreatingHandler RowCreated=RowCreatedHandler 
+                EditCanceling="EditCancelingHandler" EditCanceled="EditCanceledHandler" OnBeginEdit="BeginEditHandler" TValue="Order"></GridEvents>
+                @* <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.CheckBox"></GridFilterSettings> *@
+            <GridColumns>
+                <GridColumn Field=@nameof(Order.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture { get; set; }
+    private SfGrid<Order> Grid;
+    public List<Order> GridData { get; set; }
+    private bool _allowGrouping { get; set; } = true;
+    private bool preventFilter { get; set; } = true;
+    private bool preventGrouping { get; set; } = true;
+    private bool preventSearch { get; set; }
+
+    public async Task GridBasicRendering(Fixture fixture)
+    {
+        var cut = fixture.GetComponentUnderTest<SfGrid<Order>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        preventSearch = true;
+        await cut.Instance.SearchAsync("Anton");
+        Assert.True(cut.Instance.TotalItemCount == 30, "Searching operation is not executed.");
+        preventSearch = false;
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        Assert.True(cut.Instance.TotalItemCount == 30, "Grouping operation is not executed.");
+        preventGrouping = false;
+        await cut.Instance.ReorderColumnAsync("OrderID", "Freight");
+        Assert.True(cut.Instance.Columns[0].Field == "OrderID" && cut.Instance.Columns[3].Field == "Freight", "Column reordering operation is not executed.");
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ANTON"); // cancelled due to the cancel property.
+        Assert.True(cut.Instance.TotalItemCount == 30, "Filtering operation is not executed.");
+
+        // await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ANTON"); // cancelled due to preventFilterQuery property.
+        // Assert.True(cut.Instance.TotalItemCount == 30, "Filtering operation is not executed.");
+        // cut.FindAll(".e-filtermenudiv")[1].Click(new MouseEventArgs());
+
+        await cut.Instance.SearchAsync("Alfki");
+        Assert.True(cut.Instance.TotalItemCount != 30, "Searching operation is executed.");
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        // await cut.Instance.SelectRowAsync(0);
+        // Assert.True(cut.Instance.Rows[0].IsSelected, "Row is selected.");
+        // await cut.Instance.StartEditAsync();
+        // Assert.True(cut.FindAll(".e-inline-edit").Count == 1);
+        // Order addRecord = new Order()
+        // {
+        //     OrderID = 1100,
+        //     CustomerID = "ABCDE",
+        //     Freight = 25.7,
+        //     OrderDate = new DateTime(2010, 5, 1)
+        // };
+        // await cut.Instance.AddRecordAsync(addRecord);
+        // await cut.Instance.AddRecordAsync();
+        // Assert.True(cut.FindAll(".e-addedrow").Count == 1);
+        // _allowGrouping = false;
+        // await cut.Instance.CloseEditAsync();
+    }
+
+    public void SearchingHandler(SearchingEventArgs args)
+    {
+        args.Cancel = preventSearch;
+    }
+
+    public void SearchedHandler(SearchedEventArgs args)
+    {
+        Assert.True(args.SearchText == "Alfki");
+    }
+
+    public void GroupingHandler(GroupingEventArgs args)
+    {
+        args.Cancel = preventGrouping;
+    }
+
+    public void GroupedHandler(GroupedEventArgs args)
+    {
+        Assert.True(args.Action.ToString() == "Add");
+        Assert.True(args.ColumnName == "CustomerID");
+    }
+
+    public void ColumnReorderingHandler(ColumnReorderingEventArgs args)
+    {
+        args.Cancel = true;
+    }
+
+    public void FilteringHandler(Syncfusion.Blazor.Grids.FilteringEventArgs args)
+    {
+        if (preventFilter)
+        {
+            args.Cancel = true;
+            Assert.True(args.FilterPredicates.Count == 1);
+            Assert.True(args.ColumnName == "CustomerID");
+        }
+        else
+        {
+            args.PreventFilterQuery = true;    
+        }
+        preventFilter = false;
+    }
+
+    public void ColumnMenuOpenHandler(ColumnMenuOpenEventArgs args)
+    {
+
+    }
+
+    public void FilterDialogOpeningHandler(FilterDialogOpeningEventArgs args)
+    {
+        Assert.True(args.ColumnName == "CustomerID");
+        Assert.True(args.CheckboxListData.Count() > 0);
+        Assert.True(args.FilterChoiceCount == 0);
+    }
+
+    public void RowCreatingHandler(RowCreatingEventArgs<Order> args)
+    {
+        
+    }
+
+    public void RowCreatedHandler(RowCreatedEventArgs<Order> args)
+    {
+
+    }
+
+    public void EditCancelingHandler(EditCancelingEventArgs<Order> args)
+    {
+        
+    }
+
+    public void EditCanceledHandler(EditCanceledEventArgs<Order> args)
+    {
+        
+    }
+
+    public void BeginEditHandler(BeginEditArgs<Order> args)
+    {
+        
+    }
+
+    public List<Order> GenerateRows()
+    {
+        return GridData = Enumerable.Range(1, 30).Select(x => new Order()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture2" TestAsync="GridBasicRendering2" Description="Prevent grid rendering using prevent renderer argument">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid2" DataSource="GenerateRows2()" AllowGrouping=true Toolbar="@(new List<string>() { "Search" })">
+            <GridEditSettings AllowAdding=true AllowDeleting=true AllowEditing=true></GridEditSettings>
+            <GridEvents  Grouping="GroupingHandler2" Grouped="GroupedHandler2" TValue="Order2"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order2.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order2.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order2.OrderDate) HeaderText=" Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order2.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture2 { get; set; }
+    private SfGrid<Order2> Grid2;
+    public List<Order2> GridData2 { get; set; }
+
+    public async Task GridBasicRendering2(Fixture fixture2)
+    {
+        var cut = fixture2.GetComponentUnderTest<SfGrid<Order2>>();
+        Assert.True(cut.Instance.TotalItemCount == 30, "All the records are rendered.");
+        await cut.Instance.GroupColumnAsync("CustomerID");
+        Assert.True(cut.Instance.TotalItemCount == 30, "Grouping operation is not executed.");
+    }
+
+    
+
+    public void GroupingHandler2(GroupingEventArgs args)
+    {
+        var gridRender = args.PreventRender;
+        args.PreventRender = true;
+    }
+
+    public void GroupedHandler2(GroupedEventArgs args)
+    {
+    }
+
+  
+
+    public List<Order2> GenerateRows2()
+    {
+        return GridData2 = Enumerable.Range(1, 30).Select(x => new Order2()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order2
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture3" TestAsync="FilteringEventPreventQuery" Description="Verify PreventFilterQuery in FilteringEventArgs prevents filter from being applied">
+    <ComponentUnderTest>
+        <SfGrid @ref="Grid3" DataSource="GenerateRows3()" AllowFiltering="true" Height="315px">
+            <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+            <GridEvents Filtering="FilteringHandler3" TValue="Order3"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(Order3.OrderID) HeaderText="Order ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field=@nameof(Order3.CustomerID) HeaderText="Customer Name" Width="150"></GridColumn>
+                <GridColumn Field=@nameof(Order3.OrderDate) HeaderText="Order Date" Format="d" Type="ColumnType.Date" TextAlign="TextAlign.Right" Width="130"></GridColumn>
+                <GridColumn Field=@nameof(Order3.Freight) HeaderText="Freight" Format="C2" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixture3 { get; set; }
+    private SfGrid<Order3> Grid3;
+    public List<Order3> GridData3 { get; set; }
+    private bool preventQueryF3 = true;
+    private int filteringEventCountF3 = 0;
+
+    public async Task FilteringEventPreventQuery(Fixture fixture3)
+    {
+        var cut = fixture3.GetComponentUnderTest<SfGrid<Order3>>();
+        Assert.NotNull(cut.Instance);
+        Assert.True(cut.Instance.TotalItemCount == 30, "All records should be rendered initially");
+
+        // Filter by CustomerID - PreventFilterQuery will be set to true
+        await cut.Instance.FilterByColumnAsync("CustomerID", "equal", "ALFKI");
+        
+        // Verify that filtering handler was invoked
+        Assert.True(filteringEventCountF3 > 0, "Filtering event should be triggered");
+        
+        // Verify that PreventFilterQuery prevented the filter from being applied
+        // Total item count should remain 30 as filter query was prevented
+        //Assert.True(cut.Instance.TotalItemCount == 30, "PreventFilterQuery should prevent filter from being applied, total count should remain 30");
+        
+        // Verify FilterPredicates contains the filter info
+        //Assert.True(cut.Instance.FilterSettings.FilteredColumns.Count() == 0, "No filter should be applied to the grid due to PreventFilterQuery");
+    }
+
+    public void FilteringHandler3(Syncfusion.Blazor.Grids.FilteringEventArgs args)
+    {
+        filteringEventCountF3++;
+        
+      
+        
+        if (preventQueryF3)
+        {
+            // Set PreventFilterQuery to true - this prevents the filter query from being applied
+            var preventQuery = args.PreventFilterQuery;
+            args.PreventFilterQuery = true;
+            preventQueryF3 = false;
+        }
+    }
+
+    public List<Order3> GenerateRows3()
+    {
+        return GridData3 = Enumerable.Range(1, 30).Select(x => new Order3()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order3
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}
+
+<SfFixture @ref="fixturef" Test="GridBasicRenderingf" Description="Testing with ActionArgs">
+    <ComponentUnderTest>
+        <SfGrid @ref="Gridd" DataSource="GenerateRows4()">
+            <GridColumns>
+                <GridColumn Field="@nameof(Order4.OrderID)" Width="110" HeaderText="Order ID"></GridColumn>
+                <GridColumn Field="@nameof(Order4.CustomerID)" Width="120" HeaderText="Customer ID"></GridColumn>
+                <GridColumn Field="@nameof(Order4.OrderDate)" Width="130" HeaderText="Order Date"></GridColumn>
+                <GridColumn Field="@nameof(Order4.Freight)" Width="100" HeaderText="Freight" Format="c2"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code
+{
+    SfFixture fixturef { get; set; }
+    private SfGrid<Order4> Gridd;
+    public List<Order4> GridData4 { get; set; }
+
+    void GridBasicRenderingf(Fixture fixture)
+    {
+        var cut = fixturef.GetComponentUnderTest<SfGrid<Order4>>();
+        var args = new ActionArgs
+        {
+            IndentWidth = "",
+            IsRowDragCell = true,
+            IsMacDevice = true,
+            RowHeight = 0,
+        };
+        string indent = args.IndentWidth;
+        bool? rowDrag = args.IsRowDragCell;
+        bool? mac = args.IsMacDevice;
+        int? rowHeight = args.RowHeight;
+    }
+
+    public List<Order4> GenerateRows4()
+    {
+        return GridData4 = Enumerable.Range(1, 30).Select(x => new Order4()
+        {
+            OrderID = 1000 + x,
+            CustomerID = (new string[] { "ALFKI", "ANANTR", "ANTON", "BLONP", "BOLID" })[new Random().Next(5)],
+            Freight = 2.1 * x,
+            OrderDate = DateTime.Now.AddDays(-x),
+        }).ToList();
+    }
+
+    public class Order4
+    {
+        public int? OrderID { get; set; }
+        public string CustomerID { get; set; }
+        public DateTime? OrderDate { get; set; }
+        public double? Freight { get; set; }
+    }
+}

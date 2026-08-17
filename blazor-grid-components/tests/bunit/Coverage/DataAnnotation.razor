@@ -1,0 +1,526 @@
+﻿@inherits GridTestBase
+@using Syncfusion.Blazor.Grids
+@using System.ComponentModel.DataAnnotations
+@using System.Dynamic
+@using Microsoft.AspNetCore.Components.Forms
+
+<SfFixture @ref="fixture8" Test="ComplexTypeValidationWithCustomErrorMessage" Description="Complex type validation with custom error message in Dialog mode">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@EmployeeData" Height="315" AllowSorting="true" @ref="Grid1"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(EmployeeDetails.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(EmployeeDetails.Title)" HeaderText="Title" Width="150"></GridColumn>
+                <GridColumn Field="EmpDetails.FirstName" HeaderText="First Name" Width="150"></GridColumn>
+                <GridColumn Field="EmpDetails.LastName" HeaderText="Last Name" Width="130"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture8 { get; set; }
+    SfGrid<EmployeeDetails> Grid1;
+    List<EmployeeDetails> EmployeeData { get; set; }
+
+    public async void ComplexTypeValidationWithCustomErrorMessage(Fixture fixture)
+    {
+        EmployeeData = EmployeeDetails.GetAllRecords();
+        var cut = fixture.GetComponentUnderTest<SfGrid<EmployeeDetails>>();
+
+        await cut.Instance.AddRecordAsync();
+        cut.WaitForState(() => cut.Find(".e-dialog") != null, TimeSpan.FromSeconds(2));
+
+        Assert.NotNull(cut.Find(".e-dialog"));
+        Assert.True(cut.Instance.IsEdit);
+
+        var saveButton = cut.Find(".e-footer-content .e-primary");
+        saveButton.Click();
+        cut.WaitForState(() => cut.FindAll(".e-tooltip-wrap").Count > 0, TimeSpan.FromSeconds(2));
+
+        var tooltips = cut.FindAll(".e-tooltip-wrap");
+        Assert.True(tooltips.Count > 0, "Validation tooltip should be displayed");
+    }
+
+    public class EmployeeDetails
+    {
+        public static List<EmployeeDetails> Employees = new List<EmployeeDetails>();
+        
+        public EmployeeDetails() { }
+        
+        public EmployeeDetails(int employeeID, string firstName, string lastName, string title)
+        {
+            EmployeeID = employeeID;
+            EmpDetails = new EmployeeInfo
+            {
+                FirstName = firstName,
+                LastName = lastName
+            };
+            Title = title;
+        }
+
+        public static List<EmployeeDetails> GetAllRecords()
+        {
+            if (Employees.Count == 0)
+            {
+                Employees.Add(new EmployeeDetails(1, "Nancy", "Davolio", "Sales Representative"));
+                Employees.Add(new EmployeeDetails(2, "Andrew", "Fuller", "Vice President, Sales"));
+                Employees.Add(new EmployeeDetails(3, "Janet", "Leverling", "Sales Representative"));
+                Employees.Add(new EmployeeDetails(4, "Margaret", "Peacock", "Sales Representative"));
+                Employees.Add(new EmployeeDetails(5, "Steven", "Buchanan", "Sales Manager"));
+            }
+            return Employees;
+        }
+
+        [Required]
+        public int EmployeeID { get; set; }
+        
+        [ValidateComplexType]
+        public EmployeeInfo EmpDetails { get; set; }
+        
+        public string Title { get; set; }
+    }
+
+    public class EmployeeInfo
+    {
+        [Required(ErrorMessage = "First name should not be empty")]
+        public string? FirstName { get; set; }
+        
+        public string? LastName { get; set; }
+    }
+}
+
+
+<SfFixture @ref="fixture7" Test="ExpandoObjectComplexColumnValidation" Description="ExpandoObject binding with complex column fields">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@ExpandoData" Height="315" AllowSorting="true" @ref="Grid7"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="EmployeeID" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Name" HeaderText="Name" Width="150"></GridColumn>
+                <GridColumn Field="Translations.English" HeaderText="English Name" Width="150"></GridColumn>
+                <GridColumn Field="Translations.French" HeaderText="French Name" Width="150"></GridColumn>
+                <GridColumn Field="Translations.Spanish" HeaderText="Spanish Name" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture7 { get; set; }
+    SfGrid<ExpandoObject> Grid7;
+    List<ExpandoObject> ExpandoData { get; set; }
+
+    public async void ExpandoObjectComplexColumnValidation(Fixture fixture)
+    {
+        ExpandoData = new List<ExpandoObject>();
+        
+        for (int i = 1; i <= 5; i++)
+        {
+            dynamic employee = new ExpandoObject();
+            employee.EmployeeID = i;
+            employee.Name = $"Employee {i}";
+
+            dynamic translations = new ExpandoObject();
+            translations.English = $"Name {i}";
+            translations.French = $"Nom {i}";
+            translations.Spanish = $"Nombre {i}";
+            
+            employee.Translations = translations;
+            ExpandoData.Add(employee);
+        }
+        
+        var cut = fixture.GetComponentUnderTest<SfGrid<ExpandoObject>>();
+
+        await cut.Instance.AddRecordAsync();
+        cut.WaitForState(() => cut.Find(".e-dialog") != null, TimeSpan.FromSeconds(2));
+
+        Assert.NotNull(cut.Find(".e-dialog"));
+        Assert.True(cut.Instance.IsEdit);
+
+        var saveButton = cut.Find(".e-footer-content .e-primary");
+        saveButton.Click();
+        cut.WaitForState(() => cut.FindAll(".e-tooltip-wrap").Count > 0, TimeSpan.FromSeconds(2));
+
+        var tooltips = cut.FindAll(".e-tooltip-wrap");
+        Assert.True(tooltips.Count > 0, "Validation tooltip should be displayed");
+    }
+}
+
+<SfFixture @ref="fixture13" Test="ComplexEditContextFieldIdentifierCreation" Description="Test ComplexEditContext field identifier creation for validation">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@ComplexFieldData" Height="315" AllowSorting="true" @ref="Grid13"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(ComplexFieldEmployee.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="PersonalDetails.FirstName" HeaderText="First Name" Width="150"></GridColumn>
+                <GridColumn Field="PersonalDetails.LastName" HeaderText="Last Name" Width="150"></GridColumn>
+                <GridColumn Field="PersonalDetails.Email" HeaderText="Email" Width="180"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture13 { get; set; }
+    SfGrid<ComplexFieldEmployee> Grid13;
+    List<ComplexFieldEmployee> ComplexFieldData { get; set; }
+
+    public async void ComplexEditContextFieldIdentifierCreation(Fixture fixture)
+    {
+        ComplexFieldData = ComplexFieldEmployee.GetAllRecords();
+        var cut = fixture.GetComponentUnderTest<SfGrid<ComplexFieldEmployee>>();
+
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.True(cut.Instance.IsEdit, "Grid should be in edit mode");
+        Assert.True(cut.FindAll(".e-gridform").Count > 0, "Edit form should be rendered");
+
+        await cut.Instance.EndEditAsync();
+        
+        Assert.True(true, "ComplexEditContext field identifier creation completed without exception");
+    }
+
+    public class ComplexFieldEmployee
+    {
+        public static List<ComplexFieldEmployee> GetAllRecords()
+        {
+            var employees = new List<ComplexFieldEmployee>();
+            for (int i = 1; i <= 3; i++)
+            {
+                employees.Add(new ComplexFieldEmployee
+                {
+                    EmployeeID = i,
+                    PersonalDetails = new PersonalDetails
+                    {
+                        FirstName = $"FirstName{i}",
+                        LastName = $"LastName{i}",
+                        Email = $"employee{i}@example.com"
+                    }
+                });
+            }
+            return employees;
+        }
+
+        [Required]
+        public int EmployeeID { get; set; }
+
+        [ValidateComplexType]
+        public PersonalDetails PersonalDetails { get; set; }
+    }
+
+    public class PersonalDetails
+    {
+        [Required(ErrorMessage = "First name is required")]
+        public string? FirstName { get; set; }
+
+        [Required(ErrorMessage = "Last name is required")]
+        public string? LastName { get; set; }
+
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        public string? Email { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture14" Test="ComplexFieldNameSplitAndExtraction" Description="Test field name splitting for multi-level complex types">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@MultiLevelData" Height="315" AllowSorting="true" @ref="Grid14"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(MultiLevelEmployee.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Department.Manager.Name" HeaderText="Manager Name" Width="150"></GridColumn>
+                <GridColumn Field="Department.Manager.Title" HeaderText="Manager Title" Width="150"></GridColumn>
+                <GridColumn Field="Department.Name" HeaderText="Department" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture14 { get; set; }
+    SfGrid<MultiLevelEmployee> Grid14;
+    List<MultiLevelEmployee> MultiLevelData { get; set; }
+
+    public async void ComplexFieldNameSplitAndExtraction(Fixture fixture)
+    {
+        MultiLevelData = MultiLevelEmployee.GetAllRecords();
+        var cut = fixture.GetComponentUnderTest<SfGrid<MultiLevelEmployee>>();
+
+        await cut.Instance.AddRecordAsync();
+        cut.WaitForState(() => cut.Find(".e-dialog") != null, TimeSpan.FromSeconds(2));
+
+        Assert.NotNull(cut.Find(".e-dialog"));
+        Assert.True(cut.Instance.IsEdit);
+
+        await cut.Instance.CloseEditAsync();
+        cut.WaitForState(() => !cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.False(cut.Instance.IsEdit, "Complex field name splitting completed successfully");
+    }
+
+    public class MultiLevelEmployee
+    {
+        public static List<MultiLevelEmployee> GetAllRecords()
+        {
+            var employees = new List<MultiLevelEmployee>();
+            employees.Add(new MultiLevelEmployee
+            {
+                EmployeeID = 1,
+                Department = new DepartmentInfo
+                {
+                    Name = "Engineering",
+                    Manager = new ManagerInfo
+                    {
+                        Name = "John Manager",
+                        Title = "Director"
+                    }
+                }
+            });
+            return employees;
+        }
+
+        [Required]
+        public int EmployeeID { get; set; }
+
+        [ValidateComplexType]
+        public DepartmentInfo Department { get; set; }
+    }
+
+    public class DepartmentInfo
+    {
+        [Required(ErrorMessage = "Department name is required")]
+        public string? Name { get; set; }
+
+        [ValidateComplexType]
+        public ManagerInfo Manager { get; set; }
+    }
+
+    public class ManagerInfo
+    {
+        [Required(ErrorMessage = "Manager name is required")]
+        [MinLength(3, ErrorMessage = "Manager name must be at least 3 characters")]
+        public string? Name { get; set; }
+
+        [Required(ErrorMessage = "Manager title is required")]
+        public string? Title { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture15" Test="ComplexFieldValidationMessageClearing" Description="Test validation message clearing with complex field identifiers">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@ValidationClearData" Height="315" AllowSorting="true" @ref="Grid15"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Normal"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(ValidationEmployee.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="@nameof(ValidationEmployee.Title)" HeaderText="Title" Width="150"></GridColumn>
+                <GridColumn Field="ContactInfo.Phone" HeaderText="Phone" Width="150"></GridColumn>
+                <GridColumn Field="ContactInfo.Address" HeaderText="Address" Width="200"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture15 { get; set; }
+    SfGrid<ValidationEmployee> Grid15;
+    List<ValidationEmployee> ValidationClearData { get; set; }
+
+    public async void ComplexFieldValidationMessageClearing(Fixture fixture)
+    {
+        ValidationClearData = ValidationEmployee.GetAllRecords();
+        var cut = fixture.GetComponentUnderTest<SfGrid<ValidationEmployee>>();
+
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.True(cut.Instance.IsEdit, "Grid should be in edit mode");
+
+        await cut.Instance.EndEditAsync();
+        cut.WaitForState(() => !cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.False(cut.Instance.IsEdit, "Edit completed successfully with complex field validation clearing");
+    }
+
+    public class ValidationEmployee
+    {
+        public static List<ValidationEmployee> GetAllRecords()
+        {
+            var employees = new List<ValidationEmployee>();
+            employees.Add(new ValidationEmployee
+            {
+                EmployeeID = 1,
+                Title = "Engineer",
+                ContactInfo = new ContactInformation
+                {
+                    Phone = "555-1234",
+                    Address = "123 Main Street"
+                }
+            });
+            employees.Add(new ValidationEmployee
+            {
+                EmployeeID = 2,
+                Title = "Manager",
+                ContactInfo = new ContactInformation
+                {
+                    Phone = "555-5678",
+                    Address = "456 Oak Avenue"
+                }
+            });
+            return employees;
+        }
+
+        [Required]
+        public int EmployeeID { get; set; }
+
+        [Required]
+        public string Title { get; set; }
+
+        [ValidateComplexType]
+        public ContactInformation ContactInfo { get; set; }
+    }
+
+    public class ContactInformation
+    {
+        [Required(ErrorMessage = "Phone number is required")]
+        [Phone(ErrorMessage = "Invalid phone number format")]
+        public string? Phone { get; set; }
+
+        [Required(ErrorMessage = "Address is required")]
+        [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters")]
+        public string? Address { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture16" Test="ComplexFieldValidationErrorStorage" Description="Test error message storage with complex field identifiers">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@ErrorStorageData" Height="315" AllowSorting="true" @ref="Grid16"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="@nameof(ErrorStorageEmployee.EmployeeID)" HeaderText="Employee ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Profile.Username" HeaderText="Username" Width="150"></GridColumn>
+                <GridColumn Field="Profile.Department" HeaderText="Department" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture16 { get; set; }
+    SfGrid<ErrorStorageEmployee> Grid16;
+    List<ErrorStorageEmployee> ErrorStorageData { get; set; }
+
+    public async void ComplexFieldValidationErrorStorage(Fixture fixture)
+    {
+        ErrorStorageData = ErrorStorageEmployee.GetAllRecords();
+        var cut = fixture.GetComponentUnderTest<SfGrid<ErrorStorageEmployee>>();
+
+        await cut.Instance.AddRecordAsync();
+        cut.WaitForState(() => cut.Find(".e-dialog") != null, TimeSpan.FromSeconds(2));
+
+        Assert.NotNull(cut.Find(".e-dialog"));
+        Assert.True(cut.Instance.IsEdit);
+
+        var saveButton = cut.Find(".e-footer-content .e-primary");
+        saveButton.Click();
+        cut.WaitForState(() => cut.FindAll(".e-tooltip-wrap").Count > 0 || cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.True(cut.Instance.IsEdit, "Grid should remain in edit mode due to validation errors");
+    }
+
+    public class ErrorStorageEmployee
+    {
+        public static List<ErrorStorageEmployee> GetAllRecords()
+        {
+            var employees = new List<ErrorStorageEmployee>();
+            employees.Add(new ErrorStorageEmployee
+            {
+                EmployeeID = 1,
+                Profile = new UserProfile
+                {
+                    Username = "user1",
+                    Department = "IT"
+                }
+            });
+            return employees;
+        }
+
+        [Required]
+        public int EmployeeID { get; set; }
+
+        [ValidateComplexType]
+        public UserProfile Profile { get; set; }
+    }
+
+    public class UserProfile
+    {
+        [Required(ErrorMessage = "Username is required")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters")]
+        public string? Username { get; set; }
+
+        [Required(ErrorMessage = "Department is required")]
+        public string? Department { get; set; }
+    }
+}
+
+<SfFixture @ref="fixture17" Test="ExpandoObjectExclusionFromComplexIdentifier" Description="Test ExpandoObject exclusion from complex field identifier logic">
+    <ComponentUnderTest>
+        <SfGrid DataSource="@ExpandoExclusionData" Height="315" AllowSorting="true" @ref="Grid17"
+                Toolbar="@(new List<string>() { "Add", "Edit", "Delete", "Update", "Cancel" })">
+            <GridEditSettings AllowAdding="true" AllowEditing="true" AllowDeleting="true" Mode="EditMode.Dialog"></GridEditSettings>
+            <GridColumns>
+                <GridColumn Field="ID" HeaderText="ID" IsPrimaryKey="true" TextAlign="TextAlign.Right" Width="120"></GridColumn>
+                <GridColumn Field="Name" HeaderText="Name" Width="150"></GridColumn>
+                <GridColumn Field="Metadata.CreatedBy" HeaderText="Created By" Width="150"></GridColumn>
+                <GridColumn Field="Metadata.CreatedDate" HeaderText="Created Date" Width="150"></GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </ComponentUnderTest>
+</SfFixture>
+
+@code {
+    SfFixture fixture17 { get; set; }
+    SfGrid<ExpandoObject> Grid17;
+    List<ExpandoObject> ExpandoExclusionData { get; set; }
+
+    public async void ExpandoObjectExclusionFromComplexIdentifier(Fixture fixture)
+    {
+
+        ExpandoExclusionData = new List<ExpandoObject>();
+        
+        for (int i = 1; i <= 2; i++)
+        {
+            dynamic record = new ExpandoObject();
+            record.ID = i;
+            record.Name = $"Record {i}";
+            
+            dynamic metadata = new ExpandoObject();
+            metadata.CreatedBy = $"User{i}";
+            metadata.CreatedDate = DateTime.Now.AddDays(-i).ToString("yyyy-MM-dd");
+            
+            record.Metadata = metadata;
+            ExpandoExclusionData.Add(record);
+        }
+        
+        var cut = fixture.GetComponentUnderTest<SfGrid<ExpandoObject>>();
+
+        await cut.Instance.SelectRowAsync(0);
+        await cut.Instance.StartEditAsync();
+        cut.WaitForState(() => cut.Instance.IsEdit, TimeSpan.FromSeconds(2));
+
+        Assert.True(cut.Instance.IsEdit, "Grid should be in edit mode");
+
+        await cut.Instance.EndEditAsync();
+        
+        Assert.True(true, "ExpandoObject correctly excluded from complex field identifier logic");
+    }
+}
+

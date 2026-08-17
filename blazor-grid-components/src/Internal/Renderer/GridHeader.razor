@@ -1,0 +1,544 @@
+﻿@namespace Syncfusion.Blazor.Grids.Internal
+@typeparam TContent
+@inherits GridHeaderBase<TContent>
+@using System.Globalization;
+@using System.Linq
+@implements IRenderer
+
+@using Microsoft.AspNetCore.Components.Web
+
+
+<table class=@($"e-table{ (Parent!.AllowFiltering || Parent.AllowSorting || Parent.AllowGrouping ? " e-sortfilter" : "")}")
+       id="@($"{Parent.ID}_header_table")" data-sf-style="@Parent.GetTableStyles()" role="presentation">
+    <caption class="e-hide">@($"{Parent.ID}_header_table")</caption>
+    <WidthController TContent="TContent" ID="@HeaderParameters!.Id" IsFrozen="@HeaderParameters.IsFrozen" IsFrozenRight="@HeaderParameters.IsFrozenRight" Columns="@(Parent.EnableColumnVirtualization ? HeaderParameters.IsFrozen.HasValue && HeaderParameters.IsFrozen == true ? GridUtils.GetColumns(Parent) : Parent.VirtualScrollModule?.GetVirtualColumns() : GridUtils.GetColumns(Parent))"></WidthController>
+    <thead role="rowgroup">
+    @if(Columns != null && Columns.Any())
+    {
+        @for (int r = 0; r < Rows?.Count; r++)
+        {
+            Row<object> row = Rows[r];
+            <tr role="row" class="@GetTRClasses()">
+                @{
+                    List<Cell<object>> cells = GetCells(row);
+                }
+                @for (var i = 0; i < cells?.Count; i++)
+                {
+                    var headerCellParameters = new GridHeaderCellParameters()
+                    {
+                        IsFrozen = HeaderParameters.IsFrozen,
+                        IsFrozenRight = HeaderParameters.IsFrozenRight,
+                        Row = row,
+                        Columns = Columns,
+                        RowIteration = r,
+                        FrozenLeftColumnCount = HeaderParameters.FrozenLeftColumnCount,
+                        Cells = cells,
+                        Iteration = i
+                    };
+                    <GridHeaderCell TContent="TContent" HeaderCellParameters=headerCellParameters></GridHeaderCell>
+                }
+            </tr>
+            @if (HeaderParameters.IsFrozen.HasValue && HeaderParameters.IsFrozen == true && Parent.EnableVirtualization)
+            {
+                int maxDepth = MeasureColumnDepth(Parent.Columns!);
+                for (var i = 1; i < maxDepth; i++)
+                {
+                    <tr role="row" class="@GetTRClasses()"></tr>
+                }
+            }
+        }
+        @if (Rows != null && Rows.Count > 0 && Parent.AllowFiltering && Parent.FilterSettings!.Type == FilterType.FilterBar)
+        {
+            var filterbarParameters = new FilterBarParameters()
+            {
+                IsFrozen = HeaderParameters.IsFrozen,
+                IsFrozenRight = HeaderParameters.IsFrozenRight,
+                Rows = Rows
+            };
+            <FilterBarRenderer TContent="TContent" FilterBarParameters=@filterbarParameters></FilterBarRenderer>
+        }
+        @if (Parent.EditSettings != null && Parent.EditSettings.AllowAdding && Parent.EditSettings.ShowAddNewRow && Rows != null && Parent.EditSettings.NewRowPosition == NewRowPosition.Top && (Parent.FrozenRows > 0 || Parent.EnableVirtualization || Parent.EnableInfiniteScrolling))
+        {
+            <GridAddNewRow TRow="TContent"></GridAddNewRow>
+        }
+    }
+    </thead>
+    @if (Parent.EnableVirtualMaskRow && Parent.EnableVirtualization && HeaderParameters.IsFrozenRowMovable)
+    {
+        <tbody role="rowgroup" class="@HideClass" data-sf-style=@GetTransform()>
+
+            @foreach (Row<object> Row in (RowCollection ?? new List<Row<object>>()))
+            {
+                var rowParameters = new GridRowParameters()
+                {
+                    Row = Row,
+                    IsFrozenRight = HeaderParameters.IsFrozenRight,
+                    IsFrozen = HeaderParameters.IsFrozen,
+                    IsLastRow = Row?.Equals(Rows?.Last()) == true ? true : false
+                };
+                if (Row?.IsExpand == true && Row?.IsDetailRow == true)
+                {
+                    <GridDetailRow TRow="TContent" RowParameters="rowParameters"></GridDetailRow>
+                }
+                else if (Row?.Visible == true)
+                {
+                    <GridRow TRow="TContent" RowParameters="rowParameters"></GridRow>
+                }
+            }
+            @if (Parent.EnableVirtualMaskRow && Parent.EnableVirtualization)
+            {
+                 string Style = $"height: {Parent.RowHeight}px";
+                 List<GridColumn> gridColumns = GridUtils.GetColumns(Parent);
+                for (var i = 0; i < Parent.FrozenRows; i++)
+                {
+                    <tr role="row" class="e-masked-row e-row" data-sf-style="@Style">
+                        @if (Parent.AllowGrouping && Parent.GroupSettings != null && Parent.GroupSettings.Columns != null && Parent.EnableVirtualization)
+                        {
+                            foreach (var groupcol in Parent.GroupSettings.Columns)
+                            {
+                                <td class="e-masked-cell e-rowcell e-centeralign">
+                                    <span class="e-virtualcell"></span>
+                                </td>
+                            }
+                        }
+                        @for (var j = 0; j < gridColumns?.Count(); j++)
+                        {
+                            @if (gridColumns[j].Visible)
+                            {
+                                string textAlign = GridUtils.IsNoneTextAlign(gridColumns[j]) ? string.Empty : "text-align:" + GridUtils.GetTextAlign(gridColumns[j]);
+                                <td class="e-masked-cell e-rowcell" @attributes="GridUtils.GetStyleAttributes(textAlign)">
+                                    <span class="e-virtualcell"></span>
+                                </td>
+                            }
+                        }
+                    </tr>
+                }
+             }
+        </tbody>
+    }
+    else
+    {
+        <tbody role="rowgroup" class="@HideClass">
+            @foreach (Row<object> Row in (RowCollection ?? new List<Row<object>>()))
+            {
+                var rowParameters = new GridRowParameters()
+                {
+                    Row = Row,
+                    IsFrozenRight = HeaderParameters.IsFrozenRight,
+                    IsFrozen = HeaderParameters.IsFrozen,
+                    IsLastRow = Row?.Equals(Rows?.Last()) == true ? true : false
+                };
+                if (Row?.IsExpand == true && Row?.IsDetailRow == true)
+                {
+                    <GridDetailRow TRow="TContent" RowParameters="rowParameters"></GridDetailRow>
+                }
+                else if (Row?.Visible == true)
+                {
+                    <GridRow TRow="TContent" RowParameters="rowParameters" ></GridRow>
+                }
+            }
+        </tbody>
+    }
+</table>
+
+@code {
+
+    #region Public Properties
+
+    [Parameter]
+    public GridHeaderParameters? HeaderParameters { get; set; }
+
+    public IEnumerable<object> Data { get; set; } = System.Linq.Enumerable.Empty<object>();
+
+    #region Private Fields
+
+    private IEnumerable<object>? _data { get; set; }
+
+    #endregion
+
+    public List<Row<object>> Rows { get; set; } = new List<Row<object>>();
+
+    public List<Row<object>> RowCollection { get; set; } = new List<Row<object>>();
+
+    public string HideClass = "e-hide";
+
+    public List<GridColumn>? Columns { get; set; }
+    public List<GridColumn>? _columns { get; set; }
+
+    #endregion
+
+    #region Private Fields
+
+    private ISyncfusionStringLocalizer? Localizer;
+
+    #endregion
+
+    #region Methods
+
+    #region Lifecycle Methods
+
+    protected override void OnInitialized()
+    {
+        Localizer = Parent!.Localizer;
+        Parent.EventAggregator.Add("BeforeCellFocus", HeaderFocused);
+        Parent.EventAggregator.Add("RowStateChanged", HeaderStateChange);
+        Parent.EventAggregator.Add("HeaderStateChanged", HeaderStateChange);
+    }
+
+    protected override void OnParametersSet()
+    {
+        Columns = Parent!.RearrangeColumns(HeaderParameters?.Columns!);
+        bool isFrozenOrderChanged = false;
+        if (Columns != null && Parent.FrozenColumns > 0 && Parent.EnablePersistence && !Parent.IsStackedHeader)
+        {
+            var FrozenCount = Parent.FreezeModule!.GetFrozenCount();
+            isFrozenOrderChanged = !HeaderParameters!.Columns!.Take(FrozenCount).SequenceEqual(Columns.Take(FrozenCount));
+        }
+        if (Parent.FrozenColumns > 0 && Parent.IsColumnPropertyChanged)
+        {
+            Parent.ColumnIndex = -1;
+            Parent.SetColumnIndex(Columns!);
+        }
+        else if (isFrozenOrderChanged)
+        {
+            Parent.SetColumnIndex(Columns!);
+        }
+        Parent.FreezeModule!.EnableFrozenLineCursor(Columns);
+        RowCollection = HeaderParameters!.RowCollection;
+        Data = HeaderParameters.Data!;
+        HeaderParameters.Id = "header";
+        if (!Parent.IsClientInitialized)
+        {
+            Parent.EnableRightDefaultCursor = Parent.Columns?.Any(x => x.Freeze == FreezeDirection.Right) ?? false;
+        }
+        bool hasFrozenOrFixedColumns = Columns?.Any(c => c.FixedColumn || c.IsFrozen) ?? false;
+        bool isColumnHeaderChanged = Parent.IsColumnHeaderChange && Parent.GridEvents?.HeaderCellInfo.HasDelegate == true && hasFrozenOrFixedColumns ? !(Columns != null && _columns != null && Columns.SequenceEqual(_columns)) : Columns != _columns;
+        if (Columns != null && Columns.Count > 0 && (isColumnHeaderChanged || Parent.ForceUpdate || Parent.HasColumnChanges || Parent.RefreshColumnHeader))
+        {
+            Rows = GetRows();
+            _columns = Columns;
+        }
+
+        if (RowCollection != null && RowCollection.Count > 0)
+        {
+            HideClass = "";
+        }
+
+        Parent.RefreshColumnHeader = false;
+    }
+
+    #endregion
+
+    #region Event Handlers
+
+    private void HeaderStateChange(object arg)
+    {
+        if (Parent != null && Parent.FrozenRows > 0 && arg == null)
+        {
+            var Addedrec = Parent.Rows?.FindAll(_ => _.IsAddedTop)?.Count;
+            if (Addedrec > 0)
+            {
+                RowCollection = Parent.Rows?.Take(Convert.ToInt32(Parent.FrozenRows) + Addedrec ?? 0)?.ToList()!;
+            }
+            else
+            {
+                if (Parent.EnableInfiniteScrolling && Parent.InfiniteScrollSettings != null && Parent.InfiniteScrollSettings.EnableCache)
+                {
+                    RowCollection?.Clear();
+                    var cacheRowList = Parent.InfiniteScrollModule?.InfiniteGeneratedRows?.Values?.ToList();
+                    for(int i = 0; i < Parent.FrozenRows; i++)
+                    {
+                        RowCollection?.Add(cacheRowList?[i]!);
+                    }
+                }
+                else
+                {
+                    RowCollection = Parent.Rows?.Take(Convert.ToInt32(Parent.FrozenRows))?.ToList()!;
+                }
+            }
+            if (RowCollection != null && RowCollection.Count > 0)
+            {
+                HideClass = "";
+            }
+        }
+        InvokeAsync(() => StateHasChanged());
+    }
+
+    #endregion
+
+    #region Rendering & Header Utilities
+
+    private string GetTransform()
+    {
+        string Style = string.Empty;
+        int RowHeight = (int)Parent!.RowHeight != 0 ? (int)Parent.RowHeight : 37;
+        if (HeaderParameters != null && HeaderParameters.IsFromClient)
+        {
+            Style = "transform:translate(0px, " + (0 - ((Parent.FrozenRows + 1) * RowHeight)) + "px)";
+        }
+        else
+        {
+            Style = "transform:translate(0px, 0px)";
+        }
+
+        return Style;
+    }
+
+    public List<Row<object>> GetRows(List<GridColumn> columns = null!)
+    {
+        columns = columns ?? Columns!;
+        bool columnFrozen = false;
+        bool hasFrozenColumns = Parent!.FrozenColumns != 0;
+        bool hasFrozenHeaders = HeaderParameters!.IsFrozen == true || columnFrozen;
+        bool hasFrozenColumnsLeftOrRight = columns?.Any(x => x.FrozenMovableLabel == "FrozenLeft") == true || columns?.Any(x => x.FrozenMovableLabel == "FrozenRight") == true;
+        for (int i = 0; i < columns?.Count; i++)
+        {
+            if (columns[i].IsFrozen)
+            {
+                columnFrozen = true;
+            }
+        }
+        if (columnFrozen && Parent.FrozenColumns == 0 && !(columns != null && columns.Any(x => x.Columns != null && x.Columns.Any())))
+        {
+            if (columns != null && columns.Any(x => x.FrozenMovableLabel == "FrozenLeft"))
+            {
+                return Parent.FrozenHeaderRows = new List<Row<object>>() {
+                    new Row<object>()
+                    {
+                        Uid = Parent.GetUid("gridrow"),
+                        Cells = GenerateCells(columns)
+                    }
+                };
+            }
+            else if (columns != null && columns.Any(x => x.FrozenMovableLabel == "FrozenRight"))
+            {
+                return Parent.FrozenRightHeaderRows = new List<Row<object>>() {
+                    new Row<object>()
+                    {
+                        Uid = Parent.GetUid("gridrow"),
+                        Cells = GenerateCells(columns)
+                    }
+                };
+            }
+        }
+        if (columns != null && columns.Any(x => x.Columns != null && x.Columns?.Count != 0))
+        {
+            Parent.IsStackedHeader = true;
+            Dictionary<int, List<GridColumn>> stackedColumns = new Dictionary<int, List<GridColumn>>();
+            int maxDepth = MeasureColumnDepth(columns);
+            GetStackedColumns(1, columns, maxDepth, stackedColumns);
+            List<Row<object>> rows = new List<Row<object>>();
+            for (int level = 1; level <= maxDepth; level++)
+            {
+                List<GridColumn> levelColumns = stackedColumns[level];
+                rows.Add(new Row<object>()
+                {
+                    Uid = Parent.GetUid("gridrow"),
+                    Cells = GenerateCells(levelColumns, false, maxDepth, level)
+                });
+            }
+
+            if (hasFrozenColumns && (hasFrozenHeaders || hasFrozenColumnsLeftOrRight))
+            {
+                return Parent.FrozenHeaderRows = rows;
+            }
+            else
+            {
+                return Parent.HeaderRows = rows;
+            }
+        }
+        else if (hasFrozenColumns && (hasFrozenHeaders || hasFrozenColumnsLeftOrRight))
+        {
+            return Parent.FrozenHeaderRows = new List<Row<object>>() {
+                new Row<object>()
+                {
+                    Uid = Parent.GetUid("gridrow"),
+                    Cells = GenerateCells(columns!)
+                }
+            };
+        }
+        else
+        {
+            Parent.IsStackedHeader = (Parent.FrozenColumns > 0 || Parent.Columns!.Any(x => x.IsFrozen)) && Parent.Columns!.Any(x => x.Columns != null && x.Columns.Count != 0);
+            return Parent.HeaderRows = new List<Row<object>>() {
+                new Row<object>()
+                {
+                    Uid = Parent.GetUid("gridrow"),
+                    Cells = GenerateCells(columns!)
+                }
+            };
+        }
+    }
+
+    public List<Cell<object>> GetCells(Row<object> row)
+    {
+        if (Parent!.FreezeModule!.GetFrozenCount() == 0 || Parent.FreezeModule!.GetFrozenCount() != 0) return row?.Cells!;
+
+         if (HeaderParameters!.IsFrozen.HasValue && HeaderParameters.IsFrozen == true)
+        {
+            return row?.Cells?.Where(x => x.IsFrozen)?.ToList()!;
+        }
+        else if (HeaderParameters.IsFrozen.HasValue && HeaderParameters.IsFrozen == false)
+        {
+            if (Parent.EnableColumnVirtualization)
+            {
+                return row?.Cells?.Where(x => !x.IsFrozen)?.Skip(Parent.VirtualScrollModule!.StartColumnIndex)?.Take((Parent.VirtualScrollModule.EndColumnIndex) - (Parent.VirtualScrollModule.StartColumnIndex) + 2)?.ToList()!;
+            }
+            else
+            {
+                return row?.Cells?.Where(x => !x.IsFrozen)?.ToList()!;
+            }
+        }
+
+        return row?.Cells!;
+    }
+
+    internal void GetStackedColumns(int level, List<GridColumn> columns, int maximumDepth, Dictionary<int, List<GridColumn>>? stacked = null)
+    {
+        List<GridColumn> LastLevelColumns = new List<GridColumn>();
+        if (level == 1)
+            stacked?.Add(level, columns);
+
+        if (stacked?.Count() >= level)
+        {
+            foreach (GridColumn column in stacked[level])
+            {
+                if (column?.Columns != null && stacked.ContainsKey(level + 1))
+                {
+                    stacked[level + 1].AddRange(column.Columns);
+                }
+                else if (column?.Columns != null)
+                {
+                    stacked.Add(level + 1, new List<GridColumn>());
+                    stacked[level + 1].AddRange(column.Columns);
+                }
+                else
+                    LastLevelColumns.Add(column!);
+            }
+        }
+
+        if (level + 1 < maximumDepth)
+            GetStackedColumns(level + 1, columns, maximumDepth, stacked);
+    }
+
+    public List<Cell<object>> GenerateCells(List<GridColumn> cols, bool requireFlatten = true, int maxDepth = 1, int level = 1)
+    {
+        List<GridColumn> columns = requireFlatten ? GridUtils.GetColumns(columns: cols) : cols;
+        List<Cell<object>> cells = new List<Cell<object>>();
+        int index = HeaderParameters!.ARIAColumnIndex;
+
+        if (Parent != null &&  Parent.AllowGrouping && Parent.GroupSettings != null && Parent.GroupSettings.Columns?.Count() > 0)
+        {
+            foreach (var col in Parent.GroupSettings.Columns)
+            {
+                if(!string.IsNullOrEmpty(col))
+                {
+                    cells.Add(new Cell<object>() { CellType = CellType.Indent });
+                }
+            }
+        }
+
+        if (((IGrid)Parent!)?.GridTemplates?.DetailTemplate != null)
+        {
+            cells.Add(new Cell<object>() { CellType = CellType.DetailIndent });
+        }
+
+        if (Parent != null && Parent.AllowRowDragAndDrop)
+        {
+            cells.Add(new Cell<object>() { CellType = CellType.RowDrag });
+        }
+
+        foreach (GridColumn column in columns)
+        {
+            bool isStacked = column?.Columns != null;
+            cells.Add(new Cell<object>()
+            {
+                Visible = column != null ? column.Visible: false,
+                IsDataCell = false,
+                IsTemplate = column?.HeaderTemplate != null,
+                Column = column!,
+                Index = index,
+                IsFrozen = column?.IsFrozen == true || (HeaderParameters.IsFrozen ?? false),
+                Attributes = column?.CustomAttributes!,
+                IsStacked = isStacked,
+                ColSpan = isStacked ? GetColspanCount(column!) : 1,
+                RowSpan = isStacked ? 1 : HeaderParameters.IsFrozen == true ? MeasureColumnDepth(Parent!.Columns!) - (level - 1) : MeasureColumnDepth(Parent?.Columns!) - level + 1,
+                CellType = isStacked ? CellType.StackedHeader : CellType.Data
+            });
+            index++;
+        }
+        return cells;
+    }
+
+    internal int MeasureColumnDepth(List<GridColumn> column)
+    {
+        var max = 0;
+        for (var i = 0; i < column.Count(); i++)
+        {
+            var depth = GetColumnDepth(column[i], 0);
+            if (max < depth)
+            {
+                max = depth;
+            }
+        }
+        return max + 1;
+    }
+
+    internal int GetColumnDepth(GridColumn column, int index)
+    {
+        var max = index;
+        List<int> indices = new List<int>();
+        if (column?.Columns != null)
+        {
+            index++;
+            for (var i = 0; i < column.Columns.Count(); i++)
+            {
+                indices.Add(GetColumnDepth(column.Columns[i], index));
+            }
+            for (var j = 0; j < indices.Count(); j++)
+            {
+                if (max < indices[j])
+                {
+                    max = indices[j];
+                }
+            }
+            index = max;
+        }
+        return index;
+    }
+
+    public string GetTRClasses()
+    {
+        string classNames = "e-columnheader";
+        if (Parent != null && Parent.AllowTextWrap && Parent.TextWrapSettings != null  && Parent.TextWrapSettings.WrapMode.Equals(WrapMode.Header))
+        {
+            classNames = $"{classNames} e-wrap";
+        }
+
+        return classNames;
+    }
+
+    internal int GetColspanCount(GridColumn column, int count = 0)
+    {
+        if (column?.Columns != null && column.Columns.Any())
+        {
+            for (var i = 0; i < column.Columns.Count; i++)
+            {
+                count = this.GetColspanCount(column.Columns[i], count);
+            }
+        }
+        else
+        {
+            if (column?.Visible == true)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    #endregion
+
+    #endregion
+
+}

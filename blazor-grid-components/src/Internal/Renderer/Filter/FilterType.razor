@@ -1,0 +1,53 @@
+﻿
+@typeparam TContent
+
+@namespace Syncfusion.Blazor.Grids.Internal
+
+@if (Parent!.FilterModule != null && Parent.FilterModule.FilterIconIsClicked && Parent.FilterModule.FilterIconColumn != null && Parent.FilterModule.GetFilterType(Parent.FilterModule.FilterIconColumn) == "Menu")
+{
+    <FilterMenuRenderer TContent="TContent" Column=@Parent.FilterModule.FilterIconColumn></FilterMenuRenderer>
+}
+@if (Parent.FilterModule != null && Parent.FilterModule.FilterIconIsClicked && Parent.FilterModule.FilterIconColumn != null && (Parent.FilterModule.GetFilterType(Parent.FilterModule.FilterIconColumn) == "CheckBox" || Parent.FilterModule.GetFilterType(Parent.FilterModule.FilterIconColumn) == "Excel") )
+{
+    <FilterCheckBoxRenderer TContent="TContent" Column=@Parent.FilterModule.FilterIconColumn></FilterCheckBoxRenderer>
+}
+@if ((Parent.EnableAdaptiveUI && (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Both) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Mobile) && Parent.SyncfusionService.IsDeviceMode)) || (Parent.AdaptiveUIMode.Equals(AdaptiveMode.Desktop) && !Parent.SyncfusionService.IsDeviceMode)) && ((this.Parent.FilterModule != null && this.Parent.FilterModule.IsAdaptiveFilter) || this.Parent.FilterModule!.IsAdaptiveSort || this.Parent.FilterModule.IsAdaptiveToolbarMenu))
+{
+    <AdaptiveDialogRenderer IsFilterIconClicked="@this.Parent.FilterModule.IsAdaptiveFilter" IsSortIconClicked="@this.Parent.FilterModule.IsAdaptiveSort" IsToolbarMenuIconClicked="@this.Parent.FilterModule.IsAdaptiveToolbarMenu" TContent="TContent"></AdaptiveDialogRenderer>
+}
+@code {
+
+    [CascadingParameter]
+    public SfGrid<TContent>? Parent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Parent!.EventAggregator.Add("FilterComponentUpdate", FilterCompUpdate);
+        Parent.EventAggregator.Add("AdaptiveFilterComponent", AdaptiveFilterComponent);
+    }
+
+    internal async void FilterCompUpdate(object args)
+    {
+        if (args != null && ((bool)args))
+        {
+            //Need to handle for stacked header
+            Parent!.HeaderRows[0].Cells.Where(c => c.Column?.Uid == Parent.FilterModule?.FilterIconColumn?.Uid).ToList()[0].IsFocused = true;
+            Parent.HeaderRows[0].Cells.Where(c => c.Column?.Uid == Parent.FilterModule?.FilterIconColumn?.Uid).ToList()[0].ShowFocusLine = true;
+        }
+        if (Parent!.EnableAdaptiveUI)
+        {
+            await Parent.CallStateHasChangedAsync();
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    internal void AdaptiveFilterComponent(object args) {
+        if(Parent!.FilterModule != null)
+        Parent.FilterModule.FilterIconIsClicked = true;
+        StateHasChanged();
+    }
+}
